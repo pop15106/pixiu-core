@@ -1,0 +1,179 @@
+{
+  "generatedAt": "2026-03-05T09:49:08.600Z",
+  "technology": {
+    "language": "JavaScript",
+    "framework": "unknown"
+  },
+  "structure": {
+    "hasDocker": false,
+    "hasCompose": false,
+    "hasGit": true
+  },
+  "pixiu": {
+    "active_rules": [],
+    "installed_skills": [
+      {
+        "filename": "api-design.skill.md",
+        "size": 3806
+      },
+      {
+        "filename": "bdi-mental-states.skill.md",
+        "size": 2315
+      },
+      {
+        "filename": "brainstorming.skill.md",
+        "size": 2639
+      },
+      {
+        "filename": "claude-api-cost.skill.md",
+        "size": 9719
+      },
+      {
+        "filename": "code-review.skill.md",
+        "size": 4335
+      },
+      {
+        "filename": "context-optimization.skill.md",
+        "size": 2187
+      },
+      {
+        "filename": "db-schema.skill.md",
+        "size": 5160
+      },
+      {
+        "filename": "error-handling.skill.md",
+        "size": 5482
+      },
+      {
+        "filename": "java-spring.skill.md",
+        "size": 2328
+      },
+      {
+        "filename": "naming-convention.skill.md",
+        "size": 5208
+      },
+      {
+        "filename": "payment.skill.md",
+        "size": 2348
+      },
+      {
+        "filename": "performance.skill.md",
+        "size": 9823
+      },
+      {
+        "filename": "python-patterns.skill.md",
+        "size": 5234
+      },
+      {
+        "filename": "research.skill.md",
+        "size": 1740
+      },
+      {
+        "filename": "security.skill.md",
+        "size": 10485
+      },
+      {
+        "filename": "skill-acquisition.skill.md",
+        "size": 1341
+      },
+      {
+        "filename": "systematic-debugging.skill.md",
+        "size": 2250
+      },
+      {
+        "filename": "tdd-workflow.skill.md",
+        "size": 4599
+      },
+      {
+        "filename": "tech-stack.skill.md",
+        "size": 3313
+      },
+      {
+        "filename": "typescript-patterns.skill.md",
+        "size": 5978
+      },
+      {
+        "filename": "ui-design.skill.md",
+        "size": 6178
+      },
+      {
+        "filename": "UxSoul-extractor.skill.md",
+        "size": 2587
+      },
+      {
+        "filename": "verification-before-completion.skill.md",
+        "size": 3376
+      },
+      {
+        "filename": "visualization.skill.md",
+        "size": 1797
+      },
+      {
+        "filename": "writing-plans.skill.md",
+        "size": 3749
+      }
+    ],
+    "available_workflows": [
+      {
+        "filename": "adr.md",
+        "size": 1940
+      },
+      {
+        "filename": "changelog.md",
+        "size": 4398
+      },
+      {
+        "filename": "chrome-extension.md",
+        "size": 3284
+      },
+      {
+        "filename": "commit.md",
+        "size": 4409
+      },
+      {
+        "filename": "db-migrate.md",
+        "size": 6431
+      },
+      {
+        "filename": "deploy.md",
+        "size": 6847
+      },
+      {
+        "filename": "init-docs.md",
+        "size": 1482
+      },
+      {
+        "filename": "publish-extension.md",
+        "size": 3937
+      },
+      {
+        "filename": "regression-guard.md",
+        "size": 1462
+      },
+      {
+        "filename": "release.md",
+        "size": 5672
+      },
+      {
+        "filename": "skill-acquisition.md",
+        "size": 3096
+      },
+      {
+        "filename": "startup.md",
+        "size": 1579
+      },
+      {
+        "filename": "testing.md",
+        "size": 7213
+      },
+      {
+        "filename": "ux-audit.md",
+        "size": 1059
+      },
+      {
+        "filename": "UxSoul-scan.md",
+        "size": 913
+      }
+    ]
+  }
+}
