@@ -1,0 +1,482 @@
+[
+  {
+    "timestamp": 1772084620062,
+    "issues": [
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 12
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 13
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 134
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.ccbfafc2.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.06562d9a.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      }
+    ],
+    "summary": {
+      "totalIssues": 10,
+      "todoCount": 14,
+      "durationMs": 115317
+    }
+  },
+  {
+    "timestamp": 1772084619502,
+    "issues": [
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.ccbfafc2.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.06562d9a.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 12
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 13
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 134
+      }
+    ],
+    "summary": {
+      "totalIssues": 10,
+      "todoCount": 14,
+      "durationMs": 71644
+    }
+  },
+  {
+    "timestamp": 1772076850173,
+    "issues": [
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.ccbfafc2.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.06562d9a.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 12
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 13
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 134
+      }
+    ],
+    "summary": {
+      "totalIssues": 10,
+      "todoCount": 14,
+      "durationMs": 3470
+    }
+  },
+  {
+    "timestamp": 1772075736959,
+    "issues": [
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.06562d9a.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.ccbfafc2.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 12
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 13
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 134
+      }
+    ],
+    "summary": {
+      "totalIssues": 10,
+      "todoCount": 14,
+      "durationMs": 3814
+    }
+  },
+  {
+    "timestamp": 1772075072534,
+    "issues": [
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.06562d9a.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.ccbfafc2.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 12
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 13
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 134
+      }
+    ],
+    "summary": {
+      "totalIssues": 10,
+      "todoCount": 14,
+      "durationMs": 28156
+    }
+  },
+  {
+    "timestamp": 1772075072201,
+    "issues": [
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.06562d9a.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.ccbfafc2.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 1
+      },
+      {
+        "file": "ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js",
+        "message": "可能的硬編碼 API Key",
+        "ruleId": "hardcoded_api_key",
+        "severity": "error",
+        "line": 2
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 12
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 13
+      },
+      {
+        "file": "ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java",
+        "message": "可能的硬編碼密碼",
+        "ruleId": "hardcoded_password",
+        "severity": "error",
+        "line": 134
+      }
+    ],
+    "summary": {
+      "totalIssues": 10,
+      "todoCount": 14,
+      "durationMs": 15226
+    }
+  }
+]

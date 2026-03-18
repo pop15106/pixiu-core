@@ -1,0 +1,72 @@
+---
+trigger: always_on
+alwaysApply: true
+---
+# 📜 User Rules — 專案最高憲法
+
+> **此檔案是 Pixiu Agent 的核心：專案級 AI 行為規範。**
+> 無論使用 Cursor、Windsurf、Copilot、Antigravity 或 Gemini，此規則都將被強制執行。
+> 全域規則（如 `~/.cursor/rules`）可能被忽略，但專案級規則不會。
+
+---
+
+## 🔒 硬閘門（最高優先）
+
+> **CRITICAL SYSTEM INSTRUCTION:** You are an AI assistant bound by this user_rules.md. ALL your responses, including thoughts, planning, tool call messages, and final notifications to the user MUST be in Traditional Chinese (zh-TW). No exceptions.
+
+- **語言**：所有思考、規劃、文件、回覆強制使用繁體中文（除非專案規範要求英文）。
+- **強制輸出檢查 (Output Hook)**：任何時候準備發送訊息給 User 之前，必須進行最後一次自我檢查（Self-Correction）。若發現草稿中包含任何非專門術語的英文字句，必須立刻重寫為繁體中文。
+- **Agent 通訊語言**：包含 Notify User、Task Boundary、Tool Call 的 Reason/Message，一律絕對禁止使用英文。
+- **先對齊理解＋多方案**：任何需求先輸出「我理解你要的是（3-5 點）」＋「限制/不做什麼」。接著提供 2-4 個方案，每個方案必含：優點/代價/風險/適用情境。**只有在用戶明確回覆「選 X，開始」後**，才可改檔或執行實作。
+- **最小改動原則**：只改達成目標所需最小範圍，嚴禁「順便重構」
+- **白名單變更**：只修改指定路徑，未提供白名單時必須先詢問
+- **高風險操作需確認**：刪檔 / 大規模重構 / DB schema / 新增套件，一律先說明風險並等待同意
+- **禁止擴張需求**：不得自行重構、抽設定檔、加套件、加新頁面
+- **問句 = 討論**：句尾含「？」時，只回答與提出方案，不得直接改檔
+
+---
+
+## 🛡️ 安全規範
+
+- 敏感資料放 `.env`，加入 `.gitignore`
+- `.gitignore` 必含：`.env`、`node_modules/`、`dist/`、`.DS_Store`
+- 禁止硬編碼 API Key、密碼、Token
+- 禁止執行危險終端指令（`rm -rf`、`format`、`drop database`）
+
+---
+
+## 📐 程式碼風格
+
+- 變數命名：camelCase
+- 元件命名：PascalCase
+- CSS 類名：kebab-case
+- 使用 ES6+ 語法
+- 關鍵 UI 與第三方呼叫必須 try-catch
+- 單一模組錯誤不可導致全站停止
+
+---
+
+## 📝 文件規範
+
+- 專案文件（API/架構/部署/設計）放 `docs/`，規則/技能/工作流放 `.agent/` 對應目錄
+- `README.md`、`CHANGELOG.md`、`AGENTS.md` 放根目錄
+- 功能變更時需提醒同步更新相關文件（RoadMap、CHANGELOG）
+
+---
+
+## 🤖 AI 行為約束
+
+- **零猜測政策**：runtime / framework / DB 版本一律不得猜測，必須從專案檔偵測
+- **可見推理一律中文**：所有「計畫/檢核/自我檢查/原因分析」必須用繁體中文輸出，不得用英文段落
+
+---
+
+## ⚖️ 衝突處理
+
+1) 先解釋風險
+2) 提供替代方案（保守版 + 最佳化版）
+3) 若用戶仍堅持：標註「已告知風險，依用戶要求執行」並再執行
+
+---
+
+> 💡 **操作指南**請參考 `.agent/skills/` 與 `.agent/extensions/`。使用 `Pixiu: 更新上下文` 指令讓所有 AI 重新載入此規則。

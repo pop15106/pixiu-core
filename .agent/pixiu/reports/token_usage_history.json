@@ -1,0 +1,79 @@
+[
+  {
+    "timestamp": 1772681277964,
+    "mode": "normal",
+    "budget": 6000,
+    "finalEstimatedTokens": 944,
+    "rawEstimatedTokens": 2312,
+    "savedTokens": 1368,
+    "savedPercent": 59.17,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772535575154,
+    "mode": "normal",
+    "budget": 6000,
+    "finalEstimatedTokens": 939,
+    "rawEstimatedTokens": 2227,
+    "savedTokens": 1288,
+    "savedPercent": 57.84,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772534275709,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 911,
+    "rawEstimatedTokens": 2288,
+    "savedTokens": 1377,
+    "savedPercent": 60.18,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772531449590,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 890,
+    "rawEstimatedTokens": 2267,
+    "savedTokens": 1377,
+    "savedPercent": 60.74,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772443177614,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 884,
+    "rawEstimatedTokens": 2226,
+    "savedTokens": 1342,
+    "savedPercent": 60.29,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772442888653,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 906,
+    "rawEstimatedTokens": 2248,
+    "savedTokens": 1342,
+    "savedPercent": 59.7,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772442880426,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 906,
+    "rawEstimatedTokens": 2248,
+    "savedTokens": 1342,
+    "savedPercent": 59.7,
+    "truncated": false,
+    "criticalTrim": false
+  }
+]

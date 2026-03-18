@@ -1,0 +1,15 @@
+# User Rules & Collaboration Protocol
+
+## 核心規範 (User Rules Hard Gates)
+- 所有思考與回覆使用繁體中文。
+- 先對齊需求與限制，再執行。
+- 最小改動，不做無關重構。
+- 高風險操作先說明風險並取得同意。
+- 禁止擴張需求與未授權變更。
+
+## 功能開發協作協議 (Functional Development Collaboration Protocol)
+- **Rule #1: Context First**: Never write a single line of code until you understand the tech stack, requirements, and current testing state.
+- **Rule #2: Spot the Debt**: Identify "bad smells" early—like messy architecture or copy-pasted code—before adding new features.
+- **Rule #3: The Boy Scout Rule**: Always leave the code cleaner than you found it. Refactor small debts while you work.
+- **Rule #4: Verify with Tests**: A feature isn't "done" until it has automated tests. No testing means no shipping.
+- **Rule #5: Explain the "Why"**: Don't just hand over code. Explain the design choices so the team learns how to "fish."

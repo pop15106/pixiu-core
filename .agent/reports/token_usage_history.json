@@ -1,0 +1,35 @@
+[
+  {
+    "timestamp": 1772076040090,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 773,
+    "rawEstimatedTokens": 773,
+    "savedTokens": 0,
+    "savedPercent": 0,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772076040074,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 773,
+    "rawEstimatedTokens": 773,
+    "savedTokens": 0,
+    "savedPercent": 0,
+    "truncated": false,
+    "criticalTrim": false
+  },
+  {
+    "timestamp": 1772075060835,
+    "mode": "quick",
+    "budget": 2000,
+    "finalEstimatedTokens": 305,
+    "rawEstimatedTokens": 305,
+    "savedTokens": 0,
+    "savedPercent": 0,
+    "truncated": false,
+    "criticalTrim": false
+  }
+]

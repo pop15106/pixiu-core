@@ -1,0 +1,661 @@
+[2026-03-02T09:14:10.723Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-02T09:14:13.981Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-02T09:14:13.990Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-02T09:14:15.787Z] [Guardian] 已自動綁定 .agent/workflows/*.md 為文字編輯器
+[2026-03-02T09:14:21.330Z] 🔍 執行安全掃描...
+
+[2026-03-02T09:14:25.889Z] 🔍 執行安全掃描...
+
+[2026-03-02T09:14:32.501Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-02T09:14:32.525Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-02T09:14:37.511Z] ❌ 安全掃描失敗: Error: ENOENT: no such file or directory, open 'c:\Users\7010\Desktop\gravityTest\PTWCS\ptwcs_ap\src\main\java\com\tradevan\ptwcs\adapter\rest\deserializer\CharArrayDeserializer.java'
+[2026-03-02T09:14:40.426Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2248,"estimated":906,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":1,"promptCharsBefore":86,"promptCharsAfter":2716,"tokenSavedEstimate":1342,"tokenSavedPercent":59.7,"timestamp":1772442880426}
+[2026-03-02T09:14:48.653Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2248,"estimated":906,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":86,"promptCharsAfter":2716,"tokenSavedEstimate":1342,"tokenSavedPercent":59.7,"timestamp":1772442888653}
+[2026-03-02T09:19:37.614Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2226,"estimated":884,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":86,"promptCharsAfter":2650,"tokenSavedEstimate":1342,"tokenSavedPercent":60.29,"timestamp":1772443177614}
+[2026-03-02T10:18:07.958Z] 🔍 執行安全掃描...
+
+[2026-03-02T10:18:15.801Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:18:15.802Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:18:15.805Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:18:15.809Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:18:15.813Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:18:15.816Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:18:15.819Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:18:15.831Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-02T10:18:15.832Z] 📋 發現 7 個問題需要關注
+[2026-03-02T10:18:15.842Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:18:41.137Z] 📦 開始安裝 Pixiu 規則...
+[2026-03-02T10:18:41.158Z]   [OK] config.yaml (內容相同)
+[2026-03-02T10:18:41.170Z]   [OK] security.skill.md (內容相同)
+[2026-03-02T10:18:41.178Z]   [OK] performance.skill.md (內容相同)
+[2026-03-02T10:18:41.189Z]   [OK] tech-stack.skill.md (內容相同)
+[2026-03-02T10:18:43.154Z]   [BACKUP] code-review.skill.md -> backups/code-review.skill.md.20260302_181843.bak
+[2026-03-02T10:18:43.165Z]   [OVERWRITE] code-review.skill.md
+[2026-03-02T10:18:43.175Z]   [OK] opus-advanced.md (內容相同)
+[2026-03-02T10:18:43.186Z]   [OK] skill-trigger.shared.md (內容相同)
+[2026-03-02T10:18:43.202Z] ✅ 安裝完成！
+[2026-03-02T10:21:33.699Z] 🔍 執行安全掃描...
+
+[2026-03-02T10:21:37.038Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:21:37.045Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:21:37.050Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:21:37.052Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:21:37.055Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:21:37.057Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:21:37.059Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:21:37.075Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-02T10:21:37.077Z] 📋 發現 7 個問題需要關注
+[2026-03-02T10:21:37.130Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:45:32.446Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-02T10:45:34.249Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-02T10:45:34.296Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-02T10:45:39.971Z] 🔍 執行安全掃描...
+
+[2026-03-02T10:45:55.248Z] 🔍 執行安全掃描...
+
+[2026-03-02T10:46:09.417Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-02T10:46:09.426Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-02T10:46:24.843Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:24.857Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:24.872Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:24.885Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:24.898Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:46:24.904Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:46:24.910Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:46:24.929Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-02T10:46:24.932Z] 📋 發現 7 個問題需要關注
+[2026-03-02T10:46:24.994Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:46:25.078Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:25.083Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:46:25.095Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:46:25.103Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-02T10:46:25.114Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:25.124Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:25.135Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-02T10:46:25.176Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-02T10:46:25.207Z] 📋 發現 7 個問題需要關注
+[2026-03-02T10:46:25.264Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:17:23.070Z] 🔍 執行安全掃描...
+
+[2026-03-03T03:17:32.231Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:17:32.234Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:17:32.239Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:17:32.245Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:17:32.252Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:17:32.254Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:17:32.257Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:17:32.269Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T03:17:32.271Z] 📋 發現 7 個問題需要關注
+[2026-03-03T03:17:32.286Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:21:30.921Z] 🔍 執行安全掃描...
+
+[2026-03-03T03:21:37.028Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:21:37.032Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:21:37.036Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:21:37.039Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:21:37.042Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:21:37.047Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:21:37.049Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:21:37.064Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T03:21:37.067Z] 📋 發現 7 個問題需要關注
+[2026-03-03T03:21:37.079Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:41:49.477Z] 🔍 執行安全掃描...
+
+[2026-03-03T03:41:54.507Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:41:54.510Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:41:54.514Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:41:54.516Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:41:54.519Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:41:54.523Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:41:54.524Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:41:54.527Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:41:54.536Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T03:41:54.538Z] 📋 發現 8 個問題需要關注
+[2026-03-03T03:41:54.554Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:42:54.760Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-03T03:42:55.004Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-03T03:42:55.029Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-03T03:42:58.967Z] 🔍 執行安全掃描...
+
+[2026-03-03T03:43:04.032Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-03T03:43:04.070Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-03T03:43:37.737Z] 🔍 執行安全掃描...
+
+[2026-03-03T03:43:49.702Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:49.707Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:49.714Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:49.723Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:49.732Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:49.736Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:43:49.740Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:43:49.746Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:43:49.764Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T03:43:49.769Z] 📋 發現 8 個問題需要關注
+[2026-03-03T03:43:49.797Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:43:50.115Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:50.120Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:50.125Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:50.130Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:50.139Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T03:43:50.147Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:43:50.151Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:43:50.155Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T03:43:50.172Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T03:43:50.175Z] 📋 發現 8 個問題需要關注
+[2026-03-03T03:43:50.197Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T09:35:30.286Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-03T09:35:30.371Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-03T09:35:30.394Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-03T09:35:39.468Z] 🔍 執行安全掃描...
+
+[2026-03-03T09:35:53.153Z] 🔍 執行安全掃描...
+
+[2026-03-03T09:36:12.986Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-03T09:36:13.007Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-03T09:36:33.425Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T09:36:33.446Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T09:36:33.469Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T09:36:33.486Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:33.491Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:33.504Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:33.516Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:33.532Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:33.566Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T09:36:33.620Z] 📋 發現 8 個問題需要關注
+[2026-03-03T09:36:33.914Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T09:36:34.269Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:34.285Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:34.325Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:34.333Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:34.475Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T09:36:34.541Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T09:36:34.583Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T09:36:34.676Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T09:36:34.783Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T09:36:34.799Z] 📋 發現 8 個問題需要關注
+[2026-03-03T09:36:35.037Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T09:50:49.590Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2267,"estimated":890,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":2,"promptCharsBefore":89,"promptCharsAfter":2669,"tokenSavedEstimate":1377,"tokenSavedPercent":60.74,"timestamp":1772531449590}
+[2026-03-03T10:28:28.268Z] 🔍 執行安全掃描...
+
+[2026-03-03T10:28:34.867Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:28:34.869Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:28:34.872Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:28:34.875Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:28:34.878Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:28:34.883Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:28:34.885Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:28:34.888Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:28:34.897Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T10:28:34.899Z] 📋 發現 8 個問題需要關注
+[2026-03-03T10:28:34.908Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T10:37:10.708Z] 🔍 執行安全掃描...
+
+[2026-03-03T10:37:15.849Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:37:15.852Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:37:15.857Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:37:15.861Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:37:15.863Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:37:15.867Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:37:15.868Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:37:15.870Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:37:15.882Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T10:37:15.883Z] 📋 發現 8 個問題需要關注
+[2026-03-03T10:37:15.898Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T10:37:32.913Z] [installAll] 開始安裝，專案路徑: c:\Users\7010\Desktop\gravityTest\PTWCS
+[2026-03-03T10:37:32.917Z] 🚀 開始一鍵安裝所有元件...
+[2026-03-03T10:37:32.921Z]   📦 找到 24 個 Skills
+[2026-03-03T10:37:32.926Z] 📦 開始安裝 Pixiu 規則...
+[2026-03-03T10:37:32.936Z]   [OK] config.yaml (內容相同)
+[2026-03-03T10:37:32.948Z]   [OK] adr.md (內容相同)
+[2026-03-03T10:37:32.959Z]   [OK] changelog.md (內容相同)
+[2026-03-03T10:37:32.980Z]   [NEW] chrome-extension.md
+[2026-03-03T10:37:43.039Z]   [BACKUP] commit.md -> backups/commit.md.20260303_183743.bak
+[2026-03-03T10:37:43.048Z]   [OVERWRITE] commit.md
+[2026-03-03T10:37:43.052Z]   [OK] db-migrate.md (內容相同)
+[2026-03-03T10:37:43.057Z]   [OK] deploy.md (內容相同)
+[2026-03-03T10:37:43.061Z]   [OK] init-docs.md (內容相同)
+[2026-03-03T10:37:43.072Z]   [NEW] publish-extension.md
+[2026-03-03T10:37:43.077Z]   [OK] regression-guard.md (內容相同)
+[2026-03-03T10:37:43.081Z]   [OK] release.md (內容相同)
+[2026-03-03T10:37:43.084Z]   [OK] skill-acquisition.md (內容相同)
+[2026-03-03T10:37:43.087Z]   [OK] testing.md (內容相同)
+[2026-03-03T10:37:49.109Z]   [BACKUP] ux-audit.md -> backups/ux-audit.md.20260303_183749.bak
+[2026-03-03T10:37:49.128Z]   [OVERWRITE] ux-audit.md
+[2026-03-03T10:37:49.137Z]   [OK] UxSoul-scan.md (內容相同)
+[2026-03-03T10:37:49.165Z]   [OK] agent-guard.yml (內容相同)
+[2026-03-03T10:37:49.191Z]   [OK] ci.yml (內容相同)
+[2026-03-03T10:37:49.221Z]   [OK] issue-triage.yml (內容相同)
+[2026-03-03T10:37:49.252Z]   [OK] publish-all.yml (內容相同)
+[2026-03-03T10:37:49.270Z]   [OK] release-note.yml (內容相同)
+[2026-03-03T10:37:49.274Z]   [OK] security.skill.md (內容相同)
+[2026-03-03T10:37:49.277Z]   [OK] performance.skill.md (內容相同)
+[2026-03-03T10:37:49.283Z]   [OK] tech-stack.skill.md (內容相同)
+[2026-03-03T10:37:49.289Z]   [OK] api-design.skill.md (內容相同)
+[2026-03-03T10:37:49.295Z]   [OK] bdi-mental-states.skill.md (內容相同)
+[2026-03-03T10:37:49.300Z]   [OK] brainstorming.skill.md (內容相同)
+[2026-03-03T10:37:49.307Z]   [OK] claude-api-cost.skill.md (內容相同)
+[2026-03-03T10:37:49.311Z]   [OK] code-review.skill.md (內容相同)
+[2026-03-03T10:37:49.316Z]   [OK] context-optimization.skill.md (內容相同)
+[2026-03-03T10:37:49.321Z]   [OK] db-schema.skill.md (內容相同)
+[2026-03-03T10:37:49.328Z]   [OK] error-handling.skill.md (內容相同)
+[2026-03-03T10:37:49.332Z]   [OK] naming-convention.skill.md (內容相同)
+[2026-03-03T10:37:49.337Z]   [OK] payment.skill.md (內容相同)
+[2026-03-03T10:37:49.352Z]   [NEW] python-patterns.skill.md
+[2026-03-03T10:37:49.356Z]   [OK] research.skill.md (內容相同)
+[2026-03-03T10:37:49.360Z]   [OK] skill-acquisition.skill.md (內容相同)
+[2026-03-03T10:37:49.365Z]   [OK] systematic-debugging.skill.md (內容相同)
+[2026-03-03T10:37:49.370Z]   [OK] tdd-workflow.skill.md (內容相同)
+[2026-03-03T10:37:49.374Z]   [OK] typescript-patterns.skill.md (內容相同)
+[2026-03-03T10:37:49.378Z]   [OK] ui-design.skill.md (內容相同)
+[2026-03-03T10:37:49.382Z]   [OK] UxSoul-extractor.skill.md (內容相同)
+[2026-03-03T10:37:49.388Z]   [OK] verification-before-completion.skill.md (內容相同)
+[2026-03-03T10:37:49.392Z]   [OK] visualization.skill.md (內容相同)
+[2026-03-03T10:37:49.396Z]   [OK] writing-plans.skill.md (內容相同)
+[2026-03-03T10:37:49.412Z]   [OK] opus-advanced.md (內容相同)
+[2026-03-03T10:37:49.422Z]   [OK] skill-trigger.shared.md (內容相同)
+[2026-03-03T10:37:55.709Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2288,"estimated":911,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":86,"promptCharsAfter":2732,"tokenSavedEstimate":1377,"tokenSavedPercent":60.18,"timestamp":1772534275709}
+[2026-03-03T10:38:30.395Z] [installAll] 開始安裝，專案路徑: c:\Users\7010\Desktop\gravityTest\PTWCS
+[2026-03-03T10:38:30.398Z] 🚀 開始一鍵安裝所有元件...
+[2026-03-03T10:38:30.405Z]   📦 找到 24 個 Skills
+[2026-03-03T10:38:30.407Z] 📦 開始安裝 Pixiu 規則...
+[2026-03-03T10:38:30.416Z]   [OK] config.yaml (內容相同)
+[2026-03-03T10:38:30.427Z]   [OK] adr.md (內容相同)
+[2026-03-03T10:38:30.434Z]   [OK] changelog.md (內容相同)
+[2026-03-03T10:38:30.441Z]   [OK] chrome-extension.md (內容相同)
+[2026-03-03T10:38:30.448Z]   [OK] commit.md (內容相同)
+[2026-03-03T10:38:30.453Z]   [OK] db-migrate.md (內容相同)
+[2026-03-03T10:38:30.460Z]   [OK] deploy.md (內容相同)
+[2026-03-03T10:38:30.466Z]   [OK] init-docs.md (內容相同)
+[2026-03-03T10:38:30.474Z]   [OK] publish-extension.md (內容相同)
+[2026-03-03T10:38:30.483Z]   [OK] regression-guard.md (內容相同)
+[2026-03-03T10:38:30.489Z]   [OK] release.md (內容相同)
+[2026-03-03T10:38:30.494Z]   [OK] skill-acquisition.md (內容相同)
+[2026-03-03T10:38:30.501Z]   [OK] testing.md (內容相同)
+[2026-03-03T10:38:30.506Z]   [OK] ux-audit.md (內容相同)
+[2026-03-03T10:38:30.510Z]   [OK] UxSoul-scan.md (內容相同)
+[2026-03-03T10:38:30.519Z]   [OK] agent-guard.yml (內容相同)
+[2026-03-03T10:38:30.525Z]   [OK] ci.yml (內容相同)
+[2026-03-03T10:38:30.531Z]   [OK] issue-triage.yml (內容相同)
+[2026-03-03T10:38:30.537Z]   [OK] publish-all.yml (內容相同)
+[2026-03-03T10:38:30.544Z]   [OK] release-note.yml (內容相同)
+[2026-03-03T10:38:30.550Z]   [OK] security.skill.md (內容相同)
+[2026-03-03T10:38:30.556Z]   [OK] performance.skill.md (內容相同)
+[2026-03-03T10:38:30.562Z]   [OK] tech-stack.skill.md (內容相同)
+[2026-03-03T10:38:30.569Z]   [OK] api-design.skill.md (內容相同)
+[2026-03-03T10:38:30.574Z]   [OK] bdi-mental-states.skill.md (內容相同)
+[2026-03-03T10:38:30.579Z]   [OK] brainstorming.skill.md (內容相同)
+[2026-03-03T10:38:30.588Z]   [OK] claude-api-cost.skill.md (內容相同)
+[2026-03-03T10:38:30.594Z]   [OK] code-review.skill.md (內容相同)
+[2026-03-03T10:38:30.598Z]   [OK] context-optimization.skill.md (內容相同)
+[2026-03-03T10:38:30.605Z]   [OK] db-schema.skill.md (內容相同)
+[2026-03-03T10:38:30.609Z]   [OK] error-handling.skill.md (內容相同)
+[2026-03-03T10:38:30.612Z]   [OK] naming-convention.skill.md (內容相同)
+[2026-03-03T10:38:30.615Z]   [OK] payment.skill.md (內容相同)
+[2026-03-03T10:38:30.619Z]   [OK] python-patterns.skill.md (內容相同)
+[2026-03-03T10:38:30.626Z]   [OK] research.skill.md (內容相同)
+[2026-03-03T10:38:30.634Z]   [OK] skill-acquisition.skill.md (內容相同)
+[2026-03-03T10:38:30.641Z]   [OK] systematic-debugging.skill.md (內容相同)
+[2026-03-03T10:38:30.648Z]   [OK] tdd-workflow.skill.md (內容相同)
+[2026-03-03T10:38:30.653Z]   [OK] typescript-patterns.skill.md (內容相同)
+[2026-03-03T10:38:30.657Z]   [OK] ui-design.skill.md (內容相同)
+[2026-03-03T10:38:30.661Z]   [OK] UxSoul-extractor.skill.md (內容相同)
+[2026-03-03T10:38:30.666Z]   [OK] verification-before-completion.skill.md (內容相同)
+[2026-03-03T10:38:30.671Z]   [OK] visualization.skill.md (內容相同)
+[2026-03-03T10:38:30.674Z]   [OK] writing-plans.skill.md (內容相同)
+[2026-03-03T10:38:30.678Z]   [OK] opus-advanced.md (內容相同)
+[2026-03-03T10:38:30.681Z]   [OK] skill-trigger.shared.md (內容相同)
+[2026-03-03T10:38:30.698Z]   [SKIP] user_rules.md
+[2026-03-03T10:38:30.706Z]   🔄 已建立指標型規則檔: .cursorrules
+[2026-03-03T10:38:30.714Z]   🔄 已建立指標型規則檔: .windsurfrules
+[2026-03-03T10:38:30.719Z]   🔄 已建立指標型規則檔: .clinerules
+[2026-03-03T10:38:30.724Z]   🔄 已建立指標型規則檔: .github/copilot-instructions.md
+[2026-03-03T10:38:30.743Z] ✅ 安裝完成！
+[2026-03-03T10:38:30.748Z]   🤖 找到 4 個 Agents
+[2026-03-03T10:38:30.755Z]   [OK] build-fixer.md (內容相同)
+[2026-03-03T10:38:30.756Z] [SUCCESS] Installed Agent: build-fixer
+[2026-03-03T10:38:30.759Z]   [OK] code-reviewer.md (內容相同)
+[2026-03-03T10:38:30.762Z] [SUCCESS] Installed Agent: code-reviewer
+[2026-03-03T10:38:30.766Z]   [OK] documentation-writer.md (內容相同)
+[2026-03-03T10:38:30.769Z] [SUCCESS] Installed Agent: documentation-writer
+[2026-03-03T10:38:30.775Z]   [OK] test-writer.md (內容相同)
+[2026-03-03T10:38:30.777Z] [SUCCESS] Installed Agent: test-writer
+[2026-03-03T10:38:30.780Z]   🪝 找到 4 個 Hooks
+[2026-03-03T10:38:30.788Z]   [OK] commit-msg.json (內容相同)
+[2026-03-03T10:38:30.793Z] [SUCCESS] Installed Hook: commit-msg
+[2026-03-03T10:38:30.801Z]   [OK] console-log-detector.json (內容相同)
+[2026-03-03T10:38:30.803Z] [SUCCESS] Installed Hook: console-log-detector
+[2026-03-03T10:38:30.811Z]   [OK] pre-commit.json (內容相同)
+[2026-03-03T10:38:30.814Z] [SUCCESS] Installed Hook: pre-commit
+[2026-03-03T10:38:30.822Z]   [OK] secret-scanner.json (內容相同)
+[2026-03-03T10:38:30.824Z] [SUCCESS] Installed Hook: secret-scanner
+[2026-03-03T10:38:30.842Z]   [BACKUP] user_rules.md -> backups/user_rules.md.20260303_183830.bak
+[2026-03-03T10:38:30.848Z]   [OVERWRITE] user_rules.md
+[2026-03-03T10:38:30.855Z]   🔄 已建立指標型規則檔: .cursorrules
+[2026-03-03T10:38:30.861Z]   🔄 已建立指標型規則檔: .windsurfrules
+[2026-03-03T10:38:30.866Z]   🔄 已建立指標型規則檔: .clinerules
+[2026-03-03T10:38:30.872Z]   🔄 已建立指標型規則檔: .github/copilot-instructions.md
+[2026-03-03T10:38:30.878Z]   [OK] UxSoul-extractor.skill.md (內容相同)
+[2026-03-03T10:38:30.881Z]   [OK] UxSoul-scan.md (內容相同)
+[2026-03-03T10:38:30.883Z]   🧪 UxSoul-醬 安裝完成
+[2026-03-03T10:38:30.885Z] 🎉 一鍵安裝完成！
+[2026-03-03T10:38:33.362Z]   [BACKUP] user_rules.md -> backups/user_rules.md.20260303_183833.bak
+[2026-03-03T10:38:33.370Z]   [OVERWRITE] user_rules.md
+[2026-03-03T10:38:33.379Z]   🔄 已建立指標型規則檔: .cursorrules
+[2026-03-03T10:38:33.383Z]   🔄 已建立指標型規則檔: .windsurfrules
+[2026-03-03T10:38:33.389Z]   🔄 已建立指標型規則檔: .clinerules
+[2026-03-03T10:38:33.396Z]   🔄 已建立指標型規則檔: .github/copilot-instructions.md
+[2026-03-03T10:38:33.406Z] ✅ 安裝完成！
+[2026-03-03T10:38:33.409Z]   🤖 找到 4 個 Agents
+[2026-03-03T10:38:33.413Z]   [OK] build-fixer.md (內容相同)
+[2026-03-03T10:38:33.418Z] [SUCCESS] Installed Agent: build-fixer
+[2026-03-03T10:38:33.422Z]   [OK] code-reviewer.md (內容相同)
+[2026-03-03T10:38:33.424Z] [SUCCESS] Installed Agent: code-reviewer
+[2026-03-03T10:38:33.429Z]   [OK] documentation-writer.md (內容相同)
+[2026-03-03T10:38:33.431Z] [SUCCESS] Installed Agent: documentation-writer
+[2026-03-03T10:38:33.440Z]   [OK] test-writer.md (內容相同)
+[2026-03-03T10:38:33.443Z] [SUCCESS] Installed Agent: test-writer
+[2026-03-03T10:38:33.448Z]   🪝 找到 4 個 Hooks
+[2026-03-03T10:38:33.459Z]   [OK] commit-msg.json (內容相同)
+[2026-03-03T10:38:33.462Z] [SUCCESS] Installed Hook: commit-msg
+[2026-03-03T10:38:33.466Z]   [OK] console-log-detector.json (內容相同)
+[2026-03-03T10:38:33.469Z] [SUCCESS] Installed Hook: console-log-detector
+[2026-03-03T10:38:33.473Z]   [OK] pre-commit.json (內容相同)
+[2026-03-03T10:38:33.475Z] [SUCCESS] Installed Hook: pre-commit
+[2026-03-03T10:38:33.484Z]   [OK] secret-scanner.json (內容相同)
+[2026-03-03T10:38:33.486Z] [SUCCESS] Installed Hook: secret-scanner
+[2026-03-03T10:38:33.492Z]   [OK] user_rules.md (內容相同)
+[2026-03-03T10:38:33.506Z]   🔄 已建立指標型規則檔: .cursorrules
+[2026-03-03T10:38:33.513Z]   🔄 已建立指標型規則檔: .windsurfrules
+[2026-03-03T10:38:33.521Z]   🔄 已建立指標型規則檔: .clinerules
+[2026-03-03T10:38:33.529Z]   🔄 已建立指標型規則檔: .github/copilot-instructions.md
+[2026-03-03T10:38:33.532Z]   [OK] UxSoul-extractor.skill.md (內容相同)
+[2026-03-03T10:38:33.535Z]   [OK] UxSoul-scan.md (內容相同)
+[2026-03-03T10:38:33.537Z]   🧪 UxSoul-醬 安裝完成
+[2026-03-03T10:38:33.543Z] 🎉 一鍵安裝完成！
+[2026-03-03T10:59:24.564Z] 🔍 執行安全掃描...
+
+[2026-03-03T10:59:30.456Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:59:30.460Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:59:30.463Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:59:30.467Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:59:30.472Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T10:59:30.478Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:59:30.480Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:59:30.482Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T10:59:30.496Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T10:59:30.499Z] 📋 發現 8 個問題需要關注
+[2026-03-03T10:59:30.515Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T10:59:35.154Z] [CTX] {"mode":"normal","budget":6000,"rawEstimatedTokens":2227,"estimated":939,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":1,"promptCharsBefore":170,"promptCharsAfter":2816,"tokenSavedEstimate":1288,"tokenSavedPercent":57.84,"timestamp":1772535575154}
+[2026-03-03T11:12:17.627Z] 🔍 執行安全掃描...
+
+[2026-03-03T11:12:20.950Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T11:12:20.954Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T11:12:20.957Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T11:12:20.960Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T11:12:20.963Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-03T11:12:20.967Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T11:12:20.969Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T11:12:20.973Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-03T11:12:20.985Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-03T11:12:20.987Z] 📋 發現 8 個問題需要關注
+[2026-03-03T11:12:21.007Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T00:56:57.510Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-04T00:56:57.577Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T00:56:57.589Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T00:57:10.965Z] 🔍 執行安全掃描...
+
+[2026-03-04T00:57:22.578Z] 🔍 執行安全掃描...
+
+[2026-03-04T00:57:30.445Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-04T00:57:30.630Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T00:57:39.569Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:39.583Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:39.590Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T00:57:39.593Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T00:57:39.600Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:39.606Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:39.613Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:39.627Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T00:57:39.676Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T00:57:39.685Z] 📋 發現 8 個問題需要關注
+[2026-03-04T00:57:39.726Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T00:57:40.108Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:40.113Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:40.119Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:40.123Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:40.129Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T00:57:40.135Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T00:57:40.140Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T00:57:40.146Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T00:57:40.161Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T00:57:40.165Z] 📋 發現 8 個問題需要關注
+[2026-03-04T00:57:40.189Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:11:24.516Z] 🔍 執行安全掃描...
+
+[2026-03-04T01:11:29.739Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:11:29.743Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:11:29.745Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:11:29.748Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:11:29.751Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:11:29.753Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:11:29.756Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:11:29.759Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:11:29.776Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T01:11:29.777Z] 📋 發現 8 個問題需要關注
+[2026-03-04T01:11:29.790Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:28:36.902Z] 🔍 執行安全掃描...
+
+[2026-03-04T01:28:43.241Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:28:43.245Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:28:43.248Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:28:43.250Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:28:43.252Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:28:43.256Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:28:43.257Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:28:43.259Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:28:43.269Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T01:28:43.270Z] 📋 發現 8 個問題需要關注
+[2026-03-04T01:28:43.277Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:29:23.422Z] 🔍 執行安全掃描...
+
+[2026-03-04T01:29:26.610Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:29:26.613Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:29:26.617Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:29:26.621Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:29:26.627Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:29:26.633Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:29:26.635Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:29:26.638Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:29:26.654Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T01:29:26.657Z] 📋 發現 8 個問題需要關注
+[2026-03-04T01:29:26.674Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:34:11.794Z] 🔍 執行安全掃描...
+
+[2026-03-04T01:34:15.312Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:34:15.316Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:34:15.319Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:34:15.321Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:34:15.324Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T01:34:15.328Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:34:15.329Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:34:15.332Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T01:34:15.343Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T01:34:15.344Z] 📋 發現 8 個問題需要關注
+[2026-03-04T01:34:15.355Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T02:01:09.589Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-04T02:01:10.679Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T02:01:10.694Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T02:01:14.313Z] 🔍 執行安全掃描...
+
+[2026-03-04T02:01:35.674Z] 🔍 執行安全掃描...
+
+[2026-03-04T02:01:37.234Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-04T02:01:37.324Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T02:01:53.756Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:53.761Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:53.766Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:53.769Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:53.773Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:53.779Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T02:01:53.782Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T02:01:53.786Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T02:01:53.800Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T02:01:53.803Z] 📋 發現 8 個問題需要關注
+[2026-03-04T02:01:53.820Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T02:01:54.038Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:54.044Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:54.052Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:54.057Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:54.062Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T02:01:54.072Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T02:01:54.078Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T02:01:54.083Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T02:01:54.098Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T02:01:54.103Z] 📋 發現 8 個問題需要關注
+[2026-03-04T02:01:54.121Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T05:09:51.440Z] 🔍 執行安全掃描...
+
+[2026-03-04T05:09:58.432Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:09:58.438Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.3bb7b860.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:09:58.445Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:09:58.448Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:09:58.450Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:09:58.469Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T05:09:58.471Z] 📋 發現 5 個問題需要關注
+[2026-03-04T05:09:58.489Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T05:41:27.708Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-04T05:41:30.781Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T05:41:30.800Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T05:41:38.943Z] 🔍 執行安全掃描...
+
+[2026-03-04T05:41:50.397Z] 🔍 執行安全掃描...
+
+[2026-03-04T05:42:11.845Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-04T05:42:11.871Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T05:42:24.082Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.166Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.240Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.299Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.359Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.398Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:42:24.442Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:42:24.502Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:42:24.588Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T05:42:24.611Z] 📋 發現 8 個問題需要關注
+[2026-03-04T05:42:24.731Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T05:42:24.898Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.920Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.942Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.950Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.968Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T05:42:24.987Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:42:25.016Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:42:25.057Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T05:42:25.111Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T05:42:25.157Z] 📋 發現 8 個問題需要關注
+[2026-03-04T05:42:25.391Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T07:17:41.340Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-04T07:17:44.833Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T07:17:44.845Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-04T07:17:49.459Z] 🔍 執行安全掃描...
+
+[2026-03-04T07:17:57.323Z] 🔍 執行安全掃描...
+
+[2026-03-04T07:18:10.140Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-04T07:18:10.272Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T07:18:23.073Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T07:18:23.174Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T07:18:23.215Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T07:18:23.361Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.405Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.442Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.483Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.1bc8070d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.514Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.528Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.549Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.584Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.136de5c6.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.597Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:23.637Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T07:18:23.644Z] 📋 發現 12 個問題需要關注
+[2026-03-04T07:18:23.720Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T07:18:24.159Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.197Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.213Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.232Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.250Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.284Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.312Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.1bc8070d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.316Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.136de5c6.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.329Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-04T07:18:24.346Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T07:18:24.357Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T07:18:24.388Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-04T07:18:24.445Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-04T07:18:24.448Z] 📋 發現 12 個問題需要關注
+[2026-03-04T07:18:24.593Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-05T03:27:39.739Z] 🔍 執行安全掃描...
+
+[2026-03-05T03:27:47.838Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.843Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.849Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.856Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.099b07c2.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.861Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.865Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T03:27:47.871Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T03:27:47.875Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T03:27:47.880Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.884Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.888Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.892Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.256b34af.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.895Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.1bc8070d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.899Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.136de5c6.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.902Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.0bdb3525.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T03:27:47.914Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-05T03:27:47.916Z] 📋 發現 15 個問題需要關注
+[2026-03-05T03:27:47.931Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-05T03:27:57.964Z] [CTX] {"mode":"normal","budget":6000,"rawEstimatedTokens":2312,"estimated":944,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":176,"promptCharsAfter":2831,"tokenSavedEstimate":1368,"tokenSavedPercent":59.17,"timestamp":1772681277964}
+[2026-03-05T09:49:08.559Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
+[2026-03-05T09:49:10.314Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-05T09:49:10.367Z] [HookRunner] 已載入 4 個 Hooks
+[2026-03-05T09:49:16.151Z] 🔍 執行安全掃描...
+
+[2026-03-05T09:49:39.617Z] 🔍 執行安全掃描...
+
+[2026-03-05T09:49:44.665Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
+[2026-03-05T09:49:44.711Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-05T09:50:05.981Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:05.989Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:05.999Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.009Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.017Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.0bdb3525.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.022Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.099b07c2.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.030Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.034Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.042Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.256b34af.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.046Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.1bc8070d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.055Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.136de5c6.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.059Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.077Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T09:50:06.082Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T09:50:06.098Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T09:50:06.123Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-05T09:50:06.128Z] 📋 發現 15 個問題需要關注
+[2026-03-05T09:50:06.159Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.167Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.0bdb3525.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.173Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.180Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.187Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.194Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.099b07c2.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.200Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.207Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.212Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.217Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.256b34af.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.224Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.1bc8070d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.229Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.136de5c6.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
+[2026-03-05T09:50:06.235Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T09:50:06.241Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T09:50:06.245Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
+[2026-03-05T09:50:06.268Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-03-05T09:50:06.273Z] 📋 發現 15 個問題需要關注
+[2026-03-05T09:50:06.284Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-05T09:50:06.298Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
