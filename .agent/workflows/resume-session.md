@@ -29,11 +29,18 @@ This command is the counterpart to `/save-session`.
 
 If no argument provided:
 
-1. Check `~/.claude/sessions/`
-2. Pick the most recently modified `*-session.tmp` file
-3. If the folder does not exist or has no matching files, tell the user:
+1. Use Bash to find session files (Glob may not resolve `~` on Windows):
+   ```bash
+   ls -t ~/.claude/sessions/*-session.tmp 2>/dev/null | head -1
    ```
-   No session files found in ~/.claude/sessions/
+2. Also search the project directory:
+   ```bash
+   ls -t .claude/sessions/*-session.tmp 2>/dev/null | head -1
+   ```
+3. Pick the most recently modified file from either location.
+4. If neither finds anything, tell the user:
+   ```
+   No session files found in ~/.claude/sessions/ or .claude/sessions/
    Run /save-session at the end of a session to create one.
    ```
    Then stop.
