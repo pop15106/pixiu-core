@@ -34,6 +34,15 @@ mkdir -p ~/.claude/sessions
 
 ### Step 3: Write the session file
 
+**IMPORTANT: Always use the Bash tool with a heredoc to write this file.** Do NOT use the Write tool — it may fail silently for paths outside the current project directory (e.g., on Windows environments).
+
+Use this pattern:
+```bash
+cat > ~/.claude/sessions/YYYY-MM-DD-<short-id>-session.tmp << 'SESSIONEOF'
+[file contents here]
+SESSIONEOF
+```
+
 Create `~/.claude/sessions/YYYY-MM-DD-<short-id>-session.tmp`, using today's actual date and a short-id that satisfies the rules enforced by `SESSION_FILENAME_REGEX` in `session-manager.js`:
 
 - Allowed characters: lowercase `a-z`, digits `0-9`, hyphens `-`

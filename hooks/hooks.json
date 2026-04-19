@@ -74,6 +74,16 @@
           }
         ],
         "description": "Optional InsAIts AI security monitor for Bash/Edit/Write flows. Enable with ECC_ENABLE_INSAITS=1. Requires: pip install insa-its"
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\PixiuCore\\scripts\\hooks\\pixiu-guardrails.js\" \"pre:pixiu:change-scope\""
+          }
+        ],
+        "description": "母體治理：大規模變更警告 + .agent/ 變更偵測"
       }
     ],
     "PreCompact": [
@@ -176,6 +186,16 @@
           }
         ],
         "description": "Capture tool use results for continuous learning"
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\PixiuCore\\scripts\\hooks\\pixiu-guardrails.js\" \"post:pixiu:secret-scan\""
+          }
+        ],
+        "description": "母體安全：API Key / 機密洩露自動掃描"
       }
     ],
     "Stop": [
@@ -224,6 +244,18 @@
           }
         ],
         "description": "Track token and cost metrics per session"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\PixiuCore\\scripts\\hooks\\pixiu-guardrails.js\" \"stop:pixiu:mothership-sync\"",
+            "async": true,
+            "timeout": 5
+          }
+        ],
+        "description": "母體同步：偵測 .agent/ 框架級變更，提醒回寫母體"
       }
     ],
     "SessionEnd": [
