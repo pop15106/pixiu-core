@@ -101,12 +101,13 @@ alwaysApply: true
     - **任一失敗即退出**：步驟紅燈、criteria 缺失、偵測到母體寫入或破壞性指令 → 立即退出 Focus mode，回全步驟可見模式，附完整 trace。
     - **不可與 Auto mode 疊加的情境**：涉及 `C:\PixiuCore\` 寫入時，Focus + Auto 兩者**皆不可開**，必須全程可見＋逐步確認。
   - **🪜 /go 驗證迴圈觸發 [NEW]**：當使用者輸入「/go」、「跑驗證」、「收尾」或任務進入寫入完成階段時，**必須執行** `skills/pixiu-verify-loop/SKILL.md` 三步驟（E2E → /simplify → PR 草稿）。任一步紅燈即停、不自動修；PR 僅產草稿不自動推送。
-  - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，**必須執行** `skills/pixiu-session-recap/SKILL.md` 輸出結構化 6 區塊 Recap，Phase Recap 並寫入 `vault/memory/recaps/YYYY-MM-DD-主題.md`（Obsidian 相容格式）。
+  - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，**必須執行** `skills/pixiu-session-recap/SKILL.md` 輸出結構化 6 區塊 Recap，Phase Recap 並寫入 `vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題.md`（Obsidian 相容格式）。
+  - **🧾 Recap 自動寫檔 [NEW][HARD]**：Recap 產出後，**不需要使用者確認，直接寫入** `C:\PixiuCore\vault\memory\recaps\YYYY-MM-DD-主題.md`（Obsidian 相容格式）。同步更新 `vault/memory/memory-summary.md` 的「最近重要決策」與「進行中的工作」區塊。此為使用者預授權的寫入行為，豁免絕對用戶審批閘門。
   - **📥 Dashboard Inbox 協議 [NEW][HARD]**：當使用者說「去看我的 inbox」、「看 dashboard」、「inbox 有東西」或等效語句時，**必須**執行以下流程：
     1. 讀取 `C:\PixiuCore\vault\🏠 Dashboard.md`，擷取 `<!-- AI_INBOX_START -->` 到 `<!-- AI_INBOX_END -->` 之間所有 `- [ ]` 項目。
     2. 逐項確認理解後，**等待使用者說「開始」**，才依序執行（遵守絕對用戶審批閘門）。
     3. 每完成一項，將該行的 `- [ ]` 改為 `- [x]` 並標註完成時間，**立即回寫** Dashboard.md。
-    4. 所有項目完成後，自動觸發 Recap 並詢問是否寫入 vault。
+    4. 所有項目完成後，自動觸發 Recap 並直接寫入 vault。
 
 - **🛡️ 防禦性架構審閱 (Defensive Architecture Review) [NEW][HARD]**：
   - 在進行重構或安全性改動時，**必須**透過 `impact-assessment.md` 規範，強制納入「邊界一致性」、「效能關聯性」與「視圖狀態同步」三維度評估。
