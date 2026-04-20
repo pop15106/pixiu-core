@@ -14,9 +14,10 @@
   - [Agents 專業代理](#-agents-專業代理-27-個)
   - [Skills 技能庫](#-skills-技能庫-177-個)
   - [Workflows 工作流程](#-workflows-工作流程-79-條)
-  - [Commands 指令集](#-commands-指令集-57-條)
+  - [Commands 指令集](#-commands-指令集-58-條)
   - [Rules 規則層](#-rules-規則層-51-條)
   - [Hooks 自動化鉤子](#-hooks-自動化鉤子)
+  - [Vault 記憶庫](#-vault-記憶庫)
 - [目錄結構](#-目錄結構)
 - [支援的 AI 工具](#-支援的-ai-工具)
 - [安裝與部署](#-安裝與部署)
@@ -119,6 +120,8 @@ PixiuCore 採用「憲法至上」原則，所有 AI 行為必須通過以下階
 
 ### 🤖 Agents 專業代理（27 個）
 
+> 同步更新（2026-04-20）：新增 `vault/` 記憶庫、5 個 Pixiu 專屬 Skills、`/go` 驗證迴圈指令、完整 `.agent/` 子系統（knowledge、hooks、rules、schemas、contexts）、`Tools/` 母艦工具集。
+
 Agents 是有特定專業職責的 AI 子系統，由主 AI 在需要時自動調用。
 
 #### 規劃與架構
@@ -212,6 +215,16 @@ Skills 是可複用的 AI 行為模式，分為「通用型」（所有 AI 工�
 | `prompt-optimize` | Prompt 自動優化 |
 | `skill-acquisition` | 新技能發現、審核、安裝 |
 
+#### 🆕 Pixiu 核心專屬 Skills
+
+| 技能 | 層級綁定 | 功能 |
+|------|---------|------|
+| `pixiu-verify-loop` | L3 流程 / L4 技能 / L6 校準 | 端對端自我驗證迴圈（Boris /go 概念 × Pixiu 硬閘門）：E2E 測試 → `/simplify` → PR 草稿，任一階段紅燈即停，不自動修。Slash 入口：`/go` |
+| `pixiu-session-recap` | L3 流程 / L5 經驗 / L6 校準 | 階段 Recap 系統，整合 Claude Code `/recap`，在 session 斷點自動產出結構化摘要並寫入 `vault/memory/`，供下次接續 |
+| `claude-code-auto-mode-policy` | L0 憲法 / L1 安全 / L3 流程 | Auto mode 授權政策判斷器，評估「哪些任務可以自動放行、哪些強制退回手動」，與 L0 絕對用戶審批閘門銜接 |
+| `opus-behavior-core` | L0～L4 全層 | 將 Opus 4 行為常數抽象為「認知 / 資訊 / 行動 / 溝通 / 安全」五層可移植規則，供任意 Agent 在啟動階段載入，統一跨模型行為骨幹 |
+| `make-docx` | L4 技能 | 以固定 Pixiu 風格（藍色標題、彩色表格、風險框、流程圖、自動目錄）產生 DOCX 技術文件，Slash 入口：`/make-docx` |
+
 ---
 
 ### ⚡ Workflows 工作流程（79 條）
@@ -289,6 +302,12 @@ Workflows 是多步驟任務的標準化 Slash 指令，透過 `/指令名稱` �
 | `/loop-status` | 查看迴圈執行狀態 |
 | `/model-route` | 動態模型路由選擇 |
 
+#### 🆕 驗證迴圈
+
+| 指令 | 功能 |
+|------|------|
+| `/go` | 啟動 Pixiu 端對端自我驗證迴圈（E2E → /simplify → PR 草稿），支援 `quick`、`full`、`pr-only`、`dry-run` 四種模式。結果自動寫入 `vault/memory/verify-loop.log` |
+
 #### 技能管理
 
 | 指令 | 功能 |
@@ -300,9 +319,9 @@ Workflows 是多步驟任務的標準化 Slash 指令，透過 `/指令名稱` �
 
 ---
 
-### 📋 Commands 指令集（57 條）
+### 📋 Commands 指令集（58 條）
 
-Commands 是已標準化的 Slash 指令定義，與 Workflows 搭配使用。涵蓋範圍從程式碼審查、測試、文件更新到 UX 審查。完整清單見 `commands/` 目錄。
+Commands 是已標準化的 Slash 指令定義，與 Workflows 搭配使用。涵蓋範圍從程式碼審查、測試、文件更新到 UX 審查。完整清單見 `commands/` 目錄。新增 `/go`（驗證迴圈），見上方 Workflows 章節。
 
 ---
 
@@ -348,7 +367,38 @@ Hooks 在 AI 執行特定工具前後自動觸發，無需手動介入。
 
 | 鉤子 | 功能 |
 |------|------|
-| `mothership-sync` | 🆕 偵測 `.agent/` 框架級變更，提醒回寫母體 |
+| `mothership-sync` | 偵測 `.agent/` 框架級變更，提醒回寫母體 |
+
+---
+
+### 🗄️ Vault 記憶庫
+
+`vault/` 是 PixiuCore 的跨 session 長期記憶系統，讓 AI 在每次啟動時能快速恢復工作狀態與個人化設定。
+
+```
+vault/
+├── identity/
+│   ├── founder-profile.md    ← 創辦人畫像（偏好、思考風格、決策模式）
+│   └── agent-persona.md      ← Agent 人格設定（溝通風格、語氣基調）
+├── memory/
+│   ├── memory-summary.md     ← 跨 session 記憶摘要（累積更新）
+│   ├── verify-loop.log       ← /go 驗證迴圈執行歷史
+│   └── auto-mode-audit.log   ← Auto mode 授權稽核日誌
+├── context/
+│   ├── tech-stack.md         ← 技術棧偏好與版本設定
+│   └── pclms-overview.md     ← 核心專案概覽
+└── sop/
+    └── dev-workflow.md       ← 個人開發流程 SOP
+```
+
+**Vault 與 CODEX.md 的關係：** Codex 在執行任何審計前，必須先讀取 `vault/identity/` 與 `vault/memory/memory-summary.md`，確保稽核視角符合個人背景與歷史決策脈絡。
+
+**Vault 自動寫入時機：**
+- `/go` 執行完成 → 寫入 `verify-loop.log`
+- `/recap` 或 `pixiu-session-recap` 觸發 → 更新 `memory-summary.md`
+- Auto mode 授權評估 → 寫入 `auto-mode-audit.log`
+
+> ⚠️ `vault/` 包含個人資料，若 fork 此母體分享給他人，建議在 `.gitignore` 中排除 `vault/identity/` 與 `vault/memory/`，或手動清空後再推送。
 
 ---
 
@@ -359,20 +409,29 @@ C:\PixiuCore\
 │
 ├── 📜 user_rules.md              # L0 憲法（7層治理 + 硬閘門 + 安全規範）
 ├── 📜 CLAUDE.md                  # Claude Code 啟動協議
-├── 📜 CODEX.md                   # Codex 審計協議
-├── 📜 AGENTS.md                  # ECC Agent 全局指令（25 agents）
+├── 📜 CODEX.md                   # Codex 審計協議（含 Vault Init）
+├── 📜 AGENTS.md                  # ECC Agent 全局指令（27 agents）
 ├── 📜 SKILLS_INDEX.md            # 176+ 技能索引（含 Claude/Gemini 標注）
 ├── 📜 PLUGIN_SCHEMA_NOTES.md     # Plugin Manifest 技術注意事項
 │
 ├── 🤖 agents/                    # 頂層 Agent（27個，含 explore/verification-agent）
-├── 💬 commands/                  # Slash 指令（57條）
-├── 🧠 skills/                    # 領域技能集（框架整合型）
+├── 💬 commands/                  # Slash 指令（58條，含 /go 驗證迴圈）
+├── 🧠 skills/                    # 領域技能集（51個，含 5 個 Pixiu 核心 skills）
 ├── 📏 rules/                     # 規則層（common + 9 語言 × 5 面向）
-├── 🪝 hooks/                     # Hook 設定（hooks.json）
+├── 🪝 hooks/                     # Hook 設定（hooks.json，含 guardrails 安全閘門）
 ├── 🔧 scripts/hooks/             # Hook JS 腳本（pixiu-guardrails.js 等）
+├── 🔧 scripts/setup/             # 安裝腳本（install-to-cli.ps1、uninstall-from-cli.ps1）
+├── 🔧 scripts/scripts/           # 母體部署工具（deploy、backup、transplant、sync）
 ├── 🔌 mcp-configs/               # MCP 伺服器設定
 ├── 🧩 plugins/                   # 插件擴展
-├── 📚 docs/                      # 多語言文件
+├── 📚 docs/                      # 技術文件（claude-code-upgrade-plan 等）
+├── 🛠️ Tools/                     # 母艦工具集（pixiu-init.ps1、sync-pixiu-fleet.ps1 等）
+│
+├── 🗄️  vault/                    # 跨 session 長期記憶系統
+│   ├── identity/                 #   創辦人畫像 + Agent 人格設定
+│   ├── memory/                   #   記憶摘要、verify-loop.log、auto-mode 稽核
+│   ├── context/                  #   技術棧偏好、核心專案概覽
+│   └── sop/                      #   個人開發流程 SOP
 │
 ├── ⚙️  fleet.json                # 艦隊專案清單
 ├── 📦 plugin.json                # Claude Code Plugin 描述
@@ -386,14 +445,14 @@ C:\PixiuCore\
     ├── workflows/                # 79 條工作流程
     ├── rules/                    # 51 條語言規則
     ├── hooks/                    # Hook JSON 設定
-    ├── extensions/               # opus-advanced、skill-trigger 擴展
-    ├── knowledge/                # 知識庫（codex_bridge、workflow_methodology）
-    ├── contexts/                 # 上下文模板
-    ├── schemas/                  # JSON Schema 驗證
+    ├── knowledge/                # 知識庫（codex_bridge、workflow_methodology、lesson 等）
+    ├── contexts/                 # 上下文模板（dev / research / review）
+    ├── schemas/                  # JSON Schema 驗證（hooks、plugin、install-state 等）
+    ├── examples/                 # 範例 CLAUDE.md（django、go、nextjs 等專案模板）
     ├── mcp-configs/              # MCP 設定
     ├── logs/pixiu.log            # 執行日誌
     ├── reports/                  # token_usage、quota_trend、scan_history
-    ├── backups/                  # 自動備份（含 .bak 檔）
+    ├── backups/                  # 自動備份
     └── config.yaml               # Agent 主設定
 ```
 
@@ -651,11 +710,14 @@ Remove-Item "C:\PixiuCore\.git\index.lock" -Force
 |------|------------|
 | ECC 版本 | v1.8.0 |
 | Agents | 27 個 |
-| Skills | 177 個 |
+| Skills（.agent/） | 177 個 |
+| Skills（頂層 skills/） | 51 個（含 5 個 Pixiu 核心 skills） |
 | Workflows | 79 條 |
-| Commands | 57 條 |
+| Commands | 58 條（含 /go 驗證迴圈） |
 | Rules | 51 條 |
+| Vault 記憶系統 | ✅ 已啟用 |
 | 支援 AI 工具 | Claude Code、Gemini Antigravity、Cursor、Windsurf、Copilot |
+| 最後同步 | 2026-04-20（雙向母體同步）|
 
 ---
 
@@ -664,8 +726,12 @@ Remove-Item "C:\PixiuCore\.git\index.lock" -Force
 - [SKILLS_INDEX.md](SKILLS_INDEX.md) — 完整技能分類索引（含 Claude/Gemini 標注）
 - [AGENTS.md](AGENTS.md) — ECC Agent 完整說明
 - [PLUGIN_SCHEMA_NOTES.md](PLUGIN_SCHEMA_NOTES.md) — Plugin 開發技術注意事項
+- [vault/README.md](vault/README.md) — Vault 記憶庫說明與使用規範
+- [docs/claude-code-upgrade-plan.md](docs/claude-code-upgrade-plan.md) — Claude Code 升級計畫
 - [.agent/README-ECC-zh.md](.agent/README-ECC-zh.md) — ECC 中文詳細說明
+- [.agent/README-ECC.md](.agent/README-ECC.md) — ECC 英文說明
 - [.agent/CHANGELOG.md](.agent/CHANGELOG.md) — 版本更新紀錄
+- [.agent/TROUBLESHOOTING.md](.agent/TROUBLESHOOTING.md) — 常見問題排查
 
 ---
 
