@@ -72,7 +72,7 @@ language: zh-TW
 ### 模式 B｜Phase Recap
 - 觸發：Phase 完成（依「分階段任務審核門檻」）
 - 耗時：2–3 分鐘
-- 輸出：結構化格式 + 寫入 `vault/memory/recap-<sessionId>-phase<N>.md`
+- 輸出：結構化格式 + 寫入 Obsidian 相容的獨立檔案（見下方 Obsidian 整合）
 - 同步觸發 `pixiu-verify-loop`（若尚未跑過）
 
 ### 模式 C｜Session Resume Recap
@@ -97,34 +97,48 @@ language: zh-TW
 
 ---
 
-## Memory 寫入規範
+## Memory 寫入規範（Obsidian 相容格式）
 
-### 檔案命名
+### 檔案命名（Obsidian 友善）
 ```
-vault/memory/recap-<YYYYMMDD>-<sessionId>-phase<N>.md
+vault/memory/recaps/YYYY-MM-DD-主題關鍵字.md
 ```
 
-### 檔案內容
+範例：`2026-04-20-PCLMS-executeUpdate修復.md`
+
+### 檔案內容（Obsidian Frontmatter 格式）
 ```markdown
 ---
-session: <sessionId>
-phase: <N>
-timestamp: <ISO>
-task: <一句話>
-status: [completed | paused | blocked]
+type: session-recap
+日期: YYYY-MM-DD
+主題: "一句話描述"
+狀態: 進行中 | 完成 | 暫停
+負責AI: Claude Code
+專案: "專案名稱"
+tags: [recap, session]
 ---
 
-# Recap 內容（上述 6 區塊）
+# Session Recap：主題
 
-## 下次 session 接續建議
-[給未來自己看的提示]
+## ✅ 本次完成
+## 🔄 進行中
+## ⚠️ 發現的問題 / 踩坑
+## 🎯 重要決策（表格）
+## 📌 下次 session 要做的事（checklist）
+## 💡 補充筆記
 ```
 
-### Index 維護
-每次寫入後更新 `vault/memory/recap-index.md`：
-- 按時間倒序
-- 每筆一行：`[時間] [status] [task 一句話]`
-- 舊紀錄 30 天後自動歸檔到 `vault/memory/archive/`（由排程觸發，非即時）
+> ⚠️ **重要**：使用 Obsidian Frontmatter（`---` 包圍的 YAML），讓 Dataview 可以查詢。
+> 模板位於 `vault/templates/session-recap.md`，寫入時照此格式產生。
+
+### 決策獨立記錄
+重要決策同時建立 `vault/memory/decisions/YYYY-MM-DD-決策名稱.md`，模板見 `vault/templates/decision-log.md`。
+
+### memory-summary.md 同步
+每次寫入 recap 後，在 `vault/memory/memory-summary.md` 的「最近重要決策」表格追加一行，並更新「進行中的工作」區塊。
+
+### Dashboard 自動顯示
+Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到新檔案，無需手動更新。
 
 ---
 
@@ -154,5 +168,5 @@ status: [completed | paused | blocked]
 ---
 
 ## 版本與來源
-- v0.1.0｜2026-04-17
-- 來源：Claude Code 2.1.108 `/recap` 功能、Pixiu `continuous-learning` skill、vault/memory 結構。
+- v0.2.0｜2026-04-20｜新增 Obsidian 相容格式、獨立 recap 檔、Dataview frontmatter
+- v0.1.0｜2026-04-17｜初版
