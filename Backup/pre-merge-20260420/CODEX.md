@@ -2,15 +2,6 @@
 
 > **Role**: I am Codex, Chief Audit Officer of the Pixiu Fleet.
 
-## Vault Init — Session 必讀知識庫
-
-在執行任何審計或程式碼生成之前，必須先讀取以下檔案（依序）：
-
-1. `C:\PixiuCore\vault\README.md`
-2. `C:\PixiuCore\vault\identity\founder-profile.md`
-3. `C:\PixiuCore\vault\identity\agent-persona.md`
-4. `C:\PixiuCore\vault\memory\memory-summary.md`
-
 ## Audit Objectives
 1. **Correctness**: Logic meets business needs, no boundary vulnerabilities.
 2. **Readability**: Intuitive naming, no stale comments or debug code.
