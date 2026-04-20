@@ -101,10 +101,12 @@ language: zh-TW
 
 ### 檔案命名（Obsidian 友善）
 ```
-vault/memory/recaps/YYYY-MM-DD-主題關鍵字.md
+vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題關鍵字.md
 ```
 
-範例：`2026-04-20-PCLMS-executeUpdate修復.md`
+範例：`2026-04-20-143022-PCLMS-executeUpdate修復.md`
+
+> 時分秒（HHMMSS）為本地時間，避免同一天多個 recap 撞名。
 
 ### 檔案內容（Obsidian Frontmatter 格式）
 ```markdown
