@@ -484,30 +484,38 @@ C:\PixiuCore\
 
 ### 步驟一：Clone 母體
 
+> **安裝路徑不限 C 槽。** `C:\PixiuCore` 只是建議路徑，你可以放在任意位置（例如 `D:\Tools\PixiuCore`）。`setup.bat` 會自動偵測所在目錄並設定 `PIXIU_CORE_PATH`。
+
 ```powershell
+# 建議路徑（非必須）
 git clone https://github.com/pop15106/pixiu-core C:\PixiuCore
+
+# 自訂路徑範例
+git clone https://github.com/pop15106/pixiu-core D:\Tools\PixiuCore
 ```
 
-或直接解壓縮收到的 `pixiu-mothership.zip` 到 `C:\PixiuCore`。
+或直接解壓縮收到的 `pixiu-mothership.zip` 到任意目錄。
 
 ### 步驟二：執行安裝腳本
 
-在 `C:\PixiuCore\` 目錄，**右鍵以系統管理員身分執行** `setup.bat`：
+在母體目錄內，**右鍵以系統管理員身分執行** `setup.bat`：
 
 ```
-C:\PixiuCore\setup.bat
+<你的母體路徑>\setup.bat
 ```
 
-安裝腳本自動完成 4 件事：
+安裝腳本自動完成 6 件事：
 
 | 步驟 | 動作 | 結果 |
 |------|------|------|
 | 1 | 設定 `PIXIU_CORE_PATH` 環境變數 | 其他腳本可找到母體位置 |
-| 2 | 建立 `~\.gemini\` 目錄 | Gemini Antigravity 設定目錄 |
-| 3 | 寫入 `~\.gemini\GEMINI.md` | 啟動協議與路徑設定 |
-| 4 | 嵌入 `user_rules.md` 規則 | 母體規則注入 Gemini |
+| 2 | 寫入 `~\.gemini\GEMINI.md` | 母體規則注入 Gemini CLI |
+| 3 | 寫入 `~\.claude\CLAUDE.md` | 母體規則注入 Claude Code |
+| 4 | 寫入 `~\.codex\instructions.md` | 母體規則注入 Codex CLI |
+| 5 | 寫入 `.github\copilot-instructions.md` | Copilot 專案層級指令 |
+| 6 | 更新 VS Code `settings.json` | Copilot 使用者層級全域指令 |
 
-安裝完成後**重新啟動終端機**讓環境變數生效。
+安裝完成後**重新啟動終端機與 VS Code**讓環境變數與設定生效。
 
 ### 步驟三：設定 Claude Code（additionalDirectories）
 
@@ -518,6 +526,8 @@ C:\PixiuCore\setup.bat
   "additionalDirectories": ["C:\\PixiuCore"]
 }
 ```
+
+> 路徑請換成你實際的母體安裝位置（即 `PIXIU_CORE_PATH` 的值）。
 
 或在 Claude Code 中執行：
 
@@ -531,7 +541,7 @@ C:\PixiuCore\setup.bat
 
 ```
 ⚡ Pixiu 強化母體已連線
-母體路徑：C:\PixiuCore
+母體路徑：<你的 PIXIU_CORE_PATH>
 載入：Pixiu 7 層憲法 + ECC 全集（177 skills · 79 workflows · 51 rules）
 
 請問你要我做什麼？
