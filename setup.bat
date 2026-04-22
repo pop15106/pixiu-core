@@ -28,7 +28,9 @@ echo [2/7] Writing ~/.gemini/GEMINI.md...
 if not exist "%USERPROFILE%\.gemini" mkdir "%USERPROFILE%\.gemini"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
-    "$h = '# Pixiu - Gemini`n`nMOTHERSHIP_PATH=%PIXIU_PATH%`n`nRules: %PIXIU_PATH%\user_rules.md`n`n---`n`n'; " ^
+    "if (-not $rules) { Write-Host '[ERROR] user_rules.md not found: %PIXIU_PATH%\user_rules.md'; exit 1 }; " ^
+    "$nl = [char]10; " ^
+    "$h = '# Pixiu - Gemini' + $nl + $nl + 'MOTHERSHIP_PATH=%PIXIU_PATH%' + $nl + $nl + 'Rules: %PIXIU_PATH%\user_rules.md' + $nl + $nl + '---' + $nl + $nl; " ^
     "[IO.File]::WriteAllText('%USERPROFILE%\.gemini\GEMINI.md', $h + $rules, [Text.Encoding]::UTF8)"
 echo       Done: %USERPROFILE%\.gemini\GEMINI.md
 
@@ -37,7 +39,9 @@ echo [3/7] Writing ~/.claude/CLAUDE.md...
 if not exist "%USERPROFILE%\.claude" mkdir "%USERPROFILE%\.claude"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
-    "$h = '# Pixiu - Claude Code`n`nMOTHERSHIP_PATH=%PIXIU_PATH%`n`nRules: %PIXIU_PATH%\user_rules.md`n`n---`n`n'; " ^
+    "if (-not $rules) { Write-Host '[ERROR] user_rules.md not found: %PIXIU_PATH%\user_rules.md'; exit 1 }; " ^
+    "$nl = [char]10; " ^
+    "$h = '# Pixiu - Claude Code' + $nl + $nl + 'MOTHERSHIP_PATH=%PIXIU_PATH%' + $nl + $nl + 'Rules: %PIXIU_PATH%\user_rules.md' + $nl + $nl + '---' + $nl + $nl; " ^
     "[IO.File]::WriteAllText('%USERPROFILE%\.claude\CLAUDE.md', $h + $rules, [Text.Encoding]::UTF8)"
 echo       Done: %USERPROFILE%\.claude\CLAUDE.md
 
@@ -46,7 +50,9 @@ echo [4/7] Writing ~/.codex/instructions.md...
 if not exist "%USERPROFILE%\.codex" mkdir "%USERPROFILE%\.codex"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
-    "$h = '# Pixiu - Codex`n`nMOTHERSHIP_PATH=%PIXIU_PATH%`n`nRules: %PIXIU_PATH%\user_rules.md`n`n---`n`n'; " ^
+    "if (-not $rules) { Write-Host '[ERROR] user_rules.md not found: %PIXIU_PATH%\user_rules.md'; exit 1 }; " ^
+    "$nl = [char]10; " ^
+    "$h = '# Pixiu - Codex' + $nl + $nl + 'MOTHERSHIP_PATH=%PIXIU_PATH%' + $nl + $nl + 'Rules: %PIXIU_PATH%\user_rules.md' + $nl + $nl + '---' + $nl + $nl; " ^
     "[IO.File]::WriteAllText('%USERPROFILE%\.codex\instructions.md', $h + $rules, [Text.Encoding]::UTF8)"
 echo       Done: %USERPROFILE%\.codex\instructions.md
 
@@ -55,7 +61,9 @@ echo [5/7] Writing .github/copilot-instructions.md...
 if not exist "%PIXIU_PATH%\.github" mkdir "%PIXIU_PATH%\.github"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
-    "$h = '# Pixiu - GitHub Copilot`n`nMOTHERSHIP_PATH=%PIXIU_PATH%`n`nRules: %PIXIU_PATH%\user_rules.md`n`n---`n`n'; " ^
+    "if (-not $rules) { Write-Host '[ERROR] user_rules.md not found: %PIXIU_PATH%\user_rules.md'; exit 1 }; " ^
+    "$nl = [char]10; " ^
+    "$h = '# Pixiu - GitHub Copilot' + $nl + $nl + 'MOTHERSHIP_PATH=%PIXIU_PATH%' + $nl + $nl + 'Rules: %PIXIU_PATH%\user_rules.md' + $nl + $nl + '---' + $nl + $nl; " ^
     "[IO.File]::WriteAllText('%PIXIU_PATH%\.github\copilot-instructions.md', $h + $rules, [Text.Encoding]::UTF8)"
 echo       Done: %PIXIU_PATH%\.github\copilot-instructions.md
 
@@ -64,7 +72,7 @@ echo [6/7] Updating VS Code settings for Copilot global instructions...
 set "VSCODE_SETTINGS=%APPDATA%\Code\User\settings.json"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$s = '%VSCODE_SETTINGS:\=\\%'; " ^
-    "$p = '%PIXIU_PATH:\=\\%'; " ^
+    "$p = '%PIXIU_PATH%'; " ^
     "$json = if (Test-Path $s) { Get-Content $s -Raw -Encoding UTF8 | ConvertFrom-Json } else { [pscustomobject]@{} }; " ^
     "$instr = [pscustomobject]@{ file = $p + '\user_rules.md' }; " ^
     "$key = 'github.copilot.chat.codeGeneration.instructions'; " ^
@@ -78,7 +86,15 @@ echo       Done: %VSCODE_SETTINGS%
 echo [7/7] Deploying hooks to .claude/settings.json...
 if not exist "%PIXIU_PATH%\.claude" mkdir "%PIXIU_PATH%\.claude"
 copy /Y "%PIXIU_PATH%\hooks\hooks.json" "%PIXIU_PATH%\.claude\settings.json" >nul
-echo       Done: %PIXIU_PATH%\.claude\settings.json
+echo       Done: %PIXIU_PATH%\.claude\settings.json (project)
+if not exist "%USERPROFILE%\.claude" mkdir "%USERPROFILE%\.claude"
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$src = Get-Content -Raw '%PIXIU_PATH%\hooks\hooks.json' -Encoding UTF8 | ConvertFrom-Json; " ^
+    "$target = '%USERPROFILE:\=\\%\.claude\settings.json'; " ^
+    "$dst = if (Test-Path $target) { Get-Content $target -Raw -Encoding UTF8 | ConvertFrom-Json } else { [pscustomobject]@{} }; " ^
+    "if ($dst.PSObject.Properties['hooks']) { $dst.hooks = $src.hooks } else { $dst | Add-Member -NotePropertyName 'hooks' -NotePropertyValue $src.hooks }; " ^
+    "[IO.File]::WriteAllText($target, ($dst | ConvertTo-Json -Depth 20), [Text.Encoding]::UTF8)"
+echo       Done: %USERPROFILE%\.claude\settings.json (global)
 
 echo.
 echo ================================================
@@ -90,7 +106,8 @@ echo   [Claude]   %USERPROFILE%\.claude\CLAUDE.md
 echo   [Codex]    %USERPROFILE%\.codex\instructions.md
 echo   [Copilot]  %PIXIU_PATH%\.github\copilot-instructions.md
 echo   [Copilot]  VS Code settings.json updated
-echo   [Hooks]    %PIXIU_PATH%\.claude\settings.json
+echo   [Hooks]    %PIXIU_PATH%\.claude\settings.json (project)
+echo   [Hooks]    %USERPROFILE%\.claude\settings.json (global)
 echo.
 echo   Restart terminal and VS Code for changes to take effect.
 echo.
