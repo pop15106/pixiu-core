@@ -1,2 +1,8 @@
 /vault/memory
 vault/memory/memory-summary.md
+
+# 設備特定檔案，換設備後由 setup.bat 重新生成
+.github/copilot-instructions.md
+fleet.json
+.agent/ecc-install-state.json
+scripts/hooks/debug-input.json
