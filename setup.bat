@@ -14,7 +14,7 @@ echo Path: %PIXIU_PATH%
 echo.
 
 :: [1] Set env var
-echo [1/6] Setting PIXIU_CORE_PATH...
+echo [1/7] Setting PIXIU_CORE_PATH...
 setx PIXIU_CORE_PATH "%PIXIU_PATH%" >nul
 if %errorlevel% neq 0 (
     echo Error: Cannot set env var. Run as Administrator.
@@ -24,7 +24,7 @@ if %errorlevel% neq 0 (
 echo       Done: PIXIU_CORE_PATH = %PIXIU_PATH%
 
 :: [2] Gemini
-echo [2/6] Writing ~/.gemini/GEMINI.md...
+echo [2/7] Writing ~/.gemini/GEMINI.md...
 if not exist "%USERPROFILE%\.gemini" mkdir "%USERPROFILE%\.gemini"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -33,7 +33,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %USERPROFILE%\.gemini\GEMINI.md
 
 :: [3] Claude Code
-echo [3/6] Writing ~/.claude/CLAUDE.md...
+echo [3/7] Writing ~/.claude/CLAUDE.md...
 if not exist "%USERPROFILE%\.claude" mkdir "%USERPROFILE%\.claude"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -42,7 +42,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %USERPROFILE%\.claude\CLAUDE.md
 
 :: [4] Codex CLI
-echo [4/6] Writing ~/.codex/instructions.md...
+echo [4/7] Writing ~/.codex/instructions.md...
 if not exist "%USERPROFILE%\.codex" mkdir "%USERPROFILE%\.codex"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -51,7 +51,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %USERPROFILE%\.codex\instructions.md
 
 :: [5] GitHub Copilot - workspace instructions file
-echo [5/6] Writing .github/copilot-instructions.md...
+echo [5/7] Writing .github/copilot-instructions.md...
 if not exist "%PIXIU_PATH%\.github" mkdir "%PIXIU_PATH%\.github"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -60,7 +60,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %PIXIU_PATH%\.github\copilot-instructions.md
 
 :: [6] GitHub Copilot - VS Code user settings (global)
-echo [6/6] Updating VS Code settings for Copilot global instructions...
+echo [6/7] Updating VS Code settings for Copilot global instructions...
 set "VSCODE_SETTINGS=%APPDATA%\Code\User\settings.json"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$s = '%VSCODE_SETTINGS:\=\\%'; " ^
@@ -74,6 +74,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "[IO.File]::WriteAllText($s, $out, [Text.Encoding]::UTF8)"
 echo       Done: %VSCODE_SETTINGS%
 
+:: [7] Deploy Claude Code project hooks
+echo [7/7] Deploying hooks to .claude/settings.json...
+if not exist "%PIXIU_PATH%\.claude" mkdir "%PIXIU_PATH%\.claude"
+copy /Y "%PIXIU_PATH%\hooks\hooks.json" "%PIXIU_PATH%\.claude\settings.json" >nul
+echo       Done: %PIXIU_PATH%\.claude\settings.json
+
 echo.
 echo ================================================
 echo   Setup Complete!
@@ -84,6 +90,7 @@ echo   [Claude]   %USERPROFILE%\.claude\CLAUDE.md
 echo   [Codex]    %USERPROFILE%\.codex\instructions.md
 echo   [Copilot]  %PIXIU_PATH%\.github\copilot-instructions.md
 echo   [Copilot]  VS Code settings.json updated
+echo   [Hooks]    %PIXIU_PATH%\.claude\settings.json
 echo.
 echo   Restart terminal and VS Code for changes to take effect.
 echo.

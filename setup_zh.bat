@@ -15,10 +15,10 @@ echo Path: %PIXIU_PATH%
 echo.
 
 rem -------------------------------------------------------
-rem [1/6] 設定使用者層級環境變數 PIXIU_CORE_PATH
+rem [1/7] 設定使用者層級環境變數 PIXIU_CORE_PATH
 rem        讓其他腳本或工具可透過此變數找到母體根目錄
 rem -------------------------------------------------------
-echo [1/6] Setting PIXIU_CORE_PATH...
+echo [1/7] Setting PIXIU_CORE_PATH...
 setx PIXIU_CORE_PATH "%PIXIU_PATH%" >nul
 if %errorlevel% neq 0 (
     echo Error: Cannot set env var. Run as Administrator.
@@ -28,11 +28,11 @@ if %errorlevel% neq 0 (
 echo       Done: PIXIU_CORE_PATH = %PIXIU_PATH%
 
 rem -------------------------------------------------------
-rem [2/6] Gemini CLI 全域指令檔
+rem [2/7] Gemini CLI 全域指令檔
 rem        路徑：~/.gemini/GEMINI.md
 rem        Gemini CLI 啟動時會自動載入此檔案作為系統指令
 rem -------------------------------------------------------
-echo [2/6] Writing ~/.gemini/GEMINI.md...
+echo [2/7] Writing ~/.gemini/GEMINI.md...
 if not exist "%USERPROFILE%\.gemini" mkdir "%USERPROFILE%\.gemini"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -41,11 +41,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %USERPROFILE%\.gemini\GEMINI.md
 
 rem -------------------------------------------------------
-rem [3/6] Claude Code 全域指令檔
+rem [3/7] Claude Code 全域指令檔
 rem        路徑：~/.claude/CLAUDE.md
 rem        Claude Code CLI 每次對話都會載入此檔案
 rem -------------------------------------------------------
-echo [3/6] Writing ~/.claude/CLAUDE.md...
+echo [3/7] Writing ~/.claude/CLAUDE.md...
 if not exist "%USERPROFILE%\.claude" mkdir "%USERPROFILE%\.claude"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -54,11 +54,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %USERPROFILE%\.claude\CLAUDE.md
 
 rem -------------------------------------------------------
-rem [4/6] OpenAI Codex CLI 全域指令檔
+rem [4/7] OpenAI Codex CLI 全域指令檔
 rem        路徑：~/.codex/instructions.md
 rem        Codex CLI 啟動時會讀取此檔案作為預設 system prompt
 rem -------------------------------------------------------
-echo [4/6] Writing ~/.codex/instructions.md...
+echo [4/7] Writing ~/.codex/instructions.md...
 if not exist "%USERPROFILE%\.codex" mkdir "%USERPROFILE%\.codex"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -67,11 +67,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %USERPROFILE%\.codex\instructions.md
 
 rem -------------------------------------------------------
-rem [5/6] GitHub Copilot 專案層級指令檔
+rem [5/7] GitHub Copilot 專案層級指令檔
 rem        路徑：<母體根>/.github/copilot-instructions.md
 rem        VS Code 開啟此資料夾時，Copilot Chat 會自動套用
 rem -------------------------------------------------------
-echo [5/6] Writing .github/copilot-instructions.md...
+echo [5/7] Writing .github/copilot-instructions.md...
 if not exist "%PIXIU_PATH%\.github" mkdir "%PIXIU_PATH%\.github"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$rules = Get-Content -Raw '%PIXIU_PATH%\user_rules.md' -Encoding UTF8 -ErrorAction SilentlyContinue; " ^
@@ -80,12 +80,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo       Done: %PIXIU_PATH%\.github\copilot-instructions.md
 
 rem -------------------------------------------------------
-rem [6/6] GitHub Copilot VS Code 使用者層級設定
+rem [6/7] GitHub Copilot VS Code 使用者層級設定
 rem        修改 %APPDATA%\Code\User\settings.json
 rem        加入 github.copilot.chat.codeGeneration.instructions
 rem        讓 Copilot 在所有專案都套用 user_rules.md
 rem -------------------------------------------------------
-echo [6/6] Updating VS Code settings for Copilot global instructions...
+echo [6/7] Updating VS Code settings for Copilot global instructions...
 set "VSCODE_SETTINGS=%APPDATA%\Code\User\settings.json"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$s = '%VSCODE_SETTINGS:\=\\%'; " ^
@@ -99,6 +99,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "[IO.File]::WriteAllText($s, $out, [Text.Encoding]::UTF8)"
 echo       Done: %VSCODE_SETTINGS%
 
+rem -------------------------------------------------------
+rem [7/7] 部署 Claude Code 專案層級 Hooks 設定
+rem        來源：hooks/hooks.json（版控中的唯一真相來源）
+rem        目的：.claude/settings.json（Claude Code 啟動時自動載入）
+rem        確保 pixiu-guardrails 等 hooks 在本專案立即生效
+rem -------------------------------------------------------
+echo [7/7] Deploying hooks to .claude/settings.json...
+if not exist "%PIXIU_PATH%\.claude" mkdir "%PIXIU_PATH%\.claude"
+copy /Y "%PIXIU_PATH%\hooks\hooks.json" "%PIXIU_PATH%\.claude\settings.json" >nul
+echo       Done: %PIXIU_PATH%\.claude\settings.json
+
 echo.
 echo ================================================
 echo   Setup Complete!
@@ -109,6 +120,7 @@ echo   [Claude]   %USERPROFILE%\.claude\CLAUDE.md
 echo   [Codex]    %USERPROFILE%\.codex\instructions.md
 echo   [Copilot]  %PIXIU_PATH%\.github\copilot-instructions.md
 echo   [Copilot]  VS Code settings.json updated
+echo   [Hooks]    %PIXIU_PATH%\.claude\settings.json
 echo.
 echo   Restart terminal and VS Code for changes to take effect.
 echo.
