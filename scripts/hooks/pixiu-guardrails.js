@@ -24,7 +24,7 @@ process.stdin.on('data', chunk => inputData += chunk);
 process.stdin.on('end', () => {
   try {
     // DEBUG: 記錄原始輸入，方便排查
-    require('fs').writeFileSync('C:\\PixiuCore\\scripts\\hooks\\debug-input.json', inputData);
+    require('fs').writeFileSync(require('path').join(__dirname, 'debug-input.json'), inputData);
     const input = JSON.parse(inputData);
 
     switch (hookId) {

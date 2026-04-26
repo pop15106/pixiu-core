@@ -13,6 +13,7 @@ echo     - ~/.claude/CLAUDE.md
 echo     - ~/.codex/instructions.md
 echo     - .github/copilot-instructions.md
 echo     - VS Code Copilot instruction setting
+echo     - ~/.claude/settings.json (global hooks)
 echo.
 set /p CONFIRM="Continue? (Y/N): "
 if /i not "%CONFIRM%"=="Y" (
@@ -26,7 +27,7 @@ set "PIXIU_PATH=%~dp0"
 if "%PIXIU_PATH:~-1%"=="\" set "PIXIU_PATH=%PIXIU_PATH:~0,-1%"
 
 :: [1] Remove PIXIU_CORE_PATH env var
-echo [1/6] Removing PIXIU_CORE_PATH...
+echo [1/7] Removing PIXIU_CORE_PATH...
 REG DELETE "HKCU\Environment" /V "PIXIU_CORE_PATH" /F >nul 2>&1
 if %errorlevel% equ 0 (
     echo       Done: PIXIU_CORE_PATH removed
@@ -35,7 +36,7 @@ if %errorlevel% equ 0 (
 )
 
 :: [2] Remove Gemini GEMINI.md
-echo [2/6] Removing ~/.gemini/GEMINI.md...
+echo [2/7] Removing ~/.gemini/GEMINI.md...
 if exist "%USERPROFILE%\.gemini\GEMINI.md" (
     del /f /q "%USERPROFILE%\.gemini\GEMINI.md"
     echo       Done: %USERPROFILE%\.gemini\GEMINI.md deleted
@@ -44,7 +45,7 @@ if exist "%USERPROFILE%\.gemini\GEMINI.md" (
 )
 
 :: [3] Remove Claude Code CLAUDE.md
-echo [3/6] Removing ~/.claude/CLAUDE.md...
+echo [3/7] Removing ~/.claude/CLAUDE.md...
 if exist "%USERPROFILE%\.claude\CLAUDE.md" (
     del /f /q "%USERPROFILE%\.claude\CLAUDE.md"
     echo       Done: %USERPROFILE%\.claude\CLAUDE.md deleted
@@ -53,7 +54,7 @@ if exist "%USERPROFILE%\.claude\CLAUDE.md" (
 )
 
 :: [4] Remove Codex instructions.md
-echo [4/6] Removing ~/.codex/instructions.md...
+echo [4/7] Removing ~/.codex/instructions.md...
 if exist "%USERPROFILE%\.codex\instructions.md" (
     del /f /q "%USERPROFILE%\.codex\instructions.md"
     echo       Done: %USERPROFILE%\.codex\instructions.md deleted
@@ -62,7 +63,7 @@ if exist "%USERPROFILE%\.codex\instructions.md" (
 )
 
 :: [5] Remove GitHub Copilot workspace instructions file
-echo [5/6] Removing .github/copilot-instructions.md...
+echo [5/7] Removing .github/copilot-instructions.md...
 if exist "%PIXIU_PATH%\.github\copilot-instructions.md" (
     del /f /q "%PIXIU_PATH%\.github\copilot-instructions.md"
     echo       Done: %PIXIU_PATH%\.github\copilot-instructions.md deleted
@@ -71,12 +72,12 @@ if exist "%PIXIU_PATH%\.github\copilot-instructions.md" (
 )
 
 :: [6] Remove Copilot instruction entry from VS Code settings.json
-echo [6/6] Removing Copilot instruction from VS Code settings.json...
+echo [6/7] Removing Copilot instruction from VS Code settings.json...
 set "VSCODE_SETTINGS=%APPDATA%\Code\User\settings.json"
 if exist "%VSCODE_SETTINGS%" (
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
         "$s = '%VSCODE_SETTINGS:\=\\%'; " ^
-        "$p = '%PIXIU_PATH:\=\\%'; " ^
+        "$p = '%PIXIU_PATH%'; " ^
         "$json = Get-Content $s -Raw -Encoding UTF8 | ConvertFrom-Json; " ^
         "$key = 'github.copilot.chat.codeGeneration.instructions'; " ^
         "if ($json.PSObject.Properties[$key]) { " ^
@@ -87,6 +88,23 @@ if exist "%VSCODE_SETTINGS%" (
         "  Write-Host 'removed' " ^
         "} else { Write-Host 'not found' }"
     echo       Done: VS Code settings.json updated
+) else (
+    echo       Skip: settings.json not found
+)
+
+:: [7] Remove global Claude Code hooks from ~/.claude/settings.json
+echo [7/7] Removing hooks from ~/.claude/settings.json...
+set "CLAUDE_SETTINGS=%USERPROFILE%\.claude\settings.json"
+if exist "%CLAUDE_SETTINGS%" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        "$s = '%CLAUDE_SETTINGS:\=\\%'; " ^
+        "$json = Get-Content $s -Raw -Encoding UTF8 | ConvertFrom-Json; " ^
+        "if ($json.PSObject.Properties['hooks']) { " ^
+        "  $json.PSObject.Properties.Remove('hooks'); " ^
+        "  [IO.File]::WriteAllText($s, ($json | ConvertTo-Json -Depth 20), [Text.Encoding]::UTF8); " ^
+        "  Write-Host 'removed' " ^
+        "} else { Write-Host 'not found' }"
+    echo       Done: %CLAUDE_SETTINGS% hooks removed
 ) else (
     echo       Skip: settings.json not found
 )
