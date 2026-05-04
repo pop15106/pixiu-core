@@ -1,0 +1,7 @@
+interface:
+  display_name: "Memory Lint"
+  short_description: "Claude Code memory 目錄健檢，偵測不一致與過期內容"
+  brand_color: "#F97316"
+  default_prompt: "掃描 Claude memory 目錄：index 不一致 / 重複規則 / 命名違規 / 過期狀態"
+policy:
+  allow_implicit_invocation: true

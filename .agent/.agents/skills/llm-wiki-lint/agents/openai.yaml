@@ -1,0 +1,7 @@
+interface:
+  display_name: "LLM Wiki Lint"
+  short_description: "Karpathy LLM Wiki 格式健檢，掃描結構與一致性"
+  brand_color: "#F59E0B"
+  default_prompt: "掃描 LLM Wiki：frontmatter 缺漏 / 孤立頁面 / 矛盾內容 / schema 漂移"
+policy:
+  allow_implicit_invocation: true

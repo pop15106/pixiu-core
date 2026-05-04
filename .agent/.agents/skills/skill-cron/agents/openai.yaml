@@ -1,0 +1,7 @@
+interface:
+  display_name: "Skill Cron"
+  short_description: "排程 Skill 管理器，定時執行並推送 Telegram 通知"
+  brand_color: "#14B8A6"
+  default_prompt: "管理排程 skill：註冊 / 列出 / 暫停 / 刪除定時任務，Telegram 推播通知"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Job Radar"
+  short_description: "求職雷達遙控：搜尋職缺、整理追蹤、撰寫求職信"
+  brand_color: "#3B82F6"
+  default_prompt: "啟動求職雷達：搜尋職缺 / 整理雷達 / 寫信"
+policy:
+  allow_implicit_invocation: true

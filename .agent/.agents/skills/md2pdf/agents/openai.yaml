@@ -1,0 +1,7 @@
+interface:
+  display_name: "Markdown to PDF"
+  short_description: "Markdown 轉 A4 PDF，支援 CJK 字體與 Mermaid 圖表"
+  brand_color: "#6366F1"
+  default_prompt: "將 Markdown 轉換為出版級 PDF：/md2pdf <檔案路徑>"
+policy:
+  allow_implicit_invocation: true

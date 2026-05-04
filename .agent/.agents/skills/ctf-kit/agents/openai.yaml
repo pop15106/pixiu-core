@@ -1,0 +1,7 @@
+interface:
+  display_name: "CTF Kit"
+  short_description: "CTF 逆向工程解題工具箱，Windows 驗證繞過"
+  brand_color: "#10B981"
+  default_prompt: "開始 CTF 解題流程：偵察 → 逆向分析 → bypass 驗證"
+policy:
+  allow_implicit_invocation: true

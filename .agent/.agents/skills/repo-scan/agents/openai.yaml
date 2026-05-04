@@ -1,0 +1,7 @@
+interface:
+  display_name: "Repo Scan"
+  short_description: "GitHub 開源專案安全掃描，安裝前風險評估"
+  brand_color: "#DC2626"
+  default_prompt: "安全掃描 GitHub repo：輸入 URL → 弱點分析 / 供應鏈風險 / 維護者評估"
+policy:
+  allow_implicit_invocation: true

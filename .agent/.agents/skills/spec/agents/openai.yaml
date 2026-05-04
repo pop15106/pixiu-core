@@ -1,0 +1,7 @@
+interface:
+  display_name: "Spec 開發流程"
+  short_description: "Spec 驅動開發：需求釐清 → 技術審查 → 實作 → 驗收"
+  brand_color: "#7C3AED"
+  default_prompt: "啟動 spec 流程：需求釐清 → 技術審查 → 實作 → 驗收 → 結案報告"
+policy:
+  allow_implicit_invocation: true

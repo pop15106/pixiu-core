@@ -1,0 +1,7 @@
+interface:
+  display_name: "Job Scout"
+  short_description: "求職前公司與職位綜合評估篩選工具"
+  brand_color: "#06B6D4"
+  default_prompt: "評估公司與職位：輸入公司名稱（必填）+ 職位名稱（選填）"
+policy:
+  allow_implicit_invocation: true

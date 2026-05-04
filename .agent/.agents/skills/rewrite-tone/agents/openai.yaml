@@ -1,0 +1,7 @@
+interface:
+  display_name: "Rewrite Tone"
+  short_description: "將技術文件改寫為口語幽默風格的 Markdown"
+  brand_color: "#EC4899"
+  default_prompt: "改寫文件語調：輸入 Markdown 檔案路徑，輸出口語化、有趣的版本"
+policy:
+  allow_implicit_invocation: true
