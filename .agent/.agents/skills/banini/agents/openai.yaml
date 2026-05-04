@@ -1,0 +1,7 @@
+interface:
+  display_name: "Banini 反指標"
+  short_description: "台股巴逆逆反指標追蹤與 Threads 貼文分析"
+  brand_color: "#EF4444"
+  default_prompt: "抓取巴逆逆最新貼文，進行台股反指標分析"
+policy:
+  allow_implicit_invocation: true

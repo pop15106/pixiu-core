@@ -1,0 +1,7 @@
+interface:
+  display_name: "SearXNG 搜尋"
+  short_description: "本地 SearXNG 隱私搜尋：網頁、圖片、新聞"
+  brand_color: "#0EA5E9"
+  default_prompt: "使用本地 SearXNG 搜尋：無外部 API 依賴的隱私搜尋"
+policy:
+  allow_implicit_invocation: true

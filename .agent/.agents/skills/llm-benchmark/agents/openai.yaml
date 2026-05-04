@@ -1,0 +1,7 @@
+interface:
+  display_name: "LLM Benchmark"
+  short_description: "本地 Ollama 模型效能測試與比較工具"
+  brand_color: "#8B5CF6"
+  default_prompt: "測試本地 LLM：檢查 Ollama → 推薦模型 → 跑 benchmark → 輸出報告"
+policy:
+  allow_implicit_invocation: true

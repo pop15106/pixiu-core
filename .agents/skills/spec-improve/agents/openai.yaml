@@ -1,0 +1,7 @@
+interface:
+  display_name: "Spec Improve"
+  short_description: "Review, score, and strengthen existing specs"
+  brand_color: "#2563EB"
+  default_prompt: "Review this spec, score it, identify gaps, and ask focused clarification questions before proposing changes."
+policy:
+  allow_implicit_invocation: true
