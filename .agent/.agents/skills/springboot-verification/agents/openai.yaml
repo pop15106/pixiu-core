@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Springboot Verification"
+  short_description: "Codex skill wrapper for springboot-verification"
+  brand_color: "#64748B"
+  default_prompt: "Use the springboot-verification skill when applicable"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Mcp Server Patterns"
+  short_description: "Codex skill wrapper for mcp-server-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the mcp-server-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

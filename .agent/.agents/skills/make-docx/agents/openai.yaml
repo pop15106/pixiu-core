@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Make Docx"
+  short_description: "Codex skill wrapper for make-docx"
+  brand_color: "#64748B"
+  default_prompt: "Use the make-docx skill when applicable"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Django Verification"
+  short_description: "Codex skill wrapper for django-verification"
+  brand_color: "#64748B"
+  default_prompt: "Use the django-verification skill when applicable"
+policy:
+  allow_implicit_invocation: true

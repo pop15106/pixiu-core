@@ -9,7 +9,7 @@
 - **解決方案**：必須明確指定量化版本。
     - **正確指令**：
       ```powershell
-      & 'C:\Users\7010\AppData\Local\Programs\Ollama\ollama.exe' run hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:Q4_K_M
+      & '%LOCALAPPDATA%\Programs\Ollama\ollama.exe' run hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:Q4_K_M
       ```
 - **連線配置 (OpenAI Compatible)**：
     - **Base URL**: `http://localhost:11434/v1`

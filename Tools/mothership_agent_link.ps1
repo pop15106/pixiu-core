@@ -2,7 +2,11 @@ param (
     [string]$ProjectPath = (Get-Location).Path
 )
 
-$MotherRules = "C:\PixiuCore\user_rules.md"
+$CorePath = $env:PIXIU_CORE
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE_PATH }
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }
+$CorePath = (Resolve-Path $CorePath).Path
+$MotherRules = Join-Path $CorePath 'user_rules.md'
 $AgentLinks = @{
     ".clinerules"  = "RooCode (Cline)"
     ".codexrules"  = "Codex"

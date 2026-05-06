@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Kotlin Exposed Patterns"
+  short_description: "Codex skill wrapper for kotlin-exposed-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the kotlin-exposed-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

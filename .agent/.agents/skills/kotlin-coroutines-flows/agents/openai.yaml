@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Kotlin Coroutines Flows"
+  short_description: "Codex skill wrapper for kotlin-coroutines-flows"
+  brand_color: "#64748B"
+  default_prompt: "Use the kotlin-coroutines-flows skill when applicable"
+policy:
+  allow_implicit_invocation: true

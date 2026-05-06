@@ -48,7 +48,7 @@
 [2026-02-26T03:15:36.963Z]   💾 Report saved to .agent/reports/scan_history.json
 [2026-02-26T03:19:29.806Z]   [NEW] agent-guard.yml
 [2026-02-26T03:19:39.361Z]   [NEW] ci.yml
-[2026-02-26T03:20:01.542Z] [installAll] 開始安裝，專案路徑: c:\Users\7010\Desktop\gravityTest\PTWCS
+[2026-02-26T03:20:01.542Z] [installAll] 開始安裝，專案路徑: <workspace-root>\PTWCS
 [2026-02-26T03:20:01.544Z] 🚀 開始一鍵安裝所有元件...
 [2026-02-26T03:20:01.548Z]   📦 找到 24 個 Skills
 [2026-02-26T03:20:01.550Z] 📦 開始安裝 Pixiu 規則...

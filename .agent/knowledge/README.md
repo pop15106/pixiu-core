@@ -4,7 +4,7 @@
 
 ## 📁 存放規範
 
-- **路徑**：`C:\PixiuCore\.agent\knowledge\`
+- **路徑**：`%PIXIU_CORE%\.agent\knowledge\`
 - **內容範疇**：
   - Pixiu 框架的核心機制與擴充方法。
   - 通用工具 (如：git-commit, db-migrate) 的進階技巧。

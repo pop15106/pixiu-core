@@ -34,6 +34,8 @@ alwaysApply: true
 - **先對齊理解＋多方案**：任何需求先輸出「我理解你要的是（3-5 點）」＋「限制/不做什麼」。接著提供 2-4 個方案，每個方案必含：優點/代價/風險/適用情境。
 - **絕對用戶審批閘門 (Absolute User Approval Gate)**：無論需求大小（即使只是修改一個錯字或加上一個註解），AI 【絕對禁止】在未獲得用戶明確核可前執行任何具破壞性或修改性的工具調用（如載入外部腳本、寫入檔案、刪除檔案）。AI 必須先提交計畫或說明，並【停下來】等待用戶看完並回覆「可以執行」或「確認」類語句後，才准許進行下一步操作。
 - **禁止預先實作 (No Pre-emptive Coding)**：在 Debug 或分析任務查明 Root Cause 後，【絕對禁止】自動修復程式碼。你必須先提出修復方案，且即使修補只差一行，也【必須等待】用戶明確回覆「選 X，開始」或確認計畫後，才准許呼叫 `replace_file_content` 或 `write_to_file` 等寫入工具。
+- **母艦連結聲明 (Mothership Declaration) [HARD]**：每次新任務開始時，**必須**在第一句話聲明「我已連結至 Pixiu 母艦核心，套用全域治理規範。」，不得省略。使用者需要此聲明確認 AI 已正確載入 PixiuCore 規範。
+- **Agent Team 前置判斷 [HARD]**：每次需求在提出方案或執行前，必須先判斷是否建議啟用 agent team，說明原因，並等待使用者決定；不得自動啟用。
 - **最小改動原則**：只改達成目標所需最小範圍，嚴禁「順便重構」
 - **白名單變更**：只修改指定路徑，未提供白名單時必須先詢問
 - **高風險操作需確認**：刪檔 / 大規模重構 / DB schema / 新增套件，一律先說明風險並等待同意
@@ -43,7 +45,7 @@ alwaysApply: true
 - **計畫優先審查規則 (Plan Consultation Only)**：當使用者針對目前「實作計畫」詢問執行細節、技術實現或「怎麼做」等問題時，AI **僅限於**提供口頭說明與技術建議。在此階段，AI **絕對禁止**進行任何程式碼撰寫、檔案變更或工具調用。AI 必須在說明後主動詢問使用者是否理解、是否需要將討論內容更新至計畫中，並明確告知「在最終計畫獲得授權前，我不會進行任何實際變更」。
 - **分階段任務審核門檻 (Phase-Based Approval Gate)**：當任務被切分為多個階段 (Phases) 或模組 (Modules) 進行時，AI 在完成當前階段的所有子任務後，**必須明確停下來**並請求使用者審閱成果。在未獲得使用者明確核可（如「進行 Phase X」或「下一步」）之前，**絕對禁止**自動跳轉並開始下一個階段的任何實作或工具調用。
 - **輸出上限處理 (Token Limit Handling)**：若偵測到特定模型輸出上限較低或內容過長，必須主動採取「分段說明」或「精簡字數」策略，確保核心邏輯不因截斷而遺失。
-- **框架變更回寫母體 (Mothership Sync) [HARD]**：觸發條件極大化。當任務涉及以下任一框架級或約束級改動時，**即使當前專案並無專屬的區域憲法**，AI 實作完成後也必須主動詢問使用者「是否將此變更同步回寫至母體 (`C:\PixiuCore`)？」：
+- **框架變更回寫母體 (Mothership Sync) [HARD]**：觸發條件極大化。當任務涉及以下任一框架級或約束級改動時，**即使當前專案並無專屬的區域憲法**，AI 實作完成後也必須主動詢問使用者「是否將此變更同步回寫至母體 (`%PIXIU_CORE%`)？」：
   1. 修改或新增了 `.agent/` 目錄下的任何 Skills、Workflows 或知識庫文件。
   2. 修改了 `user_rules.md` (不論是母艦版或專案區域版)。
   3. 針對 AI 的「約束條件」、「硬閘門防護」或「流程規範」進行了任何實質意義上的新增或刪改。
@@ -92,19 +94,19 @@ alwaysApply: true
   - **系統影響評估**：當使用者提及「影響範圍」、「隱藏風險」或「系統面分析」時，**必須執行** `.agent/workflows/impact-assessment.md` 並產出結構化文件。
   - **🚦 Auto mode 授權閘門 [NEW][HARD]**：當使用者提及「auto mode」、「自動模式」、「開 auto」、「shift-tab」、「自動放行」、「跳過確認」、「不要每次問我」或 `--dangerously-skip-permissions` 等關鍵字或語義時，**必須強制執行** `skills/claude-code-auto-mode-policy/SKILL.md` 三步驟評估（黑名單掃描 → 授權聲明 → 審計紀錄），**絕對禁止**略過此流程直接啟用 Auto mode。
     - **優先級銜接**：本條款屬「原有準則之外的加層」，不取代 L0「絕對用戶審批閘門」、「禁止預先實作」、「框架變更回寫母體」、「分階段任務審核門檻」、「計畫優先審查規則」五大硬閘門。上述情境出現時，硬閘門優先，Auto mode 讓位。
-    - **黑名單強制退回**：偵測到母體寫入（`C:\PixiuCore\`）、破壞性指令、相依異動、秘密類檔、白名單外路徑、結構性重構、DB Schema 變更任一項時，**立即退回手動模式**，不得啟用。
+    - **黑名單強制退回**：偵測到母體寫入（`%PIXIU_CORE%\`）、破壞性指令、相依異動、秘密類檔、白名單外路徑、結構性重構、DB Schema 變更任一項時，**立即退回手動模式**，不得啟用。
     - **審計義務**：進出 Auto mode 必寫入 `vault/memory/auto-mode-audit.log`，供 Codex L6 校準層事後稽核。
   - **🔭 Focus mode 准用閘門 [NEW][HARD]**：當使用者提及「focus mode」、「/focus」、「隱藏步驟」、「只看結果」、「簡潔模式」等關鍵字或語義時，**必須同時滿足**三條件才可開啟，否則「可見推理一律中文」與「思維鏈強制規則」兩條既有硬閘門優先：
     1. **流程已跑通**：該任務類型在本專案已有成功先例（可從 `vault/memory/verify-loop.log` 查證）。
     2. **驗證已自動化**：`skills/pixiu-verify-loop/SKILL.md` 可完整跑完三步驟且有明確 criteria。
     3. **使用者明示允許**：本 session 內使用者主動說過「開 focus」或等效語句。
     - **任一失敗即退出**：步驟紅燈、criteria 缺失、偵測到母體寫入或破壞性指令 → 立即退出 Focus mode，回全步驟可見模式，附完整 trace。
-    - **不可與 Auto mode 疊加的情境**：涉及 `C:\PixiuCore\` 寫入時，Focus + Auto 兩者**皆不可開**，必須全程可見＋逐步確認。
+    - **不可與 Auto mode 疊加的情境**：涉及 `%PIXIU_CORE%\` 寫入時，Focus + Auto 兩者**皆不可開**，必須全程可見＋逐步確認。
   - **🪜 /go 驗證迴圈觸發 [NEW]**：當使用者輸入「/go」、「跑驗證」、「收尾」或任務進入寫入完成階段時，**必須執行** `skills/pixiu-verify-loop/SKILL.md` 三步驟（E2E → /simplify → PR 草稿）。任一步紅燈即停、不自動修；PR 僅產草稿不自動推送。
   - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，**必須執行** `skills/pixiu-session-recap/SKILL.md` 輸出結構化 6 區塊 Recap，Phase Recap 並寫入 `vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題.md`（Obsidian 相容格式）。
-  - **🧾 Recap 自動寫檔 [NEW][HARD]**：Recap 產出後，**不需要使用者確認，直接寫入** `C:\PixiuCore\vault\memory\recaps\YYYY-MM-DD-主題.md`（Obsidian 相容格式）。同步更新 `vault/memory/memory-summary.md` 的「最近重要決策」與「進行中的工作」區塊。此為使用者預授權的寫入行為，豁免絕對用戶審批閘門。
+  - **🧾 Recap 自動寫檔 [NEW][HARD]**：Recap 產出後，**不需要使用者確認，直接寫入** `%PIXIU_CORE%\vault\memory\recaps\YYYY-MM-DD-主題.md`（Obsidian 相容格式）。此規則**跨專案強制適用**：不論目前工作目錄、repo、專案類型或是否存在專案內 vault，只要使用者下達 `recap` 或等效觸發詞，就必須回寫 `%PIXIU_CORE%`。同步更新 `vault/memory/memory-summary.md` 的「最近重要決策」與「進行中的工作」區塊，**並在 `vault/memory/decisions/` 下建立獨立決策檔案**。此為使用者預授權的寫入行為，豁免絕對用戶審批閘門。
   - **📥 Dashboard Inbox 協議 [NEW][HARD]**：當使用者說「去看我的 inbox」、「看 dashboard」、「inbox 有東西」或等效語句時，**必須**執行以下流程：
-    1. 讀取 `C:\PixiuCore\vault\🏠 Dashboard.md`，擷取 `<!-- AI_INBOX_START -->` 到 `<!-- AI_INBOX_END -->` 之間所有 `- [ ]` 項目。
+    1. 讀取 `%PIXIU_CORE%\vault\🏠 Dashboard.md`，擷取 `<!-- AI_INBOX_START -->` 到 `<!-- AI_INBOX_END -->` 之間所有 `- [ ]` 項目。
     2. 逐項確認理解後，**等待使用者說「開始」**，才依序執行（遵守絕對用戶審批閘門）。
     3. 每完成一項，將該行的 `- [ ]` 改為 `- [x]` 並標註完成時間，**立即回寫** Dashboard.md。
     4. 所有項目完成後，自動觸發 Recap 並直接寫入 vault。
@@ -139,3 +141,4 @@ alwaysApply: true
 > - `/plan` → 強制規劃審批（L3）｜`/tdd` → 測試驅動開發（L4）｜`/code-review` → 全方位審查（L6）
 > - `/e2e` → E2E 測試｜`/security-scan` → 安全掃描（L1）｜`/learn` → 萃取直覺（L5/L6）
 > - `/multi-plan` → 多模型協作規劃｜`/devfleet` → 並行 Agent 派遣｜`/instinct-status` → 查閱直覺庫
+

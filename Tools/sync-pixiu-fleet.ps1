@@ -2,13 +2,18 @@
 # [Source: Mother Ship Core]
 #
 # Usage:
-#   1. Double-click (default path C:\PixiuCore)
+#   1. Double-click: resolve core from PIXIU_CORE, PIXIU_CORE_PATH, then this script location
 #   2. Drag-and-drop the Core folder onto this script
-#   3. CLI: .\sync-pixiu-fleet.ps1 "D:\MyPixiuCore"
+#   3. CLI: .\sync-pixiu-fleet.ps1 "<path-to-pixiu-core>"
 
 param(
-    [string]$CorePath = "C:\PixiuCore"
+    [string]$CorePath = $null
 )
+
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE }
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE_PATH }
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }
+$CorePath = (Resolve-Path $CorePath).Path
 
 $FleetFile = Join-Path $CorePath "fleet.json"
 $BackupRoot = Join-Path $CorePath "Backup"

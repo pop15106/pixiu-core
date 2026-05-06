@@ -14,7 +14,7 @@ version: 0.1.0
 
 收到 `/go`（可帶參數）時，**立即**：
 
-1. 讀取 `C:\PixiuCore\skills\pixiu-verify-loop\SKILL.md` 取得完整三步驟。
+1. 讀取 `%PIXIU_CORE%\skills\pixiu-verify-loop\SKILL.md` 取得完整三步驟。
 2. 依當前任務棧自動選驗證路徑（Java / Node / Python / React / CLI / DB / GUI）。
 3. 按順序跑：
    - **步驟 1｜E2E Verification**：啟動服務 → 跑 criteria → 產紅綠燈報告。
@@ -27,7 +27,7 @@ version: 0.1.0
 - 步驟 1 紅燈 → 立即停、出紅燈報告、**不自動改碼**。
 - 步驟 2 改動 > 30% → 退回手動審核。
 - 步驟 3 遇到非 git repo → 只輸出摘要，**不建分支**。
-- 任何階段觸發母體寫入（C:\PixiuCore 任何檔案）→ 呼叫「絕對用戶審批閘門」。
+- 任何階段觸發母體寫入（%PIXIU_CORE% 任何檔案）→ 呼叫「絕對用戶審批閘門」。
 
 ## 參數
 
@@ -44,7 +44,7 @@ version: 0.1.0
 
 ## 審計
 
-每次完整跑完寫入 `C:\PixiuCore\vault\memory\verify-loop.log`，格式：
+每次完整跑完寫入 `%PIXIU_CORE%\vault\memory\verify-loop.log`，格式：
 
 ```
 [時間]｜taskId｜技術棧｜步驟1結果｜步驟2改動行數｜PR狀態｜總耗時

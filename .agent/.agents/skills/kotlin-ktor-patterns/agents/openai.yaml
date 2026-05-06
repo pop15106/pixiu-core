@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Kotlin Ktor Patterns"
+  short_description: "Codex skill wrapper for kotlin-ktor-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the kotlin-ktor-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

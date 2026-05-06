@@ -7,7 +7,7 @@
 # 用法：
 #   PowerShell 開啟後：
 #      Set-ExecutionPolicy -Scope Process Bypass
-#      C:\PixiuCore\scripts\setup\uninstall-from-cli.ps1
+#      %PIXIU_CORE%\scripts\setup\uninstall-from-cli.ps1
 #
 # 版本：v0.1.0 / 2026-04-17
 # ==============================================================================
@@ -94,7 +94,7 @@ Write-Host "[4/4] 移除 Pixiu skills junctions..." -ForegroundColor White
 if (Test-Path $CliSkills) {
     $items = Get-ChildItem -Path $CliSkills -Force
     foreach ($item in $items) {
-        if ($item.LinkType -eq 'Junction' -and $item.Target -match '\\PixiuCore\\skills\\') {
+        if ($item.LinkType -eq 'Junction' -and ((@($item.Target) -join ';') -match '(?i)pixiu.*\\skills\\')) {
             # PowerShell 5.x 刪 junction 用 [System.IO.Directory]::Delete
             try {
                 [System.IO.Directory]::Delete($item.FullName, $false)
@@ -108,6 +108,6 @@ if (Test-Path $CliSkills) {
 
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Yellow
-Write-Host " 回滾完成。母體原始檔未動（C:\PixiuCore\ 不受影響）" -ForegroundColor Yellow
+Write-Host " 回滾完成。母體原始檔未動（%PIXIU_CORE%\ 不受影響）" -ForegroundColor Yellow
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Yellow
 Write-Host ""

@@ -6,9 +6,9 @@
 
 [2026-03-02T09:14:25.889Z] 🔍 執行安全掃描...
 
-[2026-03-02T09:14:32.501Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-02T09:14:32.525Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
-[2026-03-02T09:14:37.511Z] ❌ 安全掃描失敗: Error: ENOENT: no such file or directory, open 'c:\Users\7010\Desktop\gravityTest\PTWCS\ptwcs_ap\src\main\java\com\tradevan\ptwcs\adapter\rest\deserializer\CharArrayDeserializer.java'
+[2026-03-02T09:14:32.501Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-02T09:14:32.525Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
+[2026-03-02T09:14:37.511Z] ❌ 安全掃描失敗: Error: ENOENT: no such file or directory, open '<workspace-root>\PTWCS\ptwcs_ap\src\main\java\com\tradevan\ptwcs\adapter\rest\deserializer\CharArrayDeserializer.java'
 [2026-03-02T09:14:40.426Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2248,"estimated":906,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":1,"promptCharsBefore":86,"promptCharsAfter":2716,"tokenSavedEstimate":1342,"tokenSavedPercent":59.7,"timestamp":1772442880426}
 [2026-03-02T09:14:48.653Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2248,"estimated":906,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":86,"promptCharsAfter":2716,"tokenSavedEstimate":1342,"tokenSavedPercent":59.7,"timestamp":1772442888653}
 [2026-03-02T09:19:37.614Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2226,"estimated":884,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":86,"promptCharsAfter":2650,"tokenSavedEstimate":1342,"tokenSavedPercent":60.29,"timestamp":1772443177614}
@@ -23,7 +23,7 @@
 [2026-03-02T10:18:15.819Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-02T10:18:15.831Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-02T10:18:15.832Z] 📋 發現 7 個問題需要關注
-[2026-03-02T10:18:15.842Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:18:15.842Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-02T10:18:41.137Z] 📦 開始安裝 Pixiu 規則...
 [2026-03-02T10:18:41.158Z]   [OK] config.yaml (內容相同)
 [2026-03-02T10:18:41.170Z]   [OK] security.skill.md (內容相同)
@@ -45,7 +45,7 @@
 [2026-03-02T10:21:37.059Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-02T10:21:37.075Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-02T10:21:37.077Z] 📋 發現 7 個問題需要關注
-[2026-03-02T10:21:37.130Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:21:37.130Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-02T10:45:32.446Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-02T10:45:34.249Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-02T10:45:34.296Z] [HookRunner] 已載入 4 個 Hooks
@@ -53,8 +53,8 @@
 
 [2026-03-02T10:45:55.248Z] 🔍 執行安全掃描...
 
-[2026-03-02T10:46:09.417Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-02T10:46:09.426Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-02T10:46:09.417Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-02T10:46:09.426Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-02T10:46:24.843Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-02T10:46:24.857Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-02T10:46:24.872Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -64,7 +64,7 @@
 [2026-03-02T10:46:24.910Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-02T10:46:24.929Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-02T10:46:24.932Z] 📋 發現 7 個問題需要關注
-[2026-03-02T10:46:24.994Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:46:24.994Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-02T10:46:25.078Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-02T10:46:25.083Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-02T10:46:25.095Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
@@ -74,7 +74,7 @@
 [2026-03-02T10:46:25.135Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-02T10:46:25.176Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-02T10:46:25.207Z] 📋 發現 7 個問題需要關注
-[2026-03-02T10:46:25.264Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-02T10:46:25.264Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T03:17:23.070Z] 🔍 執行安全掃描...
 
 [2026-03-03T03:17:32.231Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -86,7 +86,7 @@
 [2026-03-03T03:17:32.257Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T03:17:32.269Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T03:17:32.271Z] 📋 發現 7 個問題需要關注
-[2026-03-03T03:17:32.286Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:17:32.286Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T03:21:30.921Z] 🔍 執行安全掃描...
 
 [2026-03-03T03:21:37.028Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -98,7 +98,7 @@
 [2026-03-03T03:21:37.049Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T03:21:37.064Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T03:21:37.067Z] 📋 發現 7 個問題需要關注
-[2026-03-03T03:21:37.079Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:21:37.079Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T03:41:49.477Z] 🔍 執行安全掃描...
 
 [2026-03-03T03:41:54.507Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -111,14 +111,14 @@
 [2026-03-03T03:41:54.527Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T03:41:54.536Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T03:41:54.538Z] 📋 發現 8 個問題需要關注
-[2026-03-03T03:41:54.554Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:41:54.554Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T03:42:54.760Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-03T03:42:55.004Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-03T03:42:55.029Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-03T03:42:58.967Z] 🔍 執行安全掃描...
 
-[2026-03-03T03:43:04.032Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-03T03:43:04.070Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-03T03:43:04.032Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-03T03:43:04.070Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-03T03:43:37.737Z] 🔍 執行安全掃描...
 
 [2026-03-03T03:43:49.702Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -131,7 +131,7 @@
 [2026-03-03T03:43:49.746Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T03:43:49.764Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T03:43:49.769Z] 📋 發現 8 個問題需要關注
-[2026-03-03T03:43:49.797Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:43:49.797Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T03:43:50.115Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-03T03:43:50.120Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-03T03:43:50.125Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -142,7 +142,7 @@
 [2026-03-03T03:43:50.155Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T03:43:50.172Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T03:43:50.175Z] 📋 發現 8 個問題需要關注
-[2026-03-03T03:43:50.197Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T03:43:50.197Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T09:35:30.286Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-03T09:35:30.371Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-03T09:35:30.394Z] [HookRunner] 已載入 4 個 Hooks
@@ -150,8 +150,8 @@
 
 [2026-03-03T09:35:53.153Z] 🔍 執行安全掃描...
 
-[2026-03-03T09:36:12.986Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-03T09:36:13.007Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-03T09:36:12.986Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-03T09:36:13.007Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-03T09:36:33.425Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T09:36:33.446Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T09:36:33.469Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
@@ -162,7 +162,7 @@
 [2026-03-03T09:36:33.532Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-03T09:36:33.566Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T09:36:33.620Z] 📋 發現 8 個問題需要關注
-[2026-03-03T09:36:33.914Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T09:36:33.914Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T09:36:34.269Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-03T09:36:34.285Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-03T09:36:34.325Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -173,7 +173,7 @@
 [2026-03-03T09:36:34.676Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T09:36:34.783Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T09:36:34.799Z] 📋 發現 8 個問題需要關注
-[2026-03-03T09:36:35.037Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T09:36:35.037Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T09:50:49.590Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2267,"estimated":890,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":2,"promptCharsBefore":89,"promptCharsAfter":2669,"tokenSavedEstimate":1377,"tokenSavedPercent":60.74,"timestamp":1772531449590}
 [2026-03-03T10:28:28.268Z] 🔍 執行安全掃描...
 
@@ -187,7 +187,7 @@
 [2026-03-03T10:28:34.888Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T10:28:34.897Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T10:28:34.899Z] 📋 發現 8 個問題需要關注
-[2026-03-03T10:28:34.908Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T10:28:34.908Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T10:37:10.708Z] 🔍 執行安全掃描...
 
 [2026-03-03T10:37:15.849Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -200,8 +200,8 @@
 [2026-03-03T10:37:15.870Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T10:37:15.882Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T10:37:15.883Z] 📋 發現 8 個問題需要關注
-[2026-03-03T10:37:15.898Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
-[2026-03-03T10:37:32.913Z] [installAll] 開始安裝，專案路徑: c:\Users\7010\Desktop\gravityTest\PTWCS
+[2026-03-03T10:37:15.898Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T10:37:32.913Z] [installAll] 開始安裝，專案路徑: <workspace-root>\PTWCS
 [2026-03-03T10:37:32.917Z] 🚀 開始一鍵安裝所有元件...
 [2026-03-03T10:37:32.921Z]   📦 找到 24 個 Skills
 [2026-03-03T10:37:32.926Z] 📦 開始安裝 Pixiu 規則...
@@ -254,7 +254,7 @@
 [2026-03-03T10:37:49.412Z]   [OK] opus-advanced.md (內容相同)
 [2026-03-03T10:37:49.422Z]   [OK] skill-trigger.shared.md (內容相同)
 [2026-03-03T10:37:55.709Z] [CTX] {"mode":"quick","budget":2000,"rawEstimatedTokens":2288,"estimated":911,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":86,"promptCharsAfter":2732,"tokenSavedEstimate":1377,"tokenSavedPercent":60.18,"timestamp":1772534275709}
-[2026-03-03T10:38:30.395Z] [installAll] 開始安裝，專案路徑: c:\Users\7010\Desktop\gravityTest\PTWCS
+[2026-03-03T10:38:30.395Z] [installAll] 開始安裝，專案路徑: <workspace-root>\PTWCS
 [2026-03-03T10:38:30.398Z] 🚀 開始一鍵安裝所有元件...
 [2026-03-03T10:38:30.405Z]   📦 找到 24 個 Skills
 [2026-03-03T10:38:30.407Z] 📦 開始安裝 Pixiu 規則...
@@ -384,7 +384,7 @@
 [2026-03-03T10:59:30.482Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T10:59:30.496Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T10:59:30.499Z] 📋 發現 8 個問題需要關注
-[2026-03-03T10:59:30.515Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T10:59:30.515Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-03T10:59:35.154Z] [CTX] {"mode":"normal","budget":6000,"rawEstimatedTokens":2227,"estimated":939,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":1,"promptCharsBefore":170,"promptCharsAfter":2816,"tokenSavedEstimate":1288,"tokenSavedPercent":57.84,"timestamp":1772535575154}
 [2026-03-03T11:12:17.627Z] 🔍 執行安全掃描...
 
@@ -398,7 +398,7 @@
 [2026-03-03T11:12:20.973Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-03T11:12:20.985Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-03T11:12:20.987Z] 📋 發現 8 個問題需要關注
-[2026-03-03T11:12:21.007Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-03T11:12:21.007Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T00:56:57.510Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-04T00:56:57.577Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-04T00:56:57.589Z] [HookRunner] 已載入 4 個 Hooks
@@ -406,8 +406,8 @@
 
 [2026-03-04T00:57:22.578Z] 🔍 執行安全掃描...
 
-[2026-03-04T00:57:30.445Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-04T00:57:30.630Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T00:57:30.445Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-04T00:57:30.630Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-04T00:57:39.569Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T00:57:39.583Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T00:57:39.590Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
@@ -418,7 +418,7 @@
 [2026-03-04T00:57:39.627Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T00:57:39.676Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T00:57:39.685Z] 📋 發現 8 個問題需要關注
-[2026-03-04T00:57:39.726Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T00:57:39.726Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T00:57:40.108Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T00:57:40.113Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.69278b8f.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T00:57:40.119Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.51f9a5bd.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -429,7 +429,7 @@
 [2026-03-04T00:57:40.146Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T00:57:40.161Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T00:57:40.165Z] 📋 發現 8 個問題需要關注
-[2026-03-04T00:57:40.189Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T00:57:40.189Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T01:11:24.516Z] 🔍 執行安全掃描...
 
 [2026-03-04T01:11:29.739Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -442,7 +442,7 @@
 [2026-03-04T01:11:29.759Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T01:11:29.776Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T01:11:29.777Z] 📋 發現 8 個問題需要關注
-[2026-03-04T01:11:29.790Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:11:29.790Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T01:28:36.902Z] 🔍 執行安全掃描...
 
 [2026-03-04T01:28:43.241Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -455,7 +455,7 @@
 [2026-03-04T01:28:43.259Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T01:28:43.269Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T01:28:43.270Z] 📋 發現 8 個問題需要關注
-[2026-03-04T01:28:43.277Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:28:43.277Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T01:29:23.422Z] 🔍 執行安全掃描...
 
 [2026-03-04T01:29:26.610Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.87bbc792.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -468,7 +468,7 @@
 [2026-03-04T01:29:26.638Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T01:29:26.654Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T01:29:26.657Z] 📋 發現 8 個問題需要關注
-[2026-03-04T01:29:26.674Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:29:26.674Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T01:34:11.794Z] 🔍 執行安全掃描...
 
 [2026-03-04T01:34:15.312Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -481,7 +481,7 @@
 [2026-03-04T01:34:15.332Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T01:34:15.343Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T01:34:15.344Z] 📋 發現 8 個問題需要關注
-[2026-03-04T01:34:15.355Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T01:34:15.355Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T02:01:09.589Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-04T02:01:10.679Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-04T02:01:10.694Z] [HookRunner] 已載入 4 個 Hooks
@@ -489,8 +489,8 @@
 
 [2026-03-04T02:01:35.674Z] 🔍 執行安全掃描...
 
-[2026-03-04T02:01:37.234Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-04T02:01:37.324Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T02:01:37.234Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-04T02:01:37.324Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-04T02:01:53.756Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T02:01:53.761Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T02:01:53.766Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -501,7 +501,7 @@
 [2026-03-04T02:01:53.786Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T02:01:53.800Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T02:01:53.803Z] 📋 發現 8 個問題需要關注
-[2026-03-04T02:01:53.820Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T02:01:53.820Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T02:01:54.038Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T02:01:54.044Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T02:01:54.052Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -512,7 +512,7 @@
 [2026-03-04T02:01:54.083Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T02:01:54.098Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T02:01:54.103Z] 📋 發現 8 個問題需要關注
-[2026-03-04T02:01:54.121Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T02:01:54.121Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T05:09:51.440Z] 🔍 執行安全掃描...
 
 [2026-03-04T05:09:58.432Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -522,7 +522,7 @@
 [2026-03-04T05:09:58.450Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T05:09:58.469Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T05:09:58.471Z] 📋 發現 5 個問題需要關注
-[2026-03-04T05:09:58.489Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T05:09:58.489Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T05:41:27.708Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-04T05:41:30.781Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-04T05:41:30.800Z] [HookRunner] 已載入 4 個 Hooks
@@ -530,8 +530,8 @@
 
 [2026-03-04T05:41:50.397Z] 🔍 執行安全掃描...
 
-[2026-03-04T05:42:11.845Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-04T05:42:11.871Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T05:42:11.845Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-04T05:42:11.871Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-04T05:42:24.082Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.3488cecc.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T05:42:24.166Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c5ace506.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T05:42:24.240Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -542,7 +542,7 @@
 [2026-03-04T05:42:24.502Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T05:42:24.588Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T05:42:24.611Z] 📋 發現 8 個問題需要關注
-[2026-03-04T05:42:24.731Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T05:42:24.731Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T05:42:24.898Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.4ff64a4b.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T05:42:24.920Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.c1df466d.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T05:42:24.942Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -553,7 +553,7 @@
 [2026-03-04T05:42:25.057Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T05:42:25.111Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T05:42:25.157Z] 📋 發現 8 個問題需要關注
-[2026-03-04T05:42:25.391Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T05:42:25.391Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T07:17:41.340Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-04T07:17:44.833Z] [HookRunner] 已載入 4 個 Hooks
 [2026-03-04T07:17:44.845Z] [HookRunner] 已載入 4 個 Hooks
@@ -561,8 +561,8 @@
 
 [2026-03-04T07:17:57.323Z] 🔍 執行安全掃描...
 
-[2026-03-04T07:18:10.140Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-04T07:18:10.272Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-04T07:18:10.140Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-04T07:18:10.272Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-04T07:18:23.073Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:12: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T07:18:23.174Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/rest/RestPath.java:13: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T07:18:23.215Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
@@ -577,7 +577,7 @@
 [2026-03-04T07:18:23.597Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T07:18:23.637Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T07:18:23.644Z] 📋 發現 12 個問題需要關注
-[2026-03-04T07:18:23.720Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T07:18:23.720Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-04T07:18:24.159Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.d4bba56d.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T07:18:24.197Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-04T07:18:24.213Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -592,7 +592,7 @@
 [2026-03-04T07:18:24.388Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-04T07:18:24.445Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-04T07:18:24.448Z] 📋 發現 12 個問題需要關注
-[2026-03-04T07:18:24.593Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-04T07:18:24.593Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-05T03:27:39.739Z] 🔍 執行安全掃描...
 
 [2026-03-05T03:27:47.838Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -612,7 +612,7 @@
 [2026-03-05T03:27:47.902Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/main.0bdb3525.chunk.js:1: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-05T03:27:47.914Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-05T03:27:47.916Z] 📋 發現 15 個問題需要關注
-[2026-03-05T03:27:47.931Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-05T03:27:47.931Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
 [2026-03-05T03:27:57.964Z] [CTX] {"mode":"normal","budget":6000,"rawEstimatedTokens":2312,"estimated":944,"droppedFragments":[],"criticalTrim":false,"truncated":false,"contextBuildDurationMs":0,"promptCharsBefore":176,"promptCharsAfter":2831,"tokenSavedEstimate":1368,"tokenSavedPercent":59.17,"timestamp":1772681277964}
 [2026-03-05T09:49:08.559Z] 🐲 Pixiu OS 擴充功能已啟動 (v7.14.29)
 [2026-03-05T09:49:10.314Z] [HookRunner] 已載入 4 個 Hooks
@@ -621,8 +621,8 @@
 
 [2026-03-05T09:49:39.617Z] 🔍 執行安全掃描...
 
-[2026-03-05T09:49:44.665Z] [Registry] Rebuilt registries @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu
-[2026-03-05T09:49:44.711Z] [Retention] Daily cleanup active @ c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports
+[2026-03-05T09:49:44.665Z] [Registry] Rebuilt registries @ <workspace-root>\PTWCS\.agent\pixiu
+[2026-03-05T09:49:44.711Z] [Retention] Daily cleanup active @ <workspace-root>\PTWCS\.agent\pixiu\reports
 [2026-03-05T09:50:05.981Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.bc90f7d3.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-05T09:50:05.989Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.469dca13.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
 [2026-03-05T09:50:05.999Z]   ⚠️ ptwcs_ap/src/main/webapp/static/js/2.0de02294.chunk.js:2: 可能的硬編碼 API Key (hardcoded_api_key)
@@ -657,5 +657,5 @@
 [2026-03-05T09:50:06.245Z]   ⚠️ ptwcs_ap/src/main/java/com/tradevan/ptwcs/adapter/entity/po/TUser.java:134: 可能的硬編碼密碼 (hardcoded_password)
 [2026-03-05T09:50:06.268Z] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [2026-03-05T09:50:06.273Z] 📋 發現 15 個問題需要關注
-[2026-03-05T09:50:06.284Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
-[2026-03-05T09:50:06.298Z]   💾 Report saved to c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-05T09:50:06.284Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json
+[2026-03-05T09:50:06.298Z]   💾 Report saved to <workspace-root>\PTWCS\.agent\pixiu\reports/scan_history.json

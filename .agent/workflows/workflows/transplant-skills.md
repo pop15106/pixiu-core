@@ -17,7 +17,7 @@ description: 將架構師協議與推理模式移植到新專案
    使用終端執行以下指令：
 
    ```powershell
-   powershell -ExecutionPolicy Bypass -File "c:\Users\7010\Desktop\gravityTest\PTWCS\scripts\transplant-skills-standalone.ps1" -TargetDir "[目標路徑]" -ProjectName "[專案名稱]"
+   powershell -ExecutionPolicy Bypass -File "<workspace-root>\PTWCS\scripts\transplant-skills-standalone.ps1" -TargetDir "[目標路徑]" -ProjectName "[專案名稱]"
    ```
 
 3. **初始化目標專案規則**
