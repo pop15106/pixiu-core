@@ -10,7 +10,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-$Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 
 function Resolve-FullPath {
     param([string]$Path)
@@ -196,6 +195,38 @@ Write-Utf8NoBom -Path (Join-Path $CodexDir 'AGENTS.md') -Text $codexText
 Write-Utf8NoBom -Path (Join-Path $CodexDir 'instructions.md') -Text $codexText
 Write-Host "[OK] ~/.codex/AGENTS.md" -ForegroundColor Green
 Write-Host "[OK] ~/.codex/instructions.md" -ForegroundColor Green
+
+# [5] GitHub Copilot - 專案層級指令檔
+$copilotInstructionsPath = Join-Path $SourceCorePath '.github\copilot-instructions.md'
+$rules = Get-Content -Raw (Join-Path $SourceCorePath 'user_rules.md') -Encoding UTF8 -ErrorAction SilentlyContinue
+if ($rules) {
+    $copilotHeader = "# Pixiu - GitHub Copilot`r`n`r`nMOTHERSHIP_PATH=$StableCorePath`r`n`r`nRules: $StableCorePath\user_rules.md`r`n`r`n---`r`n`r`n"
+    Write-Utf8NoBom -Path $copilotInstructionsPath -Text ($copilotHeader + $rules)
+    Write-Host "[OK] .github/copilot-instructions.md" -ForegroundColor Green
+} else {
+    Write-Host "[SKIP] user_rules.md not found, skipping copilot-instructions.md" -ForegroundColor Yellow
+}
+
+# [6] GitHub Copilot - VS Code 使用者層級全域設定
+$vsCodeSettingsPath = Join-Path $env:APPDATA 'Code\User\settings.json'
+try {
+    $vsSettings = if (Test-Path $vsCodeSettingsPath) {
+        Get-Content $vsCodeSettingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    } else {
+        [PSCustomObject]@{}
+    }
+    $copilotKey = 'github.copilot.chat.codeGeneration.instructions'
+    $instr = [PSCustomObject]@{ file = "$StableCorePath\user_rules.md" }
+    if (-not $vsSettings.PSObject.Properties[$copilotKey]) {
+        $vsSettings | Add-Member -NotePropertyName $copilotKey -NotePropertyValue @($instr)
+    } else {
+        $vsSettings.$copilotKey = @($instr)
+    }
+    Write-Utf8NoBom -Path $vsCodeSettingsPath -Text ($vsSettings | ConvertTo-Json -Depth 10)
+    Write-Host "[OK] VS Code settings.json (Copilot global instructions)" -ForegroundColor Green
+} catch {
+    Write-Host "[WARN] Could not update VS Code settings.json: $_" -ForegroundColor Yellow
+}
 
 foreach ($name in @('agents', 'commands', 'hooks', 'rules', 'scripts')) {
     Set-Junction -Path (Join-Path $ClaudeDir $name) -Target (Join-Path $StableCorePath $name)
