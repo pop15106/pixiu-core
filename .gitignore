@@ -6,3 +6,5 @@ vault/memory/memory-summary.md
 fleet.json
 .agent/ecc-install-state.json
 scripts/hooks/debug-input.json
+.claude/settings.local.json
+

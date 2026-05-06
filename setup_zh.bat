@@ -23,4 +23,11 @@ if %errorlevel% neq 0 (
 echo.
 echo Setup complete. Restart terminal and IDE tools.
 echo.
+echo ------------------------------------------------
+echo   下一步（Claude Code hooks + skills）：
+echo   需要 PowerShell 7+（pwsh）
+echo.
+echo   pwsh -File "%PIXIU_PATH%\scripts\setup\install-to-cli.ps1"
+echo ------------------------------------------------
+echo.
 pause

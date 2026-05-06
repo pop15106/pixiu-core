@@ -23,4 +23,11 @@ if %errorlevel% neq 0 (
 echo.
 echo Setup complete. Restart terminal, VS Code, Claude Code, and Gemini.
 echo.
+echo ------------------------------------------------
+echo   Next step (Claude Code hooks + skills):
+echo   Requires PowerShell 7+ (pwsh)
+echo.
+echo   pwsh -File "%PIXIU_PATH%\scripts\setup\install-to-cli.ps1"
+echo ------------------------------------------------
+echo.
 pause

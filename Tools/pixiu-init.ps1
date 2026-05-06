@@ -82,8 +82,10 @@ Write-Host "Source core : $SourceCorePath" -ForegroundColor Yellow
 Write-Host "Stable link : $StableCorePath" -ForegroundColor Yellow
 Write-Host ""
 
+# [1] ~/.pixiu-core junction
 Set-Junction -Path $StableCorePath -Target $SourceCorePath
 
+# [2] Environment variables
 [Environment]::SetEnvironmentVariable('PIXIU_CORE', $StableCorePath, 'User')
 [Environment]::SetEnvironmentVariable('PIXIU_CORE_PATH', $StableCorePath, 'User')
 $env:PIXIU_CORE = $StableCorePath
@@ -91,6 +93,7 @@ $env:PIXIU_CORE_PATH = $StableCorePath
 Write-Host "[OK] PIXIU_CORE = $StableCorePath" -ForegroundColor Green
 Write-Host "[OK] PIXIU_CORE_PATH = $StableCorePath" -ForegroundColor Green
 
+# [3] Ensure base directories exist
 if (-not (Test-Path $ClaudeDir)) { New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null }
 if (-not (Test-Path $GeminiDir)) { New-Item -ItemType Directory -Path $GeminiDir -Force | Out-Null }
 if (-not (Test-Path $CodexDir)) { New-Item -ItemType Directory -Path $CodexDir -Force | Out-Null }
@@ -147,6 +150,7 @@ foreach ($rel in $ruleFiles) {
         $claudeLines += "@$StableCorePath\$rel"
     }
 }
+# [4] ~/.claude/CLAUDE.md
 Write-Utf8NoBom -Path (Join-Path $ClaudeDir 'CLAUDE.md') -Text ($claudeLines -join "`r`n")
 Write-Host "[OK] ~/.claude/CLAUDE.md" -ForegroundColor Green
 
@@ -167,6 +171,7 @@ $geminiText = @(
     '',
     'Do not load the whole core folder. Read only the needed rules, skills, memory, and context files.'
 ) -join "`r`n"
+# [5] ~/.gemini/GEMINI.md
 Write-Utf8NoBom -Path (Join-Path $GeminiDir 'GEMINI.md') -Text $geminiText
 Write-Host "[OK] ~/.gemini/GEMINI.md" -ForegroundColor Green
 
@@ -191,12 +196,13 @@ $codexText = @(
     '',
     'Do not load the whole core folder. Read only the needed rules, skills, memory, and context files.'
 ) -join "`r`n"
+# [6] ~/.codex/AGENTS.md + instructions.md
 Write-Utf8NoBom -Path (Join-Path $CodexDir 'AGENTS.md') -Text $codexText
 Write-Utf8NoBom -Path (Join-Path $CodexDir 'instructions.md') -Text $codexText
 Write-Host "[OK] ~/.codex/AGENTS.md" -ForegroundColor Green
 Write-Host "[OK] ~/.codex/instructions.md" -ForegroundColor Green
 
-# [5] GitHub Copilot - 專案層級指令檔
+# [7] GitHub Copilot - 專案層級指令檔
 $copilotInstructionsPath = Join-Path $SourceCorePath '.github\copilot-instructions.md'
 $rules = Get-Content -Raw (Join-Path $SourceCorePath 'user_rules.md') -Encoding UTF8 -ErrorAction SilentlyContinue
 if ($rules) {
@@ -207,7 +213,7 @@ if ($rules) {
     Write-Host "[SKIP] user_rules.md not found, skipping copilot-instructions.md" -ForegroundColor Yellow
 }
 
-# [6] GitHub Copilot - VS Code 使用者層級全域設定
+# [8] GitHub Copilot - VS Code 使用者層級全域設定
 $vsCodeSettingsPath = Join-Path $env:APPDATA 'Code\User\settings.json'
 try {
     $vsSettings = if (Test-Path $vsCodeSettingsPath) {
@@ -228,10 +234,12 @@ try {
     Write-Host "[WARN] Could not update VS Code settings.json: $_" -ForegroundColor Yellow
 }
 
+# [9] ~/.claude/ directory junctions
 foreach ($name in @('agents', 'commands', 'hooks', 'rules', 'scripts')) {
     Set-Junction -Path (Join-Path $ClaudeDir $name) -Target (Join-Path $StableCorePath $name)
 }
 
+# [10] ~/.claude/settings.json
 $settingsPath = Join-Path $ClaudeDir 'settings.json'
 if (Test-Path $settingsPath) {
     try {
@@ -247,9 +255,11 @@ if (-not $settings.PSObject.Properties['permissions']) {
 }
 $settings.permissions | Add-Member -NotePropertyName 'additionalDirectories' -NotePropertyValue @($StableCorePath) -Force
 if ($settings.permissions.PSObject.Properties['allow']) {
+    # 清除舊版 hardcode 路徑（任意磁碟）與已移除的 PixiuCore 捷徑
+    $profileEscaped = [regex]::Escape($env:USERPROFILE)
     $filtered = @($settings.permissions.allow | Where-Object {
-        $_ -notmatch 'C:(\\+|/+)Users(\\+|/+)[^\\/"]+' -and
-        $_ -notmatch 'C:(\\+|/+)PixiuCore'
+        $_ -notmatch "(?i)^$profileEscaped" -and
+        $_ -notmatch '(?i)(\\|/)PixiuCore(\\|/|$)'
     })
     $settings.permissions.allow = $filtered
 }
