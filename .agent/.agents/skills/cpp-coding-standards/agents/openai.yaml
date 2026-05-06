@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Cpp Coding Standards"
+  short_description: "Codex skill wrapper for cpp-coding-standards"
+  brand_color: "#64748B"
+  default_prompt: "Use the cpp-coding-standards skill when applicable"
+policy:
+  allow_implicit_invocation: true

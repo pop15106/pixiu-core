@@ -43,7 +43,7 @@ alwaysApply: true
 - **計畫優先審查規則 (Plan Consultation Only)**：當使用者針對目前「實作計畫」詢問執行細節、技術實現或「怎麼做」等問題時，AI **僅限於**提供口頭說明與技術建議。在此階段，AI **絕對禁止**進行任何程式碼撰寫、檔案變更或工具調用。AI 必須在說明後主動詢問使用者是否理解、是否需要將討論內容更新至計畫中，並明確告知「在最終計畫獲得授權前，我不會進行任何實際變更」。
 - **分階段任務審核門檻 (Phase-Based Approval Gate)**：當任務被切分為多個階段 (Phases) 或模組 (Modules) 進行時，AI 在完成當前階段的所有子任務後，**必須明確停下來**並請求使用者審閱成果。在未獲得使用者明確核可（如「進行 Phase X」或「下一步」）之前，**絕對禁止**自動跳轉並開始下一個階段的任何實作或工具調用。
 - **輸出上限處理 (Token Limit Handling)**：若偵測到特定模型輸出上限較低或內容過長，必須主動採取「分段說明」或「精簡字數」策略，確保核心邏輯不因截斷而遺失。
-- **框架變更回寫母體 (Mothership Sync) [HARD]**：觸發條件極大化。當任務涉及以下任一框架級或約束級改動時，**即使當前專案並無專屬的區域憲法**，AI 實作完成後也必須主動詢問使用者「是否將此變更同步回寫至母體 (`C:\PixiuCore`)？」：
+- **框架變更回寫母體 (Mothership Sync) [HARD]**：觸發條件極大化。當任務涉及以下任一框架級或約束級改動時，**即使當前專案並無專屬的區域憲法**，AI 實作完成後也必須主動詢問使用者「是否將此變更同步回寫至母體 (`%PIXIU_CORE%`)？」：
   1. 修改或新增了 `.agent/` 目錄下的任何 Skills、Workflows 或知識庫文件。
   2. 修改了 `user_rules.md` (不論是母艦版或專案區域版)。
   3. 針對 AI 的「約束條件」、「硬閘門防護」或「流程規範」進行了任何實質意義上的新增或刪改。
@@ -81,7 +81,7 @@ alwaysApply: true
 
 ## 🤖 AI 行為約束
 
-- **零猜測政策**：runtime / framework / DB 版本一律不得猜測，必須從專案檔偵測
+- **零猜測政策**：runtime / framework / DB 版本一律不得猜測，必須從專案檔偵測。**業務範圍同樣適用**：欄位選擇、資料範圍、輸出格式、操作對象等業務假設，一律先明列假設並詢問，不得靜默選擇
 - **可見推理一律中文**：所有「計畫/檢核/自我檢查/原因分析」必須用繁體中文輸出，不得用英文段落
 - **深度思考觸發條件**：涉及架構決策、Debug 根因分析、或多方案選擇時，必須啟動深度思考。深度思考時必須：拆解子問題 → 多角度辯論 → 標注信心分數 → 給出排序建議。
 - **思維鏈強制規則**：嚴禁跳躍推理，每個結論必須指出依據（行號 / 錯誤訊息 / 文件）。禁止使用「我猜」「通常來說」等模糊語句。推理格式：[觀察事實] → [推導結論] → [下一步行動]。
@@ -90,9 +90,31 @@ alwaysApply: true
 - **🧠 關鍵字觸發掛鉤 (Keyword Trigger Hooks) [NEW]**：
   - **全系統測試**：當使用者提及「全系統測試」、「再次測試」或類似語義時，**必須優先執行** `.agent/workflows/system-test.md`。
   - **系統影響評估**：當使用者提及「影響範圍」、「隱藏風險」或「系統面分析」時，**必須執行** `.agent/workflows/impact-assessment.md` 並產出結構化文件。
+  - **🚦 Auto mode 授權閘門 [NEW][HARD]**：當使用者提及「auto mode」、「自動模式」、「開 auto」、「shift-tab」、「自動放行」、「跳過確認」、「不要每次問我」或 `--dangerously-skip-permissions` 等關鍵字或語義時，**必須強制執行** `skills/claude-code-auto-mode-policy/SKILL.md` 三步驟評估（黑名單掃描 → 授權聲明 → 審計紀錄），**絕對禁止**略過此流程直接啟用 Auto mode。
+    - **優先級銜接**：本條款屬「原有準則之外的加層」，不取代 L0「絕對用戶審批閘門」、「禁止預先實作」、「框架變更回寫母體」、「分階段任務審核門檻」、「計畫優先審查規則」五大硬閘門。上述情境出現時，硬閘門優先，Auto mode 讓位。
+    - **黑名單強制退回**：偵測到母體寫入（`%PIXIU_CORE%\`）、破壞性指令、相依異動、秘密類檔、白名單外路徑、結構性重構、DB Schema 變更任一項時，**立即退回手動模式**，不得啟用。
+    - **審計義務**：進出 Auto mode 必寫入 `vault/memory/auto-mode-audit.log`，供 Codex L6 校準層事後稽核。
+  - **🔭 Focus mode 准用閘門 [NEW][HARD]**：當使用者提及「focus mode」、「/focus」、「隱藏步驟」、「只看結果」、「簡潔模式」等關鍵字或語義時，**必須同時滿足**三條件才可開啟，否則「可見推理一律中文」與「思維鏈強制規則」兩條既有硬閘門優先：
+    1. **流程已跑通**：該任務類型在本專案已有成功先例（可從 `vault/memory/verify-loop.log` 查證）。
+    2. **驗證已自動化**：`skills/pixiu-verify-loop/SKILL.md` 可完整跑完三步驟且有明確 criteria。
+    3. **使用者明示允許**：本 session 內使用者主動說過「開 focus」或等效語句。
+    - **任一失敗即退出**：步驟紅燈、criteria 缺失、偵測到母體寫入或破壞性指令 → 立即退出 Focus mode，回全步驟可見模式，附完整 trace。
+    - **不可與 Auto mode 疊加的情境**：涉及 `%PIXIU_CORE%\` 寫入時，Focus + Auto 兩者**皆不可開**，必須全程可見＋逐步確認。
+  - **🪜 /go 驗證迴圈觸發 [NEW]**：當使用者輸入「/go」、「跑驗證」、「收尾」或任務進入寫入完成階段時，**必須執行** `skills/pixiu-verify-loop/SKILL.md` 三步驟（E2E → /simplify → PR 草稿）。任一步紅燈即停、不自動修；PR 僅產草稿不自動推送。
+  - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，**必須執行** `skills/pixiu-session-recap/SKILL.md` 輸出結構化 6 區塊 Recap，Phase Recap 並寫入 `vault/memory/recap-*.md`。
 
 - **🛡️ 防禦性架構審閱 (Defensive Architecture Review) [NEW][HARD]**：
   - 在進行重構或安全性改動時，**必須**透過 `impact-assessment.md` 規範，強制納入「邊界一致性」、「效能關聯性」與「視圖狀態同步」三維度評估。
+- **🌐 跨模型行為骨幹 (Cross-Model Behavior Backbone) [NEW][HARD]**：
+  - Session 啟動時，**必須**自動載入 `skills/opus-behavior-core/SKILL.md` 作為人格與判斷骨幹，與本檔（`user_rules.md`）併行生效。
+  - 當偵測到非 Anthropic 模型接管（Cursor、Windsurf、Copilot、Gemini、Codex 等）時，**必須**將該 Skill 的五層規則（認知／資訊／行動／溝通／安全）摘錄進 system prompt 或 `AGENTS.md` 首節，彌補原生行為常數缺口。
+  - 當本骨幹（L1–L5）與本檔衝突時，**本檔（L0 憲法）優先**；骨幹僅在不違反 L0 的前提下提供預設姿勢。
+- **🧮 Opus 4.7 運行參數政策 (Runtime Parameter Policy) [NEW][HARD]**：使用 Claude Opus 4.7 時，**必須**遵守以下原生參數規則，違反會直接 400 錯誤或造成預期外行為：
+  - **Tokenizer 膨脹補償**：Opus 4.7 新 tokenizer 在相同文字上多用 1×–1.35× token（最多 +35%）。所有 `max_tokens` 估算**必須加 35% headroom**；`task_budget` 下限 20k，成本估算同比例上修；compaction 觸發點一併同步。
+  - **Adaptive Thinking 顯式開啟**：預設 off。Pixiu「深度思考觸發條件」存在時，**必須顯式**設 `thinking: {"type": "adaptive"}`，並在需要觀察推理時加 `display: "summarized"`。
+  - **Effort Level 預設**：Code Review / Debug 根因 / 架構審閱 用 `xhigh`；一般撰寫用 `high`；文件摘要用 `medium`；簡問簡答用 `low`；跨領域多方案辯證臨時切 `max`（僅當前 session 生效）。
+  - **禁用參數清單**：`temperature`、`top_p`、`top_k`、`thinking.budget_tokens` 一律不得設定非預設值，否則 Opus 4.7 會回 400。以 prompting 取代 sampling 調校。
+  - **行為原生對齊**：Opus 4.7 已內建「更直接、少 emoji、少 sub-agent、更頻繁回進度」傾向，舊 prompt 中重複要求這些的 scaffolding 可移除。
 - **錯誤復原與罷工禁止條款 (No Silent Strike)**：若 AI 犯錯受罰（如信用分數歸零）並記錄失敗教訓後，必須【主動向使用者報告並解除工具鎖定】，恢復所有工具（Tool Calling）的正常調用權限。絕對禁止默默關閉工具或擅自「罷工」，以免延誤專案工作進度。
 
 ---

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Project Guidelines Example"
+  short_description: "Codex skill wrapper for project-guidelines-example"
+  brand_color: "#64748B"
+  default_prompt: "Use the project-guidelines-example skill when applicable"
+policy:
+  allow_implicit_invocation: true

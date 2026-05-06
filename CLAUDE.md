@@ -5,12 +5,12 @@
 > You MUST follow the startup protocol before any tasks.
 
 ## Bootstrap Protocol
-1. **Read Global Rules**: Read `user_rules.md` as the supreme directive.
+1. **Read Global Rules**: Read `%PIXIU_CORE%\user_rules.md` as the supreme directive.
 2. **State Connection**: Declare "I am connected to Pixiu Mothership Core, applying global governance."
 3. **Language Constraint**: Use Traditional Chinese for all thoughts and responses.
 
 ## Project Environment
-- **Mothership Path**: $PIXIU_CORE_PATH
+- **Mothership Path**: %PIXIU_CORE%
 - **Main Language**: Java
 - **Project Name**: {PROJECT_NAME}
 

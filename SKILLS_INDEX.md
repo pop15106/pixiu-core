@@ -8,7 +8,7 @@
 
 ## 🤖 專業代理 Agents 🟣
 
-*位於 `C:\PixiuCore\.agent\skills\`，透過 `additionalDirectories` 載入*
+*位於 `%PIXIU_CORE%\.agent\skills\`，透過 `additionalDirectories` 載入*
 
 | 代理 | 功能 | 觸發時機 |
 |------|------|----------|
@@ -107,7 +107,7 @@
 
 ## ⚡ Workflows（Slash Commands）🟣
 
-*位於 `~/.claude/commands/`（junction → `C:\PixiuCore\.agent\workflows\`）*
+*位於 `~/.claude/commands/`（junction → `%PIXIU_CORE%\.agent\workflows\`）*
 *Gemini 用戶無法使用 slash commands，但知識型 skills 的內容已嵌入 GEMINI.md*
 
 ### 規劃與架構

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Plankton Code Quality"
+  short_description: "Codex skill wrapper for plankton-code-quality"
+  brand_color: "#64748B"
+  default_prompt: "Use the plankton-code-quality skill when applicable"
+policy:
+  allow_implicit_invocation: true

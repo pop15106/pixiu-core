@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Ai Regression Testing"
+  short_description: "Codex skill wrapper for ai-regression-testing"
+  brand_color: "#64748B"
+  default_prompt: "Use the ai-regression-testing skill when applicable"
+policy:
+  allow_implicit_invocation: true

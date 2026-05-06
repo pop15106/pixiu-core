@@ -14,7 +14,7 @@ echo Claude Code 規則與 Skills 已透過 ~/.claude/CLAUDE.md 直讀母艦，�
 echo.
 pause
 
-powershell -ExecutionPolicy Bypass -File "C:\PixiuCore\Tools\sync-pixiu-fleet.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0sync-pixiu-fleet.ps1"
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

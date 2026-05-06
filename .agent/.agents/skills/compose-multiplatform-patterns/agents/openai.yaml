@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Compose Multiplatform Patterns"
+  short_description: "Codex skill wrapper for compose-multiplatform-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the compose-multiplatform-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

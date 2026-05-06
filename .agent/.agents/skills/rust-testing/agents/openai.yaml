@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Rust Testing"
+  short_description: "Codex skill wrapper for rust-testing"
+  brand_color: "#64748B"
+  default_prompt: "Use the rust-testing skill when applicable"
+policy:
+  allow_implicit_invocation: true

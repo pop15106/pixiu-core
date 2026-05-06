@@ -80,10 +80,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"C:\\PixiuCore\\scripts\\hooks\\pixiu-guardrails.js\" \"pre:pixiu:change-scope\""
+            "command": "node \"%PIXIU_CORE%\\scripts\\hooks\\pixiu-guardrails.js\" \"pre:pixiu:change-scope\""
           }
         ],
         "description": "母體治理：大規模變更警告 + .agent/ 變更偵測"
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"%PIXIU_CORE%\\scripts\\hooks\\pixiu-guardrails.js\" \"pre:pixiu:auto-mode-guard\""
+          }
+        ],
+        "description": "母體安全：Auto mode 授權閘門（攔截全域 defaultMode=auto 與 --dangerously-skip-permissions）"
       }
     ],
     "PreCompact": [
@@ -192,7 +202,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"C:\\PixiuCore\\scripts\\hooks\\pixiu-guardrails.js\" \"post:pixiu:secret-scan\""
+            "command": "node \"%PIXIU_CORE%\\scripts\\hooks\\pixiu-guardrails.js\" \"post:pixiu:secret-scan\""
           }
         ],
         "description": "母體安全：API Key / 機密洩露自動掃描"
@@ -250,7 +260,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"C:\\PixiuCore\\scripts\\hooks\\pixiu-guardrails.js\" \"stop:pixiu:mothership-sync\"",
+            "command": "node \"%PIXIU_CORE%\\scripts\\hooks\\pixiu-guardrails.js\" \"stop:pixiu:mothership-sync\"",
             "async": true,
             "timeout": 5
           }

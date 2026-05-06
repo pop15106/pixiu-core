@@ -1,7 +1,7 @@
 # ==============================================================================
 # Pixiu Mothership → Claude Code CLI 一鍵部署腳本
 # ------------------------------------------------------------------------------
-# 作用：把 C:\PixiuCore\ 的 skills / commands / hooks 接進 ~/.claude/，讓 CLI
+# 作用：把 %PIXIU_CORE%\ 的 skills / commands / hooks 接進 ~/.claude/，讓 CLI
 #       能真的讀到母體的全部治理功能。
 # 特性：
 #   - 冪等（idempotent）：重複跑不會壞事
@@ -14,7 +14,7 @@
 #      或
 #   2. PowerShell 開啟後：
 #      Set-ExecutionPolicy -Scope Process Bypass
-#      C:\PixiuCore\scripts\setup\install-to-cli.ps1
+#      %PIXIU_CORE%\scripts\setup\install-to-cli.ps1
 #
 # 版本：v0.1.0 / 2026-04-17
 # ==============================================================================
@@ -33,7 +33,21 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 # --- 路徑常數 ---
-$Pixiu = 'C:\PixiuCore'
+function Resolve-PixiuCore {
+    if ($env:PIXIU_CORE -and (Test-Path (Join-Path $env:PIXIU_CORE 'user_rules.md'))) {
+        return (Resolve-Path $env:PIXIU_CORE).Path
+    }
+    if ($env:PIXIU_CORE_PATH -and (Test-Path (Join-Path $env:PIXIU_CORE_PATH 'user_rules.md'))) {
+        return (Resolve-Path $env:PIXIU_CORE_PATH).Path
+    }
+    $fromScript = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    if (Test-Path (Join-Path $fromScript 'user_rules.md')) {
+        return $fromScript
+    }
+    throw 'Cannot resolve Pixiu core. Set PIXIU_CORE or run setup.bat first.'
+}
+
+$Pixiu = Resolve-PixiuCore
 $ClaudeHome = Join-Path $env:USERPROFILE '.claude'
 $PixiuCommands = Join-Path $Pixiu 'commands'
 $PixiuSkills = Join-Path $Pixiu 'skills'
@@ -193,7 +207,7 @@ Write-Host "[5/5] 接通 Skills..." -ForegroundColor White
 
 # Claude Code CLI 讀 ~/.claude/skills/ 作為全域 skill 搜尋路徑
 # 策略：在 ~/.claude/skills/ 下為每個 Pixiu skill 建立 junction（類 symlink），
-#       指向 C:\PixiuCore\skills\<name>\。好處：母體 skill 更新即時反映，不用重跑腳本。
+#       指向 %PIXIU_CORE%\skills\<name>\。好處：母體 skill 更新即時反映，不用重跑腳本。
 if (-not (Test-Path $CliSkills)) {
     New-Item -ItemType Directory -Path $CliSkills | Out-Null
 }
@@ -240,6 +254,6 @@ Write-Host "  1. 打 /go      → 應該不再 Unknown command" -ForegroundColor
 Write-Host "  2. 打 auto mode → 應該觸發 Pixiu 三步驟授權流程" -ForegroundColor Gray
 Write-Host "  3. 打 'recap' → 應該載入 pixiu-session-recap skill" -ForegroundColor Gray
 Write-Host ""
-Write-Host "回滾：C:\PixiuCore\scripts\setup\uninstall-from-cli.ps1" -ForegroundColor DarkGray
+Write-Host "回滾：%PIXIU_CORE%\scripts\setup\uninstall-from-cli.ps1" -ForegroundColor DarkGray
 Write-Host "備份：$CliBackups" -ForegroundColor DarkGray
 Write-Host ""

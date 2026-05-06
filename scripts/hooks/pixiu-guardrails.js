@@ -17,6 +17,9 @@
 
 'use strict';
 
+const path = require('path');
+const PIXIU_CORE = process.env.PIXIU_CORE_PATH || path.resolve(__dirname, '../..');
+
 const hookId = process.argv[2] || '';
 
 let inputData = '';
@@ -24,12 +27,15 @@ process.stdin.on('data', chunk => inputData += chunk);
 process.stdin.on('end', () => {
   try {
     // DEBUG: 記錄原始輸入，方便排查
-    require('fs').writeFileSync(require('path').join(__dirname, 'debug-input.json'), inputData);
+    require('fs').writeFileSync(path.join(PIXIU_CORE, 'scripts', 'hooks', 'debug-input.json'), inputData);
     const input = JSON.parse(inputData);
 
     switch (hookId) {
       case 'pre:pixiu:change-scope':
         handleChangeScope(input);
+        break;
+      case 'pre:pixiu:auto-mode-guard':
+        handleAutoModeGuard(input);
         break;
       case 'post:pixiu:secret-scan':
         handleSecretScan(input);
@@ -66,7 +72,7 @@ function handleChangeScope(input) {
     if (filePath.includes('.agent/') || filePath.includes('.agents/')) {
       console.error('[🛡️ 母體治理] 偵測到 .agent/ 目錄變更！');
       console.error('[🛡️ 母體治理] 依 user_rules.md「框架變更回寫母體」規則，');
-      console.error('[🛡️ 母體治理] 完成後必須詢問使用者是否同步至 C:\\PixiuCore。');
+      console.error(`[🛡️ 母體治理] 完成後必須詢問使用者是否同步至 ${PIXIU_CORE}。`);
     }
   }
 
@@ -111,6 +117,88 @@ function handleSecretScan(input) {
   console.log(inputData);
 }
 
+// ── Hook 2b: Auto mode 授權閘門 ───────────────────────────────────
+// 對應 user_rules.md：「🚦 Auto mode 授權閘門 [NEW][HARD]」
+// 攔截：
+//   1. 寫入 ~/.claude/settings.json 且含 "defaultMode": "auto"
+//   2. Bash 指令使用 --dangerously-skip-permissions
+// 放行條件：vault/memory/auto-mode-audit.log 最後一筆「進入」紀錄於 5 分鐘內
+function handleAutoModeGuard(input) {
+  const toolName = input.tool_name || '';
+  const toolInput = input.tool_input || {};
+
+  let trigger = null;
+  let detail = '';
+
+  // 檢查 1：settings.json 全域 defaultMode=auto
+  if (['Edit', 'Write', 'MultiEdit'].includes(toolName)) {
+    const filePath = toolInput.file_path || '';
+    const content = toolInput.new_string || toolInput.content || '';
+    const isSettingsFile = /\.claude[\\\/]settings\.json$/i.test(filePath);
+    const hasAutoMode = /"defaultMode"\s*:\s*"auto"/i.test(content);
+    if (isSettingsFile && hasAutoMode) {
+      trigger = 'settings.json 全域 defaultMode=auto';
+      detail = `目標檔案：${filePath}`;
+    }
+  }
+
+  // 檢查 2：Bash 使用 --dangerously-skip-permissions
+  if (toolName === 'Bash') {
+    const cmd = toolInput.command || '';
+    if (/--dangerously-skip-permissions/.test(cmd)) {
+      trigger = '--dangerously-skip-permissions 旗標';
+      detail = `指令：${cmd.length > 120 ? cmd.substring(0, 117) + '...' : cmd}`;
+    }
+  }
+
+  if (!trigger) {
+    console.log(inputData);
+    return;
+  }
+
+  // 查最近授權紀錄
+  const recentAuth = checkRecentAutoModeAuthorization();
+
+  if (!recentAuth) {
+    console.error('[🚨 Pixiu 憲法] Auto mode 授權閘門觸發！');
+    console.error(`[🚨 Pixiu 憲法] 偵測類別：${trigger}`);
+    console.error(`[🚨 Pixiu 憲法] ${detail}`);
+    console.error('[🚨 Pixiu 憲法] 依 user_rules.md「🚦 Auto mode 授權閘門 [HARD]」規則：');
+    console.error('[🚨 Pixiu 憲法]   1. 先執行 skills/claude-code-auto-mode-policy/SKILL.md');
+    console.error('[🚨 Pixiu 憲法]   2. 跑三步驟：黑名單掃描 → 授權聲明 → 等使用者回「開」');
+    console.error('[🚨 Pixiu 憲法]   3. 寫入 vault/memory/auto-mode-audit.log 後 5 分鐘內本操作才放行');
+    console.error('[🚨 Pixiu 憲法] 建議改用 Shift+Tab 切 session 層級 Auto mode（不動全域設定）。');
+    process.exit(2);
+  }
+
+  // 5 分鐘內有授權，放行但標註
+  console.error('[🟢 Pixiu 憲法] Auto mode 授權檢核通過（最近 5 分鐘內有 vault/memory/auto-mode-audit.log 進入紀錄）');
+  console.log(inputData);
+}
+
+function checkRecentAutoModeAuthorization() {
+  try {
+    const fs = require('fs');
+    const auditPath = path.join(PIXIU_CORE, 'vault', 'memory', 'auto-mode-audit.log');
+    if (!fs.existsSync(auditPath)) return false;
+    const log = fs.readFileSync(auditPath, 'utf8');
+    const lines = log.trim().split('\n').filter(Boolean);
+    if (lines.length === 0) return false;
+    // 從尾端往前找最近一筆「進入」紀錄
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const m = lines[i].match(/\[([^\]]+)\]｜進入｜/);
+      if (m) {
+        const t = new Date(m[1]);
+        const diffMin = (Date.now() - t.getTime()) / 60000;
+        return diffMin >= 0 && diffMin < 5;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // ── Hook 3: .agent/ 變更偵測 + 母體同步提醒 ───────────────────────
 // 對應 user_rules.md：「框架變更回寫母體 (Mothership Sync) [HARD]」
 function handleMothershipSync(input) {
@@ -130,7 +218,7 @@ function handleMothershipSync(input) {
   if (triggerFound.length > 0) {
     console.error(`[🔄 母體同步] 偵測到框架級變更：${triggerFound.join('、')}`);
     console.error(`[🔄 母體同步] 依 user_rules.md「框架變更回寫母體」硬規則，`);
-    console.error(`[🔄 母體同步] 請詢問使用者：「是否將此變更同步回寫至 C:\\PixiuCore？」`);
+    console.error(`[🔄 母體同步] 請詢問使用者：「是否將此變更同步回寫至 ${PIXIU_CORE}？」`);
   }
 
   console.log(inputData);

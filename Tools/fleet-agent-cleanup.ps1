@@ -1,14 +1,18 @@
-﻿# Pixiu Fleet Agent Cleanup Script
+# Pixiu Fleet Agent Cleanup Script
 # [來源: 母體核心] 
 # 引進備份機制與 Try-Catch 保護，確保同步過程可逆且穩定。
 
-$FleetFile = "C:\PixiuCore\fleet.json"
-$BackupRoot = "C:\PixiuCore\Backup"
+$CorePath = $env:PIXIU_CORE
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE_PATH }
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }
+$CorePath = (Resolve-Path $CorePath).Path
+$FleetFile = Join-Path $CorePath 'fleet.json'
+$BackupRoot = Join-Path $CorePath 'Backup'
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $CurrentBackupDir = Join-Path $BackupRoot "fleet_sync_$Timestamp"
 
 if (-not (Test-Path $FleetFile)) {
-    Write-Host "[ERROR] fleet.json not found at C:\PixiuCore\fleet.json" -ForegroundColor Red
+    Write-Host "[ERROR] fleet.json not found at $FleetFile" -ForegroundColor Red
     exit 1
 }
 
@@ -55,15 +59,13 @@ foreach ($ProjectPath in $Projects) {
         $TargetClaude = Join-Path $ProjectPath "CLAUDE.md"
         $TargetCodex = Join-Path $ProjectPath "CODEX.md"
 
-        if (Test-Path "C:\PixiuCore\CLAUDE.md") {
-            $ClaudeContent = Get-Content "C:\PixiuCore\CLAUDE.md" -Raw
+        $ClaudeSource = Join-Path $CorePath "CLAUDE.md"`r`n        if (Test-Path $ClaudeSource) {`r`n            $ClaudeContent = Get-Content $ClaudeSource -Raw
             $ClaudeContent = $ClaudeContent -replace ('\{PROJECT_NAME\}'), $ProjectName
             $ClaudeContent | Set-Content $TargetClaude -Encoding UTF8
             Write-Host "  - 已同步 CLAUDE.md ($ProjectName)" -ForegroundColor Cyan
         }
 
-        if (Test-Path "C:\PixiuCore\CODEX.md") {
-            Copy-Item "C:\PixiuCore\CODEX.md" -Destination $TargetCodex -Force
+        $CodexSource = Join-Path $CorePath "CODEX.md"`r`n        if (Test-Path $CodexSource) {`r`n            Copy-Item $CodexSource -Destination $TargetCodex -Force
             Write-Host "  - 已同步 CODEX.md" -ForegroundColor Cyan
         }
     } catch {

@@ -9,8 +9,11 @@ param (
     [switch]$Recursive = $false
 )
 
-$CorePath = "C:\PixiuCore"
-$FleetFile = "$CorePath\fleet.json"
+$CorePath = $env:PIXIU_CORE
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE_PATH }
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
+$CorePath = (Resolve-Path $CorePath).Path
+$FleetFile = Join-Path $CorePath "fleet.json"
 $ErrorActionPreference = "Stop"
 
 # Use UTF8 with BOM for console output

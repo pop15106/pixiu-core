@@ -7,7 +7,7 @@ applyTo: 所有開發任務
 # Dev Workflow SOP — 標準開發流程
 
 > 所有 AI 執行開發任務時必須遵循此流程。
-> 與 `C:\PixiuCore\rules\common\development-workflow.md` 對齊。
+> 與 `%PIXIU_CORE%\rules\common\development-workflow.md` 對齊。
 
 ## 標準開發流程
 
