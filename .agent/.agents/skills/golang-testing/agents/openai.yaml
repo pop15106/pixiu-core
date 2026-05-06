@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Golang Testing"
+  short_description: "Codex skill wrapper for golang-testing"
+  brand_color: "#64748B"
+  default_prompt: "Use the golang-testing skill when applicable"
+policy:
+  allow_implicit_invocation: true

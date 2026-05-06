@@ -7,7 +7,7 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 ## 目前狀態
 
 盤點日期：2026-05-04  
-盤點路徑：`C:\Users\7010\Desktop\gravityTest\pixiu-core`
+盤點路徑：`%PIXIU_CORE%`
 
 | 項目 | 現況 |
 |------|------|
@@ -93,7 +93,7 @@ PixiuCore 分成三層來看，比較不容易迷路：
 
 每次 AI session 開始時：
 
-1. 先讀環境變數 `PIXIU_CORE`；若不存在，預設 `C:\PixiuCore`。
+1. 先讀環境變數 `PIXIU_CORE`；若不存在，預設 `%PIXIU_CORE%`。
 2. 依序讀取：
    - `vault/README.md`
    - `user_rules.md`
@@ -119,7 +119,7 @@ PixiuCore 分成三層來看，比較不容易迷路：
 在 PowerShell 內可用以下指令重新計數：
 
 ```powershell
-$root = "C:\Users\7010\Desktop\gravityTest\pixiu-core"
+$root = "%PIXIU_CORE%"
 (Get-ChildItem -File "$root\agents").Count
 (Get-ChildItem -File "$root\commands").Count
 (Get-ChildItem -Directory "$root\skills").Count
@@ -159,4 +159,4 @@ $root = "C:\Users\7010\Desktop\gravityTest\pixiu-core"
 | README 更新日 | 2026-05-04 |
 | ECC Plugin 版本 | v1.8.0 |
 | 目前 gravityTest 版最新內容 | `spec-improve` skill 同步，2026-04-29 |
-| 正式母體同步狀態 | 需依 `C:\PixiuCore` 與本 repo 實際差異另行確認 |
+| 正式母體同步狀態 | 需依 `%PIXIU_CORE%` 與本 repo 實際差異另行確認 |

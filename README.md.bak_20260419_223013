@@ -7,7 +7,7 @@
 PixiuCore 是所有 AI 工具的唯一規則來源。無論你使用 Claude Code 還是 Gemini Antigravity，都從這裡讀取同一套憲法規則與技能庫。
 
 ```
-C:\PixiuCore\
+%PIXIU_CORE%\
 ├── user_rules.md            ← 7 層憲法核心規則（硬閘門）
 ├── CLAUDE.md                ← Claude Code 全域啟動協議
 ├── SKILLS_INDEX.md          ← 176 個技能分類索引
@@ -34,15 +34,15 @@ PixiuCore（唯一來源）
 ### 步驟一：Clone 母體
 
 ```bash
-git clone https://github.com/pop15106/pixiu-core C:\PixiuCore
+git clone https://github.com/pop15106/pixiu-core %PIXIU_CORE%
 ```
 
 ### 步驟二：執行安裝腳本
 
-在 `C:\PixiuCore\` 目錄，**右鍵以系統管理員執行** `setup.bat`：
+在 `%PIXIU_CORE%\` 目錄，**右鍵以系統管理員執行** `setup.bat`：
 
 ```
-C:\PixiuCore\setup.bat
+%PIXIU_CORE%\setup.bat
 ```
 
 安裝腳本自動完成以下四件事：
@@ -62,7 +62,7 @@ C:\PixiuCore\setup.bat
 
 ```json
 {
-  "additionalDirectories": ["C:\\PixiuCore"]
+  "additionalDirectories": ["%PIXIU_CORE%"]
 }
 ```
 
@@ -83,7 +83,7 @@ C:\PixiuCore\setup.bat
 執行 `pack-for-friend.bat`：
 
 ```
-C:\PixiuCore\pack-for-friend.bat
+%PIXIU_CORE%\pack-for-friend.bat
 ```
 
 此腳本會：
@@ -92,7 +92,7 @@ C:\PixiuCore\pack-for-friend.bat
 3. 輸出到桌面，詢問是否開啟資料夾
 
 朋友收到 zip 後只需：
-1. 解壓到任意資料夾（建議 `C:\PixiuCore`）
+1. 解壓到任意資料夾（建議 `%PIXIU_CORE%`）
 2. 執行 `setup.bat`
 3. 重啟終端機 / Antigravity
 

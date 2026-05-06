@@ -27,6 +27,26 @@ The Feature Implementation Workflow describes the development pipeline: research
    - Refactor (IMPROVE)
    - Verify 80%+ coverage
 
+3. **Goal-Driven Execution**（可驗證目標格式）
+
+   把命令式指令轉換為可驗證的成功標準，再開始實作：
+
+   | 命令式（禁止直接執行） | 轉換為可驗證目標 |
+   |----------------------|----------------|
+   | "加入驗證" | "寫測試覆蓋驗證失敗情境，再讓測試通過" |
+   | "修復 Bug" | "寫一個能重現該 Bug 的測試，再讓測試通過" |
+   | "重構 X" | "確認重構前後測試均通過" |
+   | "優化查詢" | "量測當前回應時間，定義目標值，驗證達成" |
+
+   多步驟任務必須列出計畫格式：
+   ```
+   1. [步驟] → verify: [具體驗證方式]
+   2. [步驟] → verify: [具體驗證方式]
+   3. [步驟] → verify: [具體驗證方式]
+   ```
+
+   > 「優化」「改善」「修好」都是命令式指令。收到這類需求時，必須先與使用者確認驗證標準，再開始實作。
+
 3. **Code Review**
    - Use **code-reviewer** agent immediately after writing code
    - Address CRITICAL and HIGH issues

@@ -42,7 +42,7 @@ echo ✅ 已輸出到桌面: pixiu-mothership.zip
 for %%A in ("%OUTPUT%") do echo 📦 檔案大小: %%~zA bytes
 echo.
 echo 告訴朋友：
-echo   1. 解壓到任意資料夾（例如 C:\PixiuCore）
+echo   1. 解壓到任意資料夾（例如 %PIXIU_CORE%）
 echo   2. 執行 setup.bat
 echo   3. 重啟終端機 / Antigravity
 echo.

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Python Testing"
+  short_description: "Codex skill wrapper for python-testing"
+  brand_color: "#64748B"
+  default_prompt: "Use the python-testing skill when applicable"
+policy:
+  allow_implicit_invocation: true

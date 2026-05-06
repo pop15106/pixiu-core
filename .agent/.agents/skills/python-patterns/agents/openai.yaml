@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Python Patterns"
+  short_description: "Codex skill wrapper for python-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the python-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

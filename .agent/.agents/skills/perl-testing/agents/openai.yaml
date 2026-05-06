@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Perl Testing"
+  short_description: "Codex skill wrapper for perl-testing"
+  brand_color: "#64748B"
+  default_prompt: "Use the perl-testing skill when applicable"
+policy:
+  allow_implicit_invocation: true

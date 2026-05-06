@@ -12,7 +12,7 @@ AI 應首先呼叫母體中央腳本進行健康檢查：
 // turbo
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\PixiuCore\.agent\pixiu\scripts\doc-health-audit.ps1"
+powershell -ExecutionPolicy Bypass -File "%PIXIU_CORE%\.agent\pixiu\scripts\doc-health-audit.ps1"
 ```
 
 ## 2. 變更分析 (Impact Analysis)

@@ -6,11 +6,11 @@
 
 五個核心模組的 System Prompt 範本已放置於專案中的 `.agent/skills/architect-protocol/` 目錄下：
 
-1. [模組 1：Context Mapping (釐清地基)](file:///c:/Users/7010/Desktop/gravityTest/PTWCS/.agent/skills/architect-protocol/module1_context_mapping.md) - 強制盤點框架與連動檔案
-2. [模組 2：Debt Detection (技術債掃描)](file:///c:/Users/7010/Desktop/gravityTest/PTWCS/.agent/skills/architect-protocol/module2_debt_detection.md) - 掃描 NPE/效能/壞味道
-3. [模組 3：Architectural Blueprinting (方案藍圖)](file:///c:/Users/7010/Desktop/gravityTest/PTWCS/.agent/skills/architect-protocol/module3_architectural_blueprinting.md) - 提供保守與最佳化多方案交由用戶決定
-4. [模組 4：Boy Scout Execution (童軍實作)](file:///c:/Users/7010/Desktop/gravityTest/PTWCS/.agent/skills/architect-protocol/module4_boy_scout_execution.md) - 在白名單範圍內精準打擊並清理垃圾
-5. [模組 5：Verification & Output Hook (驗收與防呆)](file:///c:/Users/7010/Desktop/gravityTest/PTWCS/.agent/skills/architect-protocol/module5_verification.md) - 強制繁體中文檢驗與提出測試計畫
+1. [模組 1：Context Mapping (釐清地基)](file:///<workspace-root>/PTWCS/.agent/skills/architect-protocol/module1_context_mapping.md) - 強制盤點框架與連動檔案
+2. [模組 2：Debt Detection (技術債掃描)](file:///<workspace-root>/PTWCS/.agent/skills/architect-protocol/module2_debt_detection.md) - 掃描 NPE/效能/壞味道
+3. [模組 3：Architectural Blueprinting (方案藍圖)](file:///<workspace-root>/PTWCS/.agent/skills/architect-protocol/module3_architectural_blueprinting.md) - 提供保守與最佳化多方案交由用戶決定
+4. [模組 4：Boy Scout Execution (童軍實作)](file:///<workspace-root>/PTWCS/.agent/skills/architect-protocol/module4_boy_scout_execution.md) - 在白名單範圍內精準打擊並清理垃圾
+5. [模組 5：Verification & Output Hook (驗收與防呆)](file:///<workspace-root>/PTWCS/.agent/skills/architect-protocol/module5_verification.md) - 強制繁體中文檢驗與提出測試計畫
 
 ## 🚀 如何啟動這套工作流？
 

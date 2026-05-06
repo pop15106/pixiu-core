@@ -1,7 +1,7 @@
 # PixiuCore 母體 — Claude Code 架構升級實作方案
 
 > **目標讀者**：執行此實作的 AI Agent（Gemini / Cursor / 任何 Coding Agent）
-> **母體位置**：`C:\PixiuCore`
+> **母體位置**：`%PIXIU_CORE%`
 > **基礎框架**：Everything Claude Code (ECC) Plugin v1.8.0
 > **現有基礎設施**：25 agents、46 skills、hooks.json（PreToolUse/PostToolUse/Stop/SessionStart）、7 層治理架構
 > **語言規範**：所有新增內容一律使用繁體中文
@@ -12,11 +12,11 @@
 
 在開始之前，請先閱讀以下檔案以理解現有架構：
 
-1. `C:\PixiuCore\user_rules.md` — 7 層治理架構（L0 憲法 → L6 校準）
-2. `C:\PixiuCore\hooks\hooks.json` — 現有 Hook 定義（~14 個 hooks）
-3. `C:\PixiuCore\hooks\README.md` — Hook 架構文件（含輸入 schema）
-4. `C:\PixiuCore\AGENTS.md` — 25 個 Agent 定義索引
-5. `C:\PixiuCore\agents/` — 各 Agent 的 markdown 定義檔
+1. `%PIXIU_CORE%\user_rules.md` — 7 層治理架構（L0 憲法 → L6 校準）
+2. `%PIXIU_CORE%\hooks\hooks.json` — 現有 Hook 定義（~14 個 hooks）
+3. `%PIXIU_CORE%\hooks\README.md` — Hook 架構文件（含輸入 schema）
+4. `%PIXIU_CORE%\AGENTS.md` — 25 個 Agent 定義索引
+5. `%PIXIU_CORE%\agents/` — 各 Agent 的 markdown 定義檔
 
 ### 母體已有的能力（不要重做）
 
@@ -65,7 +65,7 @@
   2. **被前 80% 迷惑**：UI 看起來行、測試也過，就忽略最後 20%
 - 必須輸出 `VERDICT: PASS / FAIL / PARTIAL`，每個檢查必須帶命令和實際觀察到的輸出
 
-## 1.2 新增檔案：`C:\PixiuCore\agents\verification-agent.md`
+## 1.2 新增檔案：`%PIXIU_CORE%\agents\verification-agent.md`
 
 建立此檔案，完整內容如下：
 
@@ -192,7 +192,7 @@ VERDICT: [PASS | FAIL | PARTIAL]
 請驗證剛才的變更。變更內容：
 - 修改了 src/utils/model-router.js（新增 Client 單例化）
 - 修改了 src/bridge.js（新增上下文壓縮）
-專案位置：C:\Users\pop15\.gemini\antigravity\scratch\openclaw-bot
+專案位置：%USERPROFILE%\.gemini\antigravity\scratch\openclaw-bot
 ```
 
 **不需要修改任何現有檔案**，Agent 放入 `agents/` 目錄即可被 ECC 框架自動偵測。
@@ -213,7 +213,7 @@ VERDICT: [PASS | FAIL | PARTIAL]
 | 「最小改動原則」 | ⚠️ 靠自律 | ✅ PreToolUse Hook 檔案數量警告 |
 | 「框架變更回寫母體」 | ⚠️ 靠自律 | ✅ Stop Hook 自動偵測 .agent/ 變更 |
 
-## 2.2 新增檔案：`C:\PixiuCore\scripts\hooks\pixiu-guardrails.js`
+## 2.2 新增檔案：`%PIXIU_CORE%\scripts\hooks\pixiu-guardrails.js`
 
 ```javascript
 /**
@@ -285,7 +285,7 @@ function handleChangeScope(input) {
     if (filePath.includes('.agent/') || filePath.includes('.agents/')) {
       console.error('[🛡️ 母體治理] 偵測到 .agent/ 目錄變更！');
       console.error('[🛡️ 母體治理] 依 user_rules.md「框架變更回寫母體」規則，');
-      console.error('[🛡️ 母體治理] 完成後必須詢問使用者是否同步至 C:\\PixiuCore。');
+      console.error('[🛡️ 母體治理] 完成後必須詢問使用者是否同步至 %PIXIU_CORE%。');
     }
   }
   
@@ -351,14 +351,14 @@ function handleMothershipSync(input) {
   if (triggerFound.length > 0) {
     console.error(`[🔄 母體同步] 偵測到框架級變更：${triggerFound.join('、')}`);
     console.error(`[🔄 母體同步] 依 user_rules.md「框架變更回寫母體」硬規則，`);
-    console.error(`[🔄 母體同步] 請詢問使用者：「是否將此變更同步回寫至 C:\\PixiuCore？」`);
+    console.error(`[🔄 母體同步] 請詢問使用者：「是否將此變更同步回寫至 %PIXIU_CORE%？」`);
   }
   
   console.log(inputData);
 }
 ```
 
-## 2.3 修改檔案：`C:\PixiuCore\hooks\hooks.json`
+## 2.3 修改檔案：`%PIXIU_CORE%\hooks\hooks.json`
 
 在 `hooks.json` 中新增 3 個 Hook 定義。
 
@@ -428,7 +428,7 @@ function handleMothershipSync(input) {
 
 你的母體已經有 `planner.md`，但 planner 的重點是「制定計畫」而非「探索代碼」。Explore Agent 是純粹的代碼探索專家。
 
-## 3.2 新增檔案：`C:\PixiuCore\agents\explore-agent.md`
+## 3.2 新增檔案：`%PIXIU_CORE%\agents\explore-agent.md`
 
 ```markdown
 ---
@@ -514,7 +514,7 @@ tools:
 ```
 /agent explore-agent
 
-請探索 C:\Users\pop15\.gemini\antigravity\scratch\openclaw-bot 的代碼庫，
+請探索 %USERPROFILE%\.gemini\antigravity\scratch\openclaw-bot 的代碼庫，
 重點理解：
 1. Skill 系統是如何路由和執行的
 2. 多模型 routing 的決策邏輯
@@ -531,7 +531,7 @@ tools:
 # 在任何專案中呼叫 verification-agent
 /agent verification-agent
 
-請驗證 C:\Users\pop15\.gemini\antigravity\scratch\openclaw-bot 專案的基本健全性：
+請驗證 %USERPROFILE%\.gemini\antigravity\scratch\openclaw-bot 專案的基本健全性：
 1. 是否能正常啟動（node src/bridge.js）
 2. 是否有硬編碼的 API Key
 3. package.json 的依賴是否都有安裝
@@ -560,7 +560,7 @@ const key = "sk-ant-1234567890abcdef1234567890abcdef";
 ```
 /agent explore-agent
 
-快速瀏覽 C:\PixiuCore 的目錄結構，告訴我有哪些 agents 和 skills。
+快速瀏覽 %PIXIU_CORE% 的目錄結構，告訴我有哪些 agents 和 skills。
 ```
 
 預期結果：
@@ -573,7 +573,7 @@ const key = "sk-ant-1234567890abcdef1234567890abcdef";
 # 📁 最終檔案結構變更
 
 ```
-C:\PixiuCore\
+%PIXIU_CORE%\
 ├── agents/
 │   ├── verification-agent.md  （新增 ← 階段 1）
 │   ├── explore-agent.md       （新增 ← 階段 3）

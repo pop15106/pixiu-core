@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Skill Stocktake"
+  short_description: "Codex skill wrapper for skill-stocktake"
+  brand_color: "#64748B"
+  default_prompt: "Use the skill-stocktake skill when applicable"
+policy:
+  allow_implicit_invocation: true

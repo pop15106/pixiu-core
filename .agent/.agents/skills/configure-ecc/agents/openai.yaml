@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Configure Ecc"
+  short_description: "Codex skill wrapper for configure-ecc"
+  brand_color: "#64748B"
+  default_prompt: "Use the configure-ecc skill when applicable"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Kotlin Patterns"
+  short_description: "Codex skill wrapper for kotlin-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the kotlin-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

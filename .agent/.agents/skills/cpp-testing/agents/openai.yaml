@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Cpp Testing"
+  short_description: "Codex skill wrapper for cpp-testing"
+  brand_color: "#64748B"
+  default_prompt: "Use the cpp-testing skill when applicable"
+policy:
+  allow_implicit_invocation: true
