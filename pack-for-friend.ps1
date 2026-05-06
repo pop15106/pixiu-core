@@ -8,7 +8,11 @@ $outputPath = Join-Path $env:USERPROFILE "Desktop\$outputName"
 Write-Host "📦 正在打包 PixiuCore..." -ForegroundColor Cyan
 
 # 排除 .git 資料夾以減小體積
-Compress-Archive -Path "C:\PixiuCore\*" -DestinationPath $outputPath -Force -ErrorAction Stop
+$core = $env:PIXIU_CORE
+if ([string]::IsNullOrWhiteSpace($core)) { $core = $env:PIXIU_CORE_PATH }
+if ([string]::IsNullOrWhiteSpace($core)) { $core = $PSScriptRoot }
+$core = (Resolve-Path $core).Path
+Compress-Archive -Path (Join-Path $core '*') -DestinationPath $outputPath -Force -ErrorAction Stop
 
 Write-Host "✅ 打包完成！" -ForegroundColor Green
 Write-Host "📍 檔案位置: $outputPath" -ForegroundColor Yellow

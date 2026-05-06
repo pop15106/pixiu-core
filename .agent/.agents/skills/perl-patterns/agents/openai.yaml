@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Perl Patterns"
+  short_description: "Codex skill wrapper for perl-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the perl-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

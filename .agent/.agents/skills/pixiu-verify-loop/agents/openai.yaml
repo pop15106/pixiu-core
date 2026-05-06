@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Pixiu Verify Loop"
+  short_description: "Codex skill wrapper for pixiu-verify-loop"
+  brand_color: "#64748B"
+  default_prompt: "Use the pixiu-verify-loop skill when applicable"
+policy:
+  allow_implicit_invocation: true

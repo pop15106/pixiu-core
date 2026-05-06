@@ -6,7 +6,13 @@ param (
     [string]$ProjectName
 )
 
-$SourceBase = "c:\Users\7010\Desktop\gravityTest\PTWCS\.agent\skills"
+$SourceBase = $env:PIXIU_SKILL_SOURCE
+if ([string]::IsNullOrWhiteSpace($SourceBase)) {
+    $CorePath = $env:PIXIU_CORE
+    if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE_PATH }
+    if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
+    $SourceBase = Join-Path (Resolve-Path $CorePath).Path '.agent\skills'
+}
 $Skills = @("architect-protocol", "claude-reasoning-modes")
 
 write-host "🚀 啟動技能移植程序..." -ForegroundColor Cyan

@@ -34,13 +34,13 @@ AI 預備一份「規則躍升報告」，內容包含：
 ### 4. 審批閘門 (Approval Gate) [HARD]
 
 AI 必須停下來發送 `notify_user` 並附帶報告。
-**嚴禁在獲得明確核准前寫入 `C:\PixiuCore\user_rules.md`。**
+**嚴禁在獲得明確核准前寫入 `%PIXIU_CORE%\user_rules.md`。**
 
 ### 5. 正式併入母艦 (Merge)
 
 獲得核准後，AI 執行：
 
-1. 更新 `C:\PixiuCore\user_rules.md`。
+1. 更新 `%PIXIU_CORE%\user_rules.md`。
 2. (選向) 清理子專案的重複規則。
 3. 產生全域更新日誌 (Global Changelog)。
 

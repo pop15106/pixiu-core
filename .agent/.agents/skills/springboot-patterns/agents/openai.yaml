@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Springboot Patterns"
+  short_description: "Codex skill wrapper for springboot-patterns"
+  brand_color: "#64748B"
+  default_prompt: "Use the springboot-patterns skill when applicable"
+policy:
+  allow_implicit_invocation: true

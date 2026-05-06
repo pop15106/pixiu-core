@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Django Tdd"
+  short_description: "Codex skill wrapper for django-tdd"
+  brand_color: "#64748B"
+  default_prompt: "Use the django-tdd skill when applicable"
+policy:
+  allow_implicit_invocation: true

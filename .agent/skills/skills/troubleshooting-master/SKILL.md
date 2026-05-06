@@ -12,7 +12,7 @@ description: 專案經驗累積與問題解決大全。此 Skill 指引 AI 系�
 ## 📁 檔案結構 (靜動解耦架構)
 
 ```text
-母艦端 (C:\Users\7010\Desktop\gravityTest\pixiu-core\):
+母艦端 (%PIXIU_CORE%\):
 └── troubleshooting-master/
     ├── SKILL.md             ← 你正在看的全域執行規範 (靜態大腦)
     └── experience-ledger.md ← 全域通用經驗庫 (母艦記憶)
@@ -27,7 +27,7 @@ description: 專案經驗累積與問題解決大全。此 Skill 指引 AI 系�
 
 在處理技術問題前，必須依序檢索：
 
-1. **母艦全域 (`C:\Users\7010\Desktop\gravityTest\pixiu-core\...\experience-ledger.md`)**：確認是否有底層通用的解法。
+1. **母艦全域 (`%PIXIU_CORE%\...\experience-ledger.md`)**：確認是否有底層通用的解法。
 2. **子專案區域 (`<WorkspaceRoot>\project_ledger.md`)**：確認是否有該專案特有的業務或技術債紀錄。
 
 ### 2. 任務執行中：比對與對齊
@@ -49,7 +49,7 @@ description: 專案經驗累積與問題解決大全。此 Skill 指引 AI 系�
 - **動作**：
     1. 寫入本地 `project-ledger.md` 作為備份。
     2. 啟動「淬鍊」：抹除專案隱私與路徑，抽象為通用法則。
-    3. **寫回母艦**：將法則追加至 `C:\Users\7010\Desktop\gravityTest\pixiu-core\...\experience-ledger.md`，供 50 個子專案同步受惠。
+    3. **寫回母艦**：將法則追加至 `%PIXIU_CORE%\...\experience-ledger.md`，供 50 個子專案同步受惠。
 
 ## 📝 經驗紀錄基準 (Ledger Standard)
 

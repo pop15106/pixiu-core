@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Android Clean Architecture"
+  short_description: "Codex skill wrapper for android-clean-architecture"
+  brand_color: "#64748B"
+  default_prompt: "Use the android-clean-architecture skill when applicable"
+policy:
+  allow_implicit_invocation: true

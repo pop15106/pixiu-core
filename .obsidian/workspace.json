@@ -1,0 +1,236 @@
+{
+  "main": {
+    "id": "cbb10b317bb2bf98",
+    "type": "split",
+    "children": [
+      {
+        "id": "0720ec6fe0995911",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "60931a89efda146c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "vault/memory/recaps/2026-05-06-PCLMS_AP庫存核銷手動調整根因清查.md",
+                "mode": "source",
+                "source": false,
+                "backlinks": true,
+                "backlinkOpts": {
+                  "collapseAll": false,
+                  "extraContext": false,
+                  "sortOrder": "alphabetical",
+                  "showSearch": false,
+                  "searchQuery": "",
+                  "backlinkCollapsed": false,
+                  "unlinkedCollapsed": true
+                }
+              },
+              "icon": "lucide-file",
+              "title": "2026-05-06-PCLMS_AP庫存核銷手動調整根因清查"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "c3364314d80c4e9c",
+    "type": "split",
+    "children": [
+      {
+        "id": "b956808bb37713c0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d91316dc09215b53",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "檔案瀏覽器"
+            }
+          },
+          {
+            "id": "e69773d52a0ad2dd",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜尋"
+            }
+          },
+          {
+            "id": "02cdca541c51c6b7",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "書籤"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 508.5
+  },
+  "right": {
+    "id": "499fa6dfdd3cdaad",
+    "type": "split",
+    "children": [
+      {
+        "id": "a202b7361ae2c569",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6a6da3d5fdfb5514",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "vault/🏠 Dashboard.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "🏠 Dashboard 的反向連結"
+            }
+          },
+          {
+            "id": "25bdfddd58aacd78",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "vault/🏠 Dashboard.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "🏠 Dashboard 的對外連結"
+            }
+          },
+          {
+            "id": "6e357a7329fc7881",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "標籤"
+            }
+          },
+          {
+            "id": "1476232fd9a04f3f",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "所有屬性"
+            }
+          },
+          {
+            "id": "f9ab6c1f4a50252e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "vault/🏠 Dashboard.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "🏠 Dashboard 的大綱"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 264.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "bases:建立新的 base": false,
+      "templater-obsidian:Templater": false
+    }
+  },
+  "active": "60931a89efda146c",
+  "lastOpenFiles": [
+    "hooks/hooks.json.tmp.4960.1778036832732",
+    "hooks/hooks.json.tmp.4960.1778036826237",
+    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036819874",
+    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036810673",
+    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036802777",
+    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036797658",
+    "hooks/hooks.json.tmp.4960.1778035593941",
+    "hooks/hooks.json.tmp.4960.1778035586033",
+    "hooks/hooks.json.tmp.4960.1778035575065",
+    "hooks/hooks.json.tmp.4960.1778035564747",
+    "vault/memory/recaps/2026-05-05-PEPIS-eDDA-3.4-Bug修復.md",
+    "vault/memory/recaps/2026-05-06-PCLMS_AP庫存核銷手動調整根因清查.md",
+    "vault/memory/recaps/2026-05-05-PCLMS庫存核銷問題AP-BK雙端深度分析.md",
+    "vault/🏠 Dashboard.md",
+    "vault/memory/memory-summary.md.tmp.5756.1777951346949",
+    "vault/memory/decisions/2026-05-04-Recap跨專案強制回寫PixiuCore.md",
+    "vault/memory/decisions/2026-05-04-Recap觸發必須回寫Obsidian.md",
+    "vault/memory/memory-summary.md",
+    "vault/memory/recaps/2026-05-04-191150-PEPIS-3.4查詢修改與Recap跨專案回寫.md",
+    "vault/memory/recaps/2026-05-04-190600-PEPIS-3.4查詢修改除錯.md",
+    "vault/memory/recaps/2026-05-04-100000-PCLMS彙報出倉孤兒表頭與未確認報單調查.md",
+    "vault/identity/agent-persona.md",
+    "vault/memory/recaps/2026-05-04-134024-PCLMS按月彙報出倉調查與Recap技能修正.md",
+    "vault/memory/recaps/2026-05-04-142717-PixiuCore-README更新.md",
+    "vault/memory/decisions/2026-05-04-PixiuCore-README採現況入口文件.md",
+    "vault/memory/recaps/2026-04-30-101303-EDDA查詢修改測試回饋.md",
+    "vault/memory/recaps/2026-04/2026-04-月度整理.md",
+    "vault/memory/decisions/2026-04/2026-04-30-EDDA查詢修改UI策略.md",
+    "vault/memory/decisions/2026-04/2026-04-29-Spec-Improve技能新增同步.md",
+    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-SAST-triage規則.md",
+    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-MVP落地路徑.md",
+    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
+    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Core架構策略.md",
+    "vault/memory/decisions/2026-04/2026-04-29-Agent-Team前置判斷硬閘門.md",
+    "vault/memory/decisions/2026-04/2026-04-27-DOCX驗證流程調整.md",
+    "vault/memory/decisions/2026-04/2026-04-27-DOCX產生工具鏈標準化.md"
+  ]
+}

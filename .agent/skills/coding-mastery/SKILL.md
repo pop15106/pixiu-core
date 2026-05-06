@@ -174,6 +174,7 @@ func calculateRiskScore(p *Portfolio) (float64, error) {
 
 詳細設計模式參見 [patterns.md](references/patterns.md)。
 反模式警告參見 [antipatterns.md](references/antipatterns.md)。
+AI 助理行為反模式參見 [ai-behavior-antipatterns.md](references/ai-behavior-antipatterns.md)。
 重構範例參見 `examples/` 目錄。
 
 ## 行為規範

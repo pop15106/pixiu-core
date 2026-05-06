@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Iterative Retrieval"
+  short_description: "Codex skill wrapper for iterative-retrieval"
+  brand_color: "#64748B"
+  default_prompt: "Use the iterative-retrieval skill when applicable"
+policy:
+  allow_implicit_invocation: true

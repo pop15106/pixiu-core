@@ -2,9 +2,8 @@
 # 用於快速將當前專案連結至 PixiuCore 母體
 
 $pixiuPath = $env:PIXIU_CORE_PATH
-if (-not $pixiuPath) {
-    $pixiuPath = "C:\PixiuCore"
-}
+if ([string]::IsNullOrWhiteSpace($pixiuPath)) { $pixiuPath = $env:PIXIU_CORE }
+if ([string]::IsNullOrWhiteSpace($pixiuPath)) { $pixiuPath = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }
 
 if (-not (Test-Path $pixiuPath)) {
     Write-Error "找不到母體核心路徑: $pixiuPath"

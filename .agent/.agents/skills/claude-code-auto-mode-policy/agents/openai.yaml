@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Claude Code Auto Mode Policy"
+  short_description: "Codex skill wrapper for claude-code-auto-mode-policy"
+  brand_color: "#64748B"
+  default_prompt: "Use the claude-code-auto-mode-policy skill when applicable"
+policy:
+  allow_implicit_invocation: true

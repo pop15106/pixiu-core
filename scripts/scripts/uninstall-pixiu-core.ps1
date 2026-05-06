@@ -15,8 +15,11 @@ param (
 
 $ErrorActionPreference = "Continue"
 
-$CorePath = "C:\PixiuCore"
-$FleetFile = "$CorePath\fleet.json"
+$CorePath = $env:PIXIU_CORE
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = $env:PIXIU_CORE_PATH }
+if ([string]::IsNullOrWhiteSpace($CorePath)) { $CorePath = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
+$CorePath = (Resolve-Path $CorePath).Path
+$FleetFile = Join-Path $CorePath "fleet.json"
 
 Write-Host "🧹 開始執行 Pixiu 母艦解除部署與清理程序..." -ForegroundColor Cyan
 
