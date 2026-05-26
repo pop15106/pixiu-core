@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "vault/memory/recaps/2026-05-06-PCLMS_AP庫存核銷手動調整根因清查.md",
+                "file": "vault/memory/recaps/2026-05-26-151040-perms-am001-am002-report-count-difference.md",
                 "mode": "source",
                 "source": false,
                 "backlinks": true,
@@ -28,7 +28,7 @@
                 }
               },
               "icon": "lucide-file",
-              "title": "2026-05-06-PCLMS_AP庫存核銷手動調整根因清查"
+              "title": "2026-05-26-151040-perms-am001-am002-report-count-difference"
             }
           }
         ]
@@ -88,7 +88,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 508.5
+    "width": 405.5
   },
   "right": {
     "id": "499fa6dfdd3cdaad",
@@ -196,41 +196,41 @@
   },
   "active": "60931a89efda146c",
   "lastOpenFiles": [
-    "hooks/hooks.json.tmp.4960.1778036832732",
-    "hooks/hooks.json.tmp.4960.1778036826237",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036819874",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036810673",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036802777",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036797658",
-    "hooks/hooks.json.tmp.4960.1778035593941",
-    "hooks/hooks.json.tmp.4960.1778035586033",
-    "hooks/hooks.json.tmp.4960.1778035575065",
-    "hooks/hooks.json.tmp.4960.1778035564747",
-    "vault/memory/recaps/2026-05-05-PEPIS-eDDA-3.4-Bug修復.md",
-    "vault/memory/recaps/2026-05-06-PCLMS_AP庫存核銷手動調整根因清查.md",
-    "vault/memory/recaps/2026-05-05-PCLMS庫存核銷問題AP-BK雙端深度分析.md",
+    "vault/memory/recaps/2026-05-26-153900-pclms-ap-cssave-codegraph-flow.md",
+    "vault/memory/recaps/2026-05-26-140930-codegraph-understand-anything-all-ai-install.md",
+    "vault/memory/recaps/2026-05-26-151040-perms-am001-am002-report-count-difference.md",
     "vault/🏠 Dashboard.md",
-    "vault/memory/memory-summary.md.tmp.5756.1777951346949",
-    "vault/memory/decisions/2026-05-04-Recap跨專案強制回寫PixiuCore.md",
-    "vault/memory/decisions/2026-05-04-Recap觸發必須回寫Obsidian.md",
+    "skills/legacy-java-flow-tracing/agents/openai.yaml",
+    "skills/legacy-java-flow-tracing/SKILL.md",
+    "skills/legacy-java-flow-tracing/agents",
+    "skills/legacy-java-flow-tracing",
+    "vault/memory/recaps/2026-05-25-PCLMS-CB1555055470-XXXXX-實例驗證.md",
+    "vault/memory/recaps/2026-05-25-PCLMS-AP-announce-system-arch.md",
+    "vault/memory/recaps/2026-05-25-173449-second-brain-lookup-policy.md",
+    "vault/memory/recaps/2026-05-25-162150-pclms-recovery-declar-rlstime-sop.md",
     "vault/memory/memory-summary.md",
-    "vault/memory/recaps/2026-05-04-191150-PEPIS-3.4查詢修改與Recap跨專案回寫.md",
-    "vault/memory/recaps/2026-05-04-190600-PEPIS-3.4查詢修改除錯.md",
-    "vault/memory/recaps/2026-05-04-100000-PCLMS彙報出倉孤兒表頭與未確認報單調查.md",
-    "vault/identity/agent-persona.md",
-    "vault/memory/recaps/2026-05-04-134024-PCLMS按月彙報出倉調查與Recap技能修正.md",
-    "vault/memory/recaps/2026-05-04-142717-PixiuCore-README更新.md",
-    "vault/memory/decisions/2026-05-04-PixiuCore-README採現況入口文件.md",
-    "vault/memory/recaps/2026-04-30-101303-EDDA查詢修改測試回饋.md",
-    "vault/memory/recaps/2026-04/2026-04-月度整理.md",
-    "vault/memory/decisions/2026-04/2026-04-30-EDDA查詢修改UI策略.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Spec-Improve技能新增同步.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-SAST-triage規則.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-MVP落地路徑.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Core架構策略.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Agent-Team前置判斷硬閘門.md",
-    "vault/memory/decisions/2026-04/2026-04-27-DOCX驗證流程調整.md",
-    "vault/memory/decisions/2026-04/2026-04-27-DOCX產生工具鏈標準化.md"
+    "vault/memory/recaps/2026-05-22-PCLMS-NX5105-XXXXX-bondno-流程分析.md",
+    "vault/memory/recaps/2026-05-22-145427-pepis-login-announcement-priority-display.md",
+    "vault/memory/recaps/2026-05-22-163715-pclms-l6-indetail-refbillno-declno-bug.md",
+    "vault/memory/recaps/2026-05/2026-05-22-PERMS專案分析-AM001-AM002-強制改密-權限架構.md",
+    "vault/memory/recaps/2026-05",
+    "vault/memory/recaps/2026-05-19-121153-pepis-login-post-announcement-source-recap.md",
+    "vault/projects/PEPIS/index.md",
+    "vault/projects/PEPIS/startup-commands.md",
+    "vault/projects/PEPIS/recaps-index.md",
+    "vault/memory/recaps/2026-05-20-183236-weblogic-wl-cls-gen-jar-static-scan.md",
+    "vault/after-action/2026-05-21-pisso-announcement-system-code-dropdown.md",
+    "vault/memory/recaps/2026-05-21-160017-pisso-system-code-source-sql-trace.md",
+    "vault/memory/recaps/2026-05-21-154105-pepis-pisso-announcement-system-code-priority-trace.md",
+    "vault/memory/recaps/2026-05-20-165623-pepis-login-announcements-use-tv-isso-api-getappannouncement.md",
+    "vault/memory/recaps/2026-05-20-163449-pepis-login-announcement-empty-result-recap.md",
+    "vault/context/pepis-new-login-saab-menu-local-bridge.md",
+    "vault/memory/recaps/2026-05-05-PCLMS庫存核銷問題AP-BK雙端深度分析.md",
+    "vault/projects/DOCX_TOOLING",
+    "vault/projects/AUTO_RESEARCH",
+    "vault/memory/agent-learning/promote-candidates",
+    "vault/memory/agent-learning/observations",
+    "vault/memory/agent-learning/instincts",
+    "vault/memory/agent-learning"
   ]
 }

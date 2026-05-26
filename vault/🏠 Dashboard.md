@@ -3,59 +3,102 @@ type: dashboard
 pinned: true
 ---
 
-# 🏠 Pixiu 工作台
-
-> AI × 人類的共用記憶中心。Claude 寫入，你在這裡查閱、編輯、延伸。
+# 🏠 Pixiu Dashboard
+> 這裡是母體 vault 的工作入口，整理近期 recap、進行中的工作、決策與常用索引。
 
 ---
 
-## 📥 Inbox — 給 AI 的任務清單
-
-> 在這裡寫任務，Claude 讀到後會逐項執行。完成的項目 AI 會自動打勾。
-> 觸發方式：在 Claude Code 說「**去看我的 inbox**」即可。
-
+## 📥 Inbox 與 AI 待辦
+> 保留目前的 AI 待辦區塊，之後若有 workflow 寫入，也建議沿用這段穩定入口。
 <!-- AI_INBOX_START -->
-- [ ]PCLMS_AP 剛剛查關於 按月彙報 流程 從 新增彙報出倉資料的流程，都可以挑選沒有原進倉報單項次的未確認報單，流程結束後，該筆出倉報單還是停在未確認，但存倉沒有任何紀錄，客戶的截圖顯示該筆按月已經有已核銷的狀態
+- [ ] 將 GitHub repo 要放在個人帳號。
+
+- [ ] 若要真正 push，先建立獨立 Git repo 或把 `second-brain/` subtree 拆出去。 請給我建議
+
+- [ ] 視需要補 `sample.env` 或 GitHub Release 說明。
+
+- [ ] 若要跨平台支援 Linux/macOS，再補 `.sh` 版 deploy script。
 
 <!-- AI_INBOX_END -->
 
 ---
 
-## 📝 今日筆記
-
-> 給自己的備忘、想法、AI 不需要執行的事。
-
-<!-- 自由書寫區 -->
-
----
-
-## 📋 最近 Session Recaps
+## 📌 近期 Session Recaps
 
 ```dataview
-TABLE file.frontmatter.日期 AS 日期, file.frontmatter.主題 AS 主題, file.frontmatter.狀態 AS 狀態
+TABLE WITHOUT ID
+  file.link AS File,
+  date AS 日期,
+  summary AS 主題,
+  狀態中文 AS 狀態
 FROM "vault/memory/recaps"
-WHERE file.ext = "md" AND !contains(file.folder, "2026-")
-SORT file.frontmatter.日期 DESC
+FLATTEN choice(status = "verified-local", "已在本地驗證",
+  choice(status = "follow-up", "待追蹤",
+  choice(status = "paused", "暫停",
+  choice(status = "draft", "草稿",
+  choice(status = "active", "進行中",
+  choice(status = "candidate", "候選",
+  choice(status = "done", "完成",
+  choice(status = "completed", "完成",
+  choice(status = "accepted", "已採納", status))))))))) AS 狀態中文
+WHERE file.ext = "md" AND !contains(file.folder, "2026-04")
+SORT date DESC, file.name DESC
 LIMIT 10
 ```
 
-> [!summary]- 📅 2026年4月 封存 Session Recaps
->
+> [!summary]- 2026 年 4 月封存 Recaps
 > ```dataview
-> TABLE file.frontmatter.日期 AS 日期, file.frontmatter.主題 AS 主題, file.frontmatter.狀態 AS 狀態
+> TABLE WITHOUT ID
+>   file.link AS File,
+>   date AS 日期,
+>   summary AS 主題,
+>   狀態中文 AS 狀態
 > FROM "vault/memory/recaps/2026-04"
+> FLATTEN choice(status = "verified-local", "已在本地驗證",
+  choice(status = "follow-up", "待追蹤",
+  choice(status = "paused", "暫停",
+  choice(status = "draft", "草稿",
+  choice(status = "active", "進行中",
+  choice(status = "candidate", "候選",
+  choice(status = "done", "完成",
+  choice(status = "completed", "完成",
+  choice(status = "accepted", "已採納", status))))))))) AS 狀態中文
 > WHERE file.ext = "md"
-> SORT file.frontmatter.日期 DESC
+> SORT date DESC, file.name DESC
 > ```
+
 ---
 
 ## ⚡ 進行中的工作
 
 ```dataview
-TABLE file.frontmatter.主題 AS 主題, file.frontmatter.日期 AS 日期, file.frontmatter.負責AI AS 負責AI
-FROM "vault/memory/recaps"
-WHERE contains(file.frontmatter.狀態, "進行中")
-SORT file.frontmatter.日期 DESC
+TABLE WITHOUT ID
+  file.link AS File,
+  project AS 專案,
+  狀態中文 AS 狀態
+FROM "vault"
+FLATTEN choice(status = "verified-local", "已在本地驗證",
+  choice(status = "follow-up", "待追蹤",
+  choice(status = "paused", "暫停",
+  choice(status = "draft", "草稿",
+  choice(status = "active", "進行中",
+  choice(status = "candidate", "候選",
+  choice(status = "done", "完成",
+  choice(status = "completed", "完成",
+  choice(status = "accepted", "已採納", status))))))))) AS 狀態中文
+WHERE file.ext = "md"
+AND status
+AND (
+  status = "follow-up"
+  OR status = "paused"
+  OR status = "draft"
+  OR status = "active"
+  OR status = "candidate"
+)
+AND type != "dashboard"
+AND type != "knowledge-index"
+AND type != "project-index"
+SORT date DESC, file.name DESC
 ```
 
 ---
@@ -63,29 +106,79 @@ SORT file.frontmatter.日期 DESC
 ## 🎯 最近決策
 
 ```dataview
-TABLE file.frontmatter.決策 AS 決策, file.frontmatter.選擇 AS 選擇, file.frontmatter.棄選方案 AS 棄選方案, file.frontmatter.原因 AS 原因
+TABLE WITHOUT ID
+  file.link AS File,
+  decision AS 決策,
+  date AS 日期,
+  狀態中文 AS 狀態
 FROM "vault/memory/decisions"
-WHERE file.ext = "md" AND !contains(file.folder, "2026-")
-SORT file.frontmatter.日期 DESC
+FLATTEN choice(status = "verified-local", "已在本地驗證",
+  choice(status = "follow-up", "待追蹤",
+  choice(status = "paused", "暫停",
+  choice(status = "draft", "草稿",
+  choice(status = "active", "進行中",
+  choice(status = "candidate", "候選",
+  choice(status = "done", "完成",
+  choice(status = "completed", "完成",
+  choice(status = "accepted", "已採納", status))))))))) AS 狀態中文
+WHERE file.ext = "md" AND !contains(file.folder, "2026-04")
+SORT date DESC, file.name DESC
 LIMIT 8
 ```
 
-> [!summary]- 📅 2026年4月 封存 Decisions
->
+> [!summary]- 2026 年 4 月封存 Decisions
 > ```dataview
-> TABLE file.frontmatter.決策 AS 決策, file.frontmatter.選擇 AS 選擇, file.frontmatter.原因 AS 原因
+> TABLE WITHOUT ID
+>   file.link AS File,
+>   decision AS 決策,
+>   date AS 日期,
+>   狀態中文 AS 狀態
 > FROM "vault/memory/decisions/2026-04"
+> FLATTEN choice(status = "verified-local", "已在本地驗證",
+  choice(status = "follow-up", "待追蹤",
+  choice(status = "paused", "暫停",
+  choice(status = "draft", "草稿",
+  choice(status = "active", "進行中",
+  choice(status = "candidate", "候選",
+  choice(status = "done", "完成",
+  choice(status = "completed", "完成",
+  choice(status = "accepted", "已採納", status))))))))) AS 狀態中文
 > WHERE file.ext = "md"
-> SORT file.frontmatter.日期 DESC
+> SORT date DESC, file.name DESC
 > ```
+
 ---
 
-## 🗂️ 快速導覽
+## 🧭 常用入口
 
-- [[memory-summary|📊 記憶快照總覽]]
-- [[vault-archive-convention|🗃️ Vault 月份封存慣例]]
-- [[vault/identity/founder-profile|👤 創辦人畫像]]
-- [[vault/identity/agent-persona|🤖 Agent 人格設定]]
-- [[vault/context/tech-stack|🔧 技術棧偏好]]
-- [[vault/context/pclms-overview|📦 PCLMS 專案概覽]]
-- [[vault/sop/dev-workflow|📐 開發 SOP]]
+- [[memory/memory-summary|記憶摘要]]
+- [[identity/founder-profile|Founder Profile]]
+- [[identity/agent-persona|Agent Persona]]
+- [[context/tech-stack|Tech Stack]]
+- [[context/pclms-overview|PCLMS Overview]]
+- [[sop/dev-workflow|開發 SOP]]
+
+## 📚 專案 Recap 入口
+
+- [[projects/PCLMS/index|PCLMS]]
+- [[projects/PEPIS/index|PEPIS]]
+- [[projects/Second_Brain/index|Second Brain]]
+- [[projects/PixiuCore/index|PixiuCore]]
+- [[projects/PISSO/index|PISSO]]
+- [[projects/AUTO_RESEARCH/index|Auto Research]]
+- [[projects/DOCX_TOOLING/index|DOCX Tooling]]
+- [[projects/OPENSPEC/index|OpenSpec]]
+
+## 🗂 其他區塊入口
+
+- [[after-action/index|After-Action]]
+- [[context/index|Context]]
+- [[memory/agent-learning/README|Agent Learning]]
+
+## 🛠 整理工程入口
+
+- [[context/recap-organization-plan|Recap 整理計畫]]
+- [[context/recap-normalization-backlog|Recap 正規化待辦]]
+- [[context/decision-normalization-status|Decision 正規化狀態]]
+- [[context/metadata-standard-after-action-context|After-Action / Context Metadata 標準]]
+

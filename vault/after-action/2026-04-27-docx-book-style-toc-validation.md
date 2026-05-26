@@ -1,7 +1,12 @@
 ---
 type: after-action
 date: 2026-04-27
-topic: "DOCX 書籍化、目錄更新與版面驗證"
+project: DOCX_TOOLING
+system: PIXIUCORE
+repo: Playground
+topic: docx-book-style-toc-validation
+status: done
+summary: 記錄 DOCX 書籍化、目錄更新與版面驗證的踩坑與後續標準流程。
 tags: [docx, cover, toc, word-com, artifact-tool, validation, pixiu]
 ---
 
