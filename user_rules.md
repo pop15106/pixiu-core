@@ -90,6 +90,9 @@ alwaysApply: true
 - **自我修正檢查清單**：程式碼產出後必須檢查：邊界值安全（null、空集合、0、負數）、失敗路徑（外部依賴故障時的行為）、回歸風險（是否破壞既有流程）、安全漏洞（注入、XSS、資料外洩）。
 
 - **🧠 關鍵字觸發掛鉤 (Keyword Trigger Hooks) [NEW]**：
+  - **🧠 第二大腦先查 [NEW][HARD]**：除單純翻譯、格式整理、目前時間、明確單一檔案小修等自足任務外，遇到需要背景脈絡、歷史決策、專案規則、舊調查、recap 或跨專案記憶的問題，**必須先查第二大腦**，再回讀命中的 vault 原文或 repo 原始碼驗證。
+    - **結果定位**：第二大腦查詢結果是線索與入口，不是最終結論；不得只憑 score、摘要或單一命中片段回答。
+    - **資料邊界**：source of truth 仍是 `%PIXIU_CORE%\vault` 與對應 repo；Qdrant 只是可重建索引，不取代 recap、decision 或 repo tracing。
   - **全系統測試**：當使用者提及「全系統測試」、「再次測試」或類似語義時，**必須優先執行** `.agent/workflows/system-test.md`。
   - **系統影響評估**：當使用者提及「影響範圍」、「隱藏風險」或「系統面分析」時，**必須執行** `.agent/workflows/impact-assessment.md` 並產出結構化文件。
   - **🚦 Auto mode 授權閘門 [NEW][HARD]**：當使用者提及「auto mode」、「自動模式」、「開 auto」、「shift-tab」、「自動放行」、「跳過確認」、「不要每次問我」或 `--dangerously-skip-permissions` 等關鍵字或語義時，**必須強制執行** `skills/claude-code-auto-mode-policy/SKILL.md` 三步驟評估（黑名單掃描 → 授權聲明 → 審計紀錄），**絕對禁止**略過此流程直接啟用 Auto mode。
@@ -103,8 +106,8 @@ alwaysApply: true
     - **任一失敗即退出**：步驟紅燈、criteria 缺失、偵測到母體寫入或破壞性指令 → 立即退出 Focus mode，回全步驟可見模式，附完整 trace。
     - **不可與 Auto mode 疊加的情境**：涉及 `%PIXIU_CORE%\` 寫入時，Focus + Auto 兩者**皆不可開**，必須全程可見＋逐步確認。
   - **🪜 /go 驗證迴圈觸發 [NEW]**：當使用者輸入「/go」、「跑驗證」、「收尾」或任務進入寫入完成階段時，**必須執行** `skills/pixiu-verify-loop/SKILL.md` 三步驟（E2E → /simplify → PR 草稿）。任一步紅燈即停、不自動修；PR 僅產草稿不自動推送。
-  - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，**必須執行** `skills/pixiu-session-recap/SKILL.md` 輸出結構化 6 區塊 Recap，Phase Recap 並寫入 `vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題.md`（Obsidian 相容格式）。
-  - **🧾 Recap 自動寫檔 [NEW][HARD]**：Recap 產出後，**不需要使用者確認，直接寫入** `%PIXIU_CORE%\vault\memory\recaps\YYYY-MM-DD-主題.md`（Obsidian 相容格式）。此規則**跨專案強制適用**：不論目前工作目錄、repo、專案類型或是否存在專案內 vault，只要使用者下達 `recap` 或等效觸發詞，就必須回寫 `%PIXIU_CORE%`。同步更新 `vault/memory/memory-summary.md` 的「最近重要決策」與「進行中的工作」區塊，**並在 `vault/memory/decisions/` 下建立獨立決策檔案**。此為使用者預授權的寫入行為，豁免絕對用戶審批閘門。
+  - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，Claude、Gemini、Codex 都**必須遵守同一份標準**：先讀 `vault/sop/recap-standard.md` 與 `vault/templates/session-recap.md`，再執行 `skills/pixiu-session-recap/SKILL.md`；Phase Recap 寫入 `vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題.md`（Obsidian 相容格式）。
+  - **🧾 Recap 自動寫檔 [NEW][HARD]**：Recap 產出後，**不需要使用者確認，直接寫入** `%PIXIU_CORE%\vault\memory\recaps\YYYY-MM-DD-HHMMSS-主題.md`。此規則**跨 AI、跨專案強制適用**：不論目前是 Claude、Gemini、Codex，不論目前工作目錄、repo、專案類型或是否存在專案內 vault，只要使用者下達 `recap` 或等效觸發詞，就必須回寫 `%PIXIU_CORE%`。Frontmatter 必須使用 `type/date/project/system/repo/topic/status/tags/source_paths/summary`；`repo` 填短 repo 名，完整路徑放 `source_paths`。若本次真的產生可長期追蹤的決策或索引狀態，再同步更新 `vault/memory/memory-summary.md` 或建立 `vault/memory/decisions/` 獨立決策檔。此為使用者預授權的寫入行為，豁免絕對用戶審批閘門。
   - **📥 Dashboard Inbox 協議 [NEW][HARD]**：當使用者說「去看我的 inbox」、「看 dashboard」、「inbox 有東西」或等效語句時，**必須**執行以下流程：
     1. 讀取 `%PIXIU_CORE%\vault\🏠 Dashboard.md`，擷取 `<!-- AI_INBOX_START -->` 到 `<!-- AI_INBOX_END -->` 之間所有 `- [ ]` 項目。
     2. 逐項確認理解後，**等待使用者說「開始」**，才依序執行（遵守絕對用戶審批閘門）。
