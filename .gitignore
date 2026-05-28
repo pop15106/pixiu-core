@@ -8,4 +8,5 @@ fleet.json
 scripts/hooks/debug-input.json
 .claude/settings.local.json
 
+# Hook debug payload（本機測試用，不應 commit）
 scripts/hooks/debug-input.json
