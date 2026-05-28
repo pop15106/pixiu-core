@@ -14,7 +14,7 @@
 | 01 | Inventory & Discovery | ✅ 完成 | 2026-05-12 | [[01_inventory/project-registry]] · [[00_overview/inventory-summary]] |
 | 02 | Architecture Analysis | 🔲 待執行 | — | `02_architecture/` |
 | 03 | Technology Analysis | 🔲 待執行 | — | `03_technology/` |
-| 04 | Code Analysis | 🔲 待執行 | — | `04_code-analysis/` |
+| 04 | Code Analysis | 🔄 進行中 | — | [[04_code-analysis/perms-NOW_STATUS-analysis]] · [[04_code-analysis/PCLMS_AP-analysis]] · [[04_code-analysis/PCLMS_BK_new-analysis]] |
 | 05 | Security Analysis | 🔲 待執行 | — | `05_security/` |
 | 06 | Data Flow & Dependency | 🔲 待執行 | — | `06_data-flow/` · `07_dependencies/` |
 | 07 | Technical Debt & Refactoring | 🔲 待執行 | — | `08_technical-debt/` · `09_refactoring/` |

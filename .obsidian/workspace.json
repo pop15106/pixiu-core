@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "vault/memory/recaps/2026-05-26-151040-perms-am001-am002-report-count-difference.md",
+                "file": "vault/after-action/2026-05-27-cybersecurity-library-integration.md",
                 "mode": "source",
                 "source": false,
                 "backlinks": true,
@@ -28,7 +28,7 @@
                 }
               },
               "icon": "lucide-file",
-              "title": "2026-05-26-151040-perms-am001-am002-report-count-difference"
+              "title": "2026-05-27-cybersecurity-library-integration"
             }
           }
         ]
@@ -88,7 +88,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 405.5
+    "width": 358.5
   },
   "right": {
     "id": "499fa6dfdd3cdaad",
@@ -196,41 +196,42 @@
   },
   "active": "60931a89efda146c",
   "lastOpenFiles": [
-    "vault/memory/recaps/2026-05-26-153900-pclms-ap-cssave-codegraph-flow.md",
-    "vault/memory/recaps/2026-05-26-140930-codegraph-understand-anything-all-ai-install.md",
-    "vault/memory/recaps/2026-05-26-151040-perms-am001-am002-report-count-difference.md",
+    "vault/after-action/2026-05-27-awesome-architecture-skillopt-integration.md",
+    "vault/memory/skill-opt-rejected.md",
+    "vault/memory/skill-opt-log.md",
+    "vault/templates/skill-opt-session.md",
+    "skills/skill-opt/SKILL.md",
+    "skills/skill-opt",
+    "vault/memory/recaps/2026-05-11-PCLMS-BK-TS-L8-無法收訊調查.md",
     "vault/🏠 Dashboard.md",
-    "skills/legacy-java-flow-tracing/agents/openai.yaml",
-    "skills/legacy-java-flow-tracing/SKILL.md",
-    "skills/legacy-java-flow-tracing/agents",
-    "skills/legacy-java-flow-tracing",
-    "vault/memory/recaps/2026-05-25-PCLMS-CB1555055470-XXXXX-實例驗證.md",
-    "vault/memory/recaps/2026-05-25-PCLMS-AP-announce-system-arch.md",
-    "vault/memory/recaps/2026-05-25-173449-second-brain-lookup-policy.md",
-    "vault/memory/recaps/2026-05-25-162150-pclms-recovery-declar-rlstime-sop.md",
-    "vault/memory/memory-summary.md",
-    "vault/memory/recaps/2026-05-22-PCLMS-NX5105-XXXXX-bondno-流程分析.md",
-    "vault/memory/recaps/2026-05-22-145427-pepis-login-announcement-priority-display.md",
-    "vault/memory/recaps/2026-05-22-163715-pclms-l6-indetail-refbillno-declno-bug.md",
-    "vault/memory/recaps/2026-05/2026-05-22-PERMS專案分析-AM001-AM002-強制改密-權限架構.md",
-    "vault/memory/recaps/2026-05",
-    "vault/memory/recaps/2026-05-19-121153-pepis-login-post-announcement-source-recap.md",
-    "vault/projects/PEPIS/index.md",
-    "vault/projects/PEPIS/startup-commands.md",
-    "vault/projects/PEPIS/recaps-index.md",
-    "vault/memory/recaps/2026-05-20-183236-weblogic-wl-cls-gen-jar-static-scan.md",
-    "vault/after-action/2026-05-21-pisso-announcement-system-code-dropdown.md",
-    "vault/memory/recaps/2026-05-21-160017-pisso-system-code-source-sql-trace.md",
-    "vault/memory/recaps/2026-05-21-154105-pepis-pisso-announcement-system-code-priority-trace.md",
-    "vault/memory/recaps/2026-05-20-165623-pepis-login-announcements-use-tv-isso-api-getappannouncement.md",
-    "vault/memory/recaps/2026-05-20-163449-pepis-login-announcement-empty-result-recap.md",
-    "vault/context/pepis-new-login-saab-menu-local-bridge.md",
-    "vault/memory/recaps/2026-05-05-PCLMS庫存核銷問題AP-BK雙端深度分析.md",
-    "vault/projects/DOCX_TOOLING",
-    "vault/projects/AUTO_RESEARCH",
-    "vault/memory/agent-learning/promote-candidates",
-    "vault/memory/agent-learning/observations",
-    "vault/memory/agent-learning/instincts",
-    "vault/memory/agent-learning"
+    "vault/memory/recaps/2026-05-26-174045-perms-report-count-quartz-job-trace.md",
+    "vault/after-action/2026-05-27-cybersecurity-library-integration.md",
+    "skills/cybersecurity-library/tools/validate-skill.py",
+    "skills/cybersecurity-library/tools/README.md",
+    "skills/cybersecurity-library/tools",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery/scripts/agent.py",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery/references/api-reference.md",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery/SKILL.md",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery/scripts",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery/references",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery/LICENSE",
+    "skills/cybersecurity-library/skills/validating-backup-integrity-for-recovery",
+    "skills/cybersecurity-library/skills/triaging-vulnerabilities-with-ssvc-framework/references/workflows.md",
+    "skills/cybersecurity-library/skills/triaging-vulnerabilities-with-ssvc-framework/references/standards.md",
+    "skills/cybersecurity-library/skills/triaging-vulnerabilities-with-ssvc-framework/references/api-reference.md",
+    "skills/cybersecurity-library/skills/triaging-vulnerabilities-with-ssvc-framework/scripts/process.py",
+    "skills/cybersecurity-library/skills/triaging-vulnerabilities-with-ssvc-framework/scripts/agent.py",
+    "skills/cybersecurity-library/skills/triaging-vulnerabilities-with-ssvc-framework/SKILL.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident/references/api-reference.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident/SKILL.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident-with-ir-playbook/references/workflows.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident-with-ir-playbook/references/standards.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident-with-ir-playbook/references/api-reference.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident-with-ir-playbook/assets/template.md",
+    "skills/cybersecurity-library/skills/triaging-security-incident-with-ir-playbook/SKILL.md",
+    "skills/cybersecurity-library/skills/triaging-security-alerts-in-splunk/references/api-reference.md",
+    "skills/cybersecurity-library/skills/triaging-security-alerts-in-splunk/SKILL.md",
+    "skills/cybersecurity-library/skills/tracking-threat-actor-infrastructure/references/workflows.md",
+    "skills/cybersecurity-library/assets/banner.png"
   ]
 }
