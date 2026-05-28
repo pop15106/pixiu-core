@@ -1,47 +1,51 @@
----
+﻿---
 type: session-recap
-日期: <% tp.date.now("YYYY-MM-DD") %>
-主題: "{{主題}}"
-狀態: 進行中
-負責AI: Claude Code
-專案: "{{專案名稱}}"
-tags: [recap, session]
+date: <% tp.date.now("YYYY-MM-DD") %>
+project: "{{project}}"
+system: "{{system}}"
+repo: "{{repo}}"
+topic: "{{topic}}"
+status: follow-up
+tags: [recap, "{{project_tag}}", "{{topic_tag}}"]
+source_paths:
+  - "{{source_path}}"
+summary: "{{summary}}"
 ---
 
-# Session Recap：{{主題}}
+# Session Recap：{{title}}
 
-> **日期**：<% tp.date.now("YYYY-MM-DD HH:mm") %>
-> **專案**：{{專案名稱}}
-> **AI**：Claude Code
+> 日期：<% tp.date.now("YYYY-MM-DD HH:mm") %>
+> 專案：{{project}}
+> AI：{{Claude/Gemini/Codex}}
 
----
-
-## ✅ 本次完成
+## 觸發與背景
 
 - 
 
-## 🔄 進行中
+## 結論
 
 - 
 
-## ⚠️ 發現的問題 / 踩坑
+## 證據與流程
 
 - 
 
-## 🎯 重要決策
+## 已做變更
 
-| 決策 | 選擇 | 原因 |
-|------|------|------|
-|  |  |  |
+- 
 
-## 📌 下次 session 要做的事
+## 驗證
+
+- 
+
+## 下一步
 
 - [ ] 
 
-## 💡 補充筆記
+## 備註
 
-<!-- 你可以在這裡手動補充 Claude 沒提到的事 -->
+<!-- 選填：補充給未來 AI handoff 的脈絡。 -->
 
 ---
 
-*由 [[pixiu-session-recap]] skill 自動產生 · 可手動編輯*
+*依 [[pixiu-session-recap]] 與 [[recap-standard]] 產出。*

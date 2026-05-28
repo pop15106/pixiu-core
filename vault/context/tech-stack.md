@@ -1,5 +1,13 @@
 ---
-type: context
+type: reference-context
+date: 2026-05-15
+project: PCLMS
+system: PCLMS
+repo: PCLMS_AP
+topic: tech-stack
+status: reference
+summary: 提供 PCLMS 相關任務的技術棧與架構決定背景，供後續設計與 tracing 使用。
+tags: [pclms, tech-stack, reference-context]
 readAt: when-relevant
 applyTo: 技術選型、架構決策
 ---

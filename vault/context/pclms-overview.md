@@ -1,5 +1,13 @@
 ---
-type: context
+type: reference-context
+date: 2026-05-15
+project: PCLMS
+system: PCLMS
+repo: PCLMS_AP
+topic: pclms-overview
+status: reference
+summary: 提供 PCLMS 任務的系統定位、背景與共用上下文，作為 tracing 前置閱讀。
+tags: [pclms, context, overview, reference]
 readAt: when-relevant
 applyTo: PCLMS 相關任務
 ---
