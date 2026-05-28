@@ -26,6 +26,57 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 
 > 注意：目前啟動規則優先讀 `PIXIU_CORE`，部分安裝腳本仍設定 `PIXIU_CORE_PATH`。兩者是既有技術債，調整前請確認所有工具相容性。
 
+## Quick Start（新人第一步）
+
+> Clone 完後依序執行，5 分鐘內讓母體正常運作。
+
+### Step 1：初始化母體環境變數
+
+```bat
+setup_zh.bat
+```
+
+執行後重新開啟終端機與 IDE，讓 `%PIXIU_CORE%` 環境變數生效。
+
+### Step 2：安裝 Claude Code hooks & skills
+
+需要 PowerShell 7+（`pwsh`）：
+
+```powershell
+pwsh -File "scripts\setup\install-to-cli.ps1"
+```
+
+### Step 3：初始化 Cybersecurity Library submodule
+
+```bash
+git submodule update --init --recursive
+```
+
+完成後 `skills/cybersecurity-library/` 會有 754 個資安技能。
+
+### Step 4：建立 fleet.json（選用）
+
+`fleet.json` 不在 repo 內（含個人路徑），需自行建立：
+
+```json
+[
+  "C:\\你的路徑\\專案A",
+  "C:\\你的路徑\\專案B"
+]
+```
+
+放在 repo 根目錄即可。
+
+### Step 5：設定 SECOND_BRAIN_PATH（選用）
+
+若要使用 `second-brain-health-check` skill，需設定環境變數：
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("SECOND_BRAIN_PATH", "C:\你的路徑\second-brain", "User")
+```
+
+---
+
 ## 核心觀念
 
 PixiuCore 分成三層來看，比較不容易迷路：
@@ -401,14 +452,4 @@ cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
 - [CLAUDE.md](CLAUDE.md)：Claude Code 啟動協議。
 - [PLUGIN_SCHEMA_NOTES.md](PLUGIN_SCHEMA_NOTES.md)：Plugin manifest 注意事項。
 - [hooks/README.md](hooks/README.md)：Hook 觸發規則與自訂方式。
-- [scripts/setup/README.md](scripts/setup/README.md)：Claude Code CLI 部署包說明。
-- [vault/README.md](vault/README.md)：Vault 記憶庫初始化規則。
-
-## 版本資訊
-
-| 項目 | 值 |
-|------|----|
-| README 更新日 | 2026-05-04 |
-| ECC Plugin 版本 | v1.8.0 |
-| 目前 gravityTest 版最新內容 | `spec-improve` skill 同步，2026-04-29 |
-| 正式母體同步狀態 | 需依 `%PIXIU_CORE%` 與本 repo 實際差異另行確認 |
+- [scripts/setup/README.md](scripts/setup/READ
