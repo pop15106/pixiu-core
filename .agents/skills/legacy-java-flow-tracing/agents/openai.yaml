@@ -1,0 +1,7 @@
+interface:
+  display_name: "Legacy Java Flow Tracing"
+  short_description: "Trace legacy Java/Vue behavior from UI to SQL, tables, reports, and runtime evidence"
+  brand_color: "#1F4E5F"
+  default_prompt: "Trace this legacy Java/Vue issue end to end from UI or stack trace through controller, service, DAO/SQL, table/history/report, and runtime evidence."
+policy:
+  allow_implicit_invocation: true
