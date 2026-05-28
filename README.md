@@ -6,7 +6,7 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 
 ## 目前狀態
 
-盤點日期：2026-05-04  
+盤點日期：2026-05-27  
 盤點路徑：PixiuCore
 
 | 項目 | 現況 |
@@ -14,15 +14,15 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 | Plugin | `everything-claude-code` v1.8.0 |
 | Fleet 專案 | `fleet.json` 目前 30 個路徑 |
 | 頂層 Agents | 27 個，位於 `agents/` |
-| ECC Agents | 28 個，位於 `.agent/agents/` |
+| ECC Agents | 29 個，位於 `.agent/agents/`（+skill-opt agent）|
 | Slash Commands | 58 條，位於 `commands/` |
 | ECC Workflows | 79 條，位於 `.agent/workflows/` |
-| 頂層 Skills | 66 個，位於 `skills/` |
-| ECC Skills | 142 個，位於 `.agent/skills/` |
+| 頂層 Skills | 68 個，位於 `skills/`（+skill-opt；cybersecurity-library 以 submodule 掛載，不計入）|
+| ECC Skills | 148 個，位於 `.agent/skills/`（含本輪新增 6 個資安域 skill）|
 | OpenAI 可攜 Skills | 43 個，位於 `.agents/skills/` |
 | Rules | 51 條 Markdown 規則，位於 `rules/` 與 `.agent/rules/` |
 | Vault | 已啟用，包含 `identity/`、`memory/`、`context/`、`sop/`、`after-action/`、`templates/` |
-| 最近明顯新增 | `spec-improve` skill，2026-04-29 同步到 `skills/`、`.agent/skills/`、`.agents/skills/` |
+| 最近明顯新增 | 2026-05-27：Cybersecurity Library（754 skills submodule）、Architecture Maps、SkillOpt 系統、security-reviewer / architect 全面升級 |
 
 > 注意：目前啟動規則優先讀 `PIXIU_CORE`，部分安裝腳本仍設定 `PIXIU_CORE_PATH`。兩者是既有技術債，調整前請確認所有工具相容性。
 
@@ -130,6 +130,258 @@ $root = "%PIXIU_CORE%"
 ```
 
 這些指令是 README 更新的校準尺；先量現況，再改文件，才不會讓母艦地圖跟實際房間對不上。
+
+
+---
+
+## 2026-05 新增能力
+
+> 本節說明 2026-05-27 整合的三項擴充：Cybersecurity Library、Architecture Maps、SkillOpt。
+
+### 1. Cybersecurity Library — 754 個資安技能縱深補強
+
+#### 是什麼
+
+[Anthropic-Cybersecurity-Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) 是一個包含 754 個資安技能的開源庫，以 git submodule 方式掛載於 `skills/cybersecurity-library/`。涵蓋 OWASP Top 10 2025、MITRE ATT&CK v14（218 個技術）、NIST CSF 的完整 mapping。
+
+#### 初次安裝
+
+Clone 完 pixiu-core 後，需要手動初始化 submodule：
+
+```bash
+git submodule update --init --recursive
+```
+
+日後更新技能庫：
+
+```bash
+git submodule update --remote skills/cybersecurity-library
+```
+
+#### 目錄結構
+
+```
+skills/cybersecurity-library/
+├── skills/               ← 754 個技能目錄（各含 SKILL.md）
+│   ├── analyzing-api-gateway-access-logs/
+│   ├── implementing-rbac/
+│   └── ...（依字母排列）
+├── mappings/
+│   ├── owasp/            ← OWASP Top 10 2025 對應表
+│   ├── mitre-attack/     ← ATT&CK v14 layer（可匯入 ATT&CK Navigator）
+│   └── nist-csf/
+└── index.json
+```
+
+#### Subdomain 分布（技能分類）
+
+| Subdomain | 技能數 | 適用場景 |
+|-----------|--------|---------|
+| cloud-security | 63 | AWS/Azure/GCP 安全設定 |
+| threat-hunting | 56 | 主動威脅偵測 |
+| threat-intelligence | 54 | CTI 分析 |
+| network-security | 43 | 網路層防護 |
+| web-application-security | 42 | OWASP / Web 漏洞 |
+| identity-access-management | 33 | OAuth / JWT / RBAC |
+| api-security | 28 | OWASP API Top 10 |
+| vulnerability-management | 25 | CVE triage / patch |
+| devsecops | 17 | CI/CD / Container 安全 |
+
+#### 如何觸發 / 使用
+
+**日常資安審查（自動）**
+
+`security-reviewer` agent 在以下情況會自動深查技能庫：
+
+```
+新增 API endpoint → security-reviewer 偵測到 web/api 相關 → 自動載入熱路徑 skill
+CI/CD 設定變更  → security-reviewer 偵測到 devsecops 相關 → 自動載入 devsecops skill
+發現 CVE / 弱點  → security-reviewer 自動載入 vulnerability-management skill
+```
+
+**手動深查特定域**
+
+```bash
+# 找某個 subdomain 的所有技能
+grep -rl "subdomain: web-application-security" skills/cybersecurity-library/skills/
+
+# 找特定關鍵字的技能
+grep -rl "IDOR\|BOLA" skills/cybersecurity-library/skills/
+
+# 查 OWASP mapping
+cat skills/cybersecurity-library/mappings/owasp/README.md
+```
+
+**熱路徑 domain skill（`.agent/skills/`）**
+
+以下 5 個高頻域已預先摘要安裝，agent 可直接載入，無需 grep 完整庫：
+
+| 觸發情境 | 載入的 Skill |
+|---------|-------------|
+| Web endpoint / form 安全問題 | `.agent/skills/web-application-security/SKILL.md` |
+| REST / GraphQL API 設計審查 | `.agent/skills/api-security/SKILL.md` |
+| Auth / JWT / OAuth / RBAC 設計 | `.agent/skills/iam-and-access-control/SKILL.md` |
+| Docker / CI/CD / IaC 安全 | `.agent/skills/devsecops/SKILL.md` |
+| CVE 分析 / 弱點修復排序 | `.agent/skills/vulnerability-management/SKILL.md` |
+
+---
+
+### 2. Architecture Maps — 21 個架構模板選型指引
+
+#### 是什麼
+
+整合自 [awesome-software-architecture](https://github.com/mehdihadeli/awesome-software-architecture) 的架構知識庫，提供 16 個經典架構 + 5 個 AI-native 架構的快速選型指引，讓 `architect` agent 在設計時有結構化的參考。
+
+#### 檔案位置
+
+```
+.agent/knowledge/architecture-maps.md   ← 架構知識庫主文件
+.agent/agents/architect.md              ← 已升級的 architect agent
+```
+
+#### 知識庫結構
+
+```
+architecture-maps.md
+├── Part A：16 個經典架構模板
+│   Layered / Hexagonal / Clean / DDD / CQRS / Event Sourcing /
+│   EDA / Microservices / Service Mesh / Strangler Fig / Saga /
+│   Outbox / BFF / API Gateway / Sidecar / Pipe-and-Filter
+│
+├── Part B：5 個 AI-native 架構模板
+│   RAG / Agent Loop / Multi-Agent / LLM Router / SkillOpt
+│
+├── Part C：選型速查矩陣（場景 → 推薦架構）
+│
+└── Part D：9 章架構教程摘要
+```
+
+#### 如何觸發 / 使用
+
+**自動觸發（`architect` agent）**
+
+以下情境會啟動 architect agent，並自動載入架構地圖：
+
+- 規劃新功能或新系統
+- 重構大型模組（超過 3 個元件受影響）
+- 做技術選型決策（DB / 框架 / 通訊方式）
+- 設計含 LLM / Agent 的 AI 系統
+
+**手動使用**
+
+```
+# 在 Claude Code 中
+use agent: architect
+→ architect 會在 Step 0 自動 Read .agent/knowledge/architecture-maps.md
+→ 依需求提供 1-3 個候選架構方案 + trade-off 分析
+```
+
+**選型流程**
+
+```
+1. 描述系統需求（用戶量級、業務複雜度、AI 特性）
+2. architect agent 從 Part C 速查矩陣推薦候選架構
+3. 對比方案的 trade-off
+4. 確認後寫入 ADR（存於 vault/context/tech-stack.md）
+```
+
+**快速查詢特定架構**
+
+直接讀取知識庫中的特定段落：
+
+```bash
+grep -A20 "### 4. Domain-Driven Design" .agent/knowledge/architecture-maps.md
+grep -A15 "### AI-3. Multi-Agent" .agent/knowledge/architecture-maps.md
+```
+
+---
+
+### 3. SkillOpt — Skill 持續演化系統
+
+#### 是什麼
+
+依 [SkillOpt (arxiv:2605.23904)](https://arxiv.org/abs/2605.23904) 實作的 skill 演化機制。把 SKILL.md 文件視為「可訓練的外部狀態」，用 edit budget + validation gate 機制漸進優化 skill，讓母體的技能隨時間自動進化。
+
+#### 檔案位置
+
+```
+.agent/agents/skill-opt.md              ← Skill Optimizer agent
+skills/skill-opt/SKILL.md              ← skill 使用指引
+vault/templates/skill-opt-session.md   ← 每次優化的記錄模板
+vault/memory/skill-opt-log.md          ← 優化歷史紀錄
+vault/memory/skill-opt-rejected.md     ← 未通過驗證的編輯暫存
+```
+
+#### 核心概念
+
+| 概念 | 說明 |
+|------|------|
+| Edit Budget | 每次優化有修改上限，防止過度改動破壞穩定技能 |
+| Validation Gate | 修改前必須通過 Regression / Scope / Precision 三層測試 |
+| Rejected Buffer | 未通過驗證的編輯不丟棄，等累積後進行結構性重組 |
+| Fast Update | 單次執行後的即時微調（Mode A）|
+| Slow Update | 跨 session 的結構性重組（Mode B）|
+
+#### 如何觸發 / 使用
+
+**4 個使用 Mode**
+
+| Mode | 觸發時機 | 說明 |
+|------|---------|------|
+| A — Fast Update | 某個 skill 本次執行結果不完整或不準確 | Edit Budget: Conservative（≤ 3 處修改）|
+| B — Slow Update | 同一個 skill 連續 3 次以上都有問題 | Edit Budget: Normal/Aggressive，完整三層驗證 |
+| C — Description Opt | Skill 觸發頻率不對（漏觸發或誤觸發）| 調整 description 中的觸發關鍵字 |
+| D — Merge | 發現兩個 skill 功能高度重疊 | 合併，舊的標 deprecated |
+
+**觸發方式（對話中）**
+
+```
+# 方式 1：直接描述問題
+「security-review 這個 skill 一直沒有 Java 的範例，幫我優化」
+→ skill-opt agent 自動啟動，選 Mode A
+
+# 方式 2：明確指定
+「用 skill-opt Mode B 重構 api-design 這個 skill」
+
+# 方式 3：搭配 skill-stocktake
+先跑 skill-stocktake → 得到評估為 Improve 的 skill 清單
+→ 對每個 Improve skill 啟動 skill-opt
+```
+
+**Edit Budget 選擇**
+
+```
+Conservative（預設）：≤ 3 處修改，每處 < 10 行
+  → 適合：補一個步驟、修一個錯誤範例
+
+Normal：≤ 5 處修改，每處 < 20 行
+  → 適合：加入新技術棧對應、調整結構
+
+Aggressive：允許完全重構
+  → 必須有 rejected buffer 的積累作為依據
+  → 必須通過完整三層 Validation Gate
+```
+
+**Skill Lifecycle 完整流程**
+
+```
+新建 → skill-creator
+  ↓
+評估 → skill-stocktake（Quick Scan / Full Stocktake）
+  ↓
+優化 → skill-opt（Mode A/B/C/D）
+  ↓
+退場 → description 加 [DEPRECATED] → 30 天觀察 → 刪除
+```
+
+**查看優化歷史**
+
+```bash
+cat vault/memory/skill-opt-log.md        # 已套用的優化
+cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
+```
+
+---
 
 ## 已知技術債
 
