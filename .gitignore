@@ -12,3 +12,9 @@ scripts/hooks/debug-input.json
 
 # vault 備份目錄（含個人資料，不應 commit）
 vault_backup_*/
+
+# 個人識別資訊（private but excluded from tracking）
+vault/identity/
+
+# Pixiu 使用量追蹤 / audit logs（含 email，不應共享）
+.agent/pixiu/reports/
