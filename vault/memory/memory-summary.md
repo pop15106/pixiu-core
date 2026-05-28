@@ -20,7 +20,24 @@ tags: [memory, pixiucore]
 
 - **PCLMS — 庫存核銷手動調整根因清查（AP）**（已完成唯讀清查，待修正）：已針對 PCLMS_AP 清查 `clearStore`、出倉 CRUD、進倉修改、按月彙報、加工與報廢流程；結論為最高風險不是單一 outstatus，而是多處「先 commit 後核銷」、log I/O 阻斷核銷、進倉流程直接改 `balance`、月彙報 key 漂移與核銷交易邊界不完整。下一步應先用 SQL 比對 outdetail/indetail/balance，再排修交易邊界。 → [[2026-05-06-PCLMS_AP庫存核銷手動調整根因清查]]
 
+<<<<<<< Updated upstream
 - **PixiuCore gravityTest README 更新**（已完成）：已將 <workspace-root>\pixiu-core\README.md 翻修為現況入口文件，補上實際盤點數字、目錄導覽、安裝入口、Session 啟動規則與已知技術債；未同步正式母體，待使用者決定。 → [[2026-05-04-142717-PixiuCore-README更新]]
+=======
+| 日期         | 狀態  | 主題                | 摘要                                        | 連結                                                     |
+| ---------- | --- | ----------------- | ----------------------------------------- | ------------------------------------------------------ |
+| 2026-05-27 | 已完成 | PERMS AM001/AM002 SQL 分析 | 展開 MyBatis 動態 SQL 為可執行語句，並對比兩支功能在粒度、NOW_STATUS 過濾、跨店查詢等差異 | [[2026-05-27-perms-am001-am002-sql-analysis]] |
+| 2026-05-18 | 資料修正待辦 | PCLMS_BK L4 舊格式封包 | 已確認客戶使用舊格式 L4，PM 暫不修流程，改走人工資料修正 | [[2026-05-18-142719-pclms-bk-l4-t1-procedure-pending-recap]] |
+| 2026-05-13 | 可測試 | 第二大腦 n8n UI workflow | Code node 版可在 UI publish | [[2026-05-13-000000-second-brain-n8n-ui-publish-workflow]] |
+| 2026-05-13 | 已完成 | PISSO 架構分析 | psaab + tv-isso-api 雙專案完整分析，發現 5 項高風險 | [[2026-05-13-PISSO-psaab-tv-isso-api-架構分析]] |
+| 2026-05-12 | 可推送 | 第二大腦 GitHub 部署 | 一鍵部署與 release 檢查完成 | [[2026-05-12-123000-second-brain-github-one-click-deploy]] |
+| 2026-05-12 | 可用 | 第二大腦 NVIDIA API | 全量索引完成，Qdrant 204 points | [[2026-05-12-114315-second-brain-full-index-and-ops]] |
+| 2026-05-11 | 待修復 | PCLMS_BK TS/L8 收訊 | 根因為 PFTZZB pool 帳密失效                      | [[2026-05-11-PCLMS-BK-TS-L8-無法收訊調查]]                   |
+| 2026-05-06 | 待修正 | PCLMS_AP 庫存核銷     | 已完成唯讀清查，下一步排修交易邊界                         | [[2026-05-06-PCLMS_AP庫存核銷手動調整根因清查]]                    |
+| 2026-05-05 | 待驗證 | PEPIS eDDA 3.4    | Vue bug 已修，待重啟部署驗證                        | [[2026-05-05-PEPIS-eDDA-3.4-Bug修復]]                    |
+| 2026-05-04 | 已完成 | PixiuCore README  | gravityTest README 已翻修為現況入口               | [[2026-05-04-142717-PixiuCore-README更新]]               |
+| 2026-05-04 | 已調查 | PCLMS 彙報孤兒表頭      | 已確認 `month` 有表頭但缺 `outdetail`             | [[2026-05-04-100000-PCLMS彙報出倉孤兒表頭與未確認報單調查]]            |
+| 2026-05-04 | 已完成 | Recap 跨專案回寫       | 已強化 skill / rules，recap 必須回寫母體 vault      | [[2026-05-04-191150-PEPIS-3.4查詢修改與Recap跨專案回寫]]         |
+>>>>>>> Stashed changes
 
 - **PCLMS — 按月彙報出倉流程調查與測試資料搬移**（進行中）：已確認按月彙報出倉流程可在前段未完整填原進倉報單項次，後續由彙報確認補齊 `decldetail`、存倉紀錄與 `monthno`；下一步產出 CD178 兩筆報單/料號的測試環境搬移 SQL。 → [[2026-05-04-PCLMS按月彙報出倉調查與Recap技能修正]]
 
