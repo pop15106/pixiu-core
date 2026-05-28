@@ -15,7 +15,8 @@ Run or report these checks in order:
 
 1. Query script:
    ```powershell
-   powershell -ExecutionPolicy Bypass -File C:\Users\7010\Documents\Playground\second-brain\scripts\query-second-brain-nvidia.ps1 -Question "<question>"
+   # 請依本機路徑調整，或設定環境變數 SECOND_BRAIN_PATH
+   powershell -ExecutionPolicy Bypass -File "$env:SECOND_BRAIN_PATH\scripts\query-second-brain-nvidia.ps1" -Question "<question>"
    ```
 2. Qdrant health:
    ```powershell
