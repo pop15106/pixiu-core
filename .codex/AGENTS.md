@@ -2,6 +2,16 @@
 
 This supplements the root `AGENTS.md` with Codex-specific guidance.
 
+## Pixiu Mothership Loading Policy
+
+Codex must follow `vault/context/ai-mothership-loading-policy.md` before loading skills, workflows, hooks, or agents.
+
+- Keep L0 hard gates resident; route L1-L6 by semantic intent.
+- Do not load every `.agents/skills/` entry at startup. Use skill descriptions and the loading policy to choose only the needed skill.
+- Multi-agent support may remain configured, but dispatch requires explicit user approval in the current turn.
+- Child agents receive compact task packets only and must not reload the full PixiuCore vault.
+- Resolve PixiuCore through `PIXIU_CORE`, then `PIXIU_CORE_PATH`, then `%USERPROFILE%\.pixiu-core` so the setup works across devices.
+
 ## Model Recommendations
 
 | Task Type | Recommended Model |
@@ -13,7 +23,7 @@ This supplements the root `AGENTS.md` with Codex-specific guidance.
 
 ## Skills Discovery
 
-Skills are auto-loaded from `.agents/skills/`. Each skill contains:
+Skills are discovered from `.agents/skills/`, but only the selected skill should be loaded for the current task. Each skill contains:
 - `SKILL.md` — Detailed instructions and workflow
 - `agents/openai.yaml` — Codex interface metadata
 
@@ -48,7 +58,7 @@ Treat the project-local `.codex/config.toml` as the default Codex baseline for E
 
 ## Multi-Agent Support
 
-Codex now supports multi-agent workflows behind the experimental `features.multi_agent` flag.
+Codex supports multi-agent workflows behind the experimental `features.multi_agent` flag, but PixiuCore requires approval before any dispatch.
 
 - Enable it in `.codex/config.toml` with `[features] multi_agent = true`
 - Define project-local roles under `[agents.<name>]`
