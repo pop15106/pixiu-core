@@ -1,0 +1,149 @@
+---
+type: session-recap
+date: 2026-05-04
+project: PEPIS
+system: PEPIS
+repo: pepis_ap
+topic: query-modify-debug
+status: follow-up
+tags: [recap, session, pepis, edda, debug]
+summary: 追查 PEPIS/CCPS eDDA 3.4 查詢修改後 disabled 狀態與畫面行為，定位實際除錯方向。
+---
+
+# Session Recap：PEPIS eDDA 3.4 申請查詢修改除錯
+
+## 🎯 任務目標與背景
+
+**目標**：實作申請查詢畫面「3.4 申請查詢與修改邏輯」，讓授權申請人可在查詢結果中，對狀態 2/4/5 的案件直接按「修改」重新送審。
+
+**背景**：原本查詢畫面無修改功能；規格要求加入：
+- 狀態 審查駁回(2)、授權通過(4)、授權駁回(5) → 修改按鈕啟用
+- 依原申請類別 × 當前狀態，動態顯示可選操作（授權/修改授權/終止授權）
+- 依選擇控制欄位可編輯範圍
+- 送出後 applyStatus 回歸 '0'（立案/補件）
+
+**影響範圍**：
+- `view/CCPS/src/views/AuthApplyQueryBasic.vue`（EachAuthApplyQuery 路由）
+- `view/CCPS/src/views/AuthApplyQuery.vue`（EachAuthReviewQuery 路由）
+
+---
+
+## ✅ 本次完成
+
+1. **兩個 Vue 檔案加入 computed 屬性**
+   - `isQueryModifyMode`：判斷目前是否為 queryModify 模式
+   - `qmReadOnly`：selectedType !== '1' 時欄位唯讀
+   - `qmPayLimitReadOnly`：selectedType 不是 '1' 或 '2' 時 payLimit 唯讀
+
+2. **data() 加入 queryModify 狀態**
+   ```js
+   queryModify: { availableTypes: [], selectedType: null }
+   ```
+
+3. **Template 改動**
+   - applyType 欄位改為：queryModify 模式顯示 v-select 動態下拉，否則顯示原 v-text-field（readonly）
+   - 全欄位 readonly/disabled 改為條件式：`isQueryModifyMode ? qm... : editDialog.isReadOnly`
+   - v-card-actions 新增 queryModify 模板：關閉 + 確認送出按鈕
+
+4. **canEdit() 更新**：status 2/4/5 回傳 true
+
+5. **onEdit() 更新**：dialogMode = 'queryModify'，清空 queryModify state
+
+6. **onEditCancel() 更新**：清空 queryModify.selectedType 與 availableTypes
+
+7. **loadEditDetails() 更新**：完成後呼叫 computeAvailableTypes
+
+8. **新增四個方法**：
+   - `normalizeApplyType(v)`：將後端文字或數字 applyType 正規化為 '0'/'1'/'2'
+   - `computeAvailableTypes(applyType, authStatus)`：依規格矩陣回傳可選清單
+   - `onQueryModifyAction(typeValue)`：選下拉時同步 model.applyType
+   - `onQueryModifyConfirm()`：送出，applyStatus='0'，POST 後刷新列表
+
+9. **加入 console.log 除錯**（本次 session）：
+   - `canEdit()` 加 `console.log('[Basic/Review canEdit]', { authStatus, status, result, item })`
+   - `onEdit()` 加 `console.log('[Basic/Review onEdit] clicked item:', item)`
+
+---
+
+## 🔄 進行中
+
+**目前步驟**：按鈕顯示仍為 disabled，原因尚未確認，正在用 console.log 診斷
+
+**整體進度**：前端程式碼完成，等待瀏覽器 console 確認 root cause
+
+**卡點**：
+- 按鈕 template 有 `:disabled="!canEdit(item) || loading || editLoading"`
+- 可能原因三選一：
+  1. 編譯結果尚未反映（舊快取），console.log 不會出現
+  2. `authStatus` 資料格式問題（數字 4 vs 字串 "4"），`result: false`
+  3. `loading` 或 `editLoading` 卡在 true，即使 `canEdit` 回 true 仍 disabled
+
+---
+
+## 📐 當前規劃完整內容
+
+### 欄位控制矩陣
+
+| selectedType | 欄位狀態 |
+|---|---|
+| `1`（授權） | 全欄位可編輯 |
+| `2`（修改授權） | 僅 payLimit 可編輯 |
+| `0`（終止授權） | 全唯讀 |
+
+### applyType × authStatus 選單矩陣
+
+| 原 applyType | authStatus | 可選清單 |
+|---|---|---|
+| 1（授權） | 2 或 5 | [1 授權] |
+| 1（授權） | 4 | [2 修改授權, 0 終止授權] |
+| 2 或 0 | 任意 | [2 修改授權, 0 終止授權] |
+
+### 送出邏輯
+
+```js
+authDocInfo.applyStatus = '0'  // 歸位為立案/補件
+authDocInfo.applyType = queryModify.selectedType
+POST → UPDATE_URL
+成功後：關閉 dialog、queryByStatus('')、fetchStatusSummary()
+```
+
+---
+
+## 🎯 重要決策記錄
+
+| 決策點 | 選擇 | 棄選方案 | 原因 |
+|--------|------|---------|------|
+| queryModify 模式觸發方式 | dialogMode = 'queryModify' | 新增獨立 dialog | 沿用既有 editDialog 結構，最小改動，與現有 edit/review/authorize 模式對稱 |
+| applyType 欄位呈現 | v-select（queryModify）/ v-text-field（其他模式）| 全部改 v-select | 避免破壞其他模式的顯示邏輯 |
+| normalizeApplyType | 同時支援文字與數字 | 假設後端一定給數字 | 後端 API 實際回傳過文字型 applyType，需相容 |
+
+---
+
+## ⚠️ 踩坑 / 遺留風險
+
+- **一開始改錯檔案**：先改 AuthApplyQuery.vue，但截圖顯示網址是 `#/EachAuthApplyQuery`（對應 AuthApplyQueryBasic.vue），需要兩個都改
+- **按鈕 disabled 原因未確認**：程式碼已更新，但視覺上仍無效果，尚不清楚是快取、資料格式、還是其他 loading flag 的問題
+- **console.log 是暫時的**：確認問題後要移除，避免進 production
+
+---
+
+## 📌 下次 session 要做的事
+
+優先執行：
+- [ ] 請用戶開 F12 Console，截圖 `[Basic canEdit]` 或 `[Review canEdit]` 的輸出
+- [ ] 判斷：authStatus 是字串還是數字？result 是 true 還是 false？console.log 有沒有出現？
+- [ ] 依診斷結果修正：格式問題 → 調整比對；loading 問題 → 找卡住的地方；不出現 → 確認編譯/快取問題
+
+待確認（需使用者決策）：
+- [ ] 確認 `computeAvailableTypes` 中 applyType=2/0 時的矩陣行為是否符合 PO 最新規格
+
+---
+
+## 💾 關鍵狀態
+
+- 專案：pepis_ap
+- 分支：master
+- 改動檔案：
+  - `view/CCPS/src/views/AuthApplyQueryBasic.vue`
+  - `view/CCPS/src/views/AuthApplyQuery.vue`
+- 尚未 commit 的變更：有（兩個 Vue 檔案）

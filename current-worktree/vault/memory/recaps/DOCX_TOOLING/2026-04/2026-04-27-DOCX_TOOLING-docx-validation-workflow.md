@@ -1,0 +1,59 @@
+---
+type: session-recap
+date: 2026-04-27
+project: DOCX_TOOLING
+system: PIXIUCORE
+repo: Playground,pixiu-core
+topic: docx-validation-workflow
+status: done
+tags: [recap, docx, validation, workflow, pixiu]
+summary: 調整 DOCX 驗證 workflow，改良文件輸出後的檢查與確認流程。
+---
+
+# Session Recap：DOCX 驗證流程調整
+
+## 任務目標與背景
+
+使用者在 CCA-F 教材 Domain 2 補強後，要求把本次「驗證工具鏈踩坑」寫入 recap，並調整後續做法：之後不要再執行已知會空轉的驗證段落，改用其他可穩定驗證方式。
+
+## 本次完成
+
+- 已確認 `artifact-tool` 本機渲染失敗，且先前已有「最小 DOCX 也失敗」紀錄，判定為工具鏈問題，不應每次重試。
+- 已確認 Chrome headless 對 PDF viewer 截圖只得到深色空白畫面，不能作為可靠視覺驗證。
+- 已決定後續 DOCX 驗證不再預設執行 `artifact-tool render` 與 Chrome headless PDF 截圖。
+- 改採：Word COM 開檔/更新目錄/匯出 PDF + PDF 頁數與文字抽取檢查 + 必要時人工開啟 DOCX/PDF 做視覺抽查。
+
+## 進行中
+
+- CCA-F 教材書 Domain 2 補強已完成。
+- 後續若繼續補 Domain 3/4/5，驗證流程直接沿用本次新決策。
+
+## 當前規劃
+
+後續教材型 DOCX 驗證流程：
+
+1. 使用 Word COM 開啟 DOCX，更新 TOC 與欄位。
+2. 匯出 PDF，確認 Word 可正常開檔與輸出。
+3. 使用 PDF metadata / `pypdf` 檢查頁數、封面文字、目錄文字、關鍵章節文字。
+4. 若需要視覺檢查，優先由使用者或 AI 用可用的 Word/PDF viewer 人工抽查代表頁。
+5. 只有在本機可靠 renderer 已修復或明確可用時，才重新啟用自動截圖驗證。
+
+## 重要決策
+
+| 決策點 | 選擇 | 原因 |
+|--------|------|------|
+| artifact-tool 驗證 | 不再預設執行 | 本機已知失敗，重跑只浪費時間且無法產生有效驗證。 |
+| Chrome headless PDF 截圖 | 不再預設執行 | 目前只截到 PDF viewer 深色空白畫面，不能判斷版面。 |
+| 替代驗證 | Word COM + PDF 頁數/文字檢查 + 必要時人工視覺抽查 | 可確認 DOCX 可開、目錄可更新、PDF 可輸出、關鍵內容存在。 |
+
+## 踩坑紀錄
+
+- artifact-tool 失敗不一定代表 DOCX 壞掉，可能是本機 renderer/toolchain 問題。
+- Chrome headless 對本機 PDF viewer 截圖可能只得到 viewer 背景，不能視為版面驗證。
+- 若中文檔名經 PowerShell here-string / stdin 管線進 Python，可能變成問號；檔案輸出仍優先用 `.py` 檔或直接腳本執行。
+
+## 下次要做的事
+
+- [ ] DOCX 類任務直接使用新驗證路線，不再重跑已知失敗的自動截圖段。
+- [ ] 若未來安裝 Poppler、LibreOffice 或修復 artifact-tool，再重新評估是否恢復自動視覺驗證。
+

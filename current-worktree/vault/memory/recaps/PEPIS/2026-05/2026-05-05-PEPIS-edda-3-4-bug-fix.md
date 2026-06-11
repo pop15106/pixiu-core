@@ -1,0 +1,82 @@
+---
+type: session-recap
+date: 2026-05-05
+project: PEPIS
+system: PEPIS
+repo: pepis_ap
+topic: edda-3-4-bug-fix
+status: done
+tags: [recap, session, pepis, edda, bug-fix, vue]
+summary: 修正 PEPIS eDDA 3.4 查詢與送審流程，釐清 EachAuthApplyQuery 與 EachAuthReviewQuery 的差異。
+---
+
+# Session Recap：PEPIS eDDA 3.4 Bug 修復
+
+> **日期**：2026-05-05
+> **專案**：PEPIS / CCPS
+> **AI**：Claude Code
+
+---
+
+## ✅ 本次完成
+
+- **Bug 1 修復 — EachAuthApplyQuery 修改授權時缺少「終止授權」選項**
+  - 檔案：`AuthApplyQueryBasic.vue` (`computeAvailableTypes`)
+  - 原因：`AuthApplyQueryBasic.vue` 的 `computeAvailableTypes` 缺少 `type=2 && status∈{2,5,4}` 的特判，直接落入 `else if (status==='2'||status==='5')` 分支，回傳 `[type]`（只有修改授權）
+  - 修正：加入 `if (type==='2' && (status==='2'||status==='5'||status==='4'))` 優先判斷，回傳 `['2','0']`
+
+- **Bug 2 修復 — 點擊申請暗號察看明細時 applyType 變成可選**
+  - 檔案：`AuthApplyQuery.vue` + `AuthApplyQueryBasic.vue`（`loadEditDetails` 內）
+  - 原因：`loadEditDetails` 無條件覆蓋 `dialogMode`，`onViewDetail` 設的 `view` 模式被改成 `queryModify`，導致 applyType 下拉出現
+  - 修正：加入 guard `if (dialogMode==='edit' || dialogMode==='queryModify')` 才允許切換，`view / review / authorize` 三種模式保持不變
+
+- **授權條件確認**
+  - 授權按鈕條件：`authStatus=1（審查通過）+ transCode=827 + canAuthorizeByRole=true`
+  - `canAuthorize` 後端邏輯：`!isAnon && !isCS`（非匿名且非客服）
+  - 曾暫時寫死為 `true` 測試，已還原
+
+---
+
+## 🔄 進行中
+
+- PEPIS eDDA 重新部署/測試驗證（需重啟 Tomcat + Ctrl+F5）
+
+---
+
+## ⚠️ 發現的問題 / 踩坑
+
+- **`AuthApplyQueryBasic.vue` 與 `AuthApplyQuery.vue` 邏輯不同步**：前者是後者的簡化版，但關鍵邏輯（`computeAvailableTypes`）沒有跟著更新，導致 EachAuthApplyQuery 行為與 EachAuthReviewQuery 不一致。未來改動共用邏輯時，兩個檔案都要同步。
+- **`loadEditDetails` 被多種 dialogMode 共用**：`onEdit / onReview / onAuthorize / onViewDetail` 都呼叫同一個 `loadEditDetails`，但原本沒有 guard，導致任何已設定的 mode 都會被覆蓋。這是個設計上的隱患，後續若加新 mode 要注意。
+- **`review / authorize` mode 也可能被覆蓋**：本次順帶修正，原本 `onReview` 設定 `dialogMode='review'` 後，`loadEditDetails` 會把它改回 `edit`，導致審查按鈕消失。已納入同一個 guard 一起修正。
+
+---
+
+## 🎯 重要決策
+
+| 決策 | 選擇 | 原因 |
+|------|------|------|
+| `loadEditDetails` mode guard 範圍 | 只允許 `edit` 或 `queryModify` 進入 mode 切換邏輯 | 保護所有唯讀/特殊模式（view/review/authorize）不被覆蓋，比只保護 view 更全面 |
+| `computeAvailableTypes` 特判順序 | `type=2` 優先判斷，再走 status 分支 | type=2 的規格（修改授權可再選終止授權）與 status 的通用規格不同，必須先攔截 |
+
+---
+
+## 📌 下次 session 要做的事
+
+- [ ] 重啟 Tomcat，驗證 Bug 1 修復（終止授權選項是否出現）
+- [ ] 驗證 Bug 2 修復（察看明細時 applyType 是否為唯讀）
+- [ ] 確認 `canAuthorize` 的正式授權邏輯是否符合業務需求（目前 `!isAnon && !isCS`）
+
+---
+
+## 💡 補充筆記
+
+- 路由對應：`EachAuthReviewQuery` → `AuthApplyQuery.vue`；`EachAuthApplyQuery` → `AuthApplyQueryBasic.vue`
+- 規格矩陣（申請類別選項）：
+  - 修改授權 + 審查駁回/授權駁回 → `[修改授權, 終止授權]`
+  - 修改授權 + 授權通過 → `[修改授權, 終止授權]`
+  - 授權通過（原申請=終止授權）→ `[授權]`
+  - 授權通過（其他）→ `[修改授權, 終止授權]`
+
+---
+
+*由 Claude Code (Cowork) 自動產生 · 可手動編輯*

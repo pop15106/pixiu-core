@@ -1,0 +1,76 @@
+---
+type: session-recap
+date: 2026-04-30
+project: PEPIS
+system: PEPIS
+repo: pepis_ap
+topic: edda-query-modify-test-feedback
+status: follow-up
+tags: [pepis_ap, ccps, edda, test-feedback, needs-fix]
+summary: 整理 eDDA 3.4 查詢修改的實測回饋，指出 UI 互動與欄位鎖定仍不符需求。
+---
+
+# eDDA 3.4 查詢修改測試回饋
+
+## 1. 任務背景
+
+使用者要求檢視 Claude 昨日針對「3.4 申請查詢畫面修改」的改動，並將實測問題寫回 recap。
+
+原需求：申請查詢畫面中，狀態為審查駁回(2)、授權駁回(5)、授權通過(4) 的案件可按「修改」，並依當前申請類別提供可執行的申請類別變更。
+
+## 2. 已改動範圍
+
+後端：
+- `Edda614AuthDocViewResultDTO.java`：新增 `canModify`、`availableApplyTypes`、`queryModify`。
+- `Edda614AuthoDocDTO.java`：新增 `queryModify`。
+- `AuthorizationServiceImpl.java`：新增 `enrichModifyMeta()`、補查 `APPLY_TYPE`、更新 3.4 查詢修改分支。
+
+前端：
+- `AuthApplyQuery.vue`
+- `AuthApplyQueryBasic.vue`
+
+主要新增：狀態 2/4/5 可進修改、`queryModify` 模式、動作按鈕群組、`onQueryModifyAction()`、`onQueryModifyConfirm()`。
+
+## 3. 實測結果
+
+紅燈：目前測試不符合需求。
+
+已觀察到：
+- 授權通過(4) 的案件有「修改」按鈕可進入，但付款限額欄位不能修改。
+- 審查駁回(2)、授權駁回(5) 原本應可全欄位修改，目前進入後全欄位不可改。
+- UI 不應用下方「動作按鈕」切換；應改為「2 申請類別」欄位本身提供可選選項。
+- 「2 申請類別」目前顯示代碼，例如 `1`，應轉成中文：`授權`、`修改授權`、`終止授權`。
+
+## 4. 疑似根因
+
+前端：
+- `onEdit()` 對狀態 2/4/5 一律設成 `dialogMode = 'queryModify'` 並 `isReadOnly = true`。
+- `onQueryModifyAction(type)` 目前只有 `type === '1'` 才會解除唯讀；`type === '2'` 仍全欄位唯讀，所以授權通過後選「修改授權」時付款限額無法編輯。
+- `applyType` 欄位仍是文字欄位，直接顯示代碼，未改為中文選項清單。
+
+後端：
+- `authDoc614DocUpdate()` 的 3.4 分支對 `newApplyType = 1` 只更新部分欄位且強制 `PAY_LIMIT = 0`，不符合狀態 2/5「全欄位可改」的期待。
+- 若狀態 2/5 其實應沿用一般編輯流程，則不應被強制導入 queryModify 分支。
+
+## 5. 修正方向
+
+建議改成：
+- 狀態 2、5：進入一般編輯模式，全欄位可改；申請類別顯示中文 `授權`，不使用下方動作按鈕。
+- 狀態 4：進入查詢修改模式，但把「2 申請類別」改為 select，選項為 `修改授權`、`終止授權`。
+- 選 `修改授權`：僅付款限額可改。
+- 選 `終止授權`：全欄位唯讀，僅送出申請類別變更與狀態歸位。
+- 前後端都以代碼傳輸，但畫面必須中文顯示。
+
+## 6. 下一步
+
+尚未修改程式碼。下一步應先確認上述修正方向，再調整兩支 Vue 與後端 3.4 分支，最後補測：
+- 狀態 2 全欄位可改。
+- 狀態 5 全欄位可改。
+- 狀態 4 選修改授權時僅付款限額可改。
+- 狀態 4 選終止授權時全欄位唯讀。
+
+## 7. 使用者補充釐清
+
+使用者補充：本次修改的核心目標是「授權通過(4) 後可修改付款限額」。目前授權通過雖然有修改按鈕，但付款限額欄位不能改，直接命中本次需求失敗。
+
+另外，原本既有的修改功能也被影響：審查駁回(2)、授權駁回(5) 原本應可修改，現在也無法修改。這不是新需求未完成，而是造成既有功能退化，修正時必須一併回歸測試。
