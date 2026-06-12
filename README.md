@@ -452,4 +452,29 @@ cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
 - [CLAUDE.md](CLAUDE.md)：Claude Code 啟動協議。
 - [PLUGIN_SCHEMA_NOTES.md](PLUGIN_SCHEMA_NOTES.md)：Plugin manifest 注意事項。
 - [hooks/README.md](hooks/README.md)：Hook 觸發規則與自訂方式。
-- [scripts/setup/README.md](scripts/setup/READ
+- [scripts/setup/README.md](scripts/setup/README.md)
+
+## 2026-06 Branch Integration Status
+
+As of 2026-06-12, the previously separate PixiuCore branches have been integrated into `master` through PR #5:
+
+- Repository: `pop15106/pixiu-core`
+- Merge commit: `7ded1dc3c1aa22603dda1f4663e582b725a4e30d`
+- Integrated branch content:
+  - `codex/rescue-pixiu-structure`
+  - `test_branch`
+  - `yongding-adjusted` (`永碇調整版`)
+- Integration branch kept for audit: `codex/integrate-all-branches-20260612`
+
+Vault and privacy boundary:
+
+- The main repo follows the privacy cleanup from `yongding-adjusted`: `vault/identity/` is not tracked in `pixiu-core`.
+- The full vault snapshot, including identity files, is stored separately in `pop15106/pixiu-vault-backup`.
+- Backup repo `main` commit: `5f46daeea33821f030ee3b031375611c98d3d6a8`
+- Local verified backup snapshot contained 426 tracked files, including `current-worktree/vault/identity/founder-profile.md`, `current-worktree/vault/identity/agent-persona.md`, and `current-worktree/vault/memory/memory-summary.md`.
+
+Operational notes:
+
+- Do not re-add `vault/identity/` to the main repo unless the privacy policy is intentionally changed.
+- Use `pop15106/pixiu-vault-backup` for full vault recovery or cross-machine vault restore.
+- The original local working tree at `C:\Users\7010\Desktop\gravityTest\pixiu-core` may still contain local-only edits and should be reviewed before resetting or overwriting.
