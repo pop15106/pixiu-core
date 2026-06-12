@@ -5,7 +5,26 @@
 ---
 
 ## 檔案命名規範
-`vault/memory/recaps/YYYY-MM-DD-主題.md`
+
+```text
+vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md
+```
+
+### 前綴規則
+
+- 與特定專案、系統或 repo 有關：檔名前綴使用專案 key，例如 `PCLMS`、`PCLMS_AP`、`PCLMS_BK`、`PEPIS`、`PERMS`、`PISSO`、`SECOND_BRAIN`、`AUTO_RESEARCH`、`DOCX_TOOLING`、`OPENSPEC`。
+- 與特定專案無關，且內容屬於 PixiuCore 母體治理、AI 行為、skill/workflow、vault 結構、recap 規範、跨 AI 決策或操作準則：檔名前綴使用 `母體`。
+- 母體類 recap 的 frontmatter `project` 使用 canonical key `PIXIUCORE`；檔名前綴才使用 `母體`。
+- `內容` 優先取自 `topic`，移除重複專案字樣，保持短、可掃讀、可搜尋。
+- 檔名不得包含 Windows 不合法字元：`\ / : * ? " < > |`。
+
+範例：
+
+- `vault/memory/recaps/PCLMS/2026-06/2026-06-08-PCLMS-庫存核銷交易邊界.md`
+- `vault/memory/recaps/母體/2026-06/2026-06-08-母體-recap檔名規則修正.md`
+
+> 檔名只保留日期，不加入時間戳。若同日同專案有多份 recap，優先讓 `內容` 更精準；仍撞名時加非時間性的短識別詞。
+> recap 原件必須依專案與月份存放；專案資料夾使用檔名前綴，月份資料夾使用 frontmatter `date` 的 `YYYY-MM`。
 
 ---
 
@@ -15,14 +34,25 @@
 ```yaml
 ---
 type: session-recap
-日期: YYYY-MM-DD
-主題: 任務簡短描述
-狀態: [進行中 | 已完成 | 待確認]
-負責AI: [Claude | Gemini | Codex]
-專案: [專案名稱]
-tags: [關鍵字1, 關鍵字2]
+date: YYYY-MM-DD
+project: PROJECT_KEY
+system: SYSTEM_KEY
+repo: repo-name
+topic: kebab-case-topic
+status: done | follow-up | paused | verified-local | procedure-pending
+tags: [recap, session, project-key, topic-key]
+source_paths:
+  - C:/absolute/path/to/important/source
+summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ---
 ```
+
+### 半自動與全自動並存規則
+
+- 半自動 recap：使用者主動要求 `recap`、`摘要`、`現在到哪了`、`下一步` 時產生，frontmatter 使用 `recap_mode: manual`，視為正式 recap。
+- 全自動 recap：由 hook 在 `Stop` 或 `SessionEnd` 事件產生，frontmatter 使用 `recap_mode: auto`、`status: draft-auto`、`auto_trigger: stop | session-end`。
+- 全自動 recap 是候選記憶，只當保險網；若同一天同專案已有半自動正式 recap，不覆蓋，改用非時間短識別詞如 `auto1`。
+- 第二大腦索引必須保留 `recap_mode`、`auto_trigger`、`recap_project`、`recap_month`，讓查詢可以選擇只看正式 recap 或包含自動 draft。
 
 ### 2. 📥 Inbox — 給 AI 的任務清單 (核心功能)
 > 用於跨會話的任務接力。AI 讀到後會自動識別並追蹤。

@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "vault/memory/recaps/2026-05-06-PCLMS_AP庫存核銷手動調整根因清查.md",
+                "file": "vault/memory/recaps/2026-05-11-PCLMS-BK-TS-L8-無法收訊調查.md",
                 "mode": "source",
                 "source": false,
                 "backlinks": true,
@@ -28,7 +28,7 @@
                 }
               },
               "icon": "lucide-file",
-              "title": "2026-05-06-PCLMS_AP庫存核銷手動調整根因清查"
+              "title": "2026-05-11-PCLMS-BK-TS-L8-無法收訊調查"
             }
           }
         ]
@@ -88,7 +88,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 508.5
+    "width": 358.5
   },
   "right": {
     "id": "499fa6dfdd3cdaad",
@@ -196,41 +196,42 @@
   },
   "active": "60931a89efda146c",
   "lastOpenFiles": [
-    "hooks/hooks.json.tmp.4960.1778036832732",
-    "hooks/hooks.json.tmp.4960.1778036826237",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036819874",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036810673",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036802777",
-    "scripts/hooks/pixiu-guardrails.js.tmp.4960.1778036797658",
-    "hooks/hooks.json.tmp.4960.1778035593941",
-    "hooks/hooks.json.tmp.4960.1778035586033",
-    "hooks/hooks.json.tmp.4960.1778035575065",
-    "hooks/hooks.json.tmp.4960.1778035564747",
-    "vault/memory/recaps/2026-05-05-PEPIS-eDDA-3.4-Bug修復.md",
-    "vault/memory/recaps/2026-05-06-PCLMS_AP庫存核銷手動調整根因清查.md",
-    "vault/memory/recaps/2026-05-05-PCLMS庫存核銷問題AP-BK雙端深度分析.md",
-    "vault/🏠 Dashboard.md",
-    "vault/memory/memory-summary.md.tmp.5756.1777951346949",
-    "vault/memory/decisions/2026-05-04-Recap跨專案強制回寫PixiuCore.md",
-    "vault/memory/decisions/2026-05-04-Recap觸發必須回寫Obsidian.md",
-    "vault/memory/memory-summary.md",
-    "vault/memory/recaps/2026-05-04-191150-PEPIS-3.4查詢修改與Recap跨專案回寫.md",
-    "vault/memory/recaps/2026-05-04-190600-PEPIS-3.4查詢修改除錯.md",
-    "vault/memory/recaps/2026-05-04-100000-PCLMS彙報出倉孤兒表頭與未確認報單調查.md",
-    "vault/identity/agent-persona.md",
-    "vault/memory/recaps/2026-05-04-134024-PCLMS按月彙報出倉調查與Recap技能修正.md",
-    "vault/memory/recaps/2026-05-04-142717-PixiuCore-README更新.md",
-    "vault/memory/decisions/2026-05-04-PixiuCore-README採現況入口文件.md",
-    "vault/memory/recaps/2026-04-30-101303-EDDA查詢修改測試回饋.md",
-    "vault/memory/recaps/2026-04/2026-04-月度整理.md",
-    "vault/memory/decisions/2026-04/2026-04-30-EDDA查詢修改UI策略.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Spec-Improve技能新增同步.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-SAST-triage規則.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-MVP落地路徑.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Core架構策略.md",
-    "vault/memory/decisions/2026-04/2026-04-29-Agent-Team前置判斷硬閘門.md",
-    "vault/memory/decisions/2026-04/2026-04-27-DOCX驗證流程調整.md",
-    "vault/memory/decisions/2026-04/2026-04-27-DOCX產生工具鏈標準化.md"
+    "vault/projects/gravityTest/04_code-analysis/perms-NOW_STATUS-analysis.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-30-101303-EDDA查詢修改測試回饋.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-月度整理.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-171300-pepis-ap-3.4申請查詢修改功能實作.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-151239-Spec-Improve技能新增同步.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-121857-Pixiu-Auto-Research-SAST-triage規則.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-112703-Pixiu-Auto-Research-MVP實作落地.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-105958-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-105025-Pixiu-Auto-Research-Core實作方案.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-102717-Agent-Team前置判斷硬閘門.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-27-154144-DOCX驗證流程調整.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-27-152302-CCA-F教材書籍化與DOCX輸出驗證.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-27-103853-DOCX文件產生與make-docx技能化.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-21-111300-OpenSpec導入規劃.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-母體雙向同步.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-PCLMS已申報彙報單Bug診斷.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-115554-PPOST-件數比對邏輯修正.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-PCLMS-按月彙報進倉流程.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-133513-PCLMS-L1傳送規則盤點.md",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-115554-PPOST-件數比對邏輯修正.docx",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-115554-PPOST-件數比對邏輯修正 1_.docx",
+    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-113252-PCLMS彙報出倉待確認原因釐清.md",
+    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-30-EDDA查詢修改UI策略.md",
+    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-MVP落地路徑.md",
+    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Spec-Improve技能新增同步.md",
+    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-SAST-triage規則.md",
+    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
+    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Core架構策略.md",
+    "vault_backup_20260506_141931/memory/recaps/gen_docx_ppost_piece.py",
+    "vault_backup_20260506_141931/memory/recaps/2026-04",
+    "vault_backup_20260506_141931/memory/decisions/2026-04",
+    "vault_backup_20260506_141931/memory/recaps",
+    "vault_backup_20260506_141931/memory/decisions",
+    "vault_backup_20260506_141931/memory/auto-mode-audit.log",
+    "vault_backup_20260506_141931/templates",
+    "vault_backup_20260506_141931/sop",
+    "skills/cybersecurity-library/assets/banner.png"
   ]
 }
