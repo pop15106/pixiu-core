@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pixiu Agent Router"
+  short_description: "Route Pixiu agents into Codex sub-agent workflows"
+  default_prompt: "Use $pixiu-agent-router to choose the right Pixiu agent mode and dispatch plan for this task."

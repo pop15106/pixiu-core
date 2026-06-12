@@ -2,7 +2,7 @@
 name: pixiu-session-recap
 description: Pixiu 版 Session Recap。整合 Claude Code 2.1.108+ 的 /recap 功能；當使用者輸入 recap/摘要/現在到哪了/下一步，或階段結束、session 恢復時，必須產出結構化摘要並立即把當前 recap 內容寫入 vault/memory/recaps，供下次 session 或 Codex 稽核使用。
 origin: Pixiu
-version: 0.3.2
+version: 0.3.3
 layer_binding: L3-流程 / L5-經驗 / L6-校準
 language: zh-TW
 ---
@@ -28,6 +28,7 @@ language: zh-TW
 
 ## 硬性寫入規則
 
+- **跨專案強制適用**：只要使用者下達 `recap` 或等效觸發詞，無論目前工作目錄、專案類型、repo 是否屬於 Pixiu/PCLMS、是否存在專案內 vault，都必須把 recap 回寫到 `%PIXIU_CORE%\vault\memory\recaps\`。不得因「當前專案不是 PixiuCore」、「目前在其他 repo」、「使用者只說 recap 沒說寫入」而降級成只輸出文字。
 - 使用者主動輸入 `recap`、`摘要`、`現在到哪了`、`剛剛做了什麼`、`下一步`、`進度` 時，產出的當前 recap 內容必須立即寫入 `vault/memory/recaps/`。
 - 不得把使用者主動觸發的 recap 視為「只輸出、不寫檔」的 Quick Recap。
 - 若目前工具環境無法直接寫入 `%PIXIU_CORE%`，必須立刻請求必要授權/升權；只有在授權被拒或工具失敗時，才可明確回報「尚未寫入」。
@@ -166,12 +167,16 @@ vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題關鍵字.md
 ```markdown
 ---
 type: session-recap
-日期: YYYY-MM-DD
-主題: "一句話描述"
-狀態: 進行中 | 完成 | 暫停
-負責AI: Claude Code
-專案: "專案名稱"
-tags: [recap, session]
+date: YYYY-MM-DD
+project: PROJECT_KEY
+system: SYSTEM_KEY
+repo: repo-name
+topic: kebab-case-topic
+status: done | follow-up | paused | verified-local | procedure-pending
+tags: [recap, session, project-key, topic-key]
+source_paths:
+  - C:/absolute/path/to/important/source
+summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ---
 
 # Session Recap：主題
@@ -213,6 +218,7 @@ tags: [recap, session]
 ```
 
 > ⚠️ **重要**：使用 Obsidian Frontmatter（`---` 包圍的 YAML），讓 Dataview 可以查詢。
+> Frontmatter 必須使用目前 vault 的英文欄位：`type/date/project/system/repo/topic/status/tags/summary`；若本次有重要檔案、資料源或程式入口，補 `source_paths`。
 > 模板位於 `vault/templates/session-recap.md`，寫入時照此格式產生。
 
 ### 決策獨立記錄
@@ -252,7 +258,7 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 
 - **`pixiu-verify-loop` 完成 → 自動呼叫本 Skill 的模式 B**，把驗證結果併入 Recap
 - **`continuous-learning` / `continuous-learning-v2` → 讀取 recap-index** 作為長期記憶來源
-- **Codex 審計 → 從 vault/memory/recap-*.md** 抽樣檢視 session 品質
+- **Codex 審計 → 從 vault/memory/recaps/*.md** 抽樣檢視 session 品質
 
 ---
 
@@ -272,6 +278,7 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 - [ ] **決策表是否列出棄選方案？**（只記選擇不夠，棄選原因同樣重要）
 - [ ] **下次要做的事是否具體到可直接執行？**（含指令、路徑、待確認事項）
 - [ ] Phase Recap 是否寫入 `vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題.md`？
+- [ ] Frontmatter 是否包含 `type/date/project/system/repo/topic/status/tags/summary`，必要時包含 `source_paths`？
 - [ ] memory-summary.md 是否同步更新「進行中的工作」區塊？
 - [ ] 有沒有因為「已說過」就省略重要規劃細節？（不能省）
 
@@ -279,6 +286,7 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 
 ## 版本與來源
 
+- v0.3.3｜2026-05-18｜對齊週五後 vault recap frontmatter：改用英文 Dataview 欄位，補 system/repo/topic/summary/source_paths
 - v0.3.1｜2026-04-21｜修正 markdown lint 警告（空行、code block 語言標注）
 - v0.3.0｜2026-04-21｜輸出格式加入「當前規劃內容」完整區塊、決策含棄選方案、月份封存機制
 - v0.2.0｜2026-04-20｜新增 Obsidian 相容格式、獨立 recap 檔、Dataview frontmatter

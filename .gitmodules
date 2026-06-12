@@ -1,3 +1,4 @@
 [submodule "skills/cybersecurity-library"]
 	path = skills/cybersecurity-library
 	url = https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
+	shallow = true
