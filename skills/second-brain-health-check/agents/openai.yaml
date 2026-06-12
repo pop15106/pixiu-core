@@ -1,0 +1,7 @@
+interface:
+  display_name: "Second Brain Health Check"
+  short_description: "Diagnose second-brain query, Qdrant, n8n, embedding, and runtime connectivity boundaries"
+  brand_color: "#2563EB"
+  default_prompt: "Check whether the second brain is usable and identify whether failures are in the query script, Qdrant, n8n, remote embedding endpoint, or runtime sandbox."
+policy:
+  allow_implicit_invocation: true
