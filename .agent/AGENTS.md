@@ -2,9 +2,20 @@
 
 This is a **production-ready AI coding plugin** providing 25 specialized agents, 108 skills, 57 commands, and automated hook workflows for software development.
 
+## Pixiu Mothership Loading Policy
+
+This repository is governed by PixiuCore. Before using agents, skills, workflows, or hooks, follow `vault/context/ai-mothership-loading-policy.md`.
+
+Key rules:
+- Keep L0 hard gates resident; keep L1-L6 as a short routing summary and load details only when triggered.
+- Use semantic routing as well as keywords. The user should not need to name exact skills or workflows.
+- Agent team is not default. Judge whether it is useful, explain why, and wait for explicit user approval before dispatch.
+- Child agents receive a compact task packet only: goal, allowed paths, relevant L0 constraints, evidence files, and verification criteria.
+- Resolve the mothership path through `PIXIU_CORE`, then `PIXIU_CORE_PATH`, then `%USERPROFILE%\.pixiu-core`; do not require one machine-specific path.
+
 ## Core Principles
 
-1. **Agent-First** — Delegate to specialized agents for domain tasks
+1. **Agent-Aware** — Judge whether specialized agents are useful, then ask for approval before dispatching
 2. **Test-Driven** — Write tests before implementation, 80%+ coverage required
 3. **Security-First** — Never compromise on security; validate all inputs
 4. **Immutability** — Always create new objects, never mutate existing ones
@@ -39,7 +50,7 @@ This is a **production-ready AI coding plugin** providing 25 specialized agents,
 
 ## Agent Orchestration
 
-Use agents proactively without user prompt:
+Judge agent fit proactively, but do not dispatch agents without explicit user approval:
 - Complex feature requests → **planner**
 - Code just written/modified → **code-reviewer**
 - Bug fix or new feature → **tdd-guide**
@@ -49,7 +60,7 @@ Use agents proactively without user prompt:
 - Autonomous loops / loop monitoring → **loop-operator**
 - Harness config reliability and cost → **harness-optimizer**
 
-Use parallel execution for independent operations — launch multiple agents simultaneously.
+Use parallel execution only after approval and only for independent operations with disjoint scopes.
 
 ## Security Guidelines
 
