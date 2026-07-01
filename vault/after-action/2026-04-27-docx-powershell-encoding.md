@@ -1,7 +1,12 @@
 ---
 type: after-action
 date: 2026-04-27
-topic: "DOCX 產生中文編碼問題"
+project: DOCX_TOOLING
+system: PIXIUCORE
+repo: Playground
+topic: docx-powershell-encoding
+status: done
+summary: 記錄 PowerShell 管線造成中文 DOCX 編碼污染的根因與後續修法。
 tags: [docx, encoding, powershell, python-docx, pixiu]
 ---
 
@@ -52,4 +57,3 @@ tags: [docx, encoding, powershell, python-docx, pixiu]
   - `name: make-docx` 與 `description:` 存在。
   - `Reusable Requirement DOCX Tool` 與 `Windows UTF-8 Guardrails` 段落存在。
   - 產出的 DOCX 檔案大小大於 0。
-
