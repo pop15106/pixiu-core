@@ -236,6 +236,18 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run-with-flags.js\" \"stop:pixiu:auto-recap\" \"scripts/hooks/pixiu-auto-recap.js\" \"minimal,standard,strict\"",
+            "async": true,
+            "timeout": 10
+          }
+        ],
+        "description": "Pixiu auto recap: write draft-auto candidate recap after responses when transcript evidence exists"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run-with-flags.js\" \"stop:evaluate-session\" \"scripts/hooks/evaluate-session.js\" \"minimal,standard,strict\"",
             "async": true,
             "timeout": 10
@@ -277,9 +289,15 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run-with-flags.js\" \"session:end:marker\" \"scripts/hooks/session-end-marker.js\" \"minimal,standard,strict\"",
             "async": true,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run-with-flags.js\" \"session:end:pixiu:auto-recap\" \"scripts/hooks/pixiu-auto-recap.js\" \"minimal,standard,strict\"",
+            "async": true,
+            "timeout": 10
           }
         ],
-        "description": "Session end lifecycle marker (non-blocking)"
+        "description": "Session end lifecycle marker and Pixiu auto recap final capture (non-blocking)"
       }
     ]
   }
