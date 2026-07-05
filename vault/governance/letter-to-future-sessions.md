@@ -17,6 +17,8 @@ summary: 建制 session（Opus 4.8，環境原誤標 Fable 5）的交接信：�
 
 ### 1. 三個 recap 目錄有 I/O error，這可能是更大問題的前兆
 
+> ✅ 狀態更新（2026-07-05）：已修復——chkdsk 排程於重開機檢查後，三目錄實測可正常讀取。復活目錄內發現約 170 份殘留舊式噪音 recap（含一份檔名即含疑似憑證者，git 未曾納管），已交使用者隔離與處置。本節保留為歷史脈絡。
+
 `memory/recaps/PCLMS_AP/2026-06`、`memory/recaps/PCLMS_BK/2026-07`、`memory/recaps/母體/2026-06` 在檔案系統層讀取失敗。這不是權限問題，是磁碟或同步軟體問題，而且**沒有理由相信只壞這三個**。請盡早提醒使用者在本機跑 `chkdsk` 並檢查同步軟體（OneDrive 等）狀態。在修好前：讀這些路徑要容錯跳過，**絕對不要**因讀不到就重建或覆寫同名目錄。
 
 ### 2. codex-thread-watcher 這一個 hook 同時造成兩大污染源，修一次解決兩件事
@@ -65,7 +67,7 @@ Get-ChildItem "$env:PIXIU_CORE\vault\memory\recaps" -Recurse -File -Filter *.md 
 
 按優先序：
 
-1. **提醒使用者檢修 I/O error 目錄**（一句話的事，每個 session 開場都值得講，直到修好）。
+1. **提醒使用者檢修 I/O error 目錄**——✅ 已修復（2026-07-05，chkdsk 重開機檢查後三目錄可讀）。殘留噪音與疑似憑證檔已於當日交使用者隔離處置，不必再逢場提醒。
 2. **根目錄回貼＝已全部完成**（2026-07-03，拆除 `~/.claude` 五條 junction 後成功掛載根目錄，AI 直接執行並驗證）：
    - 六個根目錄 .md（CLAUDE/CODEX/GEMINI/AGENTS/user_rules/SKILLS_INDEX）＋ .gitignore 已套用，全部 iconv UTF-8 通過；root 與 updated/ md5 一致。
    - **踩到並修好一個坑**：`_root-snapshot/updated/user_rules.md` 先前被我某次 Edit 截斷（少了「衝突處理」段與 ECC footer，尾字元也斷 byte）。已從乾淨的 `_root-snapshot/user_rules.md` 重跑四處編輯重建（148 行、iconv 過），root 與 updated 同步覆寫。教訓：Edit 大型中文檔後應 iconv 驗證尾端完整性——已補進 audit 教訓。
