@@ -86,7 +86,7 @@
         "description": "母體治理：大規模變更警告 + .agent/ 變更偵測"
       },
       {
-        "matcher": "Edit|Write|MultiEdit|Bash",
+        "matcher": "Edit|Write|MultiEdit|Bash|PowerShell",
         "hooks": [
           {
             "type": "command",

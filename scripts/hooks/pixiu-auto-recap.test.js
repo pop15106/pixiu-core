@@ -46,6 +46,7 @@ function runHook(corePath, transcriptPath, cwd = gravityPath('PCLMS_AP')) {
   const rawInput = JSON.stringify({
     transcript_path: transcriptPath,
     cwd,
+    session_id: 'test-session-ABCD1234',
     hook_event_name: 'Stop'
   });
   const output = autoRecap.run(rawInput, {
@@ -83,7 +84,7 @@ function testWritesDraftAutoRecapIntoProjectMonthPath() {
   assert.strictEqual(files.length, 1);
   assert.strictEqual(
     path.relative(path.join(core, 'vault', 'memory', 'recaps'), files[0]).replace(/\\/g, '/'),
-    'PCLMS_AP/2026-06/2026-06-08-PCLMS_AP-auto-fix-inventory-balance-bug.md'
+    'PCLMS_AP/2026-06/2026-06-08-PCLMS_AP-auto-session-abcd1234.md'
   );
 
   const content = read(files[0]);
@@ -106,7 +107,7 @@ function testSameTranscriptUpdatesExistingAutoRecap() {
   const files = listMarkdownFiles(core);
   assert.strictEqual(files.length, 1);
   const relative = path.relative(path.join(core, 'vault', 'memory', 'recaps'), files[0]).replace(/\\/g, '/');
-  assert.strictEqual(relative, 'PEPIS/2026-06/2026-06-08-PEPIS-auto-trace-menu-permission-issue.md');
+  assert.strictEqual(relative, 'PEPIS/2026-06/2026-06-08-PEPIS-auto-session-abcd1234.md');
 }
 
 function testDoesNotOverwriteManualRecapWithSameName() {
@@ -114,7 +115,7 @@ function testDoesNotOverwriteManualRecapWithSameName() {
   const targetDir = path.join(core, 'vault', 'memory', 'recaps', 'PCLMS_AP', '2026-06');
   fs.mkdirSync(targetDir, { recursive: true });
   fs.writeFileSync(
-    path.join(targetDir, '2026-06-08-PCLMS_AP-auto-fix-inventory-balance-bug.md'),
+    path.join(targetDir, '2026-06-08-PCLMS_AP-auto-session-abcd1234.md'),
     '---\nrecap_mode: manual\n---\nmanual content\n',
     'utf8'
   );
@@ -126,8 +127,8 @@ function testDoesNotOverwriteManualRecapWithSameName() {
 
   const files = listMarkdownFiles(core).map(file => path.basename(file)).sort();
   assert.deepStrictEqual(files, [
-    '2026-06-08-PCLMS_AP-auto-fix-inventory-balance-bug-auto1.md',
-    '2026-06-08-PCLMS_AP-auto-fix-inventory-balance-bug.md'
+    '2026-06-08-PCLMS_AP-auto-session-abcd1234-auto1.md',
+    '2026-06-08-PCLMS_AP-auto-session-abcd1234.md'
   ]);
 }
 
@@ -159,8 +160,27 @@ function testParsesBomPrefixedTranscript() {
   assert.strictEqual(files.length, 1);
   assert.strictEqual(
     path.relative(path.join(core, 'vault', 'memory', 'recaps'), files[0]).replace(/\\/g, '/'),
-    'PEPIS/2026-06/2026-06-08-PEPIS-auto-trace-pepis-login-announcement-flow.md'
+    'PEPIS/2026-06/2026-06-08-PEPIS-auto-session-abcd1234.md'
   );
+}
+
+function testGrowingSessionConsolidatesIntoSingleFile() {
+  const core = makeTempCore();
+  const transcript = writeTranscript(core, 'session-f', [
+    { type: 'user', message: { role: 'user', content: 'first question' } }
+  ]);
+  runHook(core, transcript);
+  writeTranscript(core, 'session-f', [
+    { type: 'user', message: { role: 'user', content: 'first question' } },
+    { type: 'user', message: { role: 'user', content: 'second follow-up' } }
+  ]);
+  runHook(core, transcript);
+
+  const files = listMarkdownFiles(core);
+  assert.strictEqual(files.length, 1);
+  const content = read(files[0]);
+  assert.match(content, /second follow-up/);
+  assert.match(content, /^summary: "second follow-up"$/m);
 }
 
 const tests = [
@@ -168,7 +188,8 @@ const tests = [
   testSameTranscriptUpdatesExistingAutoRecap,
   testDoesNotOverwriteManualRecapWithSameName,
   testSkipsEmptyTranscript,
-  testParsesBomPrefixedTranscript
+  testParsesBomPrefixedTranscript,
+  testGrowingSessionConsolidatesIntoSingleFile
 ];
 
 for (const test of tests) {

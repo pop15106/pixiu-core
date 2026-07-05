@@ -26,11 +26,17 @@ function run(rawInput, options = {}) {
   const date = formatDate(now);
   const project = inferProject(summary, input.cwd || process.cwd());
   const month = date.slice(0, 7);
-  const topic = buildTopic(summary);
-  const targetDir = path.join(corePath, 'vault', 'memory', 'recaps', project, month);
+  const sessionKey = deriveSessionKey(input, transcriptPath);
+  const topic = `auto-session-${sessionKey}`;
+  const recapRoot = path.join(corePath, 'vault', 'memory', 'recaps');
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+  const targetDir = path.join(recapRoot, project, month);
   const targetName = `${date}-${project}-${topic}.md`;
   const transcriptHash = sha256(transcript).slice(0, 16);
-  const targetPath = resolveAutoTargetPath(targetDir, targetName, transcriptHash);
+  // 跨日 session：同 sessionKey 已有檔案（查本月與上月）就沿用，避免一 session 兩檔
+  const existingSessionPath = findExistingSessionFile(recapRoot, project, topic, [month, prevMonth]);
+  const targetPath = existingSessionPath || resolveAutoTargetPath(targetDir, targetName, transcriptHash);
   const content = buildRecapContent({
     date,
     project,
@@ -45,10 +51,12 @@ function run(rawInput, options = {}) {
   if (fs.existsSync(targetPath)) {
     const existing = fs.readFileSync(targetPath, 'utf8');
     if (existing.includes(AUTO_RECAP_START) && existing.includes(AUTO_RECAP_END)) {
-      const next = existing.replace(
+      let next = existing.replace(
         new RegExp(`${escapeRegExp(AUTO_RECAP_START)}[\\s\\S]*?${escapeRegExp(AUTO_RECAP_END)}`),
         extractAutoBlock(content)
       );
+      const summaryLine = (content.match(/^summary: .*$/m) || [null])[0];
+      if (summaryLine) next = next.replace(/^summary: .*$/m, summaryLine);
       fs.writeFileSync(targetPath, next, 'utf8');
       return rawInput || '';
     }
@@ -100,7 +108,7 @@ function extractTranscriptSummary(transcript) {
   if (userMessages.length === 0) return null;
 
   return {
-    userMessages: userMessages.slice(-8),
+    userMessages: userMessages.slice(-20),
     toolsUsed: Array.from(toolsUsed).slice(0, 20),
     filesModified: Array.from(filesModified).slice(0, 30)
   };
@@ -114,7 +122,8 @@ function extractUserText(entry) {
     : Array.isArray(raw)
       ? raw.map(block => block?.text || '').join(' ')
       : '';
-  return text.replace(/\s+/g, ' ').trim();
+  // 去識別化：使用者訊息可能含本機路徑，寫入 vault 前正規化
+  return sanitizeLocalPath(text.replace(/\s+/g, ' ').trim());
 }
 
 function collectToolUse(entry, toolsUsed, filesModified) {
@@ -173,6 +182,12 @@ function inferProject(summary, cwd) {
   return MOTHER_PROJECT;
 }
 
+function deriveSessionKey(input, transcriptPath) {
+  const sid = String(input.session_id || '').replace(/[^a-zA-Z0-9]/g, '');
+  if (sid.length >= 8) return sid.slice(-8).toLowerCase();
+  return sha256(String(transcriptPath)).slice(0, 8);
+}
+
 function buildTopic(summary) {
   const source = summary.userMessages[summary.userMessages.length - 1] || 'session';
   const words = source
@@ -184,6 +199,23 @@ function buildTopic(summary) {
     .slice(0, 8);
   const slug = words.join('-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase();
   return `auto-${slug || 'session-capture'}`;
+}
+
+function findExistingSessionFile(recapRoot, project, topic, months) {
+  for (const m of months) {
+    const dir = path.join(recapRoot, project, m);
+    let entries;
+    try { entries = fs.readdirSync(dir); } catch { continue; }
+    for (const f of entries) {
+      if (!f.includes(`-${topic}`) || !f.endsWith('.md')) continue;
+      const p = path.join(dir, f);
+      // 只接手確定是本 session 的 auto recap；manual 同名檔絕不覆寫
+      try {
+        if (fs.readFileSync(p, 'utf8').includes('recap_mode: auto')) return p;
+      } catch {}
+    }
+  }
+  return null;
 }
 
 function resolveAutoTargetPath(targetDir, targetName, transcriptHash) {
