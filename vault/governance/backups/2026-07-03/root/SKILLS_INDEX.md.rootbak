@@ -1,8 +1,6 @@
 # Pixiu 母艦技能索引目錄 (SKILLS_INDEX)
 
-> ⚠️ **時效警語（2026-07-03 稽核）**：本索引最後實質更新為 2026-03-18，數量統計與 `AGENTS.md`、根目錄 `README.md`（2026-05-27 盤點：頂層 skills 68＋ECC skills 148、commands 58、rules 51）互相不一致。**本檔僅供分類參考；數量與清單以根目錄 README 最新盤點為準。** AI 不得引用本檔數字做決策；「Gemini 知識型 skills 已嵌入 GEMINI.md」之描述已失效。
->
-> 176+ skills · 76 slash commands · 50 rules（2026-03-18 舊值，見上方警語）
+> 176+ skills · 76 slash commands · 50 rules
 > 標注 🔵 = 任何 AI 工具可用（Gemini/Cursor/Windsurf 等）
 > 標注 🟣 = 需要 Claude Code 才能使用
 
@@ -147,4 +145,22 @@
 `/docs` · `/update-docs` · `/update-codemaps` · `/init-docs`
 
 ### 技能管理
-`/skill-create` · `/skill-health` · `/learn` · `/learn-eval
+`/skill-create` · `/skill-health` · `/learn` · `/learn-eval`
+`/instinct-status` · `/instinct-export` · `/instinct-import`
+
+---
+
+## 📊 統計總覽
+
+| 類別 | 數量 | 需要 Claude Code |
+|------|------|:---:|
+| Agents（主動型）| 25 | 🟣 |
+| 通用 Skills（知識型）| 25 | 🔵 |
+| ECC 進階 Skills | 100+ | 🔵/🟣 混合 |
+| Workflows（slash commands）| 76 | 🟣 |
+| Rules | 50 | 🔵 |
+| **合計** | **176+ skills · 76 commands** | |
+
+---
+
+*最後更新：2026-03-18 | 母艦：Pixiu + ECC Full Profile*

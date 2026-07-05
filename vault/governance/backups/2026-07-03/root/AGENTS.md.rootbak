@@ -1,50 +1,12 @@
-﻿# Everything Claude Code (ECC) — Agent Instructions
+# Everything Claude Code (ECC) — Agent Instructions
 
 This is a **production-ready AI coding plugin** providing 25 specialized agents, 108 skills, 57 commands, and automated hook workflows for software development.
 
 ## Pixiu Mothership Loading Policy
 
-<!-- HERMES_GLOBAL_ROUTER_START -->
-
-## Hermes Global Task Router
-
-When the user explicitly asks to use Hermes, route the request through Hermes instead of directly implementing in the current folder.
-
-Trigger phrases include:
-- `請幫我用 Hermes`
-- `用 Hermes`
-- `透過 Hermes`
-- `交給 Hermes`
-- `Hermes gate`
-- `Hermes 分配 AI`
-
-On trigger:
-1. Resolve Hermes home: use `$env:HERMES_HOME` if set; otherwise use `C:\Users\7010\Documents\hermes 多AI 工作流`.
-2. Do not treat the current folder being empty or not a git repo as permission to bypass Hermes.
-3. Submit and immediately run the Hermes task with:
-
-```powershell
-$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { 'C:\Users\7010\Documents\hermes 多AI 工作流' }
-powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-submit-and-run.ps1" -Text "<verbatim user request>" -SourceEntrance "codex"
-```
-
-4. Report `taskId`, run status, state path, and report path to the user.
-5. If the script fails, report the exact error and stop. Do not silently implement the task directly unless the user explicitly says not to use Hermes.
-
-For approval-only actions, use:
-
-```powershell
-$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { 'C:\Users\7010\Documents\hermes 多AI 工作流' }
-powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-gate.ps1" -TaskId "<taskId>" -Decision approve -By "<user>" -Comment "<reason>"
-```
-
-<!-- HERMES_GLOBAL_ROUTER_END -->
-
 This repository is governed by PixiuCore. Before using agents, skills, workflows, or hooks, follow `vault/context/ai-mothership-loading-policy.md`.
 
 Key rules:
-- At session start, read `vault/README.md` (init sequence) and `vault/governance/INDEX.md` (governance routing hub). Governance rule bodies live under `vault/governance/`; this file does not carry them.
-- Entry-file precedence and conflict handling: `vault/governance/entry-files-alignment.md` section 3.
 - Keep L0 hard gates resident; keep L1-L6 as a short routing summary and load details only when triggered.
 - Use semantic routing as well as keywords. The user should not need to name exact skills or workflows.
 - Agent team is not default. Judge whether it is useful, explain why, and wait for explicit user approval before dispatch.
@@ -98,7 +60,7 @@ Judge agent fit proactively, but do not dispatch agents without explicit user ap
 - Autonomous loops / loop monitoring → **loop-operator**
 - Harness config reliability and cost → **harness-optimizer**
 
-Use parallel execution only after approval and only for independent operations with disjoint scopes. Dispatch packets and reporting contracts follow `vault/governance/model-dispatch-rules.md` and `vault/governance/delegation-templates.md`.
+Use parallel execution only after approval and only for independent operations with disjoint scopes.
 
 ## Security Guidelines
 
@@ -147,8 +109,6 @@ Test types (all required):
 3. Refactor (IMPROVE) — verify coverage 80%+
 
 Troubleshoot failures: check test isolation → verify mocks → fix implementation (not tests, unless tests are wrong).
-
-> Legacy-project scope note: for legacy systems without test infrastructure (e.g., PCLMS-era Java), apply `vault/governance/judgment-rubrics.md` section 5 minimum verification (compile + relevant tests where they exist + main-path run) instead of blocking on the 80% target; do not add test frameworks without user approval.
 
 ## Development Workflow
 

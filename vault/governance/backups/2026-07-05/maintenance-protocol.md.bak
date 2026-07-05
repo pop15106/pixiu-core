@@ -1,0 +1,105 @@
+---
+type: governance
+date: 2026-07-03
+project: PIXIUCORE
+system: PIXIUCORE
+topic: maintenance-protocol
+status: active
+tags: [pixiucore, governance, maintenance, hygiene, memory]
+summary: 維護協議：檔案修改權限分級、教訓迴路、精簡門檻、檔名編碼衛生、Inbox 清理、每月維護清單、防肥大與防漂移。
+---
+
+# 維護協議
+
+> 讀者是未來每一個 session 的 AI（含中低階模型）。所有規則都是機械可執行的：有觸發點、有步驟、有完成判準。
+
+## 1. 檔案修改權限分級
+
+| 級別 | 範圍 | 規則 |
+|---|---|---|
+| **自由寫入** | `memory/recaps/`（照 sop 標準；`user_rules.md` 已明文預授權豁免審批閘門）| 不必問，但必須用對應模板與命名規則 |
+| **自由寫入（豁免已核准，待回貼生效）** | `memory/agent-learning/observations/`、`instincts/`、`after-action/`、`memory-summary.md`（照第 7 節） | 使用者已於 2026-07-03 核准擴充豁免並寫入 user_rules 修訂版（`vault/_root-snapshot/updated/user_rules.md`）。**回貼根目錄前**寫入仍先問一次；回貼後本列併入上一列 |
+| **先備份再改** | `memory/memory-summary.md`、各 `index.md`、`🏠 Dashboard.md`、`governance/` 各檔的「維護」允許欄位 | 改前複製到 `governance/backups/<日期>/`，改後 read-back |
+| **提案後改** | `governance/` 制度本體、`sop/`、`context/ai-mothership-loading-policy.md`、`vault/README.md` | 先列 diff 給使用者，同意才改，改前備份 |
+| **必問（硬閘門）** | `user_rules.md`、`identity/`、根目錄入口檔、hook 設定、**刪除任何檔案**、git push | 無使用者明確授權一律不動 |
+
+## 2. 教訓迴路（每次踩坑後）
+
+1. 踩坑當下：判斷是否值得記（`judgment-rubrics.md` 第 7 條）。不值得就不記，結束。
+2. 值得記：寫一份 observation 到 `memory/agent-learning/observations/`，用 `templates/agent-observation-template.md`。
+3. 寫之前先搜尋同主題是否已存在：
+   - 已有 observation → 在既有檔補充案例，不開新檔
+   - 已重複三次 → 升格寫 instinct（`templates/agent-instinct-template.md`），並在 instinct 的 `supporting_observations` 回填
+4. instinct 滿足自己寫的 Promotion Rule → 提案升格為 decision / sop（提案後改級別）。
+5. 與既有記憶矛盾的新事實：更新舊檔並在 frontmatter 註記修訂日期，**不要**留兩份互相矛盾的記錄。
+
+## 3. 精簡門檻（多長算太長）
+
+| 對象 | 門檻 | 動作 |
+|---|---|---|
+| 入口檔（CLAUDE/CODEX/GEMINI/AGENTS.md） | 60 行 | 規則內容搬回 governance，入口只留路由（見 `entry-files-alignment.md`） |
+| governance 單檔 | 250 行 | 拆檔，INDEX 登記新檔 |
+| `memory-summary.md` | 300 行 | 兩個月前的表格列移入月份封存 callout，只留單行結論 |
+| `instincts/` | 20 個檔 | 合併同族 instinct、淘汰 `contradicting_observations` 多於 supporting 的條目 |
+| Dashboard Inbox | 10 項 | 觸發第 5 節清理 |
+
+精簡屬「先備份再改」級別；被精簡掉的內容移入備份或月份封存，不是刪除。
+
+## 4. 檔名與編碼衛生
+
+1. 新檔命名一律：`YYYY-MM-DD-<專案KEY>-<kebab-topic>.md`。topic 用短語意詞（英文 kebab 或簡短中文詞），**禁止**：空白、標點、原始對話語句、Windows 不合法字元 `\ / : * ? " < > |`。
+2. 寫檔一律 UTF-8（無 BOM）。寫完 read-back 檢查無亂碼、無控制字元（vault 已有兩次此類事故）。
+3. 看到 `.tmp`、`dup1` 等孤兒檔：不要刪（刪除是硬閘門），記錄到當日 recap 的待辦，交使用者處理。
+4. 任何 vault 搜尋、glob、索引，一律排除 `memory/hook-state/`。此目錄是機器狀態，直到它被遷出 vault 為止。
+
+## 5. Inbox 清理規則（Dashboard 的 AI_INBOX）
+
+讀到 Inbox 項目時，只允許三種處置，禁止「看過但不處置」：
+
+1. **執行**：屬目前任務範圍 → 做掉，勾選並註記完成日期。
+2. **問**：超過 30 天未動、或看不出還有沒有效 → 本次回覆順帶問使用者「作廢或保留」。
+3. **保留**：明確仍有效但不歸本次 → 保持原狀，不重複解讀。
+
+## 6. 每月首次 session 維護清單
+
+**觸發判準**（兩條同時成立，或使用者說「做月維護」）：
+- `memory-summary.md` frontmatter 的 `lastUpdated` 月份 ≠ 本月（只看 frontmatter，不看表格內文）
+- `memory/recaps/母體/` 本月資料夾內沒有檔名含「月維護」的 recap（代表本月還沒跑過）
+
+命中即在當次任務前先跑此清單（約 10 分鐘）：
+
+1. **封存**：把 `memory/recaps/` 與 `memory/decisions/` 根層上上個月以前的檔案移入對應 `YYYY-MM/` 資料夾（規則見 `memory/vault-archive-convention.md`）。完成判準：兩目錄根層只剩本月與上月檔案。
+2. **summary 體檢**：`memory-summary.md` 的 `lastUpdated` 距今 >14 天 → 提醒使用者，並依最近的正式 recap 提案更新（提案後改級別）。
+3. **Inbox 清理**：跑第 5 節。
+4. **入口同步檢查**：跑 `entry-files-alignment.md` 第 5 節清單。
+5. 以上結果寫成一份母體 recap（`母體` 前綴），一行一項。
+
+## 7. memory-summary 更新綁定（防止再度斷更）
+
+每次產出**正式**（manual）recap 的固定最後一步：
+
+1. 打開 `memory-summary.md`，在「進行中的工作」表格新增或更新對應列（同主題已存在→更新該列，不新增）。
+2. 更新 frontmatter `lastUpdated` 為今天。
+3. 這步不需要另外問使用者（屬「先備份再改」級別，備份每日第一次即可）。
+
+> 這是把斷更兩個月的儀式綁到既有觸發點（recap）上，不新增任何需要「想起來」的儀式。
+
+**auto-only 模式補充（2026-07-03 起生效）**：使用者已不使用手動 recap 指令，日常紀錄由 auto recap（每 session 單檔、Stop 原地更新版）承擔。因此 memory-summary 的更新點改為：(1) 第 6 節月維護清單第 2 步為主要更新點；(2) 任何 session 做出重大決策（判準見 `judgment-rubrics.md` 第 7 條）時，AI 應在該 session 結尾主動提議更新 summary 對應列（提案後改）。
+
+## 8. 記憶層同步（second brain／n8n → 向量庫）
+
+> 背景：使用者已停用手動 recap，auto recap（每 session 單檔版）是主要明細來源；second brain 由 n8n 同步 vault Markdown 至 Qdrant。n8n 目前的觸發型態（排程／手動／檔案監看）本次無法從 vault 確認【未確認】——查法：n8n UI 看該 workflow 的 trigger 與最後執行時間，或比對 Qdrant point 數（2026-05-12 基準為 204）。
+
+1. **同步範圍白名單**：只同步 `memory/recaps/`（排除 `_auto-quarantine/`）、`memory/decisions/`、`memory/agent-learning/`、`after-action/`、`context/`、`sop/`、`governance/`（排除 `backups/`）、`projects/`。已於 2026-07-03 實作在 `Playground\second-brain\scripts\export-pixiu-vault-manifest.ps1` 的白名單段，政策與腳本改任一邊都要同步另一邊。**永不同步**：`hook-state/`、`_full-snapshot/`、`_root-snapshot/`、`_bridge-snapshot/`、`governance/backups/`、任何 `*.tmp`。
+2. **auto recap 不用逐篇人工審**：全部進索引，靠 metadata 分層——索引必保留 `recap_mode`、`status`、`date`（recap-standard 既有要求），查詢預設過濾 `recap_mode: auto` 除非明確要查明細。
+3. **保留與升格**：檔案全留（一場一份體積小）；月維護時掃上月 auto recaps，有決策價值的（判準：judgment-rubrics 第 7 條）升格為 decision／instinct 並改 status；auto recap 超過 90 天未升格＝過期明細，從索引剔除（檔案照月份封存慣例保留）。
+4. **重建優先於修補**：Qdrant 只是可重建索引（既有 decision）。同步規則改動後，直接全量重建一次比逐筆修補可靠。
+
+## 9. 防入口檔肥大與防四套漂移
+
+單一真源原則與檢查清單統一寫在 `entry-files-alignment.md`（第 1、5 節），本檔不重複——**本協議自己也遵守「改本體不改副本」**。
+
+## 本檔維護
+
+- 調整門檻數值（第 3 節）：AI 可提案，附觸發案例，使用者同意後改。
+- 調整權限分級（第 1 節）：只有使用者能決定。

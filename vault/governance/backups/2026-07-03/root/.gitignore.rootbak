@@ -1,5 +1,5 @@
-/vault/memory/*
-!/vault/memory/memory-summary.md
+/vault/memory
+vault/memory/memory-summary.md
 
 # 設備特定檔案，換設備後由 setup.bat 重新生成
 .github/copilot-instructions.md
@@ -18,6 +18,3 @@ vault/identity/
 
 # Pixiu 使用量追蹤 / audit logs（含 email，不應共享）
 .agent/pixiu/reports/
-
-# Hook 機器狀態（thread-watcher 等），不進版控
-/state/
