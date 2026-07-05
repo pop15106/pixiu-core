@@ -4,7 +4,7 @@
 
 ## 步驟
 1. 讀 vault/governance/INDEX.md 與 vault/governance/judgment-rubrics.md 第 7 條（什麼值得記）。
-2. 掃描 vault/memory/recaps/ 下所有「今天日期」的 .md（含各專案子資料夾；排除 _auto-quarantine/）。已知三個 I/O error 目錄（PCLMS_AP/2026-06、PCLMS_BK/2026-07、母體/2026-06）讀取失敗就跳過，禁止重建同名目錄。
+2. 掃描 vault/memory/recaps/ 下所有「今天日期」的 .md（含各專案子資料夾；排除 _auto-quarantine/）。任何檔案或目錄讀取失敗：跳過並在結尾回報，禁止因讀不到而重建同名目錄。
 3. 依 rubrics 第 7 條篩選內容：只留「之後會被引用的決策」「下次還會踩的坑」「與既有記憶矛盾的事實」；事件流水帳一律不寫。
 4. 產出一份日結檔：vault/memory/recaps/母體/<YYYY-MM>/<YYYY-MM-DD>-母體-daily-digest.md
    frontmatter 必含：type: session-recap、date、project: PIXIUCORE、system: PIXIUCORE、topic: daily-digest、recap_mode: digest、status: draft-digest、summary（一句話總結今日）、tags: [recap, digest, pixiucore]

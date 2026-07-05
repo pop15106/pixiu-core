@@ -26,7 +26,7 @@ tags: [memory, pixiucore]
 |---|---|---|---|---|
 | 2026-07-05 | 已完成 | Governance 覆核＋hook 攔截鏈修復 | fresh-context 覆核通過；auto-recap 跨日單檔＋去識別化（測試 6/6）；guardrails 補密鑰樣式＋PowerShell、secret-scan／mothership-sync 兩個死 hook 修活（tool_response 正確欄位＋JSON decision 回饋）；實測打通 auto-mode 閘門（斷點：settings.json 副本漂移）；alignment 第 5 節新增 hook 副本對照 | [[2026-07-05-PIXIUCORE-claude-code-hooks-effective-config-is-settings-json\|observation]] |
 | 2026-07-03 | 已完成 | Governance 制度建立 | `vault/governance/` 九檔落地；四入口檔＋user_rules 修訂版已於 2026-07-03 回貼生效 | [[vault/governance/INDEX\|governance/INDEX]] |
-| 2026-07-03 | 待使用者檢修 | recaps 三目錄 I/O error | `PCLMS_AP/2026-06`、`PCLMS_BK/2026-07`、`母體/2026-06` 讀取失敗，疑磁碟或同步軟體問題，修復前讀取須容錯跳過 | [[vault/governance/quick-diagnosis-2026-07-03\|quick-diagnosis]] |
+| 2026-07-03 | 已修復（2026-07-05） | recaps 三目錄 I/O error | chkdsk 重開機檢查修復，三目錄可讀；復活目錄殘留 ~170 份噪音 recap 已隔離，疑似憑證檔交使用者改密／刪除（git 未曾納管） | [[vault/governance/quick-diagnosis-2026-07-03\|quick-diagnosis]] |
 | 2026-07-03 | 已完成 | hook-state 遷移＋auto recap hook 修復 | 827MB 已遷出 vault（→ state/）、143 份噪音 recap 已隔離；watcher 與 auto-recap 已修 | [[vault/governance/letter-to-future-sessions\|letter]] |
 | 2026-06-08 | 已完成 | gravityTest 全專案盤點 | 18 個專案 full-analysis 與 module-flow inventory 已落檔 | [[vault/projects/gravityTest/index\|gravityTest index]] |
 | 2026-06-05 | 分析完成 | PCLMS decltype T balance | 「多加沒扣」根因完整分析＋SA review 已落檔 | [[2026-06-05-PCLMS-decltype-T-balance-多加-沒扣-完整分析]] |
