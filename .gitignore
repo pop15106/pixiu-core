@@ -1,23 +1,20 @@
 /vault/memory/*
 !/vault/memory/memory-summary.md
 
-# 設備特定檔案，換設備後由 setup.bat 重新生成
+# 閮剖??孵?瑼?嚗?閮剖?敺 setup.bat ???
 .github/copilot-instructions.md
 fleet.json
 .agent/ecc-install-state.json
 scripts/hooks/debug-input.json
 .claude/settings.local.json
 
-# Hook debug payload（本機測試用，不應 commit）
+# Hook debug payload嚗璈葫閰衣嚗???commit嚗?
+# vault ?遢?桅?嚗?犖鞈?嚗???commit嚗?vault_backup_*/
 
-# vault 備份目錄（含個人資料，不應 commit）
-vault_backup_*/
+# ?犖霅鞈?嚗rivate but excluded from tracking嚗?vault/identity/
 
-# 個人識別資訊（private but excluded from tracking）
-vault/identity/
-
-# Pixiu 使用量追蹤 / audit logs（含 email，不應共享）
+# Pixiu 雿輻?蕭頩?/ audit logs嚗 email嚗??鈭恬?
 .agent/pixiu/reports/
 
-# Hook 機器狀態（thread-watcher 等），不進版控
-/state/
+# Hook 璈???thread-watcher 蝑?嚗??脩???/state/
+/recap-review-*
