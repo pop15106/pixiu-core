@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: prd-create
 description: "Use when user wants to draft a PRD (Product Requirements Document) from raw input (meeting transcripts, hand-waved descriptions, scattered decisions). Workflow: load org's PRD Guideline + writing discipline → lock execution mode (human-run vs unattended-agent-run) → ingest raw input → quiz user numbered-list iterate to fill §1-§15 → draft v0.1 → handle stakeholder merge (review feedback, surface conflicts) → lock v1.0 + sanitize per ADO publication contract → publish to ADO Wiki. For an agent-run PRD, §13 carries the unattended-execution discipline (machine-checkable AC + traffic-light + 3-exits + stop-and-ask), aligned with goal-engineer's loop-run-protocol. Pure prompt-driven — Claude is the runtime, no Python helper. Trigger phrases: 寫 PRD / PRD 撰寫 / prd-create / 初版 PRD / 起 PRD."
 version: 0.2.0

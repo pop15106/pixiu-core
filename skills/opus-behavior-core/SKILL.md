@@ -2,7 +2,7 @@
 name: opus-behavior-core
 description: 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gemini、Codex）在啟動階段載入，統一行為骨幹。觸發詞：行為骨幹、Opus 規則、五層治理、可移植規範、Agent 人格對齊。
 origin: Pixiu
-version: 0.2.0
+version: 0.2.1
 layer_binding: L0-憲法 / L1-安全 / L2-心智 / L3-流程 / L4-技能
 language: zh-TW
 ---
@@ -80,6 +80,8 @@ language: zh-TW
 ## L6｜Opus 4.7 原生參數校準（v0.2 新增）
 > 「用 4.7 時該設的、該關的、該補的」——把模型原生機制對齊到 Pixiu 骨幹。
 
+> ⚠️ 版本適用警語（2026-07-05）：本節以 Opus 4.7 為基準撰寫，對 Opus 4.8／Sonnet 5／Fable 5 等後續型號適用性【未確認】——沿用前先查官方文件。現役型號對照一律以 `vault/governance/model-dispatch-rules.md` 第 3 節為準，本節不維護型號清單。
+
 ### Effort Level 政策
 Opus 4.7 移除 `thinking.budget_tokens`，改以 `effort` 參數調節努力等級。Pixiu 預設對應：
 
@@ -136,6 +138,7 @@ Opus 4.7 本身已有以下傾向，Pixiu 的 L4 溝通層**不需重複強化**
 - [ ] L5 安全閘門是否全部通過？
 
 ## 版本與來源
+- v0.2.1｜2026-07-05：L6 加版本適用警語，型號對照指向 model-dispatch-rules.md 第 3 節。
 - v0.2.0｜2026-04-17
   - 新增 L6 Opus 4.7 原生參數校準：effort 政策、adaptive thinking、禁用參數、tokenizer 補償、task budget、行為原生對齊
 - v0.1.0｜2026-04-17

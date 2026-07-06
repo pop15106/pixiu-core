@@ -47,7 +47,7 @@ L1-L6 不應整層全文常駐，應常駐這份路由摘要，命中後再讀�
 | L1 安全層 | 敏感資料、權限、DB、網路、刪檔、資安一律保守 | auth、token、secret、SQL、DB schema、filesystem、network、security、漏洞、掃描 |
 | L2 心智層 | 架構、根因、多方案需要更深推理 | 架構、root cause、影響範圍、方案比較、風險評估 |
 | L3 流程層 | 多步驟、多檔案、Phase 工作先計畫與驗證 | plan、phase、實作、收尾、驗證、測試、重構 |
-| L4 技能層 | skill 只按任務載入，不預設載入全部 skills | 使用者意圖或任務類型命中 skill description / routing table |
+| L4 技能層 | skill 與戰術規則只按任務載入，不預設載入全部 skills | 使用者意圖或任務類型命中 skill description / routing table；寫程式、修 bug、重構前先套 `vault/governance/minimal-implementation-ladder.md` 摘要 |
 | L5 經驗層 | second brain 與 recap 是線索，不是最終證據 | 需要舊決策、舊調查、跨專案記憶、踩坑紀錄 |
 | L6 校準層 | 完成前驗證，重要決策後 recap | 完成、失敗、測試結果、recap、下一步、現在到哪了 |
 
@@ -66,6 +66,7 @@ AI 不得要求使用者一定說出精準 skill 名稱。觸發方式分三層�
 | 現在到哪了、整理今天做了什麼、下一步 | `skills/pixiu-session-recap/SKILL.md`、`vault/sop/recap-standard.md`、`vault/templates/session-recap.md` |
 | 收尾、跑驗證、確認能不能交付 | `skills/pixiu-verify-loop/SKILL.md` 或 `skills/verification-loop/SKILL.md` |
 | 影響範圍、隱藏風險、系統面分析 | `.agent/workflows/impact-assessment.md` |
+| 實作、修 bug、重構、加依賴、加檔案、怕過度工程、想省 token | `vault/governance/minimal-implementation-ladder.md`（按需載入摘要；不得覆蓋 L0、安全、審批、驗證） |
 | auto mode、自動放行、不要每次問 | `skills/claude-code-auto-mode-policy/SKILL.md` |
 | focus mode、只看結果、隱藏步驟 | `user_rules.md` 的 Focus mode 閘門與相關 verify loop |
 | agent team、多 agent、平行處理 | `skills/pixiu-agent-router/SKILL.md`，且必須先取得使用者同意 |
@@ -80,6 +81,7 @@ AI 不得要求使用者一定說出精準 skill 名稱。觸發方式分三層�
 4. 測試、lint、git diff、log 輸出要裁切到能證明結論的最小片段。
 5. second brain 查詢只作 lead layer；預設取 top 3，之後讀 vault 原文或 repo source 驗證。
 6. 若任務可以用現有 repo source、CodeGraph 或精準檔案讀取回答，不啟動大型 research / deep-research skill。
+7. 實作型任務先套最小化梯：能不做就不做，能重用就重用，能用標準庫／原生平台／既有依賴就不新增；但不得刪減安全、驗證、錯誤處理、審批與使用者明確指定內容。
 
 ## Agent Team 與子 Agent 任務包
 
@@ -90,7 +92,8 @@ Agent team 是倍增器，不是預設模式。
 3. 只有跨模組、跨技術棧、獨立可並行的探索/實作/審查任務，才提議 agent team。
 4. 使用者明確同意後，才讀 `skills/pixiu-agent-router/SKILL.md` 與必要 agent 檔。
 5. 子 agent 不重讀整包母體，只接收精簡任務包：任務目標、允許路徑、必要 L0 規則、相關檔案、驗證標準。
-6. 子 agent 不得回寫母體、刪檔、安裝套件或改動未授權路徑，除非主 AI 已取得使用者明確授權。
+6. 子 agent 的任務包應包含 `minimal-implementation-ladder.md` 的短 checklist：先重用、少新增、保留安全與驗證。
+7. 子 agent 不得回寫母體、刪檔、安裝套件或改動未授權路徑，除非主 AI 已取得使用者明確授權。
 
 ## 各 AI 入口規則
 
