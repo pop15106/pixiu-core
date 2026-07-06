@@ -13,11 +13,11 @@ tags:
   - data-flow
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_AP
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\src\main\webapp\WEB-INF\web.xml
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\src\main\java
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\src\main\webapp\html\js
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\src\main\resources\conf\xdao.xml
+  - %GRAVITYTEST_ROOT%\PCLMS_AP
+  - %GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\src\main\webapp\WEB-INF\web.xml
+  - %GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\src\main\java
+  - %GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\src\main\webapp\html\js
+  - %GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\src\main\resources\conf\xdao.xml
 ---
 
 # PCLMS_AP 模組功用、資料流與牽涉程式

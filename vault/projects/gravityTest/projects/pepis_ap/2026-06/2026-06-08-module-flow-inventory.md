@@ -13,11 +13,11 @@ tags:
   - sso
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\pepis_ap
-  - C:\Users\7010\Desktop\gravityTest\pepis_ap\view\CCPS\src
-  - C:\Users\7010\Desktop\gravityTest\pepis_ap\src\main\java\com\tradevan\pccps
-  - C:\Users\7010\Desktop\gravityTest\pepis_ap\src\main\java\com\tradevan\pepis
-  - C:\Users\7010\Desktop\gravityTest\pepis_ap\src\main\webapp\WEB-INF\web.xml
+  - %GRAVITYTEST_ROOT%\pepis_ap
+  - %GRAVITYTEST_ROOT%\pepis_ap\view\CCPS\src
+  - %GRAVITYTEST_ROOT%\pepis_ap\src\main\java\com\tradevan\pccps
+  - %GRAVITYTEST_ROOT%\pepis_ap\src\main\java\com\tradevan\pepis
+  - %GRAVITYTEST_ROOT%\pepis_ap\src\main\webapp\WEB-INF\web.xml
 ---
 
 # pepis_ap 模組功用、資料流與牽涉程式

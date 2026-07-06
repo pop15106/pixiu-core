@@ -76,7 +76,7 @@ AND (
 
   OR repo = "PCLMS_FD"
 
-  OR system = "PCLMS" 
+  OR system = "PCLMS"
 
 )
 
@@ -93,4 +93,3 @@ SORT file.name DESC
 - 先用 `project / system / repo / topic / summary` 看 recap 分布。
 
 - 若某主題已重複出現多次，再提煉成正式 project note。
-

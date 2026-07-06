@@ -2,7 +2,7 @@
 name: pixiu-session-recap
 description: Pixiu 版 Session Recap。整合 Claude Code 2.1.108+ 的 /recap 功能；當使用者輸入 recap/摘要/現在到哪了/下一步，或階段結束、session 恢復時，必須產出結構化摘要並立即把當前 recap 內容寫入 vault/memory/recaps，供下次 session 或 Codex 稽核使用。
 origin: Pixiu
-version: 0.3.4
+version: 0.3.8
 layer_binding: L3-流程 / L5-經驗 / L6-校準
 language: zh-TW
 ---
@@ -153,12 +153,31 @@ language: zh-TW
 ### 檔案命名（Obsidian 友善）
 
 ```text
-vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題關鍵字.md
+vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md
 ```
 
-範例：`2026-04-20-143022-PCLMS-executeUpdate修復.md`
+範例：
 
-> 時分秒（HHMMSS）為本地時間，避免同一天多個 recap 撞名。
+- `vault/memory/recaps/PCLMS/2026-06/2026-06-08-PCLMS-庫存核銷交易邊界.md`
+- `vault/memory/recaps/母體/2026-06/2026-06-08-母體-recap檔名規則修正.md`
+
+> 檔名只保留日期，不加入時間戳。若同日同專案有多份 recap，優先讓 `內容` 更精準；仍撞名時加非時間性的短識別詞。
+> recap 必須依專案與月份落位；專案資料夾使用檔名前綴，月份資料夾使用 frontmatter `date` 的 `YYYY-MM`。
+
+### 檔名前綴規則
+
+- 與特定專案、系統或 repo 有關時，檔名前綴必須使用專案 key，例如 `PCLMS`、`PCLMS_AP`、`PCLMS_BK`、`PEPIS`、`PERMS`、`PISSO`、`SECOND_BRAIN`、`AUTO_RESEARCH`、`DOCX_TOOLING`、`OPENSPEC`。
+- 與特定專案無關，且內容屬於 PixiuCore 母體治理、AI 行為、skill/workflow、vault 結構、recap 規範、跨 AI 決策或操作準則時，檔名前綴必須使用 `母體`。
+- `內容` 優先取自 `topic`，並移除重複的專案字樣；保持短、可掃讀、可搜尋。
+- 檔名不得包含 Windows 不合法字元：`\ / : * ? " < > |`。
+- 母體類 recap 的 frontmatter `project` 仍使用 canonical key `PIXIUCORE`；只有檔名前綴使用 `母體`，方便人在 Obsidian 直接辨識。
+
+### 半自動 / 全自動並存規則
+
+- 半自動 recap：使用者主動輸入 `recap`、`摘要`、`現在到哪了`、`下一步` 時產生，frontmatter 使用 `recap_mode: manual`，視為正式 recap。
+- 全自動 recap：由 `scripts/hooks/pixiu-auto-recap.js` 在 `Stop` / `SessionEnd` hook 產生，frontmatter 使用 `recap_mode: auto`、`status: draft-auto`、`auto_trigger: stop | session-end`。
+- 全自動 recap 只作為候選記憶與保險網，不覆蓋半自動正式 recap；撞名時使用非時間短識別詞，如 `auto1`。
+- 第二大腦索引需保留 `recap_mode`、`auto_trigger`、`recap_project`、`recap_month`，方便查詢正式 recap 或 auto draft。
 
 ### 檔案內容（Obsidian Frontmatter 格式）
 
@@ -173,9 +192,10 @@ system: SYSTEM_KEY
 repo: repo-name
 topic: kebab-case-topic
 status: done | follow-up | paused | verified-local | procedure-pending
+recap_mode: manual
 tags: [recap, session, project-key, topic-key]
 source_paths:
-  - C:/absolute/path/to/important/source
+  - %PROJECT_ROOT%/path/to/important/source
 summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ---
 
@@ -246,19 +266,23 @@ summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 
 當月份切換時（例如 5/1 首次 session），執行以下封存流程：
 
-1. 在 `vault/memory/recaps/` 建立上個月的子資料夾，格式：`YYYY-MM/`（例如 `2026-04/`）
-2. 將上個月所有 recap 檔案移入該子資料夾
-3. 在 Dashboard 的封存 callout 區塊更新月份範圍（日期篩選條件 +1 個月）
-4. 在 Dashboard 新增下個月的封存 callout 區塊（預留給下次封存用）
+1. 確認所有 recap 都位於 `vault/memory/recaps/<專案或母體>/<YYYY-MM>/`
+2. 若發現根目錄或舊 `vault/memory/recaps/YYYY-MM/` 月份資料夾內仍有 Markdown recap，依 frontmatter 或檔名前綴搬回對應專案/月資料夾
+3. 在 Dashboard 檢查近期 recap 查詢是否仍可跨專案遞迴讀取
+4. 在第二大腦重建 manifest / index 前，確認 path、`recap_project`、`recap_month` 可被匯出
 
 封存後的結構：
 
 ```text
 vault/memory/recaps/
-├── 2026-04/          ← 封存，callout 摺疊顯示
-│   ├── 2026-04-20-...md
-│   └── 2026-04-21-...md
-└── （本月新 recap 放這層）
+├── PCLMS/
+│   ├── 2026-05/
+│   └── 2026-06/
+├── PEPIS/
+│   └── 2026-06/
+└── 母體/
+    ├── 2026-05/
+    └── 2026-06/
 ```
 
 ### Dashboard 自動顯示
@@ -271,7 +295,7 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 
 - **`pixiu-verify-loop` 完成 → 自動呼叫本 Skill 的模式 B**，把驗證結果併入 Recap
 - **`continuous-learning` / `continuous-learning-v2` → 讀取 recap-index** 作為長期記憶來源
-- **Codex 審計 → 從 vault/memory/recaps/*.md** 抽樣檢視 session 品質
+- **Codex 審計 → 從 vault/memory/recaps/**/*.md** 抽樣檢視 session 品質
 
 ---
 
@@ -290,8 +314,8 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 - [ ] **「當前規劃內容」區塊是否完整？**（架構設計、流程、設定範例都有嗎？）
 - [ ] **決策表是否列出棄選方案？**（只記選擇不夠，棄選原因同樣重要）
 - [ ] **下次要做的事是否具體到可直接執行？**（含指令、路徑、待確認事項）
-- [ ] Phase Recap 是否寫入 `vault/memory/recaps/YYYY-MM-DD-HHMMSS-主題.md`？
-- [ ] Frontmatter 是否包含 `type/date/project/system/repo/topic/status/tags/summary`？
+- [ ] Phase Recap 是否寫入 `vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md`，且母體治理類使用 `母體-內容`？
+- [ ] Frontmatter 是否包含 `type/date/project/system/repo/topic/status/tags/summary/recap_mode`？
 - [ ] 若是 repo tracing / code investigation，是否包含 `source_paths`，且 `repo` 是短 repo 名而不是完整路徑？
 - [ ] memory-summary.md 是否同步更新「進行中的工作」區塊？
 - [ ] 有沒有因為「已說過」就省略重要規劃細節？（不能省）
@@ -300,11 +324,13 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 
 ## 版本與來源
 
+- v0.3.8｜2026-06-08｜加入全自動 draft-auto recap lane，並以 `recap_mode` 區分半自動正式與全自動候選
+- v0.3.7｜2026-06-08｜recap 原件改為依專案與月份存放；第二大腦需匯出 `recap_project` / `recap_month`
+- v0.3.6｜2026-06-08｜檔名只保留日期；同日撞名時改用更精準內容或非時間性短識別詞
+- v0.3.5｜2026-06-08｜明確化 recap 檔名規則：新 recap 使用 `專案-內容`，非專案、屬母體治理/AI 行為/skill/workflow/vault 決策者使用 `母體-內容`
 - v0.3.4｜2026-05-19｜強化跨 AI Obsidian Properties 對齊：共同標準以 vault/sop/recap-standard.md 與 vault/templates/session-recap.md 為準，repo 必須是短名，code tracing recap 必須補 source_paths 與 summary
 - v0.3.3｜2026-05-18｜對齊週五後 vault recap frontmatter：改用英文 Dataview 欄位，補 system/repo/topic/summary/source_paths
 - v0.3.1｜2026-04-21｜修正 markdown lint 警告（空行、code block 語言標注）
 - v0.3.0｜2026-04-21｜輸出格式加入「當前規劃內容」完整區塊、決策含棄選方案、月份封存機制
 - v0.2.0｜2026-04-20｜新增 Obsidian 相容格式、獨立 recap 檔、Dataview frontmatter
 - v0.1.0｜2026-04-17｜初版
-
-

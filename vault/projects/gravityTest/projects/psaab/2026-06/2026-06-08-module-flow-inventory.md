@@ -13,7 +13,7 @@ tags:
   - xss-filter
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\psaab
+  - %GRAVITYTEST_ROOT%\psaab
 ---
 
 # psaab 模組功用、資料流與牽涉程式

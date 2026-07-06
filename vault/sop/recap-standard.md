@@ -42,7 +42,7 @@ topic: kebab-case-topic
 status: done | follow-up | paused | verified-local | procedure-pending
 tags: [recap, session, project-key, topic-key]
 source_paths:
-  - C:/absolute/path/to/important/source
+  - %PROJECT_ROOT%/path/to/important/source
 summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ---
 ```

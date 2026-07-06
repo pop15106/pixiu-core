@@ -8,9 +8,9 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P1]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/PCLMS_AP"
-  - "C:/Users/7010/Desktop/gravityTest/PCLMS_AP/pom.xml"
-  - "C:/Users/7010/Desktop/gravityTest/PCLMS_AP/JAVA/pclms_mvn/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PCLMS_AP"
+  - "%GRAVITYTEST_ROOT%/PCLMS_AP/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PCLMS_AP/JAVA/pclms_mvn/pom.xml"
 summary: PCLMS_AP 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -51,9 +51,9 @@ summary: PCLMS_AP 於 2026-06-08 的專案現況、技術棧、架構邊界與�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\PCLMS_AP
-- C:\Users\7010\Desktop\gravityTest\PCLMS_AP\pom.xml
-- C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\pom.xml
+- %GRAVITYTEST_ROOT%\PCLMS_AP
+- %GRAVITYTEST_ROOT%\PCLMS_AP\pom.xml
+- %GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\pom.xml
 
 ## 分析限制
 

@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: rewrite-tone
 description: "Rewrite Markdown files with a conversational, humorous, self-deprecating tone. Turns dry technical docs into engaging war stories. Use when user says 'rewrite', 'change tone', 'make it fun', or similar."
 version: 1.0.0

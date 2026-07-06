@@ -1,16 +1,16 @@
 # Phase 01 — Inventory & Discovery Summary
 
-> **Phase**：01 / 07  
-> **完成日期**：2026-05-12  
-> **分析範圍**：`C:\Users\7010\Desktop\gravityTest`（全目錄）  
-> **前置 Phase**：N/A（首階段）  
+> **Phase**：01 / 07
+> **完成日期**：2026-05-12
+> **分析範圍**：`%GRAVITYTEST_ROOT%`（全目錄）
+> **前置 Phase**：N/A（首階段）
 > **下一 Phase**：[[../02_architecture/architecture-summary]] （待建立）
 
 ---
 
 ## Summary
 
-本階段對 gravityTest 目錄下的全部 19 個子專案完成初始盤點。  
+本階段對 gravityTest 目錄下的全部 19 個子專案完成初始盤點。
 確認組織為 **Tradevan 貿易資訊科技**（groupId: `com.tradevan`），所有核心業務系統圍繞台灣**關務與海關稽核**領域運作。系統群分為五大業務方向，技術棧以 **Java 8 + 傳統 Spring MVC + Oracle DB + Maven Multi-Module** 為主體架構，僅 PTWCS 採用現代化的 Spring Boot + 六邊形架構。
 
 ---
@@ -165,5 +165,5 @@ jks                  →  PCLMS_BK_new/JAVA/  AND  PFTZC_BK/JAVA/
 
 ---
 
-*Phase 01 完成。下一步請執行 Phase 02：Architecture Analysis，  
+*Phase 01 完成。下一步請執行 Phase 02：Architecture Analysis，
 請先讀取本文件與 [[../01_inventory/project-registry]] 後再開始分析。*

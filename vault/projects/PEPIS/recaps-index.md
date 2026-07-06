@@ -70,7 +70,7 @@ AND (
 
   OR repo = "pepis_ap"
 
-  OR system = "PEPIS" 
+  OR system = "PEPIS"
 
 )
 

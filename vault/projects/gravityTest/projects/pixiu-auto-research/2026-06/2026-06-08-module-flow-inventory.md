@@ -12,7 +12,7 @@ tags:
   - candidates
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\pixiu-auto-research
+  - %GRAVITYTEST_ROOT%\pixiu-auto-research
 ---
 
 # pixiu-auto-research 模組功用、資料流與牽涉程式

@@ -19,4 +19,3 @@ tags: [pixiucore, project, index]
 
 - `recaps-index`：集中看 README、sync、policy、母體維護類 recap
 - 正式規則：穩定後再升格進 decision 或 SOP
-

@@ -14,9 +14,9 @@ tags:
   - announcement
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\tv-isso-api
-  - C:\Users\7010\Desktop\gravityTest\tv-isso-api\src\main\java\com\tradevan\isso\ext
-  - C:\Users\7010\Desktop\gravityTest\tv-isso-api\src\main\resources\conf
+  - %GRAVITYTEST_ROOT%\tv-isso-api
+  - %GRAVITYTEST_ROOT%\tv-isso-api\src\main\java\com\tradevan\isso\ext
+  - %GRAVITYTEST_ROOT%\tv-isso-api\src\main\resources\conf
 ---
 
 # tv-isso-api 模組功用、資料流與牽涉程式

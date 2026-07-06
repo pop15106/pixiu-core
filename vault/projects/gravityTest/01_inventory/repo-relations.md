@@ -1,6 +1,6 @@
 # Repo Relations — 專案間關聯圖
 
-> **Phase**：01  
+> **Phase**：01
 > **更新日期**：2026-05-12
 
 ---
@@ -141,10 +141,10 @@ perms ──→ 退稅主管機關 API（推測）
 
 ### 潛在共用 Oracle DB 風險
 
-目前所有業務系統均使用 Oracle DB，且沒有看到明確的 DB 邊界設計。  
+目前所有業務系統均使用 Oracle DB，且沒有看到明確的 DB 邊界設計。
 高度懷疑多系統**共用相同 Oracle Instance**，可能透過不同 Schema 或 User 隔離。
 
-> **⚠️ 風險**：若 DB 帳戶無細緻的 Schema 隔離，一個系統的 bug 可能影響其他系統資料。  
+> **⚠️ 風險**：若 DB 帳戶無細緻的 Schema 隔離，一個系統的 bug 可能影響其他系統資料。
 > **建議**：Phase 06（Data Flow）需深度掃描各系統的 datasource 設定，確認 Schema 邊界。
 
 ---

@@ -13,8 +13,8 @@ tags:
   - xdao
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PFTZC_AP_new
-  - C:\Users\7010\Desktop\gravityTest\PFTZC_AP_new\JAVA\pftzc_mvn
+  - %GRAVITYTEST_ROOT%\PFTZC_AP_new
+  - %GRAVITYTEST_ROOT%\PFTZC_AP_new\JAVA\pftzc_mvn
 ---
 
 # PFTZC_AP_new 模組功用、資料流與牽涉程式

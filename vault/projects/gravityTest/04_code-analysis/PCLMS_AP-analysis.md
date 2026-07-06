@@ -1,10 +1,10 @@
 # PCLMS_AP 程式碼分析
 
-> 專案：`PCLMS_AP`  
-> 路徑：`C:\Users\7010\Desktop\gravityTest\PCLMS_AP`  
-> 階段：Phase 04 Code Analysis  
-> 狀態：第一輪分析完成  
-> 更新日期：2026-05-13  
+> 專案：`PCLMS_AP`
+> 路徑：`%GRAVITYTEST_ROOT%\PCLMS_AP`
+> 階段：Phase 04 Code Analysis
+> 狀態：第一輪分析完成
+> 更新日期：2026-05-13
 > 範圍：唯讀分析；本次未執行 build / test
 
 ---
@@ -23,7 +23,7 @@
 
 | 項目 | 結論 |
 |---|---|
-| 根專案 | `C:\Users\7010\Desktop\gravityTest\PCLMS_AP\pom.xml` |
+| 根專案 | `%GRAVITYTEST_ROOT%\PCLMS_AP\pom.xml` |
 | 根 artifact | `com.tradevan.pclms:pclms-web-parent` |
 | 根 packaging | `pom` |
 | 實際 WAR module | `JAVA/pclms_mvn` |
@@ -35,10 +35,10 @@
 
 重要路徑：
 
-- `C:\Users\7010\Desktop\gravityTest\PCLMS_AP\pom.xml`
-- `C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\pom.xml`
-- `C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\src\main\webapp\WEB-INF\web.xml`
-- `C:\Users\7010\Desktop\gravityTest\PCLMS_AP\JAVA\pclms_mvn\src\main\java`
+- `%GRAVITYTEST_ROOT%\PCLMS_AP\pom.xml`
+- `%GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\pom.xml`
+- `%GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\src\main\webapp\WEB-INF\web.xml`
+- `%GRAVITYTEST_ROOT%\PCLMS_AP\JAVA\pclms_mvn\src\main\java`
 
 ---
 

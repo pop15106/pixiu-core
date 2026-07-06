@@ -14,10 +14,10 @@ tags:
   - saab
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\pisso_ap
-  - C:\Users\7010\Desktop\gravityTest\pisso_ap\src\main\java\com\tradevan\isso
-  - C:\Users\7010\Desktop\gravityTest\pisso_ap\src\main\webapp\pages
-  - C:\Users\7010\Desktop\gravityTest\pisso_ap\src\main\resources\conf\application.xml
+  - %GRAVITYTEST_ROOT%\pisso_ap
+  - %GRAVITYTEST_ROOT%\pisso_ap\src\main\java\com\tradevan\isso
+  - %GRAVITYTEST_ROOT%\pisso_ap\src\main\webapp\pages
+  - %GRAVITYTEST_ROOT%\pisso_ap\src\main\resources\conf\application.xml
 ---
 
 # pisso_ap 模組功用、資料流與牽涉程式

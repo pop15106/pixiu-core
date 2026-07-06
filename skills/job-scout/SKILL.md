@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: job-scout
 description: "求職前公司與職位篩選工具。當使用者提到想投履歷、考慮某公司、評估某職缺、或想了解某公司值不值得去時觸發。輸入公司名稱（必要）+ 職位名稱（選填），輸出綜合評估與建議。"
 version: 1.0.0

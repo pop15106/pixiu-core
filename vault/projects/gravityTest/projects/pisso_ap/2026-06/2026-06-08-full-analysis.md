@@ -1,4 +1,4 @@
-﻿---
+---
 type: project-analysis
 date: 2026-06-08
 project: gravityTest
@@ -8,8 +8,8 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P1]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/pisso_ap"
-  - "C:/Users/7010/Desktop/gravityTest/pisso_ap/pom.xml"
+  - "%GRAVITYTEST_ROOT%/pisso_ap"
+  - "%GRAVITYTEST_ROOT%/pisso_ap/pom.xml"
 summary: pisso_ap 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -49,8 +49,8 @@ summary: pisso_ap 於 2026-06-08 的專案現況、技術棧、架構邊界與�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\pisso_ap
-- C:\Users\7010\Desktop\gravityTest\pisso_ap\pom.xml
+- %GRAVITYTEST_ROOT%\pisso_ap
+- %GRAVITYTEST_ROOT%\pisso_ap\pom.xml
 
 ## 分析限制
 

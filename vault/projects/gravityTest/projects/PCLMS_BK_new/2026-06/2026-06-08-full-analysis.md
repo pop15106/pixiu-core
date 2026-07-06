@@ -8,9 +8,9 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P1]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/PCLMS_BK_new"
-  - "C:/Users/7010/Desktop/gravityTest/PCLMS_BK_new/pom.xml"
-  - "C:/Users/7010/Desktop/gravityTest/PCLMS_BK_new/JAVA/pclms_bp/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PCLMS_BK_new"
+  - "%GRAVITYTEST_ROOT%/PCLMS_BK_new/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PCLMS_BK_new/JAVA/pclms_bp/pom.xml"
 summary: PCLMS_BK_new 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -50,9 +50,9 @@ summary: PCLMS_BK_new 於 2026-06-08 的專案現況、技術棧、架構邊界�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\PCLMS_BK_new
-- C:\Users\7010\Desktop\gravityTest\PCLMS_BK_new\pom.xml
-- C:\Users\7010\Desktop\gravityTest\PCLMS_BK_new\JAVA\pclms_bp\pom.xml
+- %GRAVITYTEST_ROOT%\PCLMS_BK_new
+- %GRAVITYTEST_ROOT%\PCLMS_BK_new\pom.xml
+- %GRAVITYTEST_ROOT%\PCLMS_BK_new\JAVA\pclms_bp\pom.xml
 
 ## 分析限制
 

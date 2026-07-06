@@ -19,4 +19,3 @@ tags: [openspec, project, index]
 
 - `recaps-index`：集中看導入規劃與技能同步 recap
 - 正式知識：後續可補規格流程與模板慣例
-

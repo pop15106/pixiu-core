@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: skill-cron
 description: "排程推播管理器 — 註冊/管理需定時執行並推送 Telegram 通知的 skill。Use when user says '/skill-cron', '排程', '定時執行', 'crontab', 'telegram 通知' or similar."
 version: 0.2.0

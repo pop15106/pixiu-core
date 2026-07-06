@@ -1,4 +1,4 @@
-﻿---
+---
 type: project-analysis
 date: 2026-06-08
 project: gravityTest
@@ -8,8 +8,8 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P3]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/pixiu-auto-research"
-  - "C:/Users/7010/Desktop/gravityTest/pixiu-auto-research/package.json"
+  - "%GRAVITYTEST_ROOT%/pixiu-auto-research"
+  - "%GRAVITYTEST_ROOT%/pixiu-auto-research/package.json"
 summary: pixiu-auto-research 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -44,8 +44,8 @@ summary: pixiu-auto-research 於 2026-06-08 的專案現況、技術棧、架構
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\pixiu-auto-research
-- C:\Users\7010\Desktop\gravityTest\pixiu-auto-research\package.json
+- %GRAVITYTEST_ROOT%\pixiu-auto-research
+- %GRAVITYTEST_ROOT%\pixiu-auto-research\package.json
 
 ## 分析限制
 

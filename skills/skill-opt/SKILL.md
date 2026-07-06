@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: skill-opt
 description: Optimize, improve, or evolve a SKILL.md document based on execution feedback. Use when a skill repeatedly underperforms, when you want to tighten trigger precision, when merging duplicate skills, or when running a skill evolution cycle. MANDATORY TRIGGERS: "optimize skill", "improve skill", "skill underperforms", "skill evolution", "skill-opt", "refine skill", "skill not triggering". Do NOT use for creating brand new skills from scratch (use skill-creator instead).
 origin: ECC
@@ -93,8 +94,8 @@ cp skills/<skill-name>/SKILL.md vault/memory/skill-backups/<skill-name>-YYYY-MM-
 ### Description 優化公式
 
 ```markdown
-description: [核心功能一句話]. Use when [觸發情境]. 
-MANDATORY TRIGGERS: [關鍵字1], [關鍵字2], [關鍵字3]. 
+description: [核心功能一句話]. Use when [觸發情境].
+MANDATORY TRIGGERS: [關鍵字1], [關鍵字2], [關鍵字3].
 Do NOT use for [排除情境].
 ```
 

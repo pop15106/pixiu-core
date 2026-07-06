@@ -19,4 +19,3 @@ tags: [second-brain, project, index]
 
 - `recaps-index`：集中看 deploy、index、query、workflow 類 recap
 - 正式專案知識：後續整理為索引、流程圖與操作手冊
-

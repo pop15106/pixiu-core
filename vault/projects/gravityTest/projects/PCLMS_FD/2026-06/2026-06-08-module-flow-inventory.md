@@ -13,11 +13,11 @@ tags:
   - mixed-java-js
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_FD
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_FD\pclms_fd\src
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_FD\pclms_fd\src\api
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_FD\pclms_fd\src\axios
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_FD\pclms_fd\src\pages
+  - %GRAVITYTEST_ROOT%\PCLMS_FD
+  - %GRAVITYTEST_ROOT%\PCLMS_FD\pclms_fd\src
+  - %GRAVITYTEST_ROOT%\PCLMS_FD\pclms_fd\src\api
+  - %GRAVITYTEST_ROOT%\PCLMS_FD\pclms_fd\src\axios
+  - %GRAVITYTEST_ROOT%\PCLMS_FD\pclms_fd\src\pages
 ---
 
 # PCLMS_FD 模組功用、資料流與牽涉程式

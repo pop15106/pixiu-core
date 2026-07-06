@@ -13,8 +13,8 @@ tags:
   - hexagonal
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PTWCS
-  - C:\Users\7010\Desktop\gravityTest\PTWCS\ptwcs_ap
+  - %GRAVITYTEST_ROOT%\PTWCS
+  - %GRAVITYTEST_ROOT%\PTWCS\ptwcs_ap
 ---
 
 # PTWCS 模組功用、資料流與牽涉程式

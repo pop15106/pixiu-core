@@ -53,13 +53,13 @@ Phase 1 先驗證一件事：素材進入 PixiuCore vault 後，AI 能不能穩�
 建議 n8n 專案放在：
 
 ```text
-C:\Users\7010\Documents\n8n-local
+%USERPROFILE%\Documents\n8n-local
 ```
 
 PixiuCore vault 掛載到 container 內：
 
 ```text
-C:\Users\7010\Desktop\gravityTest\pixiu-core\vault
+%PIXIU_CORE%\vault
   -> /pixiu-vault
 ```
 
@@ -238,7 +238,7 @@ Content-Type: application/json
 目標目錄：
 
 ```text
-C:\Users\7010\Documents\n8n-local
+%USERPROFILE%\Documents\n8n-local
 ```
 
 `.env`：
@@ -265,7 +265,7 @@ services:
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
-      - "C:/Users/7010/Desktop/gravityTest/pixiu-core/vault:/pixiu-vault"
+      - "%PIXIU_CORE%/vault:/pixiu-vault"
 
 volumes:
   n8n_data:
@@ -274,7 +274,7 @@ volumes:
 啟動：
 
 ```powershell
-cd C:\Users\7010\Documents\n8n-local
+cd %USERPROFILE%\Documents\n8n-local
 docker compose up -d
 ```
 

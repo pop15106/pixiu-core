@@ -1,6 +1,6 @@
 # Tech Classification — 技術分類矩陣
 
-> **Phase**：01  
+> **Phase**：01
 > **更新日期**：2026-05-12
 
 ---
@@ -93,8 +93,8 @@
 | `tag.json` | PCLMS_AP, PCLMS_BK_new, PFTZC_AP_new, PFTZC_BK | 版本標籤 |
 | `.agent/` | 多個專案 | Pixiu AI Agent 設定，非 CI/CD |
 
-> ⚠️ **未發現** Jenkins Pipeline、GitHub Actions、GitLab CI 等現代 CI/CD 設定。  
-> 推測為**手動或半自動部署**，依賴 `deploy-action.xml` 腳本執行。  
+> ⚠️ **未發現** Jenkins Pipeline、GitHub Actions、GitLab CI 等現代 CI/CD 設定。
+> 推測為**手動或半自動部署**，依賴 `deploy-action.xml` 腳本執行。
 > 這是維運層面的主要技術債。
 
 ---

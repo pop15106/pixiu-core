@@ -40,4 +40,12 @@ When an AI completes implementation and starts final self-correction.
 
 - **Mothership Link**: Active through resolved PixiuCore path.
 - **Review Standard**: Pixiu 7-Layer Architecture with low-token lazy loading.
-- **Version**: v1.1.0
+- **Version**: v1.2.0
+
+## PixiuCore 母體路由（governance）
+
+1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
+2. Session 開始依序讀 `vault/README.md`、`vault/governance/INDEX.md`。
+3. 制度本體在 `vault/governance/`；本檔與 `.codex/AGENTS.md` 只做路由，不寫規則。
+4. multi-agent / thread dispatch 前，先照 `vault/governance/model-dispatch-rules.md` 的派工三件套與回報合約。
+5. `config.toml` 的能力（threads、reasoning effort）不等於預設啟用；啟用前仍受 user approval gate 控制。

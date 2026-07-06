@@ -13,10 +13,10 @@ tags:
   - servlet
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PFTZB
-  - C:\Users\7010\Desktop\gravityTest\PFTZB\PFTZB\PFTZB_AP-master
-  - C:\Users\7010\Desktop\gravityTest\PFTZB\PFTZB\PFTZB_AP-master\src\main\java
-  - C:\Users\7010\Desktop\gravityTest\PFTZB\PFTZB\PFTZB_AP-master\src\main\webapp
+  - %GRAVITYTEST_ROOT%\PFTZB
+  - %GRAVITYTEST_ROOT%\PFTZB\PFTZB\PFTZB_AP-master
+  - %GRAVITYTEST_ROOT%\PFTZB\PFTZB\PFTZB_AP-master\src\main\java
+  - %GRAVITYTEST_ROOT%\PFTZB\PFTZB\PFTZB_AP-master\src\main\webapp
 ---
 
 # PFTZB 模組功用、資料流與牽涉程式

@@ -1,4 +1,4 @@
-﻿---
+---
 type: context-note
 date: 2026-05-19
 project: PEPIS

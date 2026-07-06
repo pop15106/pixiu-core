@@ -1,10 +1,10 @@
 # PCLMS_BK_new 程式碼分析
 
-> 專案：`PCLMS_BK_new`  
-> 路徑：`C:\Users\7010\Desktop\gravityTest\PCLMS_BK_new`  
-> 階段：Phase 04 Code Analysis  
-> 狀態：第一輪分析完成  
-> 更新日期：2026-05-13  
+> 專案：`PCLMS_BK_new`
+> 路徑：`%GRAVITYTEST_ROOT%\PCLMS_BK_new`
+> 階段：Phase 04 Code Analysis
+> 狀態：第一輪分析完成
+> 更新日期：2026-05-13
 > 範圍：唯讀分析；本次未執行 build / test
 
 ---
@@ -47,7 +47,7 @@ JAVA/jks/SCT shell
 
 | 項目 | 結論 |
 |---|---|
-| 根專案 | `C:\Users\7010\Desktop\gravityTest\PCLMS_BK_new\pom.xml` |
+| 根專案 | `%GRAVITYTEST_ROOT%\PCLMS_BK_new\pom.xml` |
 | groupId | `com.tradevan.clms` |
 | artifactId | `pclms_bk_parent` |
 | version | `140` |

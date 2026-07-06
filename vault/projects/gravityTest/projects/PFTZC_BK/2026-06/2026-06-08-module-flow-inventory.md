@@ -13,8 +13,8 @@ tags:
   - message-flow
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PFTZC_BK
-  - C:\Users\7010\Desktop\gravityTest\PFTZC_BK\JAVA\FTZC_BK
+  - %GRAVITYTEST_ROOT%\PFTZC_BK
+  - %GRAVITYTEST_ROOT%\PFTZC_BK\JAVA\FTZC_BK
 ---
 
 # PFTZC_BK 模組功用、資料流與牽涉程式

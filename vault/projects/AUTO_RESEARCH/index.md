@@ -19,4 +19,3 @@ tags: [auto-research, project, index]
 
 - `recaps-index`：集中看 core、manual scoring、mvp、sast triage 等 recap
 - 正式專案知識：後續可補架構、domain plugin、runbook
-

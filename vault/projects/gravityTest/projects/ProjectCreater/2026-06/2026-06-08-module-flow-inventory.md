@@ -12,7 +12,7 @@ tags:
   - claude-sdk
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\ProjectCreater
+  - %GRAVITYTEST_ROOT%\ProjectCreater
 ---
 
 # ProjectCreater 模組功用、資料流與牽涉程式

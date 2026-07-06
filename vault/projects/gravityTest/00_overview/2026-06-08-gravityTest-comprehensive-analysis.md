@@ -1,4 +1,4 @@
-﻿---
+---
 type: project-analysis-index
 date: 2026-06-08
 project: gravityTest
@@ -8,9 +8,9 @@ topic: comprehensive-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, index]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest"
-  - "C:/Users/7010/Desktop/gravityTest/pixiu-core/vault/projects/gravityTest/00_overview/inventory-summary.md"
-  - "C:/Users/7010/Desktop/gravityTest/pixiu-core/vault/projects/gravityTest/01_inventory/project-registry.md"
+  - "%GRAVITYTEST_ROOT%"
+  - "%PIXIU_CORE%/vault/projects/gravityTest/00_overview/inventory-summary.md"
+  - "%PIXIU_CORE%/vault/projects/gravityTest/01_inventory/project-registry.md"
 summary: 2026-06-08 針對 gravityTest 除 pixiu-core 母體外 22 個項目的 CodeGraph 初始化與全面靜態分析索引。
 ---
 
@@ -18,7 +18,7 @@ summary: 2026-06-08 針對 gravityTest 除 pixiu-core 母體外 22 個項目的 
 
 ## 範圍
 
-- 分析根目錄：C:\Users\7010\Desktop\gravityTest
+- 分析根目錄：%GRAVITYTEST_ROOT%
 - 排除母體：pixiu-core
 - 本輪納入：22 個非母體目錄
 - 寫入方式：每個專案依 projects/<repo>/2026-06/2026-06-08-full-analysis.md 歸檔

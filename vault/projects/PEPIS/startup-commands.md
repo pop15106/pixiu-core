@@ -9,10 +9,10 @@ status: active
 summary: PEPIS / CCPS 本機前後端啟動指令，前端以 view/CCPS 的 Vue UI serve 為主線。
 tags: [pepis, ccps, startup, vue, maven, tomcat7]
 source_paths:
-  - C:\Users\7010\Desktop\Project\pepis_ap\README.md
-  - C:\Users\7010\Desktop\Project\pepis_ap\pom.xml
-  - C:\Users\7010\Desktop\Project\pepis_ap\view\CCPS\package.json
-  - C:\Users\7010\Desktop\Project\pepis_ap\view\CCPS\vue.config.js
+  - %USERPROFILE%\Desktop\Project\pepis_ap\README.md
+  - %USERPROFILE%\Desktop\Project\pepis_ap\pom.xml
+  - %USERPROFILE%\Desktop\Project\pepis_ap\view\CCPS\package.json
+  - %USERPROFILE%\Desktop\Project\pepis_ap\view\CCPS\vue.config.js
 ---
 
 # PEPIS / CCPS 啟動指令
@@ -22,7 +22,7 @@ source_paths:
 從 `pepis_ap` repo root 啟動 Maven Tomcat：
 
 ```powershell
-cd C:\Users\7010\Desktop\Project\pepis_ap
+cd %USERPROFILE%\Desktop\Project\pepis_ap
 mvn compile tomcat7:run -e
 ```
 
@@ -36,7 +36,7 @@ mvn compile tomcat7:run -e
 主前端是 `view\CCPS`，不是 `view\ccps_re`。
 
 ```powershell
-cd C:\Users\7010\Desktop\Project\pepis_ap\view\CCPS
+cd %USERPROFILE%\Desktop\Project\pepis_ap\view\CCPS
 vue ui
 ```
 
@@ -45,7 +45,7 @@ vue ui
 ## 前端 CLI 等效指令
 
 ```powershell
-cd C:\Users\7010\Desktop\Project\pepis_ap\view\CCPS
+cd %USERPROFILE%\Desktop\Project\pepis_ap\view\CCPS
 npm run serve
 ```
 

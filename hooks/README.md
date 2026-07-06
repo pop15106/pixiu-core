@@ -46,9 +46,10 @@ User request → Claude picks a tool → PreToolUse hook runs → Tool executes 
 | **Pre-compact** | `PreCompact` | Saves state before context compaction |
 | **Console.log audit** | `Stop` | Checks all modified files for `console.log` after each response |
 | **Session summary** | `Stop` | Persists session state when transcript path is available |
+| **Pixiu auto recap** | `Stop` | Writes `draft-auto` recap candidates into `vault/memory/recaps/<project>/<YYYY-MM>/` without replacing manual recaps |
 | **Pattern extraction** | `Stop` | Evaluates session for extractable patterns (continuous learning) |
 | **Cost tracker** | `Stop` | Emits lightweight run-cost telemetry markers |
-| **Session end marker** | `SessionEnd` | Lifecycle marker and cleanup log |
+| **Session end marker + Pixiu final auto recap** | `SessionEnd` | Lifecycle marker plus final `draft-auto` recap capture |
 
 ## Customizing Hooks
 

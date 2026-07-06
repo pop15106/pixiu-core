@@ -8,10 +8,10 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P0]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/PTWCS"
-  - "C:/Users/7010/Desktop/gravityTest/PTWCS/ptwcs_ap/pom.xml"
-  - "C:/Users/7010/Desktop/gravityTest/PTWCS/ptwcs_ap/view/ptwcs_react/package.json"
-  - "C:/Users/7010/Desktop/gravityTest/PTWCS/ptwcs_ap/src/main/resources"
+  - "%GRAVITYTEST_ROOT%/PTWCS"
+  - "%GRAVITYTEST_ROOT%/PTWCS/ptwcs_ap/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PTWCS/ptwcs_ap/view/ptwcs_react/package.json"
+  - "%GRAVITYTEST_ROOT%/PTWCS/ptwcs_ap/src/main/resources"
 summary: PTWCS 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -52,10 +52,10 @@ summary: PTWCS 於 2026-06-08 的專案現況、技術棧、架構邊界與風�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\PTWCS
-- C:\Users\7010\Desktop\gravityTest\PTWCS\ptwcs_ap\pom.xml
-- C:\Users\7010\Desktop\gravityTest\PTWCS\ptwcs_ap\view\ptwcs_react\package.json
-- C:\Users\7010\Desktop\gravityTest\PTWCS\ptwcs_ap\src\main\resources
+- %GRAVITYTEST_ROOT%\PTWCS
+- %GRAVITYTEST_ROOT%\PTWCS\ptwcs_ap\pom.xml
+- %GRAVITYTEST_ROOT%\PTWCS\ptwcs_ap\view\ptwcs_react\package.json
+- %GRAVITYTEST_ROOT%\PTWCS\ptwcs_ap\src\main\resources
 
 ## 分析限制
 

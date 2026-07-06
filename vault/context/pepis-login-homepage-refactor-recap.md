@@ -55,7 +55,7 @@ scope: 忘記密碼功能 | 公告資訊功能 | 登入驗證碼功能
 
 ### tv-isso-api
 
-工作區沒有找到 `tv-isso-api-doc` 目錄，實際可用的是 `C:\Users\7010\Desktop\Project\tv-isso-api`。
+工作區沒有找到 `tv-isso-api-doc` 目錄，實際可用的是 `%USERPROFILE%\Desktop\Project\tv-isso-api`。
 
 `tv-isso-api` 是 Java jar，不是前端專案。主要可重用公告與 ISSO user id 規則。
 
@@ -347,7 +347,7 @@ AnnouncementService.getLoginAnnouncement()
 
 ## 2026-05-13 補充確認：tv-isso-api-doc 與 tv-isso-api 差異
 
-使用者已補上 `C:\Users\7010\Desktop\Project\tv-isso-api-doc`。重新比對後確認：
+使用者已補上 `%USERPROFILE%\Desktop\Project\tv-isso-api-doc`。重新比對後確認：
 
 - `tv-isso-api-doc` 根目錄只有 `doc/`，是 Javadoc 文件包，不是 Java source project。
 - `tv-isso-api` 是 Java source project，含 `pom.xml`、`src/`、`target/`。
@@ -441,5 +441,5 @@ userId = N_{extId}_{customId}
 ### 注意事項
 - 本次不新增 DB table，也不直接處理密碼更新；密碼流程由 SAAB 後端既有機制處理。
 - captcha 使用 HttpSession 儲存，一次驗證後即移除。
-- 
+-
 pm run build 會產生 src/main/webapp/CCPS 打包輸出；若本階段只測本機 dev server，可不納入提交。

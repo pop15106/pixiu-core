@@ -1,7 +1,7 @@
 ---
 type: memory
 readAt: session-init
-lastUpdated: 2026-05-12
+lastUpdated: 2026-07-05
 tags: [memory, pixiucore]
 ---
 
@@ -14,9 +14,24 @@ tags: [memory, pixiucore]
 
 ---
 
-## 目前狀態（2026-05-13）
+## 目前狀態（2026-07-05）
 
 ### 進行中的工作
+
+#### 2026-06 ～ 2026-07
+
+> 註：2026-05-15 至 2026-07-02 期間無正式 recap（僅 auto 草稿），下表部分列標【未確認】，來源為 auto recap，狀態待正式確認。
+
+| 日期 | 狀態 | 主題 | 摘要 | 連結 |
+|---|---|---|---|---|
+| 2026-07-05 | 已完成 | Governance 覆核＋hook 攔截鏈修復 | fresh-context 覆核通過；auto-recap 跨日單檔＋去識別化（測試 6/6）；guardrails 補密鑰樣式＋PowerShell、secret-scan／mothership-sync 兩個死 hook 修活（tool_response 正確欄位＋JSON decision 回饋）；實測打通 auto-mode 閘門（斷點：settings.json 副本漂移）；alignment 第 5 節新增 hook 副本對照；skills 分層完成（8 常駐＋81 參考層 disable-model-invocation）＋`skills/INDEX.md` 單一真源索引 | [[2026-07-05-PIXIUCORE-claude-code-hooks-effective-config-is-settings-json\|observation]] |
+| 2026-07-03 | 已完成 | Governance 制度建立 | `vault/governance/` 九檔落地；四入口檔＋user_rules 修訂版已於 2026-07-03 回貼生效 | [[vault/governance/INDEX\|governance/INDEX]] |
+| 2026-07-03 | 已修復（2026-07-05） | recaps 三目錄 I/O error | chkdsk 重開機檢查修復，三目錄可讀；復活目錄殘留 ~170 份噪音 recap 已隔離，疑似憑證檔交使用者改密／刪除（git 未曾納管） | [[vault/governance/quick-diagnosis-2026-07-03\|quick-diagnosis]] |
+| 2026-07-03 | 已完成 | hook-state 遷移＋auto recap hook 修復 | 827MB 已遷出 vault（→ state/）、143 份噪音 recap 已隔離；watcher 與 auto-recap 已修 | [[vault/governance/letter-to-future-sessions\|letter]] |
+| 2026-06-08 | 已完成 | gravityTest 全專案盤點 | 18 個專案 full-analysis 與 module-flow inventory 已落檔 | [[vault/projects/gravityTest/index\|gravityTest index]] |
+| 2026-06-05 | 分析完成 | PCLMS decltype T balance | 「多加沒扣」根因完整分析＋SA review 已落檔 | [[2026-06-05-PCLMS-decltype-T-balance-多加-沒扣-完整分析]] |
+| 2026-06-16 | 【未確認】 | 第二大腦 → kc-wiki 評估 | 評估以 kc_llm_wiki 取代／搭配第二大腦，僅 auto 草稿 | |
+| 2026-06-26 | 【未確認】 | PEPIS FedEx 827 系列 | 授權通知、transcode 827、四個設定檔調整等，僅 auto 草稿，待正式 recap | |
 
 #### 2026-05
 
@@ -52,6 +67,14 @@ tags: [memory, pixiucore]
 > | 2026-04-20 | 已盤點 | PCLMS L1/L4/N1C | 已釐清訊息傳送規則與 N1C 實測 |  |
 
 ### 最近重要決策
+
+#### 2026-07
+
+| 日期 | 主題 | 摘要 | 連結 |
+|---|---|---|---|
+| 2026-07-05 | Hook 生效點 | Claude hooks 實際生效在 `~/.claude/settings.json`，repo `hooks/hooks.json` 為本體範本；改 hook 行為兩邊都要動，月維護加雙邊對照 | [[vault/governance/entry-files-alignment\|alignment 第5節]] |
+| 2026-07-03 | Governance 制度 | 制度本體集中 `vault/governance/`，入口檔只留路由；判準、派工、維護規則外化給弱模型執行 | [[vault/governance/entry-files-alignment\|entry-files-alignment]] |
+| 2026-07-03 | user_rules 修訂案 | recap 檔名對齊 sop（去時間戳）、寫入豁免擴及 agent-learning／after-action、Opus 4.7 參數加版本註記；已於 2026-07-03 回貼生效 | [[vault/governance/letter-to-future-sessions\|letter]] |
 
 #### 2026-05
 

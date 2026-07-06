@@ -1,4 +1,4 @@
-﻿---
+---
 type: project-analysis
 date: 2026-06-08
 project: gravityTest
@@ -8,9 +8,9 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P1]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/PFTZC_AP_new"
-  - "C:/Users/7010/Desktop/gravityTest/PFTZC_AP_new/pom.xml"
-  - "C:/Users/7010/Desktop/gravityTest/PFTZC_AP_new/JAVA/pftzc_mvn/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PFTZC_AP_new"
+  - "%GRAVITYTEST_ROOT%/PFTZC_AP_new/pom.xml"
+  - "%GRAVITYTEST_ROOT%/PFTZC_AP_new/JAVA/pftzc_mvn/pom.xml"
 summary: PFTZC_AP_new 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -51,9 +51,9 @@ summary: PFTZC_AP_new 於 2026-06-08 的專案現況、技術棧、架構邊界�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\PFTZC_AP_new
-- C:\Users\7010\Desktop\gravityTest\PFTZC_AP_new\pom.xml
-- C:\Users\7010\Desktop\gravityTest\PFTZC_AP_new\JAVA\pftzc_mvn\pom.xml
+- %GRAVITYTEST_ROOT%\PFTZC_AP_new
+- %GRAVITYTEST_ROOT%\PFTZC_AP_new\pom.xml
+- %GRAVITYTEST_ROOT%\PFTZC_AP_new\JAVA\pftzc_mvn\pom.xml
 
 ## 分析限制
 

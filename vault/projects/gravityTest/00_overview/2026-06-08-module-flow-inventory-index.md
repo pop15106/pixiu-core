@@ -12,9 +12,9 @@ tags:
   - data-flow
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest
-  - C:\Users\7010\Desktop\gravityTest\pixiu-core\vault\projects\gravityTest\01_inventory\module-inventory.md
-  - C:\Users\7010\Desktop\gravityTest\pixiu-core\vault\projects\gravityTest\01_inventory\repo-relations.md
+  - %GRAVITYTEST_ROOT%
+  - %PIXIU_CORE%\vault\projects\gravityTest\01_inventory\module-inventory.md
+  - %PIXIU_CORE%\vault\projects\gravityTest\01_inventory\repo-relations.md
 ---
 
 # gravityTest 專案模組與資料流盤點索引

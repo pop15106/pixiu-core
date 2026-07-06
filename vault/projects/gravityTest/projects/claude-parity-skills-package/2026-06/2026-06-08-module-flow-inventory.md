@@ -11,7 +11,7 @@ tags:
   - documentation
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\claude-parity-skills-package
+  - %GRAVITYTEST_ROOT%\claude-parity-skills-package
 ---
 
 # claude-parity-skills-package 模組功用、資料流與牽涉檔案

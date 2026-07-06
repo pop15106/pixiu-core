@@ -13,8 +13,8 @@ tags:
   - domain-model
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_LIBS_new
-  - C:\Users\7010\Desktop\gravityTest\PCLMS_LIBS_new\JAVA\src\main\java
+  - %GRAVITYTEST_ROOT%\PCLMS_LIBS_new
+  - %GRAVITYTEST_ROOT%\PCLMS_LIBS_new\JAVA\src\main\java
 ---
 
 # PCLMS_LIBS_new 模組功用、資料流與牽涉程式

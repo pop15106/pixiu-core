@@ -13,7 +13,7 @@ supporting_observations:
 contradicting_observations:
 ---
 
-# Instinct - 
+# Instinct -
 
 ## Trigger
 

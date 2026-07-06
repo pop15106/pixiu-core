@@ -12,11 +12,11 @@ tags:
   - report
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\perms
-  - C:\Users\7010\Desktop\gravityTest\perms\src\main\resources\conf\modules
-  - C:\Users\7010\Desktop\gravityTest\perms\src\main\resources\mapper
-  - C:\Users\7010\Desktop\gravityTest\perms\src\main\java\com\tradevan\perms
-  - C:\Users\7010\Desktop\gravityTest\perms\src\main\webapp\pages
+  - %GRAVITYTEST_ROOT%\perms
+  - %GRAVITYTEST_ROOT%\perms\src\main\resources\conf\modules
+  - %GRAVITYTEST_ROOT%\perms\src\main\resources\mapper
+  - %GRAVITYTEST_ROOT%\perms\src\main\java\com\tradevan\perms
+  - %GRAVITYTEST_ROOT%\perms\src\main\webapp\pages
 ---
 
 # perms 模組功用、資料流與牽涉程式

@@ -12,8 +12,8 @@ tags:
   - documentation
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\tv-isso-api-doc
-  - C:\Users\7010\Desktop\gravityTest\tv-isso-api-doc\doc
+  - %GRAVITYTEST_ROOT%\tv-isso-api-doc
+  - %GRAVITYTEST_ROOT%\tv-isso-api-doc\doc
 ---
 
 # tv-isso-api-doc 模組功用、資料流與牽涉程式

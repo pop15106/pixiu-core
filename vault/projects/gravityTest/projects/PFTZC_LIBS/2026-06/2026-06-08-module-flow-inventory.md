@@ -13,8 +13,8 @@ tags:
   - domain-model
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\PFTZC_LIBS
-  - C:\Users\7010\Desktop\gravityTest\PFTZC_LIBS\src\main\java
+  - %GRAVITYTEST_ROOT%\PFTZC_LIBS
+  - %GRAVITYTEST_ROOT%\PFTZC_LIBS\src\main\java
 ---
 
 # PFTZC_LIBS 模組功用、資料流與牽涉程式

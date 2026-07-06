@@ -8,8 +8,8 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P3]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/ProjectCreater"
-  - "C:/Users/7010/Desktop/gravityTest/ProjectCreater/package.json"
+  - "%GRAVITYTEST_ROOT%/ProjectCreater"
+  - "%GRAVITYTEST_ROOT%/ProjectCreater/package.json"
 summary: ProjectCreater 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -46,8 +46,8 @@ summary: ProjectCreater 於 2026-06-08 的專案現況、技術棧、架構邊�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\ProjectCreater
-- C:\Users\7010\Desktop\gravityTest\ProjectCreater\package.json
+- %GRAVITYTEST_ROOT%\ProjectCreater
+- %GRAVITYTEST_ROOT%\ProjectCreater\package.json
 
 ## 分析限制
 

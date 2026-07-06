@@ -1,8 +1,8 @@
 # 📚 gravityTest — Knowledge Vault Index
 
-> **組織**：com.tradevan（Tradevan 貿易資訊科技）  
-> **分析啟動日期**：2026-05-12  
-> **Vault 根目錄**：`vault/projects/gravityTest/`  
+> **組織**：com.tradevan（Tradevan 貿易資訊科技）
+> **分析啟動日期**：2026-05-12
+> **Vault 根目錄**：`vault/projects/gravityTest/`
 > **狀態**：🟢 Phase 01 完成 | 🔲 Phase 02–07 待執行
 
 ---
@@ -107,5 +107,5 @@ vault/projects/gravityTest/
 
 ---
 
-*本 Vault 由 AI 架構分析系統自動生成並持續更新。每個 Phase 完成後此索引將同步更新。*  
+*本 Vault 由 AI 架構分析系統自動生成並持續更新。每個 Phase 完成後此索引將同步更新。*
 *後續 AI Agent 接手時請先閱讀本檔案，再依 Phase 順序讀取對應摘要。*

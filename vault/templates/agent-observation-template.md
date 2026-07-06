@@ -14,7 +14,7 @@ confidence:
 verified: false
 ---
 
-# Observation - 
+# Observation -
 
 ## Problem
 

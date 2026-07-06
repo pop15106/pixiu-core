@@ -8,7 +8,7 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P3]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/pclms_ap_tmp"
+  - "%GRAVITYTEST_ROOT%/pclms_ap_tmp"
 summary: pclms_ap_tmp 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -42,7 +42,7 @@ summary: pclms_ap_tmp 於 2026-06-08 的專案現況、技術棧、架構邊界�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\pclms_ap_tmp
+- %GRAVITYTEST_ROOT%\pclms_ap_tmp
 
 ## 分析限制
 

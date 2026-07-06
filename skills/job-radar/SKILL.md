@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: job-radar
 description: "kc_job_radar 求職雷達遙控指令。觸發詞：寫信、整理雷達、搜尋職缺、評估雷達、刷新追蹤。"
 version: 1.1.0

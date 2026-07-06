@@ -1,4 +1,4 @@
-﻿---
+---
 type: project-analysis
 date: 2026-06-08
 project: gravityTest
@@ -8,7 +8,7 @@ topic: full-project-analysis
 status: current-snapshot
 tags: [gravityTest, project-analysis, codegraph, P3]
 source_paths:
-  - "C:/Users/7010/Desktop/gravityTest/tv-isso-api-doc"
+  - "%GRAVITYTEST_ROOT%/tv-isso-api-doc"
 summary: tv-isso-api-doc 於 2026-06-08 的專案現況、技術棧、架構邊界與風險整理。
 ---
 
@@ -39,7 +39,7 @@ summary: tv-isso-api-doc 於 2026-06-08 的專案現況、技術棧、架構邊�
 
 ## 本輪證據來源
 
-- C:\Users\7010\Desktop\gravityTest\tv-isso-api-doc
+- %GRAVITYTEST_ROOT%\tv-isso-api-doc
 
 ## 分析限制
 

@@ -13,7 +13,7 @@ tags:
   - PCLMS
   - codegraph
 source_paths:
-  - C:\Users\7010\Desktop\gravityTest\pclms_ap_tmp
+  - %GRAVITYTEST_ROOT%\pclms_ap_tmp
 ---
 
 # pclms_ap_tmp 模組功用、資料流與牽涉程式

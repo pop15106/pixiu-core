@@ -8,7 +8,7 @@ topic: agent-metacognition-memory-system-plan
 status: draft
 summary: 整理 agent metacognition 與母體記憶升級的實作計劃，維持 draft 狀態供後續評估。
 tags: [pixiucore, second-brain, agent-memory, metacognition, strategic-memory, self-improvement]
-sources: C:\Users\7010\Desktop\進化agent\心得.txt | C:\Users\7010\Desktop\進化agent\來源資源.txt
+sources: %USERPROFILE%\Desktop\進化agent\心得.txt | %USERPROFILE%\Desktop\進化agent\來源資源.txt
 related_decisions: vault/memory/decisions/2026-05-11-n8n第二大腦與VectorDatabase實作計劃.md | vault/memory/decisions/2026-05-12-second-brain-first-lookup-rule.md
 ---
 
@@ -16,7 +16,7 @@ related_decisions: vault/memory/decisions/2026-05-11-n8n第二大腦與VectorDat
 
 ## 目的
 
-這份文件把 `C:\Users\7010\Desktop\進化agent` 裡的研究心得整理成 PixiuCore 可落地的母體設計稿。
+這份文件把 `%USERPROFILE%\Desktop\進化agent` 裡的研究心得整理成 PixiuCore 可落地的母體設計稿。
 
 核心結論是：Agent 的「自我學習」不應被理解成模型自己神祕變聰明，而是一套可工程化的記憶管理流程：把工作過程中的經驗抓下來，整理成可檢索、可驗證、可升級的知識，再逐步影響下一次任務的行為。
 

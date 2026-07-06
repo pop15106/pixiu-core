@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "0720ec6fe0995911",
+        "id": "bf35a084d26e2fc0",
         "type": "tabs",
         "children": [
           {
-            "id": "60931a89efda146c",
+            "id": "eeac22bcfd26c9f9",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "vault/memory/recaps/2026-05-11-PCLMS-BK-TS-L8-無法收訊調查.md",
+                "file": "vault/🏠 Dashboard.md",
                 "mode": "source",
                 "source": false,
                 "backlinks": true,
@@ -28,7 +28,7 @@
                 }
               },
               "icon": "lucide-file",
-              "title": "2026-05-11-PCLMS-BK-TS-L8-無法收訊調查"
+              "title": "🏠 Dashboard"
             }
           }
         ]
@@ -88,7 +88,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 358.5
+    "width": 568.5
   },
   "right": {
     "id": "499fa6dfdd3cdaad",
@@ -194,44 +194,44 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "60931a89efda146c",
+  "active": "eeac22bcfd26c9f9",
   "lastOpenFiles": [
-    "vault/projects/gravityTest/04_code-analysis/perms-NOW_STATUS-analysis.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-30-101303-EDDA查詢修改測試回饋.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-月度整理.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-171300-pepis-ap-3.4申請查詢修改功能實作.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-151239-Spec-Improve技能新增同步.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-121857-Pixiu-Auto-Research-SAST-triage規則.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-112703-Pixiu-Auto-Research-MVP實作落地.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-105958-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-105025-Pixiu-Auto-Research-Core實作方案.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-29-102717-Agent-Team前置判斷硬閘門.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-27-154144-DOCX驗證流程調整.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-27-152302-CCA-F教材書籍化與DOCX輸出驗證.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-27-103853-DOCX文件產生與make-docx技能化.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-21-111300-OpenSpec導入規劃.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-母體雙向同步.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-PCLMS已申報彙報單Bug診斷.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-115554-PPOST-件數比對邏輯修正.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-PCLMS-按月彙報進倉流程.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-133513-PCLMS-L1傳送規則盤點.md",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-115554-PPOST-件數比對邏輯修正.docx",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-115554-PPOST-件數比對邏輯修正 1_.docx",
-    "vault_backup_20260506_141931/memory/recaps/2026-04/2026-04-20-113252-PCLMS彙報出倉待確認原因釐清.md",
-    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-30-EDDA查詢修改UI策略.md",
-    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-MVP落地路徑.md",
-    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Spec-Improve技能新增同步.md",
-    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-SAST-triage規則.md",
-    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Manual-Codex-Scoring.md",
-    "vault_backup_20260506_141931/memory/decisions/2026-04/2026-04-29-Pixiu-Auto-Research-Core架構策略.md",
-    "vault_backup_20260506_141931/memory/recaps/gen_docx_ppost_piece.py",
-    "vault_backup_20260506_141931/memory/recaps/2026-04",
-    "vault_backup_20260506_141931/memory/decisions/2026-04",
-    "vault_backup_20260506_141931/memory/recaps",
-    "vault_backup_20260506_141931/memory/decisions",
-    "vault_backup_20260506_141931/memory/auto-mode-audit.log",
-    "vault_backup_20260506_141931/templates",
-    "vault_backup_20260506_141931/sop",
+    "vault/memory/recaps/母體/2026-06/2026-06-22-母體-auto-那他如股i直接抓下來是不是就可以使用記憶層-還是書i要用-kc-llm-wiki-的技能.md",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019ece43-2ae5-7261-a248-1f0204d67c88-23cff775184d.jsonl",
+    "vault/memory/recaps/母體/2026-06/2026-06-22-母體-auto-好-那用本機的.md",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019ece43-2ae5-7261-a248-1f0204d67c88-52686610d437.jsonl",
+    "vault/memory/recaps/PERMS/2026-06/2026-06-22-PERMS-auto-context-from-my-ide-setup-open-tabs.md",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019eed3e-430b-7aa0-8d9a-54fb4ead2aac-d9b002b223a0.jsonl",
+    "vault/memory/hook-state/codex-thread-watcher/019eed3e-430b-7aa0-8d9a-54fb4ead2aac.json",
+    "vault/memory/hook-state/codex-thread-watcher/019eed13-cf8b-7e61-8a4a-cc3a51566f5d.json",
+    "vault/memory/recaps/母體/2026-06/2026-06-22-母體-auto-幫我看一下-superpowers-的最新版本-然後確認能不能更新.md",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019eed13-cf8b-7e61-8a4a-cc3a51566f5d-fc5012a586de.jsonl",
+    "vault/memory/recaps/母體/2026-06/2026-06-22-母體-auto-我想先預留-hermes接口-但不啟用-hermes-只要先完成-記憶層的部分就好.md",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019ece43-2ae5-7261-a248-1f0204d67c88-aea498be9702.jsonl",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019ed351-35d1-7903-b283-ac39d80a750e-46d9e42e7e64.jsonl",
+    "vault/memory/hook-state/codex-thread-watcher/019ed351-35d1-7903-b283-ac39d80a750e.json",
+    "vault/memory/recaps/母體/2026-06/2026-06-17-母體-auto-kc記憶測試-0617-鳳梨鐵盒.md",
+    "vault/memory/hook-state/codex-thread-watcher/transcripts/019ed325-4054-73f0-bf81-74b39e3db33f-297d213da682.jsonl",
+    "vault/memory/recaps/PCLMS/2026-06/2026-06-17-PCLMS-auto-他有新增啦-只是我想知道-ai-會不會記起來-這樣是不是要先停用第二大腦先切過去看看.md",
+    "vault/memory/recaps/PCLMS/2026-06/2026-06-17-PCLMS-auto-那現在有什麼我能測的嗎.md",
+    "vault/memory/recaps/PCLMS/2026-06/2026-06-17-PCLMS-auto-目前我還是有啟用第二大腦對吧-那根據那個repo-是不是不用啟用第二大腦-ai-可以直接從資料去抓取記憶.md",
+    "vault/projects/AUTO_RESEARCH/recaps-index.md",
+    "vault/memory/recaps/AUTO_RESEARCH/2026-04/2026-04-29-AUTO_RESEARCH-manual-codex-scoring.md",
+    "vault/memory/recaps/AUTO_RESEARCH/2026-04/2026-04-29-AUTO_RESEARCH-mvp-implementation.md",
+    "vault/memory/recaps/AUTO_RESEARCH/2026-04/2026-04-29-AUTO_RESEARCH-sast-triage-rules.md",
+    "vault/projects/AUTO_RESEARCH/index.md",
+    "vault/memory/recaps/PEPIS/2026-06/2026-06-15-PEPIS-auto-context-from-my-ide-setup-active-file-pepis_ap.md",
+    "vault/🏠 Dashboard.md",
+    "vault/memory/recaps/PCLMS_AP/2026-06/2026-06-12-PCLMS_AP-auto-context-from-my-ide-setup-active-file-pclms_ap.md",
+    "vault/memory/recaps/PERMS/2026-06/2026-06-11-PERMS-auto-context-from-my-ide-setup-active-file-src.md",
+    "vault/memory/recaps/母體/2026-06/2026-06-10-母體-auto-最後你在幫我檢查母體-現在所有分支-的變更內容-我要把還沒並回去的都併回去-要確認併回去不會影響主要分支.md",
+    "vault/memory/recaps/SECOND_BRAIN/2026-06/2026-06-10-SECOND_BRAIN-auto-這個是何推到git-嗎-還是美台電腦要重新設定.md",
+    "vault/memory/recaps/SECOND_BRAIN/2026-06/2026-06-10-SECOND_BRAIN-auto-可以結案了.md",
+    "vault/memory/recaps/SECOND_BRAIN/2026-06/2026-06-10-SECOND_BRAIN-auto-我點進去世都trusted-了.md",
+    "vault/memory/recaps/SECOND_BRAIN/2026-06/2026-06-10-SECOND_BRAIN-auto-還是只有cli-的才會.md",
+    "vault/memory/recaps/SECOND_BRAIN/2026-06/2026-06-10-SECOND_BRAIN-auto-skipped-loading-2-skill-s-due-to-invalid.md",
+    "vault/memory/recaps/母體/2026-06/2026-06-10-母體-auto-請在-codex-互動-tui-我是要開cli-嗎.md",
+    "vault/memory/recaps/母體/2026-06/2026-06-10-母體-auto-hooks.md",
     "skills/cybersecurity-library/assets/banner.png"
   ]
 }
