@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: banini
 description: "巴逆逆（8zz）反指標追蹤器 — 抓取 Threads 貼文並進行台股反指標分析。Use when user says '/banini', '巴逆逆', '反指標', '冥燈' or similar."
 version: 0.1.0

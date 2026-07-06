@@ -33,7 +33,7 @@ gitleaks detect --source . --verbose
 # GitHub Actions 範例（依實際 CI 工具調整）
 - name: SAST Scan
   uses: github/codeql-action/analyze@v2
-  
+
 - name: Dependency Check
   run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
 ```

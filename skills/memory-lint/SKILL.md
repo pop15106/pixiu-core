@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: memory-lint
 description: "Use when the user wants to lint a Claude Code memory directory (~/.claude/memory or custom path) for index inconsistency, stale project state, duplicate / conflicting feedback rules, naming convention violations, frontmatter gaps, and oversized files. The skill detects path, scans root-level *.md, reports findings by severity. Read-only — never auto-fixes, never deletes, never merges."
 version: 0.2.0

@@ -18,6 +18,7 @@
 'use strict';
 
 const path = require('path');
+const os = require('os');
 const PIXIU_CORE = process.env.PIXIU_CORE_PATH || path.resolve(__dirname, '../..');
 
 const hookId = process.argv[2] || '';
@@ -26,8 +27,10 @@ let inputData = '';
 process.stdin.on('data', chunk => inputData += chunk);
 process.stdin.on('end', () => {
   try {
-    // DEBUG: 記錄原始輸入，方便排查
-    require('fs').writeFileSync(path.join(PIXIU_CORE, 'scripts', 'hooks', 'debug-input.json'), inputData);
+    // DEBUG: 僅在 PIXIU_HOOK_DEBUG=1 時記錄原始輸入（對話內容不應常駐磁碟）
+    if (process.env.PIXIU_HOOK_DEBUG === '1') {
+      require('fs').writeFileSync(path.join(PIXIU_CORE, 'scripts', 'hooks', 'debug-input.json'), inputData);
+    }
     const input = JSON.parse(inputData);
 
     switch (hookId) {
@@ -44,13 +47,12 @@ process.stdin.on('end', () => {
         handleMothershipSync(input);
         break;
       default:
-        // 未知 hook ID，直接通過
-        console.log(inputData);
+        // 未知 hook ID，靜默通過（stdout 只允許 JSON 輸出）
+        break;
     }
   } catch (err) {
     // Hook 錯誤不應阻斷主流程
     console.error(`[pixiu-guardrails] 錯誤: ${err.message}`);
-    console.log(inputData);
   }
 });
 
@@ -58,32 +60,27 @@ process.stdin.on('end', () => {
 // 對應 user_rules.md：「最小改動原則」
 function handleChangeScope(input) {
   const toolInput = input.tool_input || {};
+  const msgs = [];
 
-  // 檢查 MultiEdit 操作的變更範圍
   if (input.tool_name === 'MultiEdit') {
-    console.error('[🛡️ 母體治理] 偵測到 MultiEdit 操作。');
-    console.error('[🛡️ 母體治理] 提醒：user_rules.md 要求「最小改動原則：只改達成目標所需最小範圍」。');
-    console.error('[🛡️ 母體治理] 請確認此次多檔案修改都是必要的。');
+    msgs.push('偵測到 MultiEdit：user_rules.md 最小改動原則，請確認多檔修改都是必要的。');
   }
-
-  // 檢查 Write 操作是否在 .agent/ 目錄下
   if (input.tool_name === 'Write') {
     const filePath = toolInput.file_path || '';
     if (filePath.includes('.agent/') || filePath.includes('.agents/')) {
-      console.error('[🛡️ 母體治理] 偵測到 .agent/ 目錄變更！');
-      console.error('[🛡️ 母體治理] 依 user_rules.md「框架變更回寫母體」規則，');
-      console.error(`[🛡️ 母體治理] 完成後必須詢問使用者是否同步至 ${PIXIU_CORE}。`);
+      msgs.push(`偵測到 .agent/ 變更：完成後須詢問使用者是否同步至 ${PIXIU_CORE}。`);
     }
   }
-
-  console.log(inputData);
+  if (msgs.length > 0) {
+    console.log(JSON.stringify({ systemMessage: `[🛡️ 母體治理] ${msgs.join(' ')}` }));
+  }
 }
 
 // ── Hook 2: API Key 洩露掃描 ──────────────────────────────────────
 // 對應 user_rules.md：「禁止硬編碼 API Key、密碼、Token」
 function handleSecretScan(input) {
-  const toolOutput = input.tool_output || {};
-  const content = toolOutput.output || '';
+  const toolResponse = input.tool_response ?? input.tool_output ?? '';
+  const content = typeof toolResponse === 'string' ? toolResponse : JSON.stringify(toolResponse);
   const toolInput = input.tool_input || {};
   const newContent = toolInput.new_string || toolInput.content || '';
 
@@ -98,6 +95,10 @@ function handleSecretScan(input) {
     { pattern: /-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----/, name: 'Private Key' },
     { pattern: /mongodb\+srv:\/\/[^\s]+/,                 name: 'MongoDB Connection String' },
     { pattern: /postgres:\/\/[^\s]+/,                     name: 'PostgreSQL Connection String' },
+    { pattern: /AIza[0-9A-Za-z_-]{35}/,                   name: 'Google API Key' },
+    { pattern: /xox[bp]-[A-Za-z0-9-]{10,}/,               name: 'Slack Token' },
+    { pattern: /glpat-[A-Za-z0-9_-]{20,}/,                name: 'GitLab Token' },
+    { pattern: /npm_[A-Za-z0-9]{36}/,                     name: 'npm Token' },
   ];
 
   const found = [];
@@ -108,13 +109,13 @@ function handleSecretScan(input) {
   }
 
   if (found.length > 0) {
-    console.error(`[🔴 母體安全警報] 偵測到可能的硬編碼機密！`);
-    console.error(`[🔴 母體安全警報] 發現類型：${found.join('、')}`);
-    console.error(`[🔴 母體安全警報] 違反 user_rules.md：「禁止硬編碼 API Key、密碼、Token」`);
-    console.error(`[🔴 母體安全警報] 請立即改用 .env 環境變數。`);
+    // PostToolUse 的 exit 0 stderr 模型看不到；JSON decision:block 的 reason 會回饋給 Claude（官方 hooks 文件）
+    console.log(JSON.stringify({
+      decision: 'block',
+      reason: `[🔴 母體安全警報] 偵測到可能的硬編碼機密（${found.join('、')}）。違反 user_rules.md「禁止硬編碼 API Key、密碼、Token」——請立即改用 .env 環境變數，並清除剛寫入的機密內容。`,
+      systemMessage: `[🔴 母體安全警報] 疑似硬編碼機密：${found.join('、')}`
+    }));
   }
-
-  console.log(inputData);
 }
 
 // ── Hook 2b: Auto mode 授權閘門 ───────────────────────────────────
@@ -142,8 +143,8 @@ function handleAutoModeGuard(input) {
     }
   }
 
-  // 檢查 2：Bash 使用 --dangerously-skip-permissions
-  if (toolName === 'Bash') {
+  // 檢查 2：Bash / PowerShell 使用 --dangerously-skip-permissions
+  if (['Bash', 'PowerShell'].includes(toolName)) {
     const cmd = toolInput.command || '';
     if (/--dangerously-skip-permissions/.test(cmd)) {
       trigger = '--dangerously-skip-permissions 旗標';
@@ -152,7 +153,6 @@ function handleAutoModeGuard(input) {
   }
 
   if (!trigger) {
-    console.log(inputData);
     return;
   }
 
@@ -172,8 +172,7 @@ function handleAutoModeGuard(input) {
   }
 
   // 5 分鐘內有授權，放行但標註
-  console.error('[🟢 Pixiu 憲法] Auto mode 授權檢核通過（最近 5 分鐘內有 vault/memory/auto-mode-audit.log 進入紀錄）');
-  console.log(inputData);
+  console.log(JSON.stringify({ systemMessage: '[🟢 Pixiu 憲法] Auto mode 授權檢核通過（5 分鐘內有 audit.log 進入紀錄）' }));
 }
 
 function checkRecentAutoModeAuthorization() {
@@ -202,24 +201,34 @@ function checkRecentAutoModeAuthorization() {
 // ── Hook 3: .agent/ 變更偵測 + 母體同步提醒 ───────────────────────
 // 對應 user_rules.md：「框架變更回寫母體 (Mothership Sync) [HARD]」
 function handleMothershipSync(input) {
-  const toolOutput = input.tool_output || {};
-  const transcript = toolOutput.output || '';
+  const fs = require('fs');
+  // Stop 事件輸入沒有 tool_output（官方 hooks 文件）；改讀 transcript，只掃「實際寫入操作」的路徑，避免誤報
+  const transcriptPath = input.transcript_path || '';
+  if (!transcriptPath || !fs.existsSync(transcriptPath)) return;
+  if (input.stop_hook_active) return; // 防 Stop 迴圈
 
-  const SYNC_TRIGGERS = [
-    '.agent/skills/',
-    '.agent/workflows/',
-    '.agents/skills/',
-    'user_rules.md',
-    'AGENTS.md',
-  ];
+  const sessionKey = String(input.session_id || 'unknown').replace(/[^a-zA-Z0-9-]/g, '').slice(-12) || 'unknown';
+  const markerPath = path.join(os.tmpdir(), `pixiu-msync-${sessionKey}`);
+  if (fs.existsSync(markerPath)) return; // 本 session 已提醒過，不重複擋
 
-  const triggerFound = SYNC_TRIGGERS.filter(trigger => transcript.includes(trigger));
-
-  if (triggerFound.length > 0) {
-    console.error(`[🔄 母體同步] 偵測到框架級變更：${triggerFound.join('、')}`);
-    console.error(`[🔄 母體同步] 依 user_rules.md「框架變更回寫母體」硬規則，`);
-    console.error(`[🔄 母體同步] 請詢問使用者：「是否將此變更同步回寫至 ${PIXIU_CORE}？」`);
+  const SYNC_TRIGGERS = ['.agent/', '.agents/', '.agent\\', '.agents\\', 'user_rules.md', 'AGENTS.md'];
+  const writtenHits = new Set();
+  for (const line of fs.readFileSync(transcriptPath, 'utf8').split(/\r?\n/)) {
+    if (!line) continue;
+    let entry;
+    try { entry = JSON.parse(line); } catch { continue; }
+    const blocks = (entry.type === 'assistant' && Array.isArray(entry.message?.content)) ? entry.message.content : [];
+    for (const b of blocks) {
+      if (b.type !== 'tool_use' || !['Edit', 'Write', 'MultiEdit'].includes(b.name || '')) continue;
+      const fp = b.input?.file_path || '';
+      if (fp && SYNC_TRIGGERS.some(tr => fp.includes(tr))) writtenHits.add(fp);
+    }
   }
+  if (writtenHits.size === 0) return;
 
-  console.log(inputData);
+  try { fs.writeFileSync(markerPath, new Date().toISOString()); } catch {}
+  console.log(JSON.stringify({
+    decision: 'block',
+    reason: `[🔄 母體同步] 本 session 修改了框架級檔案：${Array.from(writtenHits).slice(0, 5).join('、')}。依 user_rules.md「框架變更回寫母體」硬規則，請詢問使用者是否將變更同步回寫至母體（${PIXIU_CORE}），確認後即可結束。`
+  }));
 }

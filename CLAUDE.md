@@ -34,3 +34,13 @@ After implementation, before submitting:
 2. Confirm logic, no redundant variables, and no stale fragments.
 3. Check that mothership changes remain portable across devices and paths.
 4. If issues are found, fix and re-audit until verified.
+
+## PixiuCore 母體路由（governance）
+
+1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
+2. Session 開始依序讀：
+   - `vault/README.md`（init 序列）
+   - `vault/governance/INDEX.md`（制度路由：何時讀哪份規則）
+3. 制度本體一律在 `vault/governance/` 與 `vault/context/ai-mothership-loading-policy.md`；本檔不承載規則內容。
+4. 派工、模型選擇、驗收：照 `vault/governance/model-dispatch-rules.md`。
+5. 拿不準要不要問使用者：照 `vault/governance/judgment-rubrics.md`。

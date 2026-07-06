@@ -137,7 +137,7 @@ topic: local-orapass-l8-db-test
 status: done
 tags: [recap, pclms, pclms-bk, db-test]
 source_paths:
-  - C:/Users/7010/Desktop/gravityTest/PCLMS_BK_new
+  - %GRAVITYTEST_ROOT%/PCLMS_BK_new
 related_notes: []
 related_decisions: []
 related_recaps: []

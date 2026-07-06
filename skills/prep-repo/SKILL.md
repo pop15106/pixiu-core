@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: prep-repo
 description: "Prepare a project for GitHub: README, commit conventions, sensitive data scan, broken link check, project structure, tests, CI, Docker, and final cleanup."
 version: 2.0.0

@@ -57,4 +57,3 @@ tags: [docx, encoding, powershell, python-docx, pixiu]
   - `name: make-docx` 與 `description:` 存在。
   - `Reusable Requirement DOCX Tool` 與 `Windows UTF-8 Guardrails` 段落存在。
   - 產出的 DOCX 檔案大小大於 0。
-
