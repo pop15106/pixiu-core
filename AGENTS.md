@@ -1,4 +1,4 @@
-﻿# Everything Claude Code (ECC) — Agent Instructions
+# Everything Claude Code (ECC) — Agent Instructions
 
 This is a **production-ready AI coding plugin** providing 25 specialized agents, 108 skills, 57 commands, and automated hook workflows for software development.
 
@@ -19,12 +19,12 @@ Trigger phrases include:
 - `Hermes 分配 AI`
 
 On trigger:
-1. Resolve Hermes home: use `$env:HERMES_HOME` if set; otherwise use `C:\Users\7010\Documents\hermes 多AI 工作流`.
+1. Resolve Hermes home: use `$env:HERMES_HOME` if set; otherwise use `%USERPROFILE%\Documents\hermes 多AI 工作流`.
 2. Do not treat the current folder being empty or not a git repo as permission to bypass Hermes.
 3. Submit and immediately run the Hermes task with:
 
 ```powershell
-$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { 'C:\Users\7010\Documents\hermes 多AI 工作流' }
+$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:USERPROFILE\Documents\hermes 多AI 工作流" }
 powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-submit-and-run.ps1" -Text "<verbatim user request>" -SourceEntrance "codex"
 ```
 
@@ -34,7 +34,7 @@ powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-submit-and-run.
 For approval-only actions, use:
 
 ```powershell
-$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { 'C:\Users\7010\Documents\hermes 多AI 工作流' }
+$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:USERPROFILE\Documents\hermes 多AI 工作流" }
 powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-gate.ps1" -TaskId "<taskId>" -Decision approve -By "<user>" -Comment "<reason>"
 ```
 
