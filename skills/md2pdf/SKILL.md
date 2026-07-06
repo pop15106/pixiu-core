@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: md2pdf
 description: "Convert Markdown to publication-ready A4 PDF with automatic ASCII-to-Mermaid conversion, CJK font handling, and self-check. Use when user says '/md2pdf', 'convert to pdf', 'markdown to pdf', or similar."
 version: 0.1.0

@@ -168,7 +168,9 @@ function inferProject(summary, cwd) {
     ['DOCX_TOOLING', /docx|make-docx/],
     ['OPENSPEC', /openspec/],
     ['PPOST', /ppost/],
-    ['PTWCS', /ptwcs/]
+    ['PTWCS', /ptwcs/],
+    ['AI_Narrative_Template_Platform', /ai[-_ ]narrative|narrative[-_ ]template/],
+    ['Playground', /playground/]
   ];
 
   for (const [project, pattern] of rules) {

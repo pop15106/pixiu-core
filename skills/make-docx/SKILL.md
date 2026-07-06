@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: make-docx
 description: 以固定的 Pixiu 風格（藍色標題、彩色表格、風險框、程式碼佐證、流程圖、自動目錄）產生 DOCX 技術文件。適用於流程分析、系統說明、風險報告等場景。
 origin: Pixiu

@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: llm-benchmark
 description: "本地 LLM Benchmark 工具。當使用者想測試、比較或選擇本地 Ollama 模型時觸發。流程：檢查 Ollama 安裝 → 依 VRAM 推薦模型大小 → 下載模型 → 跑 benchmark → 與現有模型比較 → 輸出 markdown 報告。"
 version: 1.0.0

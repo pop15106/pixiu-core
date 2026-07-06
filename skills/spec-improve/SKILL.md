@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: spec-improve
 description: Review and improve existing spec-driven development artifacts. Use when the user asks to optimize, review, score, audit, strengthen, renovate, or fill gaps in an existing spec, especially files under specs/active or specs/completed such as spec.md, plan.md, and tasks.md. This skill scores the spec first, explains strengths and weaknesses, recommends missing details, then asks the user focused clarification questions before any rewrite or file change.
 ---

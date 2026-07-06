@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: goal-engineer
 description: "Use when the user wants to AUTHOR an unattended, goal-driven evaluator-optimizer loop of the GENERATE-AND-SELECT kind (generate candidates → grade against a rubric → iterate by reason-code → keep the best; the human picks the final selection) that a fresh-session agent runs hands-off while the human only watches traffic-light push notifications. Interview-style forcing questions lock the spec, then it emits a self-contained dispatch markdown + a channel-agnostic notification protocol. This is the upstream SPEC AUTHOR, NOT a runtime: the dispatch is run by Claude Code's /goal, a headless `-p` session, or any unattended agent — /goal is the engine, this writes what you feed it. NOT for build-to-spec PRDs (that is prd-create), NOT a time scheduler (/loop or cron), NOT a recurring-push registrar (skill-cron)."
 version: 0.3.0

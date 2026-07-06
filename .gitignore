@@ -18,3 +18,5 @@ scripts/hooks/debug-input.json
 
 # Hook 璈???thread-watcher 蝑?嚗??脩???/state/
 /recap-review-*
+
+/vault/governance/backups/

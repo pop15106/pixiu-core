@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: searxng
 description: Privacy-respecting metasearch using your local SearXNG instance. Search the web, images, news, and more without external API dependencies.
 author: Avinash Venkatswamy

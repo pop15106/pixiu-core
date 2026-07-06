@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: spec
 description: "Spec-driven 開發流程 — 從模糊需求到驗收結案。自動判斷專案狀態，引導 user 走完：需求釐清 → 技術審查 → 實作 → 驗收 → 結案報告。"
 version: 1.2.0
