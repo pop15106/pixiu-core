@@ -71,7 +71,8 @@ summary: 維護協議：檔案修改權限分級、教訓迴路、精簡門檻�
 2. **summary 體檢**：`memory-summary.md` 的 `lastUpdated` 距今 >14 天 → 提醒使用者，並依最近的正式 recap 提案更新（提案後改級別）。
 3. **Inbox 清理**：跑第 5 節。
 4. **入口同步檢查**：跑 `entry-files-alignment.md` 第 5 節清單。
-5. 以上結果寫成一份母體 recap（`母體` 前綴），一行一項。
+5. **保留態複審（給封存 recap 一次翻案）**：掃 `memory/recaps/` 月份封存區裡 `reviewed` 但未升格、且封存滿 90 天的 auto recap，快速重看有無當時漏判的升格價值。有 → 升格 `decision`／`observation`；無 → 維持封存，之後不再複審。這是「保留」態的**唯一回頭路**（執行一次即定案），避免當時判保留、後來才有價值的永久沉底。
+6. 以上結果寫成一份母體 recap（`母體` 前綴），一行一項。
 
 ## 7. memory-summary 更新綁定（防止再度斷更）
 
@@ -93,6 +94,7 @@ summary: 維護協議：檔案修改權限分級、教訓迴路、精簡門檻�
 2. **auto recap 不用逐篇人工審**：全部進索引，靠 metadata 分層——索引必保留 `recap_mode`、`status`、`date`（recap-standard 既有要求），查詢預設過濾 `recap_mode: auto` 除非明確要查明細。
 3. **保留與升格**：檔案全留（一場一份體積小）；月維護時掃上月 auto recaps，有決策價值的（判準：judgment-rubrics 第 7 條）升格為 decision／instinct 並改 status；auto recap 超過 90 天未升格＝過期明細，從索引剔除（檔案照月份封存慣例保留）。
 4. **重建優先於修補**：Qdrant 只是可重建索引（既有 decision）。同步規則改動後，直接全量重建一次比逐筆修補可靠。
+5. **隔離區定時清除（使用者 2026-07-07 授權）**：`_auto-quarantine/`（審查判為作廢的 auto recap）內檔案 mtime 滿 30 天 → 真刪。安全前提三條同時成立才清：(a) 隔離區已排除 Qdrant 同步（第 1 點）故不在知識通道；(b) 屬作廢態、不進審查；(c) 有價值者已升格為 `decision`／`observation`（在白名單、全 AI 可讀）。因此清除「原料」不影響「知識層」讀取。執行者：`daily-review` 每日收尾順手清超期檔。此為刪除硬閘門的**具名豁免**（僅限 `_auto-quarantine/` 且滿 30 天），需同步進 `user_rules.md`；回貼前 AI 依本條執行清除視同已獲授權。
 
 ## 9. 防入口檔肥大與防四套漂移
 
