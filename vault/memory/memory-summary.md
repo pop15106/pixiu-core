@@ -1,7 +1,7 @@
 ---
 type: memory
 readAt: session-init
-lastUpdated: 2026-07-05
+lastUpdated: 2026-07-07
 tags: [memory, pixiucore]
 ---
 
@@ -24,6 +24,7 @@ tags: [memory, pixiucore]
 
 | 日期 | 狀態 | 主題 | 摘要 | 連結 |
 |---|---|---|---|---|
+| 2026-07-07 | 已完成 | Codex 治理對齊＋合併上 master＋日結時序修正 | Codex 端四道 guardrails 確認全註冊（走 bridge 呼叫母體同一份 js，今天修的版本自動生效）；本輪工作合併回 master（雙向分歧 6 vs 17，用 -X theirs 保住 cybersecurity 754 skills＋架構圖，可攜性閘門過）；daily-digest prompt 修時序（改掃昨天＋強制實掃＋去識別化），治掉普遍誤判「無來源」 | [[skills/INDEX\|skills 分層]] |
 | 2026-07-05 | 已完成 | Governance 覆核＋hook 攔截鏈修復 | fresh-context 覆核通過；auto-recap 跨日單檔＋去識別化（測試 6/6）；guardrails 補密鑰樣式＋PowerShell、secret-scan／mothership-sync 兩個死 hook 修活（tool_response 正確欄位＋JSON decision 回饋）；實測打通 auto-mode 閘門（斷點：settings.json 副本漂移）；alignment 第 5 節新增 hook 副本對照；skills 分層完成（8 常駐＋81 參考層 disable-model-invocation）＋`skills/INDEX.md` 單一真源索引 | [[2026-07-05-PIXIUCORE-claude-code-hooks-effective-config-is-settings-json\|observation]] |
 | 2026-07-03 | 已完成 | Governance 制度建立 | `vault/governance/` 九檔落地；四入口檔＋user_rules 修訂版已於 2026-07-03 回貼生效 | [[vault/governance/INDEX\|governance/INDEX]] |
 | 2026-07-03 | 已修復（2026-07-05） | recaps 三目錄 I/O error | chkdsk 重開機檢查修復，三目錄可讀；復活目錄殘留 ~170 份噪音 recap 已隔離，疑似憑證檔交使用者改密／刪除（git 未曾納管） | [[vault/governance/quick-diagnosis-2026-07-03\|quick-diagnosis]] |
@@ -72,6 +73,8 @@ tags: [memory, pixiucore]
 
 | 日期 | 主題 | 摘要 | 連結 |
 |---|---|---|---|
+| 2026-07-07 | 日結掃昨天不掃今天 | daily-digest 掃「今天」會撞時序（當天 recap 未齊）＝普遍誤判無來源；改為掃昨天＋強制先實掃列檔＋輸出去識別化 | [[scripts/scheduled/codex-daily-digest-prompt\|digest prompt]] |
+| 2026-07-07 | hook-state 不納入審查 | Codex recap 成品已進 memory/recaps 被審；hook-state 是含對話原文的原料，維持排除索引（隱私＋制度） | |
 | 2026-07-05 | Hook 生效點 | Claude hooks 實際生效在 `~/.claude/settings.json`，repo `hooks/hooks.json` 為本體範本；改 hook 行為兩邊都要動，月維護加雙邊對照 | [[vault/governance/entry-files-alignment\|alignment 第5節]] |
 | 2026-07-03 | Governance 制度 | 制度本體集中 `vault/governance/`，入口檔只留路由；判準、派工、維護規則外化給弱模型執行 | [[vault/governance/entry-files-alignment\|entry-files-alignment]] |
 | 2026-07-03 | user_rules 修訂案 | recap 檔名對齊 sop（去時間戳）、寫入豁免擴及 agent-learning／after-action、Opus 4.7 參數加版本註記；已於 2026-07-03 回貼生效 | [[vault/governance/letter-to-future-sessions\|letter]] |
