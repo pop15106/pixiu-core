@@ -1,0 +1,293 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"session:start\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"session:start\"",
+            "timeout": 30,
+            "statusMessage": "Loading Pixiu session context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:bash:auto-tmux-dev\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:bash:auto-tmux-dev\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: tmux dev server"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:bash:tmux-reminder\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:bash:tmux-reminder\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: tmux reminder"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:bash:git-push-reminder\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:bash:git-push-reminder\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: git push reminder"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:write:doc-file-warning\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:write:doc-file-warning\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: doc file warning"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:edit-write:suggest-compact\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:edit-write:suggest-compact\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: compact suggestion"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:insaits-security\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:insaits-security\"",
+            "timeout": 15,
+            "statusMessage": "Pixiu hook: InsAIts security"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:pixiu:change-scope\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:pixiu:change-scope\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: change scope"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:pixiu:auto-mode-guard\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:pixiu:auto-mode-guard\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: auto mode guard"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:compact\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:compact\"",
+            "timeout": 30,
+            "statusMessage": "Saving Pixiu compaction state"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:bash:pr-created\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:bash:pr-created\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: PR created"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:bash:build-complete\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:bash:build-complete\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: build complete"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:quality-gate\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:quality-gate\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: quality gate"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:edit:format\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:edit:format\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: format"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:edit:typecheck\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:edit:typecheck\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: typecheck"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:edit:console-warn\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:edit:console-warn\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: console warning"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:pixiu:secret-scan\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:pixiu:secret-scan\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: secret scan"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"stop:check-console-log\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"stop:check-console-log\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: console log check"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"stop:session-end\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"stop:session-end\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: session summary"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"stop:pixiu:auto-recap\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"stop:pixiu:auto-recap\"",
+            "timeout": 30,
+            "statusMessage": "Writing Pixiu auto recap"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"stop:evaluate-session\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"stop:evaluate-session\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: session evaluation"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"stop:cost-tracker\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"stop:cost-tracker\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu hook: cost tracker"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"stop:pixiu:mothership-sync\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"stop:pixiu:mothership-sync\"",
+            "timeout": 10,
+            "statusMessage": "Pixiu hook: mothership sync"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"pre:observe\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"pre:observe\"",
+            "timeout": 15,
+            "statusMessage": "Pixiu watcher: pre observe"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"post:observe\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"post:observe\"",
+            "timeout": 15,
+            "statusMessage": "Pixiu watcher: post observe"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"session:end:marker\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"session:end:marker\"",
+            "timeout": 15,
+            "statusMessage": "Pixiu watcher: session end marker"
+          },
+          {
+            "type": "command",
+            "command": "__NODE__ \"__BRIDGE__\" \"session:end:pixiu:auto-recap\"",
+            "commandWindows": "__NODE_WIN__ \"__BRIDGE_WIN__\" \"session:end:pixiu:auto-recap\"",
+            "timeout": 30,
+            "statusMessage": "Pixiu watcher: session end auto recap"
+          }
+        ]
+      }
+    ]
+  }
+}
