@@ -1,72 +1,74 @@
-# Pixiu 母體 → Claude Code CLI 部署包
+# Pixiu 母體部署包
 
-> 這個資料夾把 `%PIXIU_CORE%\` 接進 `~/.claude\`，讓 Claude Code CLI 真的用得到母體的全功能。
+> 讓別人 clone 母體後，一鍵接上 Claude Code 與 Codex 的全部治理功能。
 
-## 為什麼需要這個
+## 一鍵部署（新機器 clone 後）
 
-母體放在 `%PIXIU_CORE%\`，但 Claude Code CLI 只會掃：
+前置：PowerShell 7+、git、node（Codex 接線需要）。
 
-- `~/.claude/commands/` — slash commands（`/go`、`/verify`…）
-- `~/.claude/skills/` — skills
-- `~/.claude/settings.json` 的 `hooks` 欄位 — hooks
+```powershell
+git clone <repo-url> pixiu-core
+cd pixiu-core
+pwsh -File scripts/setup/bootstrap.ps1
+```
 
-不接通 = CLI 看不到母體，`/go` 會回 `Unknown command`、hooks 也不會跑。
+`bootstrap.ps1` 冪等（可重跑），串起 6 步：
+
+1. `git submodule update --init` — 拉 cybersecurity library（754 skills；普通 clone **不帶** submodule 內容）
+2. `setx PIXIU_CORE` — 設環境變數（永久 user 層 + 本 session 立即）
+3. 建 `~/.pixiu-core` junction → 母體
+4. 建 `~/.claude/{agents,hooks,rules,scripts}` junction → 母體
+5. 呼叫 `install-to-cli.ps1` — Claude Code 的 skills junction + commands + settings.json hooks
+6. 呼叫 `install-to-codex.js` — 生成 `~/.codex/hooks.json`
 
 ## 腳本清單
 
 | 腳本 | 用途 |
-|------|------|
-| `install-to-cli.ps1` | 一鍵部署（冪等，可重複跑） |
-| `uninstall-from-cli.ps1` | 回滾（撤掉所有 Pixiu 注入） |
+|---|---|
+| `bootstrap.ps1` | **一鍵總入口**（新機器 clone 後跑這個） |
+| `install-to-cli.ps1` | 只接 Claude Code（skills junction + settings.json hooks），冪等 |
+| `install-to-codex.js` | 只接 Codex（node 跨平台生成 hooks.json，node 路徑動態） |
+| `uninstall-from-cli.ps1` | 回滾 Claude Code 注入（只動 `~/.claude/`） |
 
-## 裝它會做什麼
-
-1. 備份 `~/.claude/settings.json` 到 `~/.claude/backups/settings-<時間戳>.json`
-2. 清掉違反 Pixiu 憲法的 `"defaultMode": "auto"`（若存在）
-3. 複製 `%PIXIU_CORE%\commands\*.md` 到 `~/.claude/commands/`（目前只有 `go.md`）
-4. 把 Pixiu hooks 寫進 `~/.claude/settings.json`：
-   - `PreToolUse`：change-scope、auto-mode-guard
-   - `PostToolUse`：secret-scan
-   - `Stop`：mothership-sync
-5. 為每個 `origin: Pixiu` 的 skill 在 `~/.claude/skills/` 下建立 junction，指向 `%PIXIU_CORE%\skills\<name>\`（母體更新即時生效）
-
-## 安全保證
-
-- **不覆蓋**使用者既有 settings 其他欄位（只 merge `hooks` 和清掉 `defaultMode: auto`）
-- **不動**母體原始檔（`%PIXIU_CORE%\` 只讀）
-- **每次執行先備份**舊 settings
-- 僅處理 `origin: Pixiu` 的 skills，避免碰到 ECC 外掛的同名 skill
-
-## 怎麼跑
-
-### 方法 A｜右鍵跑
-
-對著 `install-to-cli.ps1` 右鍵 → 以 PowerShell 執行。
-
-### 方法 B｜PowerShell
+## 個別接線（已部署過、只想補某一半）
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-%PIXIU_CORE%\scripts\setup\install-to-cli.ps1
+pwsh -File scripts/setup/install-to-cli.ps1   # 只補 Claude Code
+node scripts/setup/install-to-codex.js         # 只補 Codex
 ```
+
+## 可攜性保證
+
+- node 路徑動態（`process.execPath`）；母體路徑三層 fallback（`PIXIU_CORE` → `PIXIU_CORE_PATH` → `~/.pixiu-core`）；junction 與 hooks 全用相對母體位置。**無寫死機器路徑。**
+- Codex bridge 納入母體 `scripts/codex-bridge/`；wiki capture 是可選依賴（`PIXIU_WIKI_POC`，未設定時自動 skip，不影響核心）。
 
 ## 裝完後驗收
 
-新開一個 Claude Code session，依序跑：
+Claude Code 新 session：
 
-1. `/go` → 應該**不會**再回 Unknown command
-2. 問 `auto mode` → 應該觸發 Pixiu 三步驟授權流程（黑名單掃描 → 授權聲明 → 等「開」）
-3. 模擬寫 `~/.claude/settings.json` 把 `defaultMode` 改 `auto` → 應該被 `pre:pixiu:auto-mode-guard` hook 直接 `exit 2` 擋下
-4. 問 `recap` → 應該載入 `pixiu-session-recap` skill
+1. `/hooks` → 看到 pixiu 系列（guardrails / auto-recap）
+2. `/go` → 不再 `Unknown command`
+3. 測 `echo --dangerously-skip-permissions`（明說是測試）→ 被 `pre:pixiu:auto-mode-guard` 擋
+
+Codex 新 session：
+
+- `echo --dangerously-skip-permissions`（明說是測試）→ 應被擋（測 Codex shell 工具名有無盲區）
+
+## 安全保證
+
+- `install-to-cli.ps1` 只 merge settings.json 的 `hooks` + 清 `defaultMode: auto`，不覆蓋其他欄位；每次先備份
+- 母體 `%PIXIU_CORE%\` 只讀，不動原始檔
+- `bootstrap.ps1` 冪等：junction 已存在則跳過；遇同名非 junction 目錄只警告、不覆蓋
 
 ## 回滾
 
 ```powershell
-%PIXIU_CORE%\scripts\setup\uninstall-from-cli.ps1
+pwsh -File scripts/setup/uninstall-from-cli.ps1
 ```
 
-回滾**只動** `~/.claude/`，母體資料夾 `%PIXIU_CORE%\` 完全不受影響。
+只動 `~/.claude/`，母體資料夾完全不受影響。
 
 ## 版本
 
-- v0.1.0｜2026-04-17｜初版
+- v0.2.0｜2026-07-07｜加 `bootstrap.ps1` 一鍵入口、Codex 接線（`install-to-codex.js`）、`install-to-cli.ps1` 的 auto-mode-guard matcher 補 PowerShell（修 PowerShell 盲區）
+- v0.1.0｜2026-04-17｜初版（僅 `install-to-cli.ps1`）

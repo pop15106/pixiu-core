@@ -155,7 +155,7 @@ $pixiuHookEntries = @{
             description = '母體治理：大規模變更警告 + .agent/ 變更偵測'
         },
         @{
-            matcher = 'Edit|Write|MultiEdit|Bash'
+            matcher = 'Edit|Write|MultiEdit|Bash|PowerShell'
             hooks = @(@{ type = 'command'; command = "node `"$PixiuGuardrails`" `"pre:pixiu:auto-mode-guard`"" })
             description = '母體安全：Auto mode 授權閘門'
         }
