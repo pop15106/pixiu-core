@@ -452,4 +452,4 @@ cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
 - [CLAUDE.md](CLAUDE.md)：Claude Code 啟動協議。
 - [PLUGIN_SCHEMA_NOTES.md](PLUGIN_SCHEMA_NOTES.md)：Plugin manifest 注意事項。
 - [hooks/README.md](hooks/README.md)：Hook 觸發規則與自訂方式。
-- [scripts/setup/README.md](scripts/setup/READ
+- [scripts/setup/README.md](scripts/setup/README.md)：安裝、bootstrap 與解除安裝腳本說明。
