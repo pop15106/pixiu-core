@@ -1,0 +1,112 @@
+[CmdletBinding()]
+param()
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$script:Passed = 0
+$script:Failed = 0
+
+function Assert-Equal {
+    param($Actual, $Expected, [string]$Name)
+    if (($Actual | ConvertTo-Json -Compress -Depth 10) -ne ($Expected | ConvertTo-Json -Compress -Depth 10)) {
+        Write-Host "[FAIL] $Name" -ForegroundColor Red
+        Write-Host "  expected: $($Expected | ConvertTo-Json -Compress -Depth 10)"
+        Write-Host "  actual:   $($Actual | ConvertTo-Json -Compress -Depth 10)"
+        $script:Failed++
+        return
+    }
+    Write-Host "[PASS] $Name" -ForegroundColor Green
+    $script:Passed++
+}
+
+function Assert-Throws {
+    param([scriptblock]$Action, [string]$Name)
+    try {
+        & $Action
+        Write-Host "[FAIL] $Name (no exception)" -ForegroundColor Red
+        $script:Failed++
+    }
+    catch {
+        Write-Host "[PASS] $Name" -ForegroundColor Green
+        $script:Passed++
+    }
+}
+
+$modulePath = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.OneClick.Core.psm1'
+Import-Module $modulePath -Force
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.OneClick.Platform.psm1') -Force -DisableNameChecking
+
+$testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("devspace-oneclick-tests-" + [guid]::NewGuid().ToString('N'))
+$userProfile = Join-Path $testRoot 'user'
+$desktop = Join-Path $userProfile 'Desktop'
+$downloads = Join-Path $userProfile 'Downloads'
+$projectA = Join-Path $desktop 'project-a'
+$projectB = Join-Path $userProfile 'work\project-b'
+
+try {
+    foreach ($directory in @($projectA, $projectB, $downloads)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+
+    $resolvedA = Assert-NarrowAllowedRoot -Root $projectA -UserProfile $userProfile
+    Assert-Equal $resolvedA ([System.IO.Path]::GetFullPath($projectA).TrimEnd('\')) 'accepts a specific project directory'
+    Assert-Throws { Assert-NarrowAllowedRoot -Root $userProfile -UserProfile $userProfile } 'rejects the whole user profile'
+    Assert-Throws { Assert-NarrowAllowedRoot -Root $desktop -UserProfile $userProfile } 'rejects the whole Desktop'
+    Assert-Throws { Assert-NarrowAllowedRoot -Root $downloads -UserProfile $userProfile } 'rejects the whole Downloads'
+    Assert-Throws { Assert-NarrowAllowedRoot -Root ([System.IO.Path]::GetPathRoot($testRoot)) -UserProfile $userProfile } 'rejects a drive root'
+
+    $mergedRoots = Merge-AllowedRoots -ExistingRoots @($projectA) -NewRoots @($projectA.ToUpperInvariant(), $projectB) -UserProfile $userProfile
+    Assert-Equal @($mergedRoots) @(
+        [System.IO.Path]::GetFullPath($projectA).TrimEnd('\'),
+        [System.IO.Path]::GetFullPath($projectB).TrimEnd('\')
+    ) 'deduplicates roots without widening access'
+
+    $selectedPort = Select-DevSpacePort -UsedAccountPorts @(7676, 7681) -StartPort 7676 -EndPort 7685 -IsPortAvailable {
+        param($Port)
+        return $Port -ne 7677
+    }
+    Assert-Equal $selectedPort 7678 'avoids account and local port conflicts'
+
+    $existingConfig = [pscustomobject]@{
+        host = '127.0.0.1'
+        port = 7000
+        allowedRoots = @($projectA)
+        publicBaseUrl = 'https://old.example.com'
+        preservedSetting = 'keep-me'
+    }
+    $mergedConfig = Merge-DevSpaceConfig -ExistingConfig $existingConfig -AllowedRoots @($projectA, $projectB) -Port 7678 -PublicBaseUrl 'https://machine-7678.jpe1.devtunnels.ms'
+    Assert-Equal $mergedConfig.preservedSetting 'keep-me' 'preserves unrelated config fields'
+    Assert-Equal $mergedConfig.host '127.0.0.1' 'binds DevSpace to loopback'
+    Assert-Equal $mergedConfig.port 7678 'persists the selected port'
+    Assert-Equal $existingConfig.port 7000 'does not mutate the input config'
+
+    $fakeDevTunnel = Join-Path $testRoot 'fake-devtunnel.cmd'
+    $fakeDevTunnelContent = @"
+@echo off
+if "%1"=="list" echo {"tunnels":[{"tunnelId":"one.jpe1"},{"tunnelId":"two.jpe1"}]}& exit /b 0
+if "%1"=="port" if "%2"=="list" if "%3"=="one.jpe1" echo {"ports":[{"portNumber":7676},{"portNumber":7681}]}& exit /b 0
+if "%1"=="port" if "%2"=="list" if "%3"=="two.jpe1" echo {"ports":[{"portNumber":7676},{"portNumber":7677}]}& exit /b 0
+exit /b 2
+"@
+    [System.IO.File]::WriteAllText($fakeDevTunnel, $fakeDevTunnelContent, [System.Text.UTF8Encoding]::new($false))
+    $accountPorts = @(Get-AccountDevSpacePorts -DevTunnel $fakeDevTunnel | Sort-Object)
+    Assert-Equal $accountPorts @(7676, 7677, 7681) 'returns unique account-wide DevSpace ports on Windows PowerShell'
+    $tunnel = [pscustomobject]@{
+        tunnel = [pscustomobject]@{
+            ports = @([pscustomobject]@{ portNumber = 7678; portUri = 'https://machine-7678.jpe1.devtunnels.ms/' })
+        }
+    }
+    Assert-Equal (Get-TunnelPublicBaseUrl -TunnelDocument $tunnel -Port 7678) 'https://machine-7678.jpe1.devtunnels.ms' 'derives an HTTPS origin without /mcp'
+    Assert-Equal (New-DevSpaceTunnelName -ComputerName 'OFFICE_PC 01' -Suffix 'A1B2C3D4') 'devspace-office-pc-01-a1b2c3d4' 'creates a machine-specific tunnel name'
+}
+finally {
+    $resolvedTestRoot = [System.IO.Path]::GetFullPath($testRoot)
+    $tempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
+    if ($resolvedTestRoot.StartsWith($tempRoot, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $resolvedTestRoot)) {
+        Remove-Item -LiteralPath $resolvedTestRoot -Recurse -Force
+    }
+}
+
+Write-Host "Tests: $($script:Passed) passed, $($script:Failed) failed"
+if ($script:Failed -gt 0) { exit 1 }
