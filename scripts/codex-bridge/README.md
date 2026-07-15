@@ -15,13 +15,17 @@ node scripts/setup/install-to-codex.js
 生成 `%USERPROFILE%\.codex\hooks.json`（覆寫前自動備份）。node 路徑用
 `process.execPath` 動態取得，不寫死。
 
+`hooks.json` 是 Codex hook 定義的唯一來源。預設安裝若在同目錄的 `config.toml`
+發現成對且唯一的 `codebase-memory-mcp SessionStart` marker，會先備份 TOML，再移除
+該舊區塊；其他設定與 `[hooks.state]` 不變。指定測試輸出路徑時不會修改 `config.toml`。
+
 ## 檔案
 
 - `pixiu-global-hook-bridge.js` — 入口：分流 watcher 模式與母體派發
 - `pixiu-mothership-hook-bridge.js` — 派發到母體 `scripts/hooks/*.js`（用 corePath）
 - `pixiu-thread-watcher.js` — thread watcher：observations、session-end、auto-recap 觸發
 - `pixiu-auto-recap-bridge.js` — auto-recap 接線
-- `hooks.template.json` — hooks.json 模板（command 用佔位符，不含機器路徑）
+- `hooks.template.json` — hooks.json 模板（含 Pixiu 與 codebase-memory SessionStart；command 用佔位符，不含機器路徑）
 
 ## 可選依賴
 
