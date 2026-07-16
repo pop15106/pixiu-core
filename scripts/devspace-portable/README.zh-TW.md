@@ -33,6 +33,20 @@
 - 停止後端：`04-STOP.cmd`
 - 查看 URL、port、tunnel ID、allowedRoots：`05-STATUS.cmd`
 - 把 Owner password 複製到剪貼簿：`06-COPY-PASSWORD.cmd`
+- 查看全部或指定 Subagent 狀態：`07-SUBAGENT-STATUS.cmd [Agent ID]`
+- 停止卡住的 Subagent：`08-STOP-SUBAGENT.cmd [Agent ID]`
+
+## Subagent delegation
+
+安裝器會啟用 DevSpace 1.0.4 的 experimental Subagent delegation，並安裝三個 `xhigh` profile：
+
+- `codex-explorer`：唯讀盤點與依賴分析。
+- `codex-worker`：實作指定項目。
+- `codex-qa-tester`：獨立測試與驗證。
+
+Windows 相容修補會在每次安裝或啟動時檢查並重複安全套用，包括：授權目錄可在未初始化 Git 時使用、Node/npm PATH 傳入 Agent、隱藏背景 CMD 視窗，以及縮短 Agent 狀態查詢等待。修補只支援套件鎖定的 DevSpace 1.0.4；版本不同時會停止並顯示錯誤，不會盲目修改。
+
+`07-SUBAGENT-STATUS.cmd` 只顯示精簡錯誤摘要，完整紀錄仍保留在 DevSpace 的 Agent store。`08-STOP-SUBAGENT.cmd` 只會停止與指定 `agt_XXXXXXXX` 完整匹配的 worker process tree。
 
 新增資料夾時，也可以直接把資料夾拖到 `02-ADD-FOLDER.cmd`。若後端正在執行，腳本會自動重啟套用設定。
 
