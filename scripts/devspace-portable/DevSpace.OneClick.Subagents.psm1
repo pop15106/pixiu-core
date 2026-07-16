@@ -93,6 +93,7 @@ function Install-DevSpaceSubagentWindowsPatch {
     }
 
     $runtimePath = Join-Path $packageRoot 'dist\local-agent-runtime.js'
+    $profilePath = Join-Path $packageRoot 'dist\local-agent-profiles.js'
     $sdkPath = Join-Path $packageRoot 'node_modules\@openai\codex-sdk\dist\index.js'
     $cliPath = Join-Path $packageRoot 'dist\cli.js'
     $changed = 0
@@ -123,6 +124,58 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
+    $runtimeTimeoutReplacement = @(
+        'const timeoutMs = input.timeoutMs;'
+        '        const controller = timeoutMs ? new AbortController() : undefined;'
+        '        const timeoutHandle = controller ? setTimeout(() => controller.abort(), timeoutMs) : undefined;'
+        '        let turn;'
+        '        try {'
+        '            turn = await thread.run(input.prompt, { signal: controller?.signal });'
+        '        }'
+        '        catch (error) {'
+        '            if (controller?.signal.aborted) {'
+        '                throw new Error("Subagent timed out after " + Math.round(timeoutMs / 1000) + " seconds.");'
+        '            }'
+        '            throw error;'
+        '        }'
+        '        finally {'
+        '            if (timeoutHandle) clearTimeout(timeoutHandle);'
+        '        }'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $runtimePath -AlreadyPatchedText 'Subagent timed out after ' -Pattern 'const turn = await thread\.run\(input\.prompt\);' -Replacement $runtimeTimeoutReplacement -Description 'bounded subagent execution time') {
+        $changed++
+    }
+
+    $profileFieldsReplacement = @(
+        'thinking: readString(frontmatter, "thinking"),'
+        '        writeMode: readWriteMode(frontmatter, filePath),'
+        '        timeoutSeconds: readTimeoutSeconds(frontmatter, filePath),'
+        '        filePath,'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $profilePath -AlreadyPatchedText 'timeoutSeconds: readTimeoutSeconds' -Pattern 'thinking: readString\(frontmatter, "thinking"\),\r?\n\s*filePath,' -Replacement $profileFieldsReplacement -Description 'profile execution controls') {
+        $changed++
+    }
+
+    $profileReadersReplacement = @(
+        'function readWriteMode(frontmatter, filePath) {'
+        '    const value = readString(frontmatter, "writeMode");'
+        '    if (value === undefined || value === "read_only" || value === "allowed" || value === "full_access") return value;'
+        '    throw new Error("Subagent profile writeMode must be read_only, allowed, or full_access: " + filePath);'
+        '}'
+        'function readTimeoutSeconds(frontmatter, filePath) {'
+        '    const value = frontmatter.timeoutSeconds;'
+        '    if (value === undefined) return undefined;'
+        '    if (!Number.isInteger(value) || value < 60 || value > 3600) {'
+        '        throw new Error("Subagent profile timeoutSeconds must be an integer from 60 to 3600: " + filePath);'
+        '    }'
+        '    return value;'
+        '}'
+        'function readString(frontmatter, key) {'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $profilePath -AlreadyPatchedText 'function readWriteMode(frontmatter, filePath)' -Pattern 'function readString\(frontmatter, key\) \{' -Replacement $profileReadersReplacement -Description 'profile execution-control validation') {
+        $changed++
+    }
+
     $sdkReplacement = @(
         'const child = spawn(this.executablePath, commandArgs, {'
         '      env,'
@@ -131,6 +184,15 @@ function Install-DevSpaceSubagentWindowsPatch {
         '    });'
     ) -join "`r`n"
     if (Set-PatchedTextFile -FilePath $sdkPath -AlreadyPatchedText 'windowsHide: process.platform === "win32"' -Pattern 'const child = spawn\(this\.executablePath, commandArgs, \{\r?\n\s*env,\r?\n\s*signal: args\.signal\r?\n\s*\}\);' -Replacement $sdkReplacement -Description 'hidden Codex child process') {
+        $changed++
+    }
+
+    $profileExecutionReplacement = @(
+        'writeMode: profile.writeMode ?? "allowed",'
+        '        timeoutMs: profile.timeoutSeconds ? profile.timeoutSeconds * 1000 : undefined,'
+        '        model: record.model ?? profile.model,'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $cliPath -AlreadyPatchedText 'timeoutMs: profile.timeoutSeconds ?' -Pattern 'writeMode: "allowed",\r?\n\s*model: record\.model \?\? profile\.model,' -Replacement $profileExecutionReplacement -Description 'profile write mode and timeout enforcement') {
         $changed++
     }
 
@@ -188,6 +250,90 @@ function Install-DevSpaceAgentProfiles {
         $installed += $target
     }
     return [string[]]$installed
+}
+
+function ConvertTo-DevSpaceBashPath {
+    param([Parameter(Mandatory = $true)][string]$FilePath)
+
+    $fullPath = [System.IO.Path]::GetFullPath($FilePath)
+    if ($fullPath -match '^([A-Za-z]):\\(.*)$') {
+        return '/' + $Matches[1].ToLowerInvariant() + '/' + $Matches[2].Replace('\', '/')
+    }
+    return $fullPath.Replace('\', '/')
+}
+
+function Install-DevSpaceAgentCliShim {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$NodePath,
+        [Parameter(Mandatory = $true)][string]$DevSpaceCli,
+        [Parameter(Mandatory = $true)][string]$AdminScript,
+        [Parameter(Mandatory = $true)][string]$BinDirectory
+    )
+
+    foreach ($requiredPath in @($NodePath, $DevSpaceCli, $AdminScript)) {
+        if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+            throw "DevSpace Agent CLI shim dependency is missing: $requiredPath"
+        }
+    }
+    if (-not (Test-Path -LiteralPath $BinDirectory)) {
+        New-Item -ItemType Directory -Path $BinDirectory -Force | Out-Null
+    }
+
+    $stableAdmin = Join-Path $BinDirectory 'DevSpace.AgentAdmin.mjs'
+    Copy-Item -LiteralPath $AdminScript -Destination $stableAdmin -Force
+
+    $shellTemplate = @(
+        '#!/usr/bin/env bash'
+        'if [ "$1" = "agents" ]; then'
+        '  case "$2" in'
+        '    ls|list)'
+        '      exec "__NODE__" "__ADMIN__" "__CLI__" cli-list'
+        '      ;;'
+        '    show)'
+        '      agent_id="$3"'
+        '      exec "__NODE__" "__ADMIN__" "__CLI__" cli-show "$agent_id"'
+        '      ;;'
+        '  esac'
+        'fi'
+        'exec "__NODE__" "__CLI__" "$@"'
+    ) -join [Environment]::NewLine
+    $shellContent = $shellTemplate.
+        Replace('__NODE__', (ConvertTo-DevSpaceBashPath -FilePath $NodePath)).
+        Replace('__ADMIN__', (ConvertTo-DevSpaceBashPath -FilePath $stableAdmin)).
+        Replace('__CLI__', (ConvertTo-DevSpaceBashPath -FilePath $DevSpaceCli))
+    $shellPath = Join-Path $BinDirectory 'devspace'
+    [System.IO.File]::WriteAllText($shellPath, $shellContent, [System.Text.UTF8Encoding]::new($false))
+
+    $cmdTemplate = @(
+        '@echo off'
+        'if /I "%~1"=="agents" if /I "%~2"=="ls" goto agent_list'
+        'if /I "%~1"=="agents" if /I "%~2"=="list" goto agent_list'
+        'if /I "%~1"=="agents" if /I "%~2"=="show" goto agent_show'
+        'goto passthrough'
+        ':agent_list'
+        '"__NODE__" "__ADMIN__" "__CLI__" cli-list'
+        'exit /b %ERRORLEVEL%'
+        ':agent_show'
+        '"__NODE__" "__ADMIN__" "__CLI__" cli-show "%~3"'
+        'exit /b %ERRORLEVEL%'
+        ':passthrough'
+        '"__NODE__" "__CLI__" %*'
+        'exit /b %ERRORLEVEL%'
+    ) -join [Environment]::NewLine
+    $cmdContent = $cmdTemplate.
+        Replace('__NODE__', $NodePath).
+        Replace('__ADMIN__', $stableAdmin).
+        Replace('__CLI__', $DevSpaceCli)
+    $cmdPath = Join-Path $BinDirectory 'devspace.cmd'
+    [System.IO.File]::WriteAllText($cmdPath, $cmdContent, [System.Text.UTF8Encoding]::new($false))
+
+    return [pscustomobject]@{
+        BinDirectory = $BinDirectory
+        ShellPath = $shellPath
+        CmdPath = $cmdPath
+        AdminPath = $stableAdmin
+    }
 }
 
 function Invoke-DevSpaceAgentAdmin {
@@ -279,6 +425,7 @@ Export-ModuleMember -Function @(
     'Get-DevSpaceAgentRecordText',
     'Install-DevSpaceSubagentWindowsPatch',
     'Install-DevSpaceAgentProfiles',
+    'Install-DevSpaceAgentCliShim',
     'Get-DevSpaceAgentStatus',
     'Stop-DevSpaceAgent'
 )

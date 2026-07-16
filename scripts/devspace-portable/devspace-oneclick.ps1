@@ -35,6 +35,7 @@ $AuthPath = Join-Path $ConfigRoot 'auth.json'
 $SettingsPath = Join-Path $StateRoot 'settings.json'
 $RuntimePath = Join-Path $StateRoot 'runtime.json'
 $LogRoot = Join-Path $StateRoot 'logs'
+$ShimRoot = Join-Path $StateRoot 'bin'
 $AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
 $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
 
@@ -384,12 +385,13 @@ function Set-DevSpaceEnvironment {
     param(
         [Parameter(Mandatory = $true)]$Spec,
         [Parameter(Mandatory = $true)][string]$BashPath,
-        [Parameter(Mandatory = $true)][string]$NodePath
+        [Parameter(Mandatory = $true)][string]$NodePath,
+        [Parameter(Mandatory = $true)][string]$ShimDirectory
     )
 
     $bashDirectory = Split-Path -Parent $BashPath
     $nodeDirectory = Split-Path -Parent $NodePath
-    foreach ($directory in @($nodeDirectory, $bashDirectory)) {
+    foreach ($directory in @($nodeDirectory, $bashDirectory, $ShimDirectory)) {
         if (($env:Path -split ';') -notcontains $directory) {
             $env:Path = "$directory;$env:Path"
         }
@@ -415,6 +417,7 @@ function Start-Stack {
     $runtime = Read-JsonFile -FilePath $RuntimePath
     $patchCount = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
+    [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
     if ($patchCount -gt 0) {
         Write-Info "Applied $patchCount DevSpace 1.0.4 Windows subagent compatibility fixes."
     }
@@ -442,7 +445,7 @@ function Start-Stack {
 
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     [void](Get-TunnelSettings -DevTunnel $tools.DevTunnel)
-    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node
+    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node -ShimDirectory $ShimRoot
 
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $devSpaceOut = Join-Path $LogRoot "devspace-$stamp.out.log"
@@ -634,6 +637,7 @@ function Install-OneClick {
     $tools = Install-Dependencies -DevSpacePackage $DevSpacePackage
     [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
+    [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     $roots = Get-InstallRoots
     $settings = Get-TunnelSettings -DevTunnel $tools.DevTunnel -Create
