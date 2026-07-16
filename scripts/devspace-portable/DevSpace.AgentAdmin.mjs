@@ -28,14 +28,52 @@ const [{ loadConfig }, { createLocalAgentStore }] = await Promise.all([
   importFromDist("local-agent-store.js"),
 ]);
 
+function formatAgentLine(agent) {
+  return [
+    agent.id,
+    agent.status,
+    agent.profileName,
+    agent.provider,
+    agent.model,
+    agent.thinking ? "thinking=" + agent.thinking : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function printCliRecord(record) {
+  console.log(formatAgentLine(record));
+  if (record.latestResponse) {
+    console.log(record.latestResponse);
+  } else if (record.error) {
+    console.error(record.error);
+  } else if (record.status === "starting" || record.status === "running") {
+    console.log("No final response yet. Call devspace agents show " + record.id + " again later.");
+  }
+}
+
 const store = createLocalAgentStore(loadConfig());
 try {
   if (action === "list") {
     console.log(JSON.stringify(store.list(), null, 2));
+  } else if (action === "cli-list") {
+    const agents = store.list({
+      workspaceId: process.env.DEVSPACE_WORKSPACE_ID,
+      workspaceRoot: resolve(process.cwd()),
+    });
+    if (agents.length === 0) {
+      console.log("No subagent sessions found for this workspace.");
+    } else {
+      for (const agent of agents) console.log(formatAgentLine(agent));
+    }
   } else if (action === "show") {
     const record = store.get(agentId);
     if (!record) throw new Error(`Unknown subagent id: ${agentId}`);
     console.log(JSON.stringify(record, null, 2));
+  } else if (action === "cli-show") {
+    const record = store.get(agentId);
+    if (!record) throw new Error("Unknown subagent id: " + agentId);
+    printCliRecord(record);
   } else if (action === "mark-stopped") {
     const record = store.get(agentId);
     if (!record) throw new Error(`Unknown subagent id: ${agentId}`);
