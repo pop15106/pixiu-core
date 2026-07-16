@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password')]
+    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -12,6 +12,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'DevSpace.OneClick.Core.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'DevSpace.OneClick.Platform.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'DevSpace.OneClick.Subagents.psm1') -Force
 
 $DevSpacePackage = '@waishnav/devspace@1.0.4'
 $ConfigRoot = if ($env:DEVSPACE_ONECLICK_CONFIG_DIR) {
@@ -34,6 +35,8 @@ $AuthPath = Join-Path $ConfigRoot 'auth.json'
 $SettingsPath = Join-Path $StateRoot 'settings.json'
 $RuntimePath = Join-Path $StateRoot 'runtime.json'
 $LogRoot = Join-Path $StateRoot 'logs'
+$AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
+$AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
 
 function Write-Info {
     param([Parameter(Mandatory = $true)][string]$Message)
@@ -380,12 +383,16 @@ function Show-Status {
 function Set-DevSpaceEnvironment {
     param(
         [Parameter(Mandatory = $true)]$Spec,
-        [Parameter(Mandatory = $true)][string]$BashPath
+        [Parameter(Mandatory = $true)][string]$BashPath,
+        [Parameter(Mandatory = $true)][string]$NodePath
     )
 
     $bashDirectory = Split-Path -Parent $BashPath
-    if (($env:Path -split ';') -notcontains $bashDirectory) {
-        $env:Path = "$bashDirectory;$env:Path"
+    $nodeDirectory = Split-Path -Parent $NodePath
+    foreach ($directory in @($nodeDirectory, $bashDirectory)) {
+        if (($env:Path -split ';') -notcontains $directory) {
+            $env:Path = "$directory;$env:Path"
+        }
     }
 
     [Environment]::SetEnvironmentVariable('DEVSPACE_CONFIG_DIR', $ConfigRoot, 'Process')
@@ -395,7 +402,9 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_PUBLIC_BASE_URL', $Spec.PublicBaseUrl, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_TOOL_MODE', 'full', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WIDGETS', 'off', 'Process')
-    [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '0', 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '1', 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_AGENT_DIR', (Join-Path $ConfigRoot 'agents'), 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
 }
 
 function Start-Stack {
@@ -404,6 +413,11 @@ function Start-Stack {
     $spec = Get-ValidatedSpec
     $tools = Get-InstalledTools
     $runtime = Read-JsonFile -FilePath $RuntimePath
+    $patchCount = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
+    [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
+    if ($patchCount -gt 0) {
+        Write-Info "Applied $patchCount DevSpace 1.0.4 Windows subagent compatibility fixes."
+    }
 
     if (Test-LocalHealth -Port $spec.Port) {
         if ($runtime) {
@@ -428,7 +442,7 @@ function Start-Stack {
 
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     [void](Get-TunnelSettings -DevTunnel $tools.DevTunnel)
-    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash
+    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node
 
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $devSpaceOut = Join-Path $LogRoot "devspace-$stamp.out.log"
@@ -553,6 +567,54 @@ function Copy-OwnerPassword {
     Write-Info 'Owner password copied to the clipboard.'
 }
 
+function Write-AgentRecord {
+    param([Parameter(Mandatory = $true)]$Record)
+
+    Write-Host "$($Record.id) $($Record.status) $($Record.profileName) $($Record.provider) $($Record.model) thinking=$($Record.thinking)"
+    Write-Host "  workspace: $($Record.workspaceRoot)"
+    $response = Get-DevSpaceAgentRecordText -Record $Record -PropertyName 'latestResponse'
+    if (-not [string]::IsNullOrWhiteSpace($response)) {
+        Write-Host "  response: $response"
+    }
+    $errorDetail = Get-DevSpaceAgentRecordText -Record $Record -PropertyName 'error'
+    if (-not [string]::IsNullOrWhiteSpace($errorDetail)) {
+        Write-Host "  error: $errorDetail"
+    }
+}
+
+function Show-AgentStatus {
+    $tools = Get-InstalledTools
+    $agentId = if ([string]::IsNullOrWhiteSpace($Path)) { $null } else { $Path.Trim() }
+    $records = Get-DevSpaceAgentStatus -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -AgentId $agentId
+    if ($null -eq $records -or @($records).Count -eq 0) {
+        Write-Info 'No Subagent sessions were found.'
+        return
+    }
+    foreach ($record in @($records)) {
+        Write-AgentRecord -Record $record
+    }
+}
+
+function Stop-Agent {
+    $agentId = $Path
+    if ([string]::IsNullOrWhiteSpace($agentId)) {
+        $agentId = Read-Host 'Agent ID to stop'
+    }
+    if ([string]::IsNullOrWhiteSpace($agentId)) {
+        throw 'No Agent ID was entered.'
+    }
+
+    $tools = Get-InstalledTools
+    $result = Stop-DevSpaceAgent -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -AgentId $agentId.Trim()
+    if (@($result.StoppedProcessIds).Count -gt 0) {
+        Write-Info "Stopped Agent process tree: $(@($result.StoppedProcessIds) -join ', ')"
+    }
+    else {
+        Write-Info 'No live process remained; the stale Agent record was closed.'
+    }
+    Write-AgentRecord -Record $result.Record
+}
+
 function Invoke-Doctor {
     param([Parameter(Mandatory = $true)]$Tools)
 
@@ -570,6 +632,8 @@ function Install-OneClick {
     Ensure-Directory -Directory $LogRoot
 
     $tools = Install-Dependencies -DevSpacePackage $DevSpacePackage
+    [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
+    [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     $roots = Get-InstallRoots
     $settings = Get-TunnelSettings -DevTunnel $tools.DevTunnel -Create
@@ -599,4 +663,6 @@ switch ($Action) {
     'status' { Show-Status }
     'add-root' { Add-Root }
     'copy-password' { Copy-OwnerPassword }
+    'agent-status' { Show-AgentStatus }
+    'agent-stop' { Stop-Agent }
 }
