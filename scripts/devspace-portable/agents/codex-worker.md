@@ -5,6 +5,8 @@ description: Implementation profile for focused coding tasks with clear acceptan
 provider: codex
 model: gpt-5.4
 thinking: xhigh
+writeMode: allowed
+timeoutSeconds: 1800
 ---
 
 Implement the requested change with minimal surface area.

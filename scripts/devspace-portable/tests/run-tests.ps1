@@ -121,6 +121,12 @@ exit /b 2
     )
 
     $runtimeSource = @(
+        'class Runtime {'
+        '    async run(input) {'
+        '        const turn = await thread.run(input.prompt);'
+        '        return turn;'
+        '    }'
+        '}'
         'function threadOptionsFor(input) {'
         '    return {'
         '        workingDirectory: input.workspace,'
@@ -134,6 +140,19 @@ exit /b 2
     ) -join "`r`n"
     [System.IO.File]::WriteAllText((Join-Path $fakeDist 'local-agent-runtime.js'), $runtimeSource, [System.Text.UTF8Encoding]::new($false))
 
+    $profileParserSource = @(
+        'function profileFromFrontmatter(frontmatter, body, filePath) {'
+        '    return {'
+        '        thinking: readString(frontmatter, "thinking"),'
+        '        filePath,'
+        '    };'
+        '}'
+        'function readString(frontmatter, key) {'
+        '    return frontmatter[key];'
+        '}'
+    ) -join [Environment]::NewLine
+    [System.IO.File]::WriteAllText((Join-Path $fakeDist 'local-agent-profiles.js'), $profileParserSource, [System.Text.UTF8Encoding]::new($false))
+
     $sdkSource = @(
         'const child = spawn(this.executablePath, commandArgs, {'
         '      env,'
@@ -144,6 +163,12 @@ exit /b 2
 
     $cliSource = @(
         'const deadline = Date.now() + 15_000;'
+        'async function runLocalAgentProfile(profile, record, prompt) {'
+        '    return runLocalAgentProvider(profile.provider, {'
+        '        writeMode: "allowed",'
+        '        model: record.model ?? profile.model,'
+        '    });'
+        '}'
         'function spawnAgentWorker() {'
         '    const child = spawn("node", [], {'
         '        detached: true,'
@@ -158,14 +183,20 @@ exit /b 2
     $fakeCli = Join-Path $fakeDist 'cli.js'
     [System.IO.File]::WriteAllText($fakeCli, $cliSource, [System.Text.UTF8Encoding]::new($false))
 
-    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 6 'applies all DevSpace 1.0.4 Subagent patches'
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 10 'applies all DevSpace 1.0.4 Subagent patches'
     $patchedRuntime = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    $patchedProfiles = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-profiles.js'))
     $patchedSdk = [System.IO.File]::ReadAllText((Join-Path $fakeSdkDist 'index.js'))
     $patchedCli = [System.IO.File]::ReadAllText($fakeCli)
     Assert-Equal $patchedRuntime.Contains('skipGitRepoCheck: true') $true 'allows explicitly authorized non-Git workspaces'
     Assert-Equal $patchedRuntime.Contains('shell_environment_policy:') $true 'injects the Node and npm PATH into Codex'
+    Assert-Equal $patchedRuntime.Contains('Subagent timed out after ') $true 'enforces bounded Agent execution'
+    Assert-Equal $patchedProfiles.Contains('writeMode: readWriteMode') $true 'loads profile write modes'
+    Assert-Equal $patchedProfiles.Contains('timeoutSeconds: readTimeoutSeconds') $true 'loads profile timeouts'
     Assert-Equal $patchedSdk.Contains('windowsHide: process.platform === "win32"') $true 'hides the Codex child window'
     Assert-Equal $patchedCli.Contains('const deadline = Date.now() + 1_000;') $true 'shortens Agent status polling'
+    Assert-Equal $patchedCli.Contains('writeMode: profile.writeMode ?? "allowed"') $true 'enforces read-only profiles'
+    Assert-Equal $patchedCli.Contains('timeoutMs: profile.timeoutSeconds ?') $true 'passes profile timeouts to the runtime'
     Assert-Equal $patchedCli.Contains('const isShortAgentCommand') $true 'forces short Agent commands to exit'
     Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'Subagent patch is idempotent'
 
@@ -174,7 +205,22 @@ exit /b 2
     $installedProfiles = @(Install-DevSpaceAgentProfiles -ConfigRoot $profileConfig -SourceDirectory $profileSource)
     Assert-Equal $installedProfiles.Count 3 'installs the three managed Agent profiles'
     $explorerProfile = Get-Content -LiteralPath (Join-Path $profileConfig 'agents\codex-explorer.md') -Raw
+    $workerProfile = Get-Content -LiteralPath (Join-Path $profileConfig 'agents\codex-worker.md') -Raw
+    $qaProfile = Get-Content -LiteralPath (Join-Path $profileConfig 'agents\codex-qa-tester.md') -Raw
     Assert-Equal $explorerProfile.Contains('thinking: xhigh') $true 'installs xhigh thinking profiles'
+    Assert-Equal ($explorerProfile.Contains('writeMode: read_only') -and $explorerProfile.Contains('timeoutSeconds: 720')) $true 'bounds Explorer execution'
+    Assert-Equal ($workerProfile.Contains('writeMode: allowed') -and $workerProfile.Contains('timeoutSeconds: 1800')) $true 'allows bounded Worker edits'
+    Assert-Equal ($qaProfile.Contains('writeMode: read_only') -and $qaProfile.Contains('timeoutSeconds: 1200')) $true 'keeps QA read-only'
+
+    $shimRoot = Join-Path $testRoot 'shim'
+    $adminSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.AgentAdmin.mjs'
+    $shim = Install-DevSpaceAgentCliShim -NodePath (Join-Path $PSHOME 'powershell.exe') -DevSpaceCli $fakeCli -AdminScript $adminSource -BinDirectory $shimRoot
+    $shellShim = Get-Content -LiteralPath $shim.ShellPath -Raw
+    $cmdShim = Get-Content -LiteralPath $shim.CmdPath -Raw
+    Assert-Equal ($shellShim.Contains('cli-list') -and $shellShim.Contains('cli-show')) $true 'installs fast Bash status routing'
+    Assert-Equal ($cmdShim.Contains('cli-list') -and $cmdShim.Contains('cli-show')) $true 'installs fast CMD status routing'
+    Assert-Equal (Test-Path -LiteralPath $shim.AdminPath) $true 'copies the lightweight Agent admin to a stable path'
+    Assert-Equal ($agentAdminSource.Contains('action === "cli-list"') -and $agentAdminSource.Contains('action === "cli-show"')) $true 'supports CLI-compatible fast status output'
 }
 finally {
     $resolvedTestRoot = [System.IO.Path]::GetFullPath($testRoot)

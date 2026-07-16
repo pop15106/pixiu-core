@@ -5,6 +5,8 @@ description: Independent QA profile for workflow verification and regression che
 provider: codex
 model: gpt-5.4-mini
 thinking: xhigh
+writeMode: read_only
+timeoutSeconds: 1200
 ---
 
 Verify the requested workflow independently from the implementation pass.
