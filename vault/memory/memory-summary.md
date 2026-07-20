@@ -1,7 +1,7 @@
 ---
 type: memory
 readAt: session-init
-lastUpdated: 2026-07-07
+lastUpdated: 2026-07-13
 tags: [memory, pixiucore]
 ---
 
@@ -73,6 +73,9 @@ tags: [memory, pixiucore]
 
 | 日期 | 主題 | 摘要 | 連結 |
 |---|---|---|---|
+| 2026-07-13 | PCLMS_AP 資料庫刪除還原 SQL 流程 | DD630/CBB2135790B097 案：先 SELECT 驗證筆數（271 筆）確認無誤才分段執行 DELETE／還原，不整段直接跑（日審升格） | [[2026-07-13-PCLMS_AP-資料庫刪除還原SQL驗證流程]] |
+| 2026-07-13 | PCLMS_AP L6 移倉異常修復與回退 | 情境三/四出現保證金核扣金額異常與 IndexOutOfBoundsException；先修法加註記，複測未過前先暫停回原分支不上版（日審升格） | [[2026-07-13-PCLMS_AP-L6移倉異常修復與回退決策]] |
+| 2026-07-08 | Second Brain 一鍵建立檢核規格 | 每個檢核附清楚說明、失敗時指出哪個步驟失敗（07-07 使用者指定，日審升格） | [[2026-07-08-SECOND_BRAIN-one-click-setup-check-failure-reporting]] |
 | 2026-07-07 | 日結掃昨天不掃今天 | daily-digest 掃「今天」會撞時序（當天 recap 未齊）＝普遍誤判無來源；改為掃昨天＋強制先實掃列檔＋輸出去識別化 | [[scripts/scheduled/codex-daily-digest-prompt\|digest prompt]] |
 | 2026-07-07 | hook-state 不納入審查 | Codex recap 成品已進 memory/recaps 被審；hook-state 是含對話原文的原料，維持排除索引（隱私＋制度） | |
 | 2026-07-05 | Hook 生效點 | Claude hooks 實際生效在 `~/.claude/settings.json`，repo `hooks/hooks.json` 為本體範本；改 hook 行為兩邊都要動，月維護加雙邊對照 | [[vault/governance/entry-files-alignment\|alignment 第5節]] |
