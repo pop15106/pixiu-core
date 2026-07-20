@@ -52,6 +52,12 @@ Explorer 與 QA 會在真正的 Codex sandbox 層強制唯讀；Worker 才能修
 
 安裝器會在自己的 `bin` 目錄建立輕量 `devspace` shim。`devspace agents ls` 與 `devspace agents show <id>` 直接讀 Agent store；`agents run` 與其他命令仍交回官方 DevSpace CLI。Web 輪詢建議每 60 到 90 秒一次，不要連續快速查詢。
 
+### Web 長時間命令與 Connector 502
+
+安裝器會把 DevSpace 內建的 `exec_command` 與 `write_stdin` process-session 工具開放給 ChatGPT Web。`npm run build`、測試、Android build、`devspace agents show`，或任何可能超過 20 秒的命令，都應先用 `exec_command`；若回傳 `running=true` 與 `sessionId`，再用相同 `workspaceId`、`sessionId` 呼叫 `write_stdin`，直到 `running=false`。只有 `exitCode=0` 才算成功。
+
+Git Bash 的 `npm`/`npx` 也會透過輕量 shim 直接轉給 `npm.cmd`/`npx.cmd`，避免 Windows npm Bash 包裝器重複啟動 Node。安裝或更新後，請重新整理 ChatGPT Web 或重新連接 DevSpace App，讓工具清單載入新工具。
+
 新增資料夾時，也可以直接把資料夾拖到 `02-ADD-FOLDER.cmd`。若後端正在執行，腳本會自動重啟套用設定。
 
 ## 權限與安全
