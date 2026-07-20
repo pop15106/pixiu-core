@@ -183,11 +183,23 @@ exit /b 2
     $fakeCli = Join-Path $fakeDist 'cli.js'
     [System.IO.File]::WriteAllText($fakeCli, $cliSource, [System.Text.UTF8Encoding]::new($false))
 
-    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 10 'applies all DevSpace 1.0.4 Subagent patches'
+    $serverSource = @(
+        'function serverInstructions(config) {'
+        '    return `Use DevSpace as a local coding workspace. Prefer ${toolNames.edit} for targeted modifications, then continue.`;'
+        '}'
+        'if (config.toolMode === "codex") {'
+        '    registerCodexProcessTools(server, config, workspaces, processSessions);'
+        '}'
+    ) -join [Environment]::NewLine
+    $fakeServer = Join-Path $fakeDist 'server.js'
+    [System.IO.File]::WriteAllText($fakeServer, $serverSource, [System.Text.UTF8Encoding]::new($false))
+
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 12 'applies all DevSpace 1.0.4 Windows patches'
     $patchedRuntime = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
     $patchedProfiles = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-profiles.js'))
     $patchedSdk = [System.IO.File]::ReadAllText((Join-Path $fakeSdkDist 'index.js'))
     $patchedCli = [System.IO.File]::ReadAllText($fakeCli)
+    $patchedServer = [System.IO.File]::ReadAllText($fakeServer)
     Assert-Equal $patchedRuntime.Contains('skipGitRepoCheck: true') $true 'allows explicitly authorized non-Git workspaces'
     Assert-Equal $patchedRuntime.Contains('shell_environment_policy:') $true 'injects the Node and npm PATH into Codex'
     Assert-Equal $patchedRuntime.Contains('Subagent timed out after ') $true 'enforces bounded Agent execution'
@@ -198,6 +210,8 @@ exit /b 2
     Assert-Equal $patchedCli.Contains('writeMode: profile.writeMode ?? "allowed"') $true 'enforces read-only profiles'
     Assert-Equal $patchedCli.Contains('timeoutMs: profile.timeoutSeconds ?') $true 'passes profile timeouts to the runtime'
     Assert-Equal $patchedCli.Contains('const isShortAgentCommand') $true 'forces short Agent commands to exit'
+    Assert-Equal $patchedServer.Contains('Use exec_command for npm, builds, tests, and DevSpace Agent status commands') $true 'guides ChatGPT Web to use process sessions for long commands'
+    Assert-Equal $patchedServer.Contains('if (config.toolMode === "codex")') $false 'registers process-session tools outside Codex mode'
     Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'Subagent patch is idempotent'
 
     $profileConfig = Join-Path $testRoot 'profile-config'
@@ -214,13 +228,23 @@ exit /b 2
 
     $shimRoot = Join-Path $testRoot 'shim'
     $adminSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.AgentAdmin.mjs'
-    $shim = Install-DevSpaceAgentCliShim -NodePath (Join-Path $PSHOME 'powershell.exe') -DevSpaceCli $fakeCli -AdminScript $adminSource -BinDirectory $shimRoot
+    $fakeNodeRoot = Join-Path $testRoot 'node-runtime'
+    New-Item -ItemType Directory -Path $fakeNodeRoot -Force | Out-Null
+    $fakeNode = Join-Path $fakeNodeRoot 'node.exe'
+    foreach ($runtimeFile in @($fakeNode, (Join-Path $fakeNodeRoot 'npm.cmd'), (Join-Path $fakeNodeRoot 'npx.cmd'))) {
+        [System.IO.File]::WriteAllText($runtimeFile, '', [System.Text.UTF8Encoding]::new($false))
+    }
+    $shim = Install-DevSpaceAgentCliShim -NodePath $fakeNode -DevSpaceCli $fakeCli -AdminScript $adminSource -BinDirectory $shimRoot
     $shellShim = Get-Content -LiteralPath $shim.ShellPath -Raw
     $cmdShim = Get-Content -LiteralPath $shim.CmdPath -Raw
+    $npmShellShim = Get-Content -LiteralPath $shim.NpmShellPath -Raw
+    $npxShellShim = Get-Content -LiteralPath $shim.NpxShellPath -Raw
     Assert-Equal ($shellShim.Contains('cli-list') -and $shellShim.Contains('cli-show')) $true 'installs fast Bash status routing'
     Assert-Equal ($cmdShim.Contains('cli-list') -and $cmdShim.Contains('cli-show')) $true 'installs fast CMD status routing'
     Assert-Equal (Test-Path -LiteralPath $shim.AdminPath) $true 'copies the lightweight Agent admin to a stable path'
     Assert-Equal ($agentAdminSource.Contains('action === "cli-list"') -and $agentAdminSource.Contains('action === "cli-show"')) $true 'supports CLI-compatible fast status output'
+    Assert-Equal $npmShellShim.Contains('/npm.cmd" "$@"') $true 'routes Git Bash npm through npm.cmd'
+    Assert-Equal $npxShellShim.Contains('/npx.cmd" "$@"') $true 'routes Git Bash npx through npx.cmd'
 }
 finally {
     $resolvedTestRoot = [System.IO.Path]::GetFullPath($testRoot)
