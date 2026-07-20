@@ -96,6 +96,7 @@ function Install-DevSpaceSubagentWindowsPatch {
     $profilePath = Join-Path $packageRoot 'dist\local-agent-profiles.js'
     $sdkPath = Join-Path $packageRoot 'node_modules\@openai\codex-sdk\dist\index.js'
     $cliPath = Join-Path $packageRoot 'dist\cli.js'
+    $serverPath = Join-Path $packageRoot 'dist\server.js'
     $changed = 0
 
     $runtimeGitReplacement = @(
@@ -220,6 +221,19 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
+    $webProcessGuidanceReplacement = 'Use exec_command for npm, builds, tests, and DevSpace Agent status commands, or any command likely to take more than 20 seconds. If exec_command returns running with a sessionId, call write_stdin with the same workspaceId and sessionId until running is false; do not report success before exitCode is 0. Use ${toolNames.shell} only for short commands. Prefer ${toolNames.edit} for targeted modifications,'
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Use exec_command for npm, builds, tests, and DevSpace Agent status commands' -Pattern 'Prefer \$\{toolNames\.edit\} for targeted modifications,' -Replacement $webProcessGuidanceReplacement -Description 'ChatGPT Web long-command guidance') {
+        $changed++
+    }
+
+    $webProcessRegistrationReplacement = @(
+        '    // DevSpace OneClick: expose resumable process sessions to ChatGPT Web.'
+        '    registerCodexProcessTools(server, config, workspaces, processSessions);'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'DevSpace OneClick: expose resumable process sessions to ChatGPT Web.' -Pattern 'if \(config\.toolMode === "codex"\) \{\r?\n\s*registerCodexProcessTools\(server, config, workspaces, processSessions\);\r?\n\s*\}' -Replacement $webProcessRegistrationReplacement -Description 'ChatGPT Web process-session tools') {
+        $changed++
+    }
+
     return $changed
 }
 
@@ -328,11 +342,32 @@ function Install-DevSpaceAgentCliShim {
     $cmdPath = Join-Path $BinDirectory 'devspace.cmd'
     [System.IO.File]::WriteAllText($cmdPath, $cmdContent, [System.Text.UTF8Encoding]::new($false))
 
+    $nodeDirectory = Split-Path -Parent $NodePath
+    $npmCmdPath = Join-Path $nodeDirectory 'npm.cmd'
+    $npxCmdPath = Join-Path $nodeDirectory 'npx.cmd'
+    foreach ($packageCommand in @($npmCmdPath, $npxCmdPath)) {
+        if (-not (Test-Path -LiteralPath $packageCommand -PathType Leaf)) {
+            throw "Node package command is missing: $packageCommand"
+        }
+    }
+
+    $npmShellPath = Join-Path $BinDirectory 'npm'
+    $npmShellContent = '#!/usr/bin/env bash' + [Environment]::NewLine +
+        'exec "' + (ConvertTo-DevSpaceBashPath -FilePath $npmCmdPath) + '" "$@"' + [Environment]::NewLine
+    [System.IO.File]::WriteAllText($npmShellPath, $npmShellContent, [System.Text.UTF8Encoding]::new($false))
+
+    $npxShellPath = Join-Path $BinDirectory 'npx'
+    $npxShellContent = '#!/usr/bin/env bash' + [Environment]::NewLine +
+        'exec "' + (ConvertTo-DevSpaceBashPath -FilePath $npxCmdPath) + '" "$@"' + [Environment]::NewLine
+    [System.IO.File]::WriteAllText($npxShellPath, $npxShellContent, [System.Text.UTF8Encoding]::new($false))
+
     return [pscustomobject]@{
         BinDirectory = $BinDirectory
         ShellPath = $shellPath
         CmdPath = $cmdPath
         AdminPath = $stableAdmin
+        NpmShellPath = $npmShellPath
+        NpxShellPath = $npxShellPath
     }
 }
 
