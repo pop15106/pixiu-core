@@ -110,14 +110,20 @@ function New-TunnelSettings {
     $machineLabel = Get-SafeMachineLabel
     Write-Info "Creating a dedicated persistent tunnel for $env:COMPUTERNAME on port $port..."
 
-    $created = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @(
+    $createArguments = @(
         'create', $requestedId,
         '--allow-anonymous',
         '--expiration', '30d',
-        '--description', "DevSpace OneClick on $env:COMPUTERNAME port $port",
-        '--labels', 'devspace', 'oneclick', "machine-$machineLabel",
-        '-j'
-    ) -Operation 'Dev Tunnel create'
+        '--description', "DevSpace OneClick on $env:COMPUTERNAME port $port"
+    )
+    $createArguments += @(ConvertTo-DevTunnelLabelArguments -Labels @(
+        'devspace',
+        'oneclick',
+        "machine-$machineLabel"
+    ))
+    $createArguments += '-j'
+
+    $created = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments $createArguments -Operation 'Dev Tunnel create'
 
     $tunnelId = [string]$created.tunnel.tunnelId
     if ([string]::IsNullOrWhiteSpace($tunnelId)) {

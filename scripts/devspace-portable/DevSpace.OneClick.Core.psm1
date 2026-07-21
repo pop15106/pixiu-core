@@ -157,11 +157,38 @@ function Get-TunnelPublicBaseUrl {
     $matchingPort = @($TunnelDocument.tunnel.ports) |
         Where-Object { [int]$_.portNumber -eq $Port } |
         Select-Object -First 1
-    if (-not $matchingPort -or [string]::IsNullOrWhiteSpace([string]$matchingPort.portUri)) {
+    if (-not $matchingPort) {
         throw "Tunnel does not expose port $Port."
     }
 
-    return Assert-PublicOrigin -PublicBaseUrl ([string]$matchingPort.portUri).TrimEnd('/')
+    $portUriProperty = $matchingPort.PSObject.Properties['portUri']
+    if ($portUriProperty -and -not [string]::IsNullOrWhiteSpace([string]$portUriProperty.Value)) {
+        return Assert-PublicOrigin -PublicBaseUrl ([string]$portUriProperty.Value).TrimEnd('/')
+    }
+
+    $tunnelIdProperty = $TunnelDocument.tunnel.PSObject.Properties['tunnelId']
+    $tunnelId = if ($tunnelIdProperty) { [string]$tunnelIdProperty.Value } else { '' }
+    if ($tunnelId -notmatch '^(.+)\.([a-z0-9]+)$') {
+        throw "Tunnel $tunnelId does not provide a port URI and its region cannot be derived."
+    }
+
+    $publicBaseUrl = "https://$($Matches[1])-$Port.$($Matches[2]).devtunnels.ms"
+    return Assert-PublicOrigin -PublicBaseUrl $publicBaseUrl
+}
+
+function ConvertTo-DevTunnelLabelArguments {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string[]]$Labels)
+
+    $arguments = @()
+    foreach ($label in $Labels) {
+        if ([string]::IsNullOrWhiteSpace($label) -or $label -notmatch '^[\w-=]{1,50}$') {
+            throw "Invalid Dev Tunnel label: $label"
+        }
+        $arguments += '--labels'
+        $arguments += $label
+    }
+    return [string[]]$arguments
 }
 
 function New-DevSpaceTunnelName {
@@ -195,5 +222,6 @@ Export-ModuleMember -Function @(
     'Select-DevSpacePort',
     'Merge-DevSpaceConfig',
     'Get-TunnelPublicBaseUrl',
+    'ConvertTo-DevTunnelLabelArguments',
     'New-DevSpaceTunnelName'
 )

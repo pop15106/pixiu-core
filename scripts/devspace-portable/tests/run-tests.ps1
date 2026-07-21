@@ -99,6 +99,16 @@ exit /b 2
         }
     }
     Assert-Equal (Get-TunnelPublicBaseUrl -TunnelDocument $tunnel -Port 7678) 'https://machine-7678.jpe1.devtunnels.ms' 'derives an HTTPS origin without /mcp'
+
+    $tunnelWithoutPortUri = [pscustomobject]@{
+        tunnel = [pscustomobject]@{
+            tunnelId = 'devspace-tv7010nb-a1b2c3d4.jpe1'
+            ports = @([pscustomobject]@{ portNumber = 7676; protocol = 'http' })
+        }
+    }
+    Assert-Equal (Get-TunnelPublicBaseUrl -TunnelDocument $tunnelWithoutPortUri -Port 7676) 'https://devspace-tv7010nb-a1b2c3d4-7676.jpe1.devtunnels.ms' 'derives the public origin when current Dev Tunnel JSON omits portUri'
+    Assert-Equal @(ConvertTo-DevTunnelLabelArguments -Labels @('devspace', 'oneclick', 'machine-tv7010nb')) @('--labels', 'devspace', '--labels', 'oneclick', '--labels', 'machine-tv7010nb') 'repeats the labels option for current Dev Tunnel CLI'
+    Assert-Throws { ConvertTo-DevTunnelLabelArguments -Labels @('invalid label') } 'rejects invalid Dev Tunnel labels'
     Assert-Equal (New-DevSpaceTunnelName -ComputerName 'OFFICE_PC 01' -Suffix 'A1B2C3D4') 'devspace-office-pc-01-a1b2c3d4' 'creates a machine-specific tunnel name'
     Assert-Equal (Assert-DevSpaceAgentId -AgentId 'agt_1a2b3c4d') 'agt_1a2b3c4d' 'accepts a valid Agent ID'
     Assert-Throws { Assert-DevSpaceAgentId -AgentId 'agt_1a2b3c4d;taskkill' } 'rejects an unsafe Agent ID'
