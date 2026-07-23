@@ -4,7 +4,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { normalizeCandidate } = require('../candidate-schema');
-const { buildCanonicalKey } = require('../candidate-dedupe');
+const {
+  buildCanonicalKey,
+  buildResourceKey,
+} = require('../candidate-dedupe');
 
 function createBase(overrides = {}) {
   return {
@@ -43,11 +46,12 @@ test('相同 Repo URI 與 Commit SHA 產生相同 Canonical Key', () => {
   assert.equal(buildCanonicalKey(first), buildCanonicalKey(second));
 });
 
-test('Repo 新 Commit SHA 產生不同 Canonical Key', () => {
+test('Repo 新 Commit SHA 產生不同 Canonical Key，但維持相同 Resource Key', () => {
   const first = normalizeCandidate(createBase({ commitSha: 'a'.repeat(40) }));
   const second = normalizeCandidate(createBase({ commitSha: 'b'.repeat(40) }));
 
   assert.notEqual(buildCanonicalKey(first), buildCanonicalKey(second));
+  assert.equal(buildResourceKey(first), buildResourceKey(second));
 });
 
 test('論文優先使用 DOI 並忽略 DOI 大小寫', () => {
@@ -87,6 +91,7 @@ test('arXiv v1 與 v2 產生不同 Canonical Key', () => {
   }));
 
   assert.notEqual(buildCanonicalKey(first), buildCanonicalKey(second));
+  assert.equal(buildResourceKey(first), buildResourceKey(second));
 });
 
 test('文章以 Canonical URL 與發布日期形成版本鍵', () => {
@@ -105,4 +110,5 @@ test('文章以 Canonical URL 與發布日期形成版本鍵', () => {
 
   assert.equal(buildCanonicalKey(first), 'article:https://example.com/article@2026-07-20');
   assert.notEqual(buildCanonicalKey(first), buildCanonicalKey(second));
+  assert.equal(buildResourceKey(first), buildResourceKey(second));
 });

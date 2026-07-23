@@ -57,6 +57,29 @@ async function readRegistry(registryPath) {
   return freezeArray(events);
 }
 
+function validateCandidateImportEvent(event) {
+  if (event?.eventType !== 'CANDIDATE_IMPORTED') return null;
+  if (
+    event.schemaVersion !== 'pixiu.core-research/registry-event-v1'
+    || typeof event.eventId !== 'string'
+    || typeof event.eventAt !== 'string'
+    || typeof event.canonicalKey !== 'string'
+    || !event.candidate
+  ) {
+    throw createError('REGISTRY_EVENT_INVALID', '候選匯入事件格式不合法');
+  }
+
+  const candidate = normalizeCandidate(event.candidate);
+  const expectedCanonicalKey = buildCanonicalKey(candidate);
+  if (event.canonicalKey !== expectedCanonicalKey) {
+    throw createError(
+      'REGISTRY_CANONICAL_KEY_MISMATCH',
+      'Registry Canonical Key 與候選內容不一致',
+    );
+  }
+  return Object.freeze({ candidate, canonicalKey: expectedCanonicalKey });
+}
+
 function listLatestCandidates(events) {
   if (!Array.isArray(events)) {
     throw createError('REGISTRY_EVENTS_INVALID', 'Registry events 必須是陣列');
@@ -64,10 +87,9 @@ function listLatestCandidates(events) {
 
   const byCanonicalKey = new Map();
   for (const event of events) {
-    if (event?.eventType !== 'CANDIDATE_IMPORTED' || !event.candidate) continue;
-    const candidate = normalizeCandidate(event.candidate);
-    const canonicalKey = event.canonicalKey || buildCanonicalKey(candidate);
-    byCanonicalKey.set(canonicalKey, candidate);
+    const validated = validateCandidateImportEvent(event);
+    if (!validated) continue;
+    byCanonicalKey.set(validated.canonicalKey, validated.candidate);
   }
   return freezeArray(byCanonicalKey.values());
 }
@@ -98,11 +120,11 @@ async function importCandidates({ registryPath, candidates, importedAt } = {}) {
 
   const eventAt = normalizeEventTime(importedAt);
   const existingEvents = await readRegistry(registryPath);
-  const knownKeys = new Set(
-    existingEvents
-      .map((event) => event?.canonicalKey)
-      .filter((canonicalKey) => typeof canonicalKey === 'string' && canonicalKey),
-  );
+  const knownKeys = new Set();
+  for (const event of existingEvents) {
+    const validated = validateCandidateImportEvent(event);
+    if (validated) knownKeys.add(validated.canonicalKey);
+  }
   const imported = [];
   const duplicates = [];
   const newEvents = [];

@@ -1,7 +1,10 @@
 'use strict';
 
-const { buildCanonicalKey } = require('./candidate-dedupe');
-const { scoreCandidate } = require('./candidate-scorer');
+const { buildResourceKey } = require('./candidate-dedupe');
+const {
+  scoreCandidate,
+  isBlockingReasonCode,
+} = require('./candidate-scorer');
 
 const DEFAULT_POLICY = Object.freeze({
   days: 7,
@@ -100,21 +103,21 @@ function selectWeeklyCandidates(candidates, inputPolicy = {}) {
     }
     return {
       candidate,
-      canonicalKey: buildCanonicalKey(candidate),
+      resourceKey: buildResourceKey(candidate),
       score: scoreCandidate(candidate),
     };
   }).sort(compareEntries);
 
-  const seenCanonicalKeys = new Set();
+  const seenResourceKeys = new Set();
   const eligible = [];
   const rejected = [];
 
   for (const entry of scoredEntries) {
-    if (seenCanonicalKeys.has(entry.canonicalKey)) {
+    if (seenResourceKeys.has(entry.resourceKey)) {
       rejected.push(createRejectedEntry(entry, ['DUPLICATE_RESOURCE']));
       continue;
     }
-    seenCanonicalKeys.add(entry.canonicalKey);
+    seenResourceKeys.add(entry.resourceKey);
 
     const discoveredTimestamp = Date.parse(entry.candidate.discoveredAt);
     if (discoveredTimestamp < earliestTimestamp || discoveredTimestamp > nowTimestamp) {
@@ -122,8 +125,9 @@ function selectWeeklyCandidates(candidates, inputPolicy = {}) {
       continue;
     }
 
-    if (entry.score.reasonCodes.includes('SOURCE_BLOCKED')) {
-      rejected.push(createRejectedEntry(entry, ['SOURCE_BLOCKED']));
+    const blockingReasonCodes = entry.score.reasonCodes.filter(isBlockingReasonCode);
+    if (blockingReasonCodes.length > 0) {
+      rejected.push(createRejectedEntry(entry, blockingReasonCodes));
       continue;
     }
 

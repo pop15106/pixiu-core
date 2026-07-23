@@ -11,6 +11,8 @@ const {
   readRegistry,
   listLatestCandidates,
 } = require('../candidate-registry');
+const { normalizeCandidate } = require('../candidate-schema');
+const { buildCanonicalKey } = require('../candidate-dedupe');
 
 function createCandidate(overrides = {}) {
   return {
@@ -141,4 +143,39 @@ test('Registry 每一行都是完整 JSON 事件', async () => {
   const lines = (await readFile(registryPath, 'utf8')).trim().split(/\r?\n/);
   assert.equal(lines.length, 1);
   assert.doesNotThrow(() => JSON.parse(lines[0]));
+});
+
+test('Canonical Key 與候選內容不一致時拒絕讀取候選', () => {
+  const candidate = normalizeCandidate(createCandidate());
+  const event = {
+    schemaVersion: 'pixiu.core-research/registry-event-v1',
+    eventType: 'CANDIDATE_IMPORTED',
+    eventId: 'event-aaaaaaaaaaaaaaaaaaaaaaaa',
+    eventAt: '2026-07-23T03:00:00.000Z',
+    canonicalKey: 'repository:https://github.com/attacker/repo@tampered',
+    candidate,
+  };
+
+  assert.notEqual(event.canonicalKey, buildCanonicalKey(candidate));
+  assert.throws(
+    () => listLatestCandidates([event]),
+    (error) => error.code === 'REGISTRY_CANONICAL_KEY_MISMATCH',
+  );
+});
+
+test('候選匯入事件 Schema 不合法時拒絕讀取', () => {
+  const candidate = normalizeCandidate(createCandidate());
+  const event = {
+    schemaVersion: 'pixiu.core-research/registry-event-v0',
+    eventType: 'CANDIDATE_IMPORTED',
+    eventId: 'event-aaaaaaaaaaaaaaaaaaaaaaaa',
+    eventAt: '2026-07-23T03:00:00.000Z',
+    canonicalKey: buildCanonicalKey(candidate),
+    candidate,
+  };
+
+  assert.throws(
+    () => listLatestCandidates([event]),
+    (error) => error.code === 'REGISTRY_EVENT_INVALID',
+  );
 });

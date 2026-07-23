@@ -44,6 +44,12 @@ function normalizeUri(value, fieldName = 'canonicalUri') {
   if (!['http:', 'https:'].includes(url.protocol)) {
     throw createError('CANDIDATE_URI_INVALID', `${fieldName} 僅允許 HTTP 或 HTTPS`);
   }
+  if (url.username || url.password) {
+    throw createError(
+      'CANDIDATE_URI_CREDENTIALS_FORBIDDEN',
+      `${fieldName} 不可包含帳號或密碼`,
+    );
+  }
 
   url.protocol = url.protocol.toLowerCase();
   url.hostname = url.hostname.toLowerCase();

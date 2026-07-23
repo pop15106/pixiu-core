@@ -65,6 +65,10 @@ function capDisposition(disposition, maximum) {
     : disposition;
 }
 
+function isBlockingReasonCode(reasonCode) {
+  return BLOCKING_RISK_FLAGS.has(reasonCode);
+}
+
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
   for (const nestedValue of Object.values(value)) {
@@ -124,4 +128,5 @@ function scoreCandidate(candidate, policy = {}) {
 module.exports = {
   DEFAULT_WEIGHTS,
   scoreCandidate,
+  isBlockingReasonCode,
 };

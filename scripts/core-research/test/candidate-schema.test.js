@@ -62,12 +62,18 @@ test('Repo 可以先以未固定版本進入候選資料層', () => {
   assert.equal(candidate.commitSha, null);
 });
 
-test('拒絕非 HTTP 或 HTTPS 的 canonical URI', () => {
+test('拒絕非 HTTP／HTTPS 或內嵌帳密的 URI', () => {
   assert.throws(
     () => normalizeCandidate(createRepositoryCandidate({
       canonicalUri: 'file:///tmp/repo',
     })),
     (error) => error.code === 'CANDIDATE_URI_INVALID',
+  );
+  assert.throws(
+    () => normalizeCandidate(createRepositoryCandidate({
+      canonicalUri: 'https://user:password@example.com/repo',
+    })),
+    (error) => error.code === 'CANDIDATE_URI_CREDENTIALS_FORBIDDEN',
   );
 });
 

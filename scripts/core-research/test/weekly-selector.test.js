@@ -76,13 +76,15 @@ test('低於最低分數的候選排除為 SCORE_BELOW_THRESHOLD', () => {
   assert.deepEqual(result.rejected[0].reasonCodes, ['SCORE_BELOW_THRESHOLD']);
 });
 
-test('來源阻擋候選排除為 SOURCE_BLOCKED', () => {
-  const result = select([
-    createCandidate({ id: 'blocked', score: 100, riskFlags: ['SOURCE_BLOCKED'] }),
-  ]);
+test('阻擋型風險候選不論高分都不得入選', () => {
+  for (const riskFlag of ['SOURCE_BLOCKED', 'INTEGRITY_MISMATCH', 'MALICIOUS_CONTENT']) {
+    const result = select([
+      createCandidate({ id: riskFlag.toLowerCase(), score: 100, riskFlags: [riskFlag] }),
+    ]);
 
-  assert.equal(result.selected.length, 0);
-  assert.deepEqual(result.rejected[0].reasonCodes, ['SOURCE_BLOCKED']);
+    assert.equal(result.selected.length, 0);
+    assert.deepEqual(result.rejected[0].reasonCodes, [riskFlag]);
+  }
 });
 
 test('相同 Canonical Key 只保留分數較高的一項', () => {
@@ -105,6 +107,18 @@ test('相同 Canonical Key 只保留分數較高的一項', () => {
 
   assert.equal(result.selected.length, 1);
   assert.equal(result.selected[0].score.totalScore, 90);
+  assert.equal(result.rejected.length, 1);
+  assert.deepEqual(result.rejected[0].reasonCodes, ['DUPLICATE_RESOURCE']);
+});
+
+test('同一 Repo 的不同 Commit 只保留分數較高的版本', () => {
+  const result = select([
+    createCandidate({ id: 'versioned', score: 80, commitSha: 'a'.repeat(40) }),
+    createCandidate({ id: 'versioned', score: 95, commitSha: 'b'.repeat(40) }),
+  ]);
+
+  assert.equal(result.selected.length, 1);
+  assert.equal(result.selected[0].candidate.commitSha, 'b'.repeat(40));
   assert.equal(result.rejected.length, 1);
   assert.deepEqual(result.rejected[0].reasonCodes, ['DUPLICATE_RESOURCE']);
 });
