@@ -5,7 +5,7 @@
 - 日期：2026-07-23
 - 分支：`feature/core-research-pipeline`
 - 基底：Phase 1～2 已完成的 `9cb19ae`
-- 狀態：使用者已授權繼續完成 Phase 3～4
+- 狀態：Phase 3～4 已實作，待使用者審閱與決定是否合併
 
 ## 目標
 

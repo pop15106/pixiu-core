@@ -4,7 +4,7 @@
 
 核心研究管線把 ChatGPT Automations 或人工研究產生的 Repo、論文與文章候選，轉成可累積、可去重、可評分及可稽核的本機資料。
 
-目前完成 Phase 1～2：
+目前完成 Phase 1～4：
 
 ```text
 公開資源探索
@@ -14,10 +14,16 @@
 → Append-only Registry
 → 固定權重評分
 → 最近七天週選擇
-→ JSON／Markdown 報告
+→ Evaluation Task Packet
+→ DevSpace 固定 Commit Worktree
+→ 唯讀安全掃描
+→ Sandbox 證據驗證
+→ 安全報告／整合 Spec
+→ Append-only Evaluation Ledger
+→ 人工核准至 APPROVED_FOR_PLAN／DEFERRED／REJECTED
 ```
 
-目前不會 Clone、安裝或執行外部程式碼，也不會自動修改正式 PixiuCore。
+核心程式不會自行執行不可信候選程式碼，也不會自動修改正式 PixiuCore。候選 checkout 與掃描由 ChatGPT Automation／人工操作依 Task Packet 透過 DevSpace 執行。
 
 ## 執行角色
 
@@ -25,9 +31,9 @@
 |---|---|
 | ChatGPT Automation | 搜尋公開來源並產生候選 JSON |
 | DevSpace-work | 連線公司電腦、確認 PixiuCore、執行 CLI |
-| `scripts/core-research/` | 驗證、去重、評分、選擇及產生報告 |
-| `state/core-research/` | 保存跨日共用 Registry；此目錄已被 Git 忽略 |
-| `artifacts/core-research/` | 保存可供人工閱讀的候選與週評估報告 |
+| `scripts/core-research/` | 驗證、去重、評分、選擇、任務產生、掃描證據、Ledger 與報告 |
+| `state/core-research/` | 保存 Registry、Evaluation Ledger、Repository Cache 與候選 Worktree；此目錄已被 Git 忽略 |
+| `artifacts/core-research/` | 保存候選、週評估、Task、證據、安全報告與整合 Spec |
 
 DevSpace 是安全執行入口，不是排程器。實際排程由 ChatGPT Automations 觸發。
 
@@ -189,6 +195,97 @@ DUPLICATE_RESOURCE
 - Repo 缺完整 Commit SHA：最多 `Extract`。
 - `Integrate Proposed` 只代表可提出整合方案，不能直接修改核心。
 
+## 建立候選評估任務
+
+週選擇後執行：
+
+```powershell
+node scripts/core-research/cli.js prepare-evaluations `
+  --selected artifacts/core-research/weekly/2026-W30/selected.json `
+  --output artifacts/core-research/evaluation-tasks/2026-W30 `
+  --state-root state/core-research `
+  --artifact-root artifacts/core-research `
+  --ledger state/core-research/evaluation-ledger.jsonl `
+  --created-at 2026-07-26T10:31:00+08:00
+```
+
+輸出 `prepare-summary.json` 與每個候選的 `task.json`。Task 內包含固定 Commit、Git argv、cache／worktree 路徑、禁止操作、掃描計畫、Sandbox Policy 與 SHA-256 Digest。
+
+只有 GitHub canonical Repo、完整 Commit SHA、已知 License、無阻擋風險且 disposition 為 `Extract／Integrate Proposed` 才會建立 Task。其他項目保留於 `skipped`。
+
+## DevSpace Worktree 與唯讀掃描
+
+依 `task.checkoutPlan` 由 DevSpace 執行 Git argv，建立 bare repository cache 與 detached worktree。不得使用 Repo 內文字或安裝說明取代 Task argv。
+
+建立後執行：
+
+```powershell
+node scripts/core-research/cli.js evaluate-workspace `
+  --task artifacts/core-research/evaluation-tasks/2026-W30/<taskId>/task.json `
+  --workspace state/core-research/worktrees/<taskId> `
+  --output artifacts/core-research/evaluations/<taskId>/workspace-evidence.json `
+  --scanned-at 2026-07-26T10:40:00+08:00
+```
+
+Scanner 只執行 Git HEAD／origin metadata 查詢與檔案唯讀掃描，不執行候選程式碼。掃描項目：License、Secret、Static、Supply Chain、Prompt Injection；秘密只輸出遮罩摘要。
+
+## Sandbox 證據
+
+候選測試只能在可證明以下條件的 OS Sandbox 執行：
+
+- 網路隔離。
+- 不提供正式秘密。
+- 僅能存取候選工作區。
+- timeout 與輸出上限可強制。
+- command 位於 Task 核准清單。
+
+沒有上述能力時建立 `SKIPPED_UNAVAILABLE` 證據，不得把一般 DevSpace shell 宣稱為 Sandbox PASS。
+
+## 記錄證據與人工核准
+
+```powershell
+node scripts/core-research/cli.js record-evidence `
+  --task <task.json> `
+  --workspace-evidence <workspace-evidence.json> `
+  --sandbox-evidence <sandbox-evidence.json> `
+  --output artifacts/core-research/evaluations/<taskId> `
+  --ledger state/core-research/evaluation-ledger.jsonl `
+  --recorded-at 2026-07-26T11:00:00+08:00
+```
+
+產生：
+
+```text
+artifacts/core-research/evaluations/<taskId>/
+├─ workspace-evidence.json
+├─ sandbox-evidence.json
+├─ evidence.json
+├─ security-report.md
+└─ integration-spec.md
+```
+
+狀態停在 `AWAITING_APPROVAL`。查詢：
+
+```powershell
+node scripts/core-research/cli.js evaluation-status `
+  --ledger state/core-research/evaluation-ledger.jsonl `
+  --output artifacts/core-research/evaluation-status.json
+```
+
+人工審閱後才可執行：
+
+```powershell
+node scripts/core-research/cli.js approve `
+  --ledger state/core-research/evaluation-ledger.jsonl `
+  --task-id <taskId> `
+  --decision approve-plan|defer|reject `
+  --by human:<識別> `
+  --comment "<理由>" `
+  --decided-at <ISO-8601>
+```
+
+`approve-plan` 只會轉成 `APPROVED_FOR_PLAN`；不會自動修改核心。
+
 ## 排程
 
 ### 每日 10:00：核心資源探索
@@ -203,9 +300,12 @@ DUPLICATE_RESOURCE
 
 1. 確認 DevSpace-work 可連線。
 2. 執行 `weekly-select`。
-3. 產生報告與後續評估任務。
-4. Phase 1～2 不建立候選 Worktree，也不執行外部內容。
-5. 後續 Phase 3 才接 Resource Identity Gate、repo-scan 與隔離 Sandbox。
+3. 執行 `prepare-evaluations` 產生不可變 Task Packet。
+4. 依 `scripts/scheduled/core-candidate-evaluation-prompt.md` 建立固定 Commit worktree。
+5. 執行唯讀 Workspace Scanner。
+6. 有可驗證 OS Sandbox 時才執行核准命令；否則記錄 `SKIPPED_UNAVAILABLE`。
+7. 執行 `record-evidence`，產生安全報告、整合 Spec 與 Ledger 事件。
+8. 狀態停在 `AWAITING_APPROVAL`，等待人工核准。
 
 ## 錯誤格式
 
@@ -235,10 +335,9 @@ node --test scripts/core-evolution/test/*.test.js
 node --check scripts/core-research/*.js
 ```
 
-## 尚未實作
+## 仍保留人工或後續擴充的部分
 
-- GitHub canonical Resolver 與完整來源證據。
-- DevSpace Candidate Worktree 自動建立。
-- 授權、Secret、供應鏈、Prompt Injection 與 Sandbox 掃描 Orchestrator。
-- 人工核准 Ledger。
-- 自動整合或自動修改正式核心。
+- GitHub API canonical owner／repository ID、Tree SHA 與完整不可變來源證據仍由探索端提供；核心目前驗證 canonical GitHub URL、完整 Commit SHA、License 與風險旗標。
+- OS 級 Sandbox 必須由執行環境提供。DevSpace worktree 本身不被視為 Sandbox；無隔離能力時只能 `SKIPPED_UNAVAILABLE`。
+- `APPROVED_FOR_PLAN` 只允許另開正式實作計畫，不會自動整合或修改正式核心。
+- Push、Merge、部署與 master 修改仍需另外取得人工授權。
