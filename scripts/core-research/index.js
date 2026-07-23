@@ -8,6 +8,7 @@ const weeklySelector = require('./weekly-selector');
 const reportBuilder = require('./report-builder');
 const repositorySourceGate = require('./repository-source-gate');
 const evaluationTaskBuilder = require('./evaluation-task-builder');
+const workspaceScanner = require('./workspace-scanner');
 
 module.exports = {
   ...candidateSchema,
@@ -18,4 +19,5 @@ module.exports = {
   ...reportBuilder,
   ...repositorySourceGate,
   ...evaluationTaskBuilder,
+  ...workspaceScanner,
 };
