@@ -543,7 +543,7 @@ Expected:
 
 將所有完成步驟改為 `[x]`，設計狀態改為「Phase 1～2 已實作，待使用者審閱」。
 
-- [ ] **Step 6: Commit Task 6**
+- [x] **Step 6: Commit Task 6**
 
 ```powershell
 git add docs/core-research-pipeline.md scripts/scheduled/core-resource-discovery-prompt.md scripts/scheduled/core-candidate-weekly-review-prompt.md docs/superpowers/specs/2026-07-23-core-research-pipeline-design.md docs/superpowers/plans/2026-07-23-core-research-pipeline.md
