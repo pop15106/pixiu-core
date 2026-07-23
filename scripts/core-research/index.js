@@ -6,6 +6,8 @@ const candidateRegistry = require('./candidate-registry');
 const candidateScorer = require('./candidate-scorer');
 const weeklySelector = require('./weekly-selector');
 const reportBuilder = require('./report-builder');
+const repositorySourceGate = require('./repository-source-gate');
+const evaluationTaskBuilder = require('./evaluation-task-builder');
 
 module.exports = {
   ...candidateSchema,
@@ -14,4 +16,6 @@ module.exports = {
   ...candidateScorer,
   ...weeklySelector,
   ...reportBuilder,
+  ...repositorySourceGate,
+  ...evaluationTaskBuilder,
 };
