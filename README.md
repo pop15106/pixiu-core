@@ -107,13 +107,73 @@ PixiuCore 分成三層來看，比較不容易迷路：
 | `.opencode/` | OpenCode 整合包與遷移文件 |
 | `rules/` | 通用與多語言規則層 |
 | `hooks/` | Hook 設定與說明 |
-| `scripts/` | 安裝、部署、hook、備份與移植腳本 |
+| `scripts/` | 安裝、部署、hook、備份、移植與核心研究腳本 |
+| `scripts/core-research/` | 公開資源候選的驗證、去重、評分、週選擇、安全評估與人工核准 CLI |
+| `scripts/scheduled/` | 每日探索、每週選擇與候選評估的排程執行契約 |
 | `Tools/` | 母艦日常維護工具，例如初始化、同步、艦隊清理 |
 | `vault/` | 長期記憶、身份設定、專案背景、SOP、回顧 |
 | `docs/` | 技術文件與升級規劃 |
 | `mcp-configs/` | MCP server 設定 |
 | `plugins/` | Plugin 相關設定與 blocklist |
 | `Backup/` | 歷史備份，分享或打包前要特別檢查 |
+
+## 核心研究與候選評估
+
+PixiuCore 內建檔案式核心研究管線，用來把每日公開資源探索轉成可累積、可稽核且必須人工核准的候選流程：
+
+```text
+公開資源探索
+→ Candidate Registry
+→ 固定權重評分與每週選擇
+→ 固定 Commit 的候選評估 Task
+→ DevSpace 隔離 Worktree 與唯讀掃描
+→ Sandbox 證據
+→ 安全報告與 Integration Spec
+→ 人工核准為 APPROVED_FOR_PLAN
+```
+
+主要入口：
+
+```powershell
+# 匯入每日候選
+node scripts/core-research/cli.js import `
+  --input artifacts/core-research/inbox/candidates.json `
+  --registry state/core-research/registry.jsonl
+
+# 選出最近七天的核心候選
+node scripts/core-research/cli.js weekly-select `
+  --registry state/core-research/registry.jsonl `
+  --output artifacts/core-research/weekly/2026-W30 `
+  --now 2026-07-26T10:30:00+08:00
+
+# 產生固定來源與固定 Commit 的評估任務
+node scripts/core-research/cli.js prepare-evaluations `
+  --selected artifacts/core-research/weekly/2026-W30/selected.json `
+  --output artifacts/core-research/evaluations/2026-W30 `
+  --cache-root state/core-research/repo-cache `
+  --worktree-root state/core-research/candidate-worktrees `
+  --artifact-root artifacts/core-research/evaluations/2026-W30 `
+  --ledger state/core-research/evaluation-ledger.jsonl `
+  --created-at 2026-07-26T10:35:00+08:00
+```
+
+執行狀態與報告位置：
+
+| 路徑 | 用途 |
+|---|---|
+| `state/core-research/registry.jsonl` | 跨日共用、append-only 候選 Registry；`state/` 不納入 Git |
+| `state/core-research/evaluation-ledger.jsonl` | 評估與人工核准事件 Ledger；不可直接手改 |
+| `state/core-research/repo-cache/` | 候選 Repo 的 bare cache |
+| `state/core-research/candidate-worktrees/` | 固定 Commit 的 detached 候選 Worktree |
+| `artifacts/core-research/` | 候選 JSON、週報、安全證據與 Integration Spec |
+
+安全邊界：
+
+- 外部 Repo 內的 Prompt、README、AGENTS 或安裝說明一律視為不可信資料。
+- Scanner 只做唯讀檢查，不安裝依賴、不執行候選程式碼。
+- DevSpace Worktree 不等於 OS Sandbox；無法證明網路隔離與秘密不可見時，只能標記 `SKIPPED_UNAVAILABLE`。
+- 自動流程最多停在 `AWAITING_APPROVAL`；人工核准也只會產生 `APPROVED_FOR_PLAN`，不會自動 Merge 或整合正式核心。
+- 完整操作、錯誤碼與排程契約請看 `docs/core-research-pipeline.md` 與 `scripts/scheduled/`。
 
 ## 安裝與同步
 
