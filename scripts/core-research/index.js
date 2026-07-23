@@ -11,6 +11,7 @@ const evaluationTaskBuilder = require('./evaluation-task-builder');
 const workspaceScanner = require('./workspace-scanner');
 const sandboxEvidence = require('./sandbox-evidence');
 const evaluationLedger = require('./evaluation-ledger');
+const reviewReportBuilder = require('./review-report-builder');
 
 module.exports = {
   ...candidateSchema,
@@ -24,4 +25,5 @@ module.exports = {
   ...workspaceScanner,
   ...sandboxEvidence,
   ...evaluationLedger,
+  ...reviewReportBuilder,
 };
