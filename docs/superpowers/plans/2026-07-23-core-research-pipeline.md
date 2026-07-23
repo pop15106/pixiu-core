@@ -34,7 +34,7 @@
 - Produces: `buildCanonicalKey(candidate) -> string`
 - Produces: `isFullCommitSha(value) -> boolean`
 
-- [ ] **Step 1: 寫 Candidate Schema 失敗測試**
+- [x] **Step 1: 寫 Candidate Schema 失敗測試**
 
 測試需覆蓋：
 
@@ -76,7 +76,7 @@ test('正規化完整 Repo 候選並固定不可變資料', () => {
 
 另測：不合法 URL、缺欄位、空 categories、metrics 超出 0～100、Repo 非 40 字元 SHA。
 
-- [ ] **Step 2: 執行測試確認 RED**
+- [x] **Step 2: 執行測試確認 RED**
 
 Run:
 
@@ -86,7 +86,7 @@ node --test scripts/core-research/test/candidate-schema.test.js
 
 Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-schema`.
 
-- [ ] **Step 3: 實作最小 Candidate Schema**
+- [x] **Step 3: 實作最小 Candidate Schema**
 
 實作：
 
@@ -99,7 +99,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-schema`.
 - 以 SHA-256 根據 canonical key 產生 `candidateId`。
 - 回傳深層凍結的新物件，不修改輸入。
 
-- [ ] **Step 4: 寫 Canonical Key 失敗測試**
+- [x] **Step 4: 寫 Canonical Key 失敗測試**
 
 測試：
 
@@ -109,7 +109,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-schema`.
 - arXiv v1 與 v2 產生不同 key。
 - 文章 URL 相同但發布日期不同產生不同 key。
 
-- [ ] **Step 5: 執行 Dedupe 測試確認 RED**
+- [x] **Step 5: 執行 Dedupe 測試確認 RED**
 
 Run:
 
@@ -119,7 +119,7 @@ node --test scripts/core-research/test/candidate-dedupe.test.js
 
 Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-dedupe`.
 
-- [ ] **Step 6: 實作最小 Canonical Key**
+- [x] **Step 6: 實作最小 Canonical Key**
 
 建立 `buildCanonicalKey(candidate)`，輸出：
 
@@ -131,7 +131,7 @@ paper:url:<normalized-uri>
 article:<normalized-uri>@<YYYY-MM-DD>
 ```
 
-- [ ] **Step 7: 執行 Task 1 測試與 syntax check**
+- [x] **Step 7: 執行 Task 1 測試與 syntax check**
 
 Run:
 
@@ -143,7 +143,7 @@ node --check scripts/core-research/candidate-dedupe.js
 
 Expected: all PASS，syntax checks exit 0。
 
-- [ ] **Step 8: Commit Task 1**
+- [x] **Step 8: Commit Task 1**
 
 ```powershell
 git add scripts/core-research/candidate-schema.js scripts/core-research/candidate-dedupe.js scripts/core-research/test/candidate-schema.test.js scripts/core-research/test/candidate-dedupe.test.js
@@ -164,7 +164,7 @@ git commit -m "feat: add core research candidate schema"
 - Produces: `readRegistry(registryPath)`
 - Produces: `listLatestCandidates(events)`
 
-- [ ] **Step 1: 寫 Registry 失敗測試**
+- [x] **Step 1: 寫 Registry 失敗測試**
 
 測試使用 `node:fs/promises.mkdtemp` 與 `node:os.tmpdir()`，覆蓋：
 
@@ -174,7 +174,7 @@ git commit -m "feat: add core research candidate schema"
 - 壞 JSONL 行回報 `REGISTRY_LINE_INVALID` 與行號。
 - `listLatestCandidates` 回傳不可變候選陣列。
 
-- [ ] **Step 2: 執行 Registry 測試確認 RED**
+- [x] **Step 2: 執行 Registry 測試確認 RED**
 
 Run:
 
@@ -184,7 +184,7 @@ node --test scripts/core-research/test/candidate-registry.test.js
 
 Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-registry`.
 
-- [ ] **Step 3: 實作 Registry**
+- [x] **Step 3: 實作 Registry**
 
 規則：
 
@@ -195,7 +195,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-registry`.
 - 回傳 `{ imported, duplicates, eventsWritten }`。
 - 不靜默修復壞 Registry。
 
-- [ ] **Step 4: 執行 Task 2 測試與回歸**
+- [x] **Step 4: 執行 Task 2 測試與回歸**
 
 Run:
 
@@ -205,7 +205,7 @@ node --test scripts/core-research/test/candidate-registry.test.js scripts/core-r
 
 Expected: all PASS。
 
-- [ ] **Step 5: Commit Task 2**
+- [x] **Step 5: Commit Task 2**
 
 ```powershell
 git add scripts/core-research/candidate-registry.js scripts/core-research/test/candidate-registry.test.js
@@ -224,7 +224,7 @@ git commit -m "feat: add append-only candidate registry"
 - Consumes: normalized candidate
 - Produces: `scoreCandidate(candidate, policy?) -> frozen score result`
 
-- [ ] **Step 1: 寫 Scorer 失敗測試**
+- [x] **Step 1: 寫 Scorer 失敗測試**
 
 覆蓋：
 
@@ -235,7 +235,7 @@ git commit -m "feat: add append-only candidate registry"
 - License `UNKNOWN` 時最多 `Reference`，reason code 包含 `LICENSE_UNKNOWN`。
 - `riskFlags` 含 `SOURCE_BLOCKED` 時為 `Reject`。
 
-- [ ] **Step 2: 執行 Scorer 測試確認 RED**
+- [x] **Step 2: 執行 Scorer 測試確認 RED**
 
 Run:
 
@@ -245,7 +245,7 @@ node --test scripts/core-research/test/candidate-scorer.test.js
 
 Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-scorer`.
 
-- [ ] **Step 3: 實作固定權重評分**
+- [x] **Step 3: 實作固定權重評分**
 
 預設權重：
 
@@ -273,7 +273,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `candidate-scorer`.
 }
 ```
 
-- [ ] **Step 4: 執行 Task 3 測試與回歸**
+- [x] **Step 4: 執行 Task 3 測試與回歸**
 
 Run:
 
@@ -283,7 +283,7 @@ node --test scripts/core-research/test/*.test.js
 
 Expected: all core-research tests PASS。
 
-- [ ] **Step 5: Commit Task 3**
+- [x] **Step 5: Commit Task 3**
 
 ```powershell
 git add scripts/core-research/candidate-scorer.js scripts/core-research/test/candidate-scorer.test.js
@@ -303,7 +303,7 @@ git commit -m "feat: add deterministic candidate scoring"
 - Consumes: normalized candidates、`scoreCandidate(candidate)`
 - Produces: `selectWeeklyCandidates(candidates, policy) -> frozen selection result`
 
-- [ ] **Step 1: 寫 Weekly Selector 失敗測試**
+- [x] **Step 1: 寫 Weekly Selector 失敗測試**
 
 建立固定 `now = 2026-07-26T02:30:00.000Z`，覆蓋：
 
@@ -315,7 +315,7 @@ git commit -m "feat: add deterministic candidate scoring"
 - 同分依 evidenceQuality、coreFit、時間、candidateId 穩定排序。
 - 每個排除項目至少一個 reason code。
 
-- [ ] **Step 2: 執行 Selector 測試確認 RED**
+- [x] **Step 2: 執行 Selector 測試確認 RED**
 
 Run:
 
@@ -325,7 +325,7 @@ node --test scripts/core-research/test/weekly-selector.test.js
 
 Expected: FAIL with `MODULE_NOT_FOUND` for `weekly-selector`.
 
-- [ ] **Step 3: 實作 Selector**
+- [x] **Step 3: 實作 Selector**
 
 預設 policy：
 
@@ -357,7 +357,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `weekly-selector`.
 }
 ```
 
-- [ ] **Step 4: 建立探索設定檔**
+- [x] **Step 4: 建立探索設定檔**
 
 `discovery-profiles.json` 固定包含：
 
@@ -366,7 +366,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `weekly-selector`.
 - 四個核心分類名稱
 - 預設週選擇政策 7／70／5／2
 
-- [ ] **Step 5: 執行 Task 4 測試與 JSON parse 驗證**
+- [x] **Step 5: 執行 Task 4 測試與 JSON parse 驗證**
 
 Run:
 
@@ -377,7 +377,7 @@ node -e "JSON.parse(require('node:fs').readFileSync('configs/core-research/disco
 
 Expected: tests PASS and output `OK`。
 
-- [ ] **Step 6: Commit Task 4**
+- [x] **Step 6: Commit Task 4**
 
 ```powershell
 git add configs/core-research/discovery-profiles.json scripts/core-research/weekly-selector.js scripts/core-research/test/weekly-selector.test.js
@@ -400,7 +400,7 @@ git commit -m "feat: add weekly candidate selector"
 - Produces: `writeWeeklyReport({ outputDir, selection })`
 - Produces CLI commands `import` and `weekly-select`
 
-- [ ] **Step 1: 寫 Report Builder 失敗測試**
+- [x] **Step 1: 寫 Report Builder 失敗測試**
 
 覆蓋：
 
@@ -409,7 +409,7 @@ git commit -m "feat: add weekly candidate selector"
 - Markdown 包含政策、入選項目、排除原因與統計。
 - Markdown 對 `|` 與換行做安全處理，不直接嵌入候選原始 HTML。
 
-- [ ] **Step 2: 執行 Report Builder 測試確認 RED**
+- [x] **Step 2: 執行 Report Builder 測試確認 RED**
 
 Run:
 
@@ -419,11 +419,11 @@ node --test scripts/core-research/test/report-builder.test.js
 
 Expected: FAIL with `MODULE_NOT_FOUND` for `report-builder`.
 
-- [ ] **Step 3: 實作 Report Builder 與 index.js**
+- [x] **Step 3: 實作 Report Builder 與 index.js**
 
 `index.js` 匯出所有公開函式，不暴露 CLI 內部解析器。
 
-- [ ] **Step 4: 寫 CLI 端對端失敗測試**
+- [x] **Step 4: 寫 CLI 端對端失敗測試**
 
 測試以 temp directory 建立 `input.json`，使用 `spawnSync(process.execPath, [...])`：
 
@@ -431,7 +431,7 @@ Expected: FAIL with `MODULE_NOT_FOUND` for `report-builder`.
 2. 再執行 `weekly-select --now 2026-07-26T02:30:00.000Z`，確認三個報告檔存在。
 3. 不合法 JSON 或未知命令 exit 非 0，stderr 只含簡短錯誤碼，不含 stack trace。
 
-- [ ] **Step 5: 執行 CLI 測試確認 RED**
+- [x] **Step 5: 執行 CLI 測試確認 RED**
 
 Run:
 
@@ -441,7 +441,7 @@ node --test scripts/core-research/test/cli.integration.test.js
 
 Expected: FAIL because `cli.js` does not exist。
 
-- [ ] **Step 6: 實作 CLI**
+- [x] **Step 6: 實作 CLI**
 
 支援：
 
@@ -450,7 +450,7 @@ import --input --registry
 weekly-select --registry --output [--now] [--days] [--minimum-score] [--limit] [--per-category]
 ```
 
-預設路徑：
+建議固定路徑（CLI 仍要求顯式傳入）：
 
 ```text
 state/core-research/registry.jsonl
@@ -463,7 +463,7 @@ CLI 錯誤輸出格式：
 CORE_RESEARCH_ERROR <ERROR_CODE>: <繁體中文訊息>
 ```
 
-- [ ] **Step 7: 執行 Task 5 測試與 syntax check**
+- [x] **Step 7: 執行 Task 5 測試與 syntax check**
 
 Run:
 
@@ -476,7 +476,7 @@ node --check scripts/core-research/cli.js
 
 Expected: all PASS。
 
-- [ ] **Step 8: Commit Task 5**
+- [x] **Step 8: Commit Task 5**
 
 ```powershell
 git add scripts/core-research/report-builder.js scripts/core-research/index.js scripts/core-research/cli.js scripts/core-research/test/report-builder.test.js scripts/core-research/test/cli.integration.test.js
@@ -497,7 +497,7 @@ git commit -m "feat: add core research CLI reports"
 **Interfaces:**
 - Documents CLI contract for ChatGPT Automations and DevSpace execution.
 
-- [ ] **Step 1: 撰寫操作文件**
+- [x] **Step 1: 撰寫操作文件**
 
 內容必須包含：
 
@@ -508,7 +508,7 @@ git commit -m "feat: add core research CLI reports"
 - 本階段不建立 Worktree、不執行外部內容。
 - 範例 JSON 與 PowerShell 指令。
 
-- [ ] **Step 2: 建立兩份排程契約**
+- [x] **Step 2: 建立兩份排程契約**
 
 契約內容對齊已更新的 ChatGPT Automations：
 
@@ -518,7 +518,7 @@ git commit -m "feat: add core research CLI reports"
 - CLI 不存在時不得假裝已匯入。
 - 週評估中的 Worktree／掃描屬 Phase 3，現階段只產選擇結果與待執行任務。
 
-- [ ] **Step 3: 執行完整驗證**
+- [x] **Step 3: 執行完整驗證**
 
 Run:
 
@@ -535,11 +535,11 @@ Expected:
 - 所有 syntax checks exit 0。
 - `git diff --check` 無輸出。
 
-- [ ] **Step 4: 執行手動 CLI smoke test**
+- [x] **Step 4: 執行手動 CLI smoke test**
 
 在 worktree 外的暫存目錄準備一份合法候選 JSON，執行 import 與 weekly-select，確認三個報告檔可讀；不得在 repo 內留下 runtime state。
 
-- [ ] **Step 5: 更新計畫勾選狀態與設計狀態**
+- [x] **Step 5: 更新計畫勾選狀態與設計狀態**
 
 將所有完成步驟改為 `[x]`，設計狀態改為「Phase 1～2 已實作，待使用者審閱」。
 

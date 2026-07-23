@@ -5,7 +5,7 @@
 - 日期：2026-07-23
 - 分支：`feature/core-research-pipeline`
 - 基底：`master@b0bb5af84ea8d1f70e977f40b11ea5916052deb6`
-- 狀態：使用者已核准方案 B，進入 Phase 1～2 實作
+- 狀態：Phase 1～2 已實作，待使用者審閱
 
 ## 目標
 
@@ -57,7 +57,7 @@ configs/core-research/
 
 - `resourceType`：`repository | paper | article`
 - `title`
-- `canonicalUri`：只允許 HTTP／HTTPS
+- `canonicalUri`：只允許 HTTP／HTTPS，且不可內嵌帳號或密碼
 - `publisher`
 - `publishedAt`
 - `discoveredAt`
@@ -90,6 +90,7 @@ Registry 為 append-only JSONL：
 - 重複匯入產生結果但不重複寫入事件。
 - 每行都是完整事件，不依賴跨行可變狀態。
 - Registry 讀取遇到壞行時必須回報行號，不得靜默跳過。
+- `CANDIDATE_IMPORTED` 事件必須使用支援的 Schema，且保存的 `canonicalKey` 必須與候選重新計算結果一致；不一致時視為狀態遭竄改並停止。
 
 候選狀態第一版只使用：
 
@@ -137,6 +138,8 @@ REJECTED
 - `totalLimit = 5`
 - `perCategoryLimit = 2`
 
+同一資源的不同版本先以 Resource Key 分組，只保留排序最高的一個版本進入配額選擇；其他版本標記 `DUPLICATE_RESOURCE`。Repo 的 Resource Key 不含 Commit SHA，論文不含 arXiv version，文章不含發布日期。
+
 候選先依以下順序排序：
 
 1. 總分高
@@ -153,6 +156,8 @@ SCORE_BELOW_THRESHOLD
 CATEGORY_QUOTA_REACHED
 TOTAL_LIMIT_REACHED
 SOURCE_BLOCKED
+INTEGRITY_MISMATCH
+MALICIOUS_CONTENT
 DUPLICATE_RESOURCE
 ```
 
@@ -189,16 +194,17 @@ CLI 必須以非零 exit code 回報不合法輸入，且不得輸出秘密或�
 
 ## 驗收條件
 
-1. Repo、論文與文章可被驗證並正規化。
+1. Repo、論文與文章可被驗證並正規化，URL 內嵌帳密會被拒絕。
 2. 相同版本候選重複匯入時 Registry 不增加事件。
 3. Repo 新 Commit 或論文新版本會產生新候選版本。
-4. 評分結果在相同輸入下可重現。
-5. License 不明不能得到 `Extract` 以上處理方式。
-6. Repo 缺完整 Commit SHA 不能得到 `Integrate Proposed`。
-7. 週選擇只使用最近七天候選、總數最多五項、同分類最多兩項。
-8. 每個未入選候選都有明確 reason code。
-9. CLI 可完成 import → weekly-select 的端對端流程。
-10. 既有 `scripts/core-evolution/test/*.test.js` 全數維持通過。
+4. Registry 事件 Schema 或 Canonical Key 遭竄改時停止處理。
+5. 評分結果在相同輸入下可重現。
+6. License 不明不能得到 `Extract` 以上處理方式。
+7. Repo 缺完整 Commit SHA 不能得到 `Integrate Proposed`。
+8. 週選擇只使用最近七天候選、同一資源只保留一個版本、總數最多五項、同分類最多兩項。
+9. 每個未入選候選都有明確 reason code，阻擋型風險不得入選。
+10. CLI 可完成 import → weekly-select 的端對端流程。
+11. 既有 `scripts/core-evolution/test/*.test.js` 全數維持通過。
 
 ## 本階段不做
 
