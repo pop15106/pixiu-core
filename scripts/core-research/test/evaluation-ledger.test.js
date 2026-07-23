@@ -104,6 +104,19 @@ test('Ledger 以 append-only JSONL 保存事件並衍生狀態', async () => {
   assert.ok(events.every((event) => /^[a-f0-9]{64}$/.test(event.integrity.value)));
 });
 
+test('重新排序的有效事件會因狀態遷移不合法而拒絕', async () => {
+  const task = createTask();
+  const ledgerPath = await createLedgerPath();
+  await appendLifecycleToApproval(ledgerPath, task);
+  const events = await readEvaluationLedger(ledgerPath);
+  const reordered = [events[1], events[0], events[2], events[3]];
+
+  assert.throws(
+    () => deriveEvaluationStates(reordered),
+    (error) => error.code === 'EVALUATION_STATE_TRANSITION_INVALID',
+  );
+});
+
 test('同一 Task 的 Digest 不一致時拒絕追加', async () => {
   const task = createTask();
   const ledgerPath = await createLedgerPath();

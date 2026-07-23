@@ -152,6 +152,8 @@ function deriveEvaluationStates(events) {
       throw createError('EVALUATION_TASK_DIGEST_MISMATCH', '同一 Task 的 Digest 不一致');
     }
 
+    assertTransition(event.eventType, current.state);
+
     let state = current.state;
     let concerns = [...current.concerns];
     if (event.eventType === 'EVALUATION_PREPARED') state = 'PREPARED';

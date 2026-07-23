@@ -84,6 +84,12 @@ function buildEvaluationTask({
     taskId,
     createdAt: normalizedCreatedAt,
     candidateId: candidate.candidateId,
+    candidate: {
+      title: candidate.title,
+      profile: candidate.profile,
+      categories: [...candidate.categories],
+      summary: candidate.summary,
+    },
     score: {
       totalScore: score.totalScore,
       disposition: score.disposition,
