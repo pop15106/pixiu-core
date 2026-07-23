@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "pixiu.core-research/discovery-profiles-v1",
+  "profiles": {
+    "ai-tech-trends": {
+      "description": "公開 AI 技術、研究文章與預測市場方向探索",
+      "categories": [
+        "ai-workflow",
+        "agent-collaboration",
+        "prompt-context-engineering",
+        "memory-rag-graphrag",
+        "mcp-tooling",
+        "model-evaluation-governance",
+        "prediction-markets"
+      ],
+      "coreEligibleByDefault": false
+    },
+    "core-resource": {
+      "description": "可進入 PixiuCore 候選週評估的核心資源探索",
+      "categories": [
+        "skill-agent-workflow",
+        "ai-sdlc",
+        "security-testing",
+        "tool-integration"
+      ],
+      "coreEligibleByDefault": true
+    }
+  },
+  "weeklySelection": {
+    "days": 7,
+    "minimumScore": 70,
+    "totalLimit": 5,
+    "perCategoryLimit": 2
+  }
+}
