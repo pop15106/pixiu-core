@@ -5,8 +5,8 @@
 ## 啟動
 
 - 不列舉或全文載入 `.agents/skills/`。
-- 依 `vault/capabilities/capability-manifest.json` 選最多 3 個 Capability，只讀其指定檔案。
-- 未命中時使用 Bootstrap 與 repo 原始碼，不退回全量掃描。
+- 先執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`，只讀 `filesToLoad`，最多 3 個 Capability。
+- Router 無法執行時才以 `vault/capabilities/capability-manifest.json` 降級；未命中時使用 Bootstrap 與 repo 原始碼，不退回全量掃描。
 - 子 Agent 僅在使用者明確同意後使用，且只接收精簡任務包。
 
 ```powershell

@@ -80,6 +80,28 @@
       }
     },
     {
+      "id": "identity-calibration",
+      "summary": "使用者偏好、角色定位與跨模型人格校準。",
+      "keywords": ["我的偏好", "個人偏好", "我的習慣", "你應該知道我", "根據你對我的了解", "角色定位", "人格校準", "我是誰"],
+      "priority": 32,
+      "load": {
+        "skills": [],
+        "contexts": ["vault/identity/founder-profile.md", "vault/identity/agent-persona.md"],
+        "governance": []
+      }
+    },
+    {
+      "id": "prompt-engineering",
+      "summary": "Prompt、提示詞與 system prompt 精煉。",
+      "keywords": ["prompt", "提示詞", "提示語", "system prompt", "優化 prompt", "改寫 prompt", "提示工程"],
+      "priority": 18,
+      "load": {
+        "skills": [],
+        "contexts": ["rules/common/prompt-engineering.md"],
+        "governance": []
+      }
+    },
+    {
       "id": "recap-memory",
       "summary": "Session 摘要、舊決策與跨 Session 記憶。",
       "keywords": ["recap", "摘要", "現在到哪", "做到哪", "目前進度", "進度", "下一步", "之前", "上次", "前面", "剛剛", "對話", "紀錄", "記憶", "接續", "繼續", "昨天"],

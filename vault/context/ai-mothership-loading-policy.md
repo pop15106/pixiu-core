@@ -29,9 +29,11 @@ summary: 定義各 AI 連結 PixiuCore 母體時的低 token 分層載入、語�
 
 每次 Session 只常駐：
 
-1. `vault/bootstrap/SESSION-BOOTSTRAP.md`：L0 硬閘門摘要、降級規則與路由入口。
-2. `vault/capabilities/capability-manifest.json`：能力名稱、觸發詞與必要文件路徑。
-3. 當前專案入口檔中與本次任務直接相關的局部規則。
+1. `vault/bootstrap/SESSION-BOOTSTRAP.md`：L0 硬閘門摘要、降級規則與 Router 入口。
+2. 當前專案入口檔中與本次任務直接相關的局部規則。
+3. `scripts/router/resolve-capabilities.js` 的精簡輸出：最多 3 個 Capability 與 `filesToLoad`。
+
+`vault/capabilities/capability-manifest.json` 是 Router 的磁碟資料源，不在正常 Session 中全文常駐；只有 Router 無法執行時才作降級索引。
 
 `user_rules.md` 仍是最高憲法與唯一完整來源，但不在每次啟動時全文載入。遇到治理衝突、審批例外、高風險操作或特殊 Hook 時，再讀對應原文段落。identity、完整 memory summary、recap、decisions 與本政策全文都改為按需載入。
 

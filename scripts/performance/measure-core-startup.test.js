@@ -29,7 +29,37 @@ function testMeasuresStartupFileBytes() {
   assert.deepStrictEqual(result.missingStartupFiles, ['missing.md']);
 }
 
-const tests = [testCountsDuplicateSkillNamesAcrossRoots, testMeasuresStartupFileBytes];
+function testDetectsPixiuCanonicalPublishingLayer() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-skill-suppression-'));
+  const canonical = path.join(root, 'skills');
+  const portable = path.join(root, '.agents', 'skills');
+  fs.mkdirSync(path.join(root, 'vault', 'bootstrap'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'vault', 'bootstrap', 'SESSION-BOOTSTRAP.md'), '# bootstrap\n', 'utf8');
+  fs.mkdirSync(path.join(canonical, 'shared'), { recursive: true });
+  fs.mkdirSync(path.join(canonical, 'canonical-only'), { recursive: true });
+  fs.mkdirSync(path.join(portable, 'shared'), { recursive: true });
+  fs.writeFileSync(path.join(canonical, 'shared', 'SKILL.md'), 'canonical\n', 'utf8');
+  fs.writeFileSync(path.join(canonical, 'canonical-only', 'SKILL.md'), 'canonical only\n', 'utf8');
+  fs.writeFileSync(path.join(portable, 'shared', 'SKILL.md'), 'portable drift\n', 'utf8');
+
+  const eligible = measure.measurePixiuSkillSuppression(root, canonical);
+  assert.strictEqual(eligible.pixiuCanonicalSuppressionEligible, true);
+  assert.strictEqual(eligible.portableSkillNamesCovered, true);
+  assert.strictEqual(eligible.effectiveSkillNameCollisions, 0);
+
+  fs.mkdirSync(path.join(portable, 'portable-only'), { recursive: true });
+  fs.writeFileSync(path.join(portable, 'portable-only', 'SKILL.md'), 'portable only\n', 'utf8');
+  const ineligible = measure.measurePixiuSkillSuppression(root, canonical);
+  assert.strictEqual(ineligible.pixiuCanonicalSuppressionEligible, false);
+  assert.strictEqual(ineligible.portableSkillNamesCovered, false);
+  assert.strictEqual(ineligible.effectiveSkillNameCollisions, 1);
+}
+
+const tests = [
+  testCountsDuplicateSkillNamesAcrossRoots,
+  testMeasuresStartupFileBytes,
+  testDetectsPixiuCanonicalPublishingLayer
+];
 for (const test of tests) {
   test();
   process.stdout.write(`ok ${test.name}\n`);

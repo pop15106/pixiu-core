@@ -22,8 +22,8 @@ try {
     $report = node scripts/performance/measure-core-startup.js | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0) { throw 'Startup measurement failed.' }
 
-    if ($report.startupFilesBytes -gt 12288) {
-        throw "Startup payload exceeds 12 KB: $($report.startupFilesBytes) bytes"
+    if ($report.startupFilesBytes -gt 8192) {
+        throw "Startup payload exceeds 8 KB: $($report.startupFilesBytes) bytes"
     }
 
     if ($report.yamlWarnings -ne 0) {
@@ -32,7 +32,9 @@ try {
 
     Write-Host 'PixiuCore lazy-loading verification passed.' -ForegroundColor Green
     Write-Host "Startup payload: $($report.startupFilesBytes) bytes / $($report.startupFilesLines) lines"
-    Write-Host "Skill package collisions: $($report.skillNameCollisions)"
+    Write-Host "Raw Skill package collisions: $($report.skillNameCollisions)"
+    Write-Host "Effective Skill collisions: $($report.effectiveSkillNameCollisions)"
+    Write-Host "Pixiu canonical suppression eligible: $($report.pixiuCanonicalSuppressionEligible)"
 }
 finally {
     Pop-Location

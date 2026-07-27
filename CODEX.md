@@ -6,10 +6,10 @@ Codex 以低 Token 模式連結 PixiuCore。
 
 1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
 2. 讀取 `vault/bootstrap/SESSION-BOOTSTRAP.md`。
-3. 讀取 `vault/capabilities/capability-manifest.json`，依本次需求選擇最多 3 個 Capability。
-4. 只讀 Manifest 指向的 Skill、Context 與 Governance。
+3. 執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
+4. 只讀 Router 回傳的 `filesToLoad`；最多 3 個 Capability。
 
-一般 Session 不全文載入：`user_rules.md`、identity、`memory-summary.md`、recap、decisions、全部 Skills、Workflows、Hooks 或 Agents。遇到治理衝突、高風險操作或舊決策查詢時再讀對應原文。
+Router 無法執行時才以 `vault/capabilities/capability-manifest.json` 降級路由。一般 Session 不全文載入：`user_rules.md`、identity、`memory-summary.md`、recap、decisions、全部 Skills、Workflows、Hooks 或 Agents。遇到治理衝突、高風險操作或舊決策查詢時再讀對應原文。
 
 ## Codex 職責
 

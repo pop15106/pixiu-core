@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { parseFrontmatter } = require('../skills/validate-skill-metadata');
 
@@ -39,6 +40,49 @@ function measureSkillRoots(roots) {
   };
 }
 
+function canonicalDirectory(directoryPath) {
+  try {
+    if (!fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) return '';
+    return fs.realpathSync.native ? fs.realpathSync.native(directoryPath) : fs.realpathSync(directoryPath);
+  } catch {
+    return '';
+  }
+}
+
+function samePath(left, right) {
+  if (!left || !right) return false;
+  return process.platform === 'win32'
+    ? left.toLowerCase() === right.toLowerCase()
+    : left === right;
+}
+
+function measurePixiuSkillSuppression(
+  coreRoot,
+  globalSkillRoot = path.join(os.homedir(), '.agents', 'skills')
+) {
+  const canonicalRoot = path.join(coreRoot, 'skills');
+  const portableRoot = path.join(coreRoot, '.agents', 'skills');
+  const canonicalNames = new Set(listSkills(canonicalRoot).map(skill => skill.name));
+  const portableNames = listSkills(portableRoot).map(skill => skill.name);
+  const portableSkillNamesCovered = portableNames.length > 0 &&
+    portableNames.every(name => canonicalNames.has(name));
+  const bootstrapExists = fs.existsSync(
+    path.join(coreRoot, 'vault', 'bootstrap', 'SESSION-BOOTSTRAP.md')
+  );
+  const pixiuCanonicalSuppressionEligible = bootstrapExists &&
+    portableSkillNamesCovered &&
+    samePath(canonicalDirectory(canonicalRoot), canonicalDirectory(globalSkillRoot));
+  const raw = measureSkillRoots([portableRoot, canonicalRoot]);
+
+  return {
+    portableSkillNamesCovered,
+    pixiuCanonicalSuppressionEligible,
+    effectiveSkillNameCollisions: pixiuCanonicalSuppressionEligible
+      ? 0
+      : raw.skillNameCollisions
+  };
+}
+
 function measureStartupFiles(root, relativeFiles) {
   let startupFilesBytes = 0;
   let startupFilesLines = 0;
@@ -62,7 +106,6 @@ function buildReport(coreRoot) {
   const startupFiles = [
     'AGENTS.md',
     'vault/bootstrap/SESSION-BOOTSTRAP.md',
-    'vault/capabilities/capability-manifest.json',
     '.codex/AGENTS.md'
   ];
   const roots = [
@@ -73,7 +116,8 @@ function buildReport(coreRoot) {
   return {
     timestamp: new Date().toISOString(),
     ...measureStartupFiles(coreRoot, startupFiles),
-    ...measureSkillRoots(roots)
+    ...measureSkillRoots(roots),
+    ...measurePixiuSkillSuppression(coreRoot)
   };
 }
 
@@ -82,4 +126,10 @@ if (require.main === module) {
   process.stdout.write(JSON.stringify(buildReport(coreRoot), null, 2) + '\n');
 }
 
-module.exports = { listSkills, measureSkillRoots, measureStartupFiles, buildReport };
+module.exports = {
+  listSkills,
+  measureSkillRoots,
+  measurePixiuSkillSuppression,
+  measureStartupFiles,
+  buildReport
+};

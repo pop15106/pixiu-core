@@ -23,11 +23,11 @@ priority: highest
 完整憲法仍以 `user_rules.md` 為唯一來源；只有命中治理衝突、審批例外或特殊 hook 時才讀對應原文段落，不在啟動時全文複製進 Context。
 
 ## 按需能力路由
-1. 讀取 `vault/capabilities/capability-manifest.json`。
-2. 根據本次需求選擇最多 3 個 Capability。
-3. 只讀被選中的 Skill、Context 與 Governance 文件。
-4. 沒有命中時只使用 Bootstrap 與專案原始碼，不退回全量掃描。
-5. 路由器可用：`node scripts/router/resolve-capabilities.js "<需求>"`。
+1. 先執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
+2. 只讀輸出的 `filesToLoad`；Router 會把 Capability 限制在最多 3 個。
+3. 沒有命中時只使用 Bootstrap 與專案原始碼，不退回全量掃描。
+4. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引。
+5. Manifest、Skill 或 Context 解析失敗時回報路徑，不自動全文載入母體。
 
 ## 記憶路由
 一般 Session 不讀完整 `vault/memory/memory-summary.md`、recap 或 decisions。

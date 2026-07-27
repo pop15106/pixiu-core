@@ -1,6 +1,7 @@
 ---
-trigger: always_on
-alwaysApply: true
+trigger: governance-trigger
+alwaysApply: false
+readAt: on-demand
 ---
 # 📜 User Rules — 專案最高憲法
 
