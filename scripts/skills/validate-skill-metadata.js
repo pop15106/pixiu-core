@@ -45,14 +45,19 @@ function validateSkillRoot(root) {
     return { skills, errors: [`Skill root 不是目錄：${root}`] };
   }
 
-  const entries = fs.readdirSync(root, { withFileTypes: true })
-    .filter(entry => entry.isDirectory())
+  const rootEntries = fs.readdirSync(root, { withFileTypes: true })
     .sort((a, b) => a.name.localeCompare(b.name));
+  const skillPaths = [
+    ...rootEntries
+      .filter(entry => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+      .map(entry => path.join(root, entry.name)),
+    ...rootEntries
+      .filter(entry => entry.isDirectory())
+      .map(entry => path.join(root, entry.name, 'SKILL.md'))
+      .filter(skillPath => fs.existsSync(skillPath))
+  ];
 
-  for (const entry of entries) {
-    const skillPath = path.join(root, entry.name, 'SKILL.md');
-    if (!fs.existsSync(skillPath)) continue;
-
+  for (const skillPath of skillPaths) {
     const parsed = parseFrontmatter(fs.readFileSync(skillPath, 'utf8'));
     if (parsed.error) {
       errors.push(`${skillPath}: ${parsed.error}`);

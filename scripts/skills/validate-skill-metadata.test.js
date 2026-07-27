@@ -40,12 +40,24 @@ function testDuplicateNameFails() {
   assert.match(result.errors.join('\n'), /duplicate/);
 }
 
-function testIndexMarkdownIsIgnored() {
+function testRootMarkdownSkillIsValidated() {
+  const root = makeRoot();
+  fs.writeFileSync(
+    path.join(root, 'INDEX.md'),
+    '---\ndisable-model-invocation: true\nname: skills-index\ndescription: "手動索引"\n---\n# 索引\n',
+    'utf8'
+  );
+  const result = validator.validateSkillRoot(root);
+  assert.deepStrictEqual(result.errors, []);
+  assert.strictEqual(result.skills.length, 1);
+  assert.strictEqual(result.skills[0].name, 'skills-index');
+}
+
+function testInvalidRootMarkdownSkillFails() {
   const root = makeRoot();
   fs.writeFileSync(path.join(root, 'INDEX.md'), '# 索引\n', 'utf8');
   const result = validator.validateSkillRoot(root);
-  assert.deepStrictEqual(result.errors, []);
-  assert.strictEqual(result.skills.length, 0);
+  assert.match(result.errors.join('\n'), /frontmatter|description|name/);
 }
 
 function testFileRootReturnsStructuredError() {
@@ -60,7 +72,8 @@ const tests = [
   testValidSkillPasses,
   testMissingDescriptionFails,
   testDuplicateNameFails,
-  testIndexMarkdownIsIgnored,
+  testRootMarkdownSkillIsValidated,
+  testInvalidRootMarkdownSkillFails,
   testFileRootReturnsStructuredError
 ];
 

@@ -1,7 +1,7 @@
 ---
 disable-model-invocation: true
 name: skill-opt
-description: Optimize, improve, or evolve a SKILL.md document based on execution feedback. Use when a skill repeatedly underperforms, when you want to tighten trigger precision, when merging duplicate skills, or when running a skill evolution cycle. MANDATORY TRIGGERS: "optimize skill", "improve skill", "skill underperforms", "skill evolution", "skill-opt", "refine skill", "skill not triggering". Do NOT use for creating brand new skills from scratch (use skill-creator instead).
+description: 'Optimize, improve, or evolve a SKILL.md document based on execution feedback. Use when a skill repeatedly underperforms, when you want to tighten trigger precision, when merging duplicate skills, or when running a skill evolution cycle. MANDATORY TRIGGERS: "optimize skill", "improve skill", "skill underperforms", "skill evolution", "skill-opt", "refine skill", "skill not triggering". Do NOT use for creating brand new skills from scratch (use skill-creator instead).'
 origin: ECC
 source: arxiv:2605.23904
 version: "1.0"
