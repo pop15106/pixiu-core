@@ -47,7 +47,7 @@
 
 Windows 相容修補會在每次安裝或啟動時檢查並重複安全套用，包括：授權目錄可在未初始化 Git 時使用、Node/npm PATH 傳入 Agent、隱藏背景 CMD 視窗，以及縮短 Agent 狀態查詢等待。修補只支援套件鎖定的 DevSpace 1.0.4；版本不同時會停止並顯示錯誤，不會盲目修改。若需回復官方檔案，可執行 `powershell -ExecutionPolicy Bypass -File .\devspace-oneclick.ps1 restore-subagent-patch`。還原前會用修補時記錄的 SHA-256 manifest 一次檢查全部六個 target 與備份；遇到同版 hotfix、target／備份漂移、缺少部分備份或版本不同時，會在寫入任何檔案前整批拒絕。全部備份都不存在時安全地不做事；已還原狀態可重複執行。舊版安裝器留下的備份若沒有 manifest，會拒絕未驗證還原。
 
-Skill root 判斷是時間點檢查：一般專案只有名稱與 SHA-256 內容都被較早來源完整涵蓋時，才略過 project-local root；檔案缺失、讀取失敗、獨有 Skill 或同名不同內容都 fail-open 保留專案能力。PixiuCore 本體另有 canonical 特例：workspace 必須有 `vault/bootstrap/SESSION-BOOTSTRAP.md`，較早的全域 root 實體路徑必須正是該 workspace 的 `skills/`，且 canonical 名稱全集涵蓋 `.agents/skills`，才把後者視為 portable 發佈層並略過。root-only API 無法把判斷與後續載入包成原子快照，因此仍保留極小競態窗口。
+Skill root 判斷是時間點檢查：掃描時只把實際存在的 `SKILL.md` 視為 Skill，資料庫、參考文件等非 Skill 子目錄不會讓整個 root 誤判失敗。一般專案只有名稱與 SHA-256 內容都被較早來源完整涵蓋時，才略過 project-local root；檔案缺失、讀取失敗、獨有 Skill 或同名不同內容都 fail-open 保留專案能力。PixiuCore 本體另有 canonical 特例：workspace 必須有 `vault/bootstrap/SESSION-BOOTSTRAP.md`，較早的全域 root 實體路徑必須正是該 workspace 的 `skills/`，且 canonical 名稱全集涵蓋 `.agents/skills`，才把後者視為 portable 發佈層並略過。root-only API 無法把判斷與後續載入包成原子快照，因此仍保留極小競態窗口。
 
 `07-SUBAGENT-STATUS.cmd` 只顯示精簡錯誤摘要，完整紀錄仍保留在 DevSpace 的 Agent store。`08-STOP-SUBAGENT.cmd` 只會停止與指定 `agt_XXXXXXXX` 完整匹配的 worker process tree。
 

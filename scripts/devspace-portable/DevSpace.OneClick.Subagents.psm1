@@ -115,6 +115,65 @@ function Write-DevSpacePatchManifest {
     }
 }
 
+function Assert-DevSpacePatchInstallState {
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    $targets = @(Get-DevSpacePatchTargets -PackageRoot $PackageRoot)
+    $manifestPath = Join-Path $PackageRoot '.devspace-oneclick-patch-manifest.json'
+    $existingBackups = @($targets | Where-Object { Test-Path -LiteralPath $_.Backup })
+
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        if ($existingBackups.Count -gt 0) {
+            throw "DevSpace patch manifest is missing; refusing to upgrade unverified backups: $manifestPath"
+        }
+        return
+    }
+
+    try {
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    }
+    catch {
+        throw "DevSpace patch manifest is unreadable; refusing to upgrade: $manifestPath"
+    }
+    if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.devSpaceVersion -ne '1.0.4') {
+        throw "DevSpace patch manifest is unsupported; refusing to upgrade: $manifestPath"
+    }
+
+    $manifestFiles = @($manifest.files)
+    if ($manifestFiles.Count -ne $targets.Count) {
+        throw "DevSpace patch manifest file set is incomplete; refusing to upgrade: $manifestPath"
+    }
+    $manifestByPath = @{}
+    foreach ($file in $manifestFiles) {
+        $relativePath = [string]$file.path
+        if ([string]::IsNullOrWhiteSpace($relativePath) -or $manifestByPath.ContainsKey($relativePath)) {
+            throw "DevSpace patch manifest contains an invalid file entry; refusing to upgrade: $manifestPath"
+        }
+        $manifestByPath[$relativePath] = $file
+    }
+
+    foreach ($entry in $targets) {
+        if (-not $manifestByPath.ContainsKey($entry.RelativePath)) {
+            throw "DevSpace patch manifest is missing $($entry.RelativePath); refusing to upgrade."
+        }
+        if (-not (Test-Path -LiteralPath $entry.Target) -or -not (Test-Path -LiteralPath $entry.Backup)) {
+            throw "DevSpace patch target or backup is missing for $($entry.RelativePath); refusing to upgrade."
+        }
+
+        $record = $manifestByPath[$entry.RelativePath]
+        $backupHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Backup
+        $targetHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Target
+        if (-not [string]::Equals($backupHash, [string]$record.backupSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "DevSpace patch backup drift detected for $($entry.RelativePath); refusing to upgrade."
+        }
+        $knownPatched = [string]::Equals($targetHash, [string]$record.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)
+        $alreadyRestored = [string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)
+        if (-not $knownPatched -and -not $alreadyRestored) {
+            throw "Unknown DevSpace 1.0.4 target drift detected for $($entry.RelativePath); refusing to upgrade."
+        }
+    }
+}
+
 function Set-PatchedTextFile {
     param(
         [Parameter(Mandatory = $true)][string]$FilePath,
@@ -173,9 +232,7 @@ function Install-DevSpaceSubagentWindowsPatch {
     $cliPath = Join-Path $packageRoot 'dist\cli.js'
     $serverPath = Join-Path $packageRoot 'dist\server.js'
     $skillsPath = Join-Path $packageRoot 'dist\skills.js'
-    $manifestPath = Join-Path $packageRoot '.devspace-oneclick-patch-manifest.json'
-    $recordPatchManifest = -not (Test-Path -LiteralPath $manifestPath) -and
-        @((Get-DevSpacePatchTargets -PackageRoot $packageRoot) | Where-Object { Test-Path -LiteralPath $_.Backup }).Count -eq 0
+    Assert-DevSpacePatchInstallState -PackageRoot $packageRoot
     $changed = 0
 
     $runtimeGitReplacement = @(
@@ -332,6 +389,7 @@ function Install-DevSpaceSubagentWindowsPatch {
         '            for (const entry of readdirSync(root, { withFileTypes: true })) {'
         '                if (!entry.isDirectory()) continue;'
         '                const skillFile = join(root, entry.name, "SKILL.md");'
+        '                if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;'
         '                entries.set(entry.name, createHash("sha256").update(readFileSync(skillFile)).digest("hex"));'
         '            }'
         '            return entries;'
@@ -392,7 +450,16 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
-    if ($changed -gt 0 -and $recordPatchManifest) {
+    $skillEntryUpgradeReplacement = @(
+        '                const skillFile = join(root, entry.name, "SKILL.md");'
+        '                if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;'
+        '                entries.set(entry.name, createHash("sha256").update(readFileSync(skillFile)).digest("hex"));'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $skillsPath -AlreadyPatchedText 'if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;' -Pattern 'const skillFile = join\(root, entry\.name, "SKILL\.md"\);\r?\n\s*entries\.set\(entry\.name, createHash\("sha256"\)\.update\(readFileSync\(skillFile\)\)\.digest\("hex"\)\);' -Replacement $skillEntryUpgradeReplacement -Description 'ignore non-Skill directories during mirror inspection') {
+        $changed++
+    }
+
+    if ($changed -gt 0) {
         Write-DevSpacePatchManifest -PackageRoot $packageRoot
     }
     return $changed
