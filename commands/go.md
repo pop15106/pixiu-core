@@ -52,7 +52,7 @@ version: 0.1.0
 
 ## 與 Recap 銜接
 
-步驟 3 結束後自動觸發 `pixiu-session-recap` 模式 B（Phase Recap），把驗證結果併入當前階段摘要並寫入 `vault/memory/recap-*.md`。
+步驟 3 結束後自動觸發 `pixiu-session-recap` 模式 B（Phase Recap），把驗證結果併入當前階段摘要並寫入 `vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md`。
 
 ## 版本
 

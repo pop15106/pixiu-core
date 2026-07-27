@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop')]
+    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'restore-subagent-patch')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -125,7 +125,8 @@ function New-TunnelSettings {
 
     $created = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments $createArguments -Operation 'Dev Tunnel create'
 
-    $tunnelId = [string]$created.tunnel.tunnelId
+    $createdTunnel = Get-TunnelObject -TunnelDocument $created
+    $tunnelId = [string]$createdTunnel.tunnelId
     if ([string]::IsNullOrWhiteSpace($tunnelId)) {
         throw 'Dev Tunnel create returned no tunnel ID.'
     }
@@ -138,7 +139,7 @@ function New-TunnelSettings {
         '-j'
     ) -Operation 'Dev Tunnel port create')
 
-    $shown = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @('show', $tunnelId, '-j') -Operation 'Dev Tunnel show'
+    $shown = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @('show', $tunnelId, '-j', '-v') -Operation 'Dev Tunnel show' -UseVerboseHttpJson
     $publicBaseUrl = Get-TunnelPublicBaseUrl -TunnelDocument $shown -Port $port
 
     $settings = [ordered]@{
@@ -171,8 +172,9 @@ function Get-TunnelSettings {
         throw 'These one-click settings belong to another computer. Run the installer on this computer.'
     }
 
-    $shown = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @('show', [string]$settings.tunnelId, '-j') -Operation 'Persistent tunnel lookup'
-    $portEntry = @($shown.tunnel.ports) | Where-Object { [int]$_.portNumber -eq [int]$settings.port } | Select-Object -First 1
+    $shown = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @('show', [string]$settings.tunnelId, '-j', '-v') -Operation 'Persistent tunnel lookup' -UseVerboseHttpJson
+    $tunnel = Get-TunnelObject -TunnelDocument $shown
+    $portEntry = @($tunnel.ports) | Where-Object { [int]$_.portNumber -eq [int]$settings.port } | Select-Object -First 1
     if (-not $portEntry) {
         [void](ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @(
             'port', 'create', [string]$settings.tunnelId,
@@ -181,7 +183,7 @@ function Get-TunnelSettings {
             '--description', 'DevSpace MCP',
             '-j'
         ) -Operation 'Persistent tunnel port repair')
-        $shown = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @('show', [string]$settings.tunnelId, '-j') -Operation 'Persistent tunnel refresh'
+        $shown = ConvertFrom-NativeJson -Executable $DevTunnel -Arguments @('show', [string]$settings.tunnelId, '-j', '-v') -Operation 'Persistent tunnel refresh' -UseVerboseHttpJson
     }
 
     $publicBaseUrl = Get-TunnelPublicBaseUrl -TunnelDocument $shown -Port ([int]$settings.port)
@@ -413,6 +415,12 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '1', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_AGENT_DIR', (Join-Path $ConfigRoot 'agents'), 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
+}
+
+function Restore-SubagentPatch {
+    $tools = Get-InstalledTools
+    $restored = Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
+    Write-Info "Restored $restored DevSpace subagent patch file(s)."
 }
 
 function Start-Stack {
@@ -675,4 +683,5 @@ switch ($Action) {
     'copy-password' { Copy-OwnerPassword }
     'agent-status' { Show-AgentStatus }
     'agent-stop' { Stop-Agent }
+    'restore-subagent-patch' { Restore-SubagentPatch }
 }

@@ -10,17 +10,20 @@ priority: highest
 > 本 vault 由 Pixiu Mothership Core 統一管理。
 > 所有接線至母體的 AI（Claude、Gemini、Codex）均須在 session 開始時依序讀取。
 
-## Init 讀取序列（每次 session 必執行）
+## Init 讀取序列（每次 Session）
 
 ```
-1. vault/README.md                        ← 你現在在這裡
-2. vault/identity/founder-profile.md      ← 了解你在服務誰
-3. vault/identity/agent-persona.md        ← 確認你的角色定位
-4. vault/memory/memory-summary.md         ← 載入最新記憶快照（先看 lastUpdated，逾 14 天先提醒使用者內容可能過期）
-5. vault/governance/INDEX.md              ← 制度路由：派工、驗收、判斷、維護規則都從這裡查
-6. vault/context/pclms-overview.md        ← 若當前任務涉及 PCLMS
-7. vault/context/tech-stack.md            ← 若當前任務涉及技術決策
+1. vault/bootstrap/SESSION-BOOTSTRAP.md              ← 常駐硬閘門與降級規則
+2. vault/capabilities/capability-manifest.json       ← 依本次需求選最多 3 個能力
+3. Manifest 命中的 Skill／Context／Governance       ← 按需讀取
 ```
+
+以下內容不再每次 Session 自動全文載入：
+
+- `identity/founder-profile.md`、`identity/agent-persona.md`：需要個人化或角色校準時讀取。
+- `memory/memory-summary.md`、recap、decisions：先讀 `memory/SESSION-INDEX.md`，命中舊決策或接續工作時再讀原文。
+- `governance/INDEX.md` 與制度本體：命中派工、驗收、入口檔、維護或判斷問題時讀取。
+- `context/pclms-overview.md`、`context/tech-stack.md`：涉及對應專案或技術決策時讀取。
 
 ## Vault 資料夾用途
 
