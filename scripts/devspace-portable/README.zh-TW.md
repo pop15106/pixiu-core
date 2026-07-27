@@ -35,6 +35,7 @@
 - 把 Owner password 複製到剪貼簿：`06-COPY-PASSWORD.cmd`
 - 查看全部或指定 Subagent 狀態：`07-SUBAGENT-STATUS.cmd [Agent ID]`
 - 停止卡住的 Subagent：`08-STOP-SUBAGENT.cmd [Agent ID]`
+- 服務仍正常但 OneClick 狀態失聯時安全接管：`09-REPAIR-STATE.cmd`
 
 ## Subagent delegation
 
@@ -49,6 +50,10 @@ Windows 相容修補會在每次安裝或啟動時檢查並重複安全套用，
 Skill 全鏡像判斷是時間點檢查：DevSpace 1.0.4 會先取得 `effectiveSkillPaths()` 的 root 清單，再交給 `loadSkills()` 讀取。雜湊期間的缺失或讀取失敗會 fail-open 保留 project-local root；但 root-only API 無法把外部檔案系統變更與後續載入包成原子快照，因此判斷完成後若另一個程序立刻改動或移除 earlier root，仍存在無法完全消除的極小競態窗口。
 
 `07-SUBAGENT-STATUS.cmd` 只顯示精簡錯誤摘要，完整紀錄仍保留在 DevSpace 的 Agent store。`08-STOP-SUBAGENT.cmd` 只會停止與指定 `agt_XXXXXXXX` 完整匹配的 worker process tree。
+
+### OneClick 狀態失聯修復
+
+若 DevSpace MCP 仍可使用，但 `05-STATUS.cmd` 顯示舊 PID、舊 tunnel URL 或設定不一致，執行 `09-REPAIR-STATE.cmd`。修復流程不停止也不重啟服務；它只在以下條件全部通過時接管現行程序：本機與公開 `/healthz` 都回傳 DevSpace ready、listener 確實是 `@waishnav/devspace` 的 `serve` CLI、同一 launcher parent 下只有一個 `devtunnel host`、tunnel ID 與公開 URL region 一致。寫回前會備份既有 `settings.json` 與 `runtime.json`，寫回或 read-back 任一步失敗就恢復舊內容。
 
 Explorer 與 QA 會在真正的 Codex sandbox 層強制唯讀；Worker 才能修改檔案。預設上限分別為 Explorer 12 分鐘、Worker 30 分鐘、QA 20 分鐘。Explorer 另限制為 20 個 repository commands 與最多 10 個優先發現，達到時間上限時必須回傳部分結果。
 
