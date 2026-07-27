@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'restore-subagent-patch')]
+    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -292,15 +292,20 @@ function Get-ValidatedSpec {
     }
 }
 
-function Test-LocalHealth {
-    param([Parameter(Mandatory = $true)][int]$Port)
+function Test-HealthUrl {
+    param([Parameter(Mandatory = $true)][string]$Url)
     try {
-        $response = Invoke-RestMethod -UseBasicParsing -Uri "http://127.0.0.1:$Port/healthz" -TimeoutSec 3
-        return ($response.ok -eq $true)
+        $response = Invoke-RestMethod -UseBasicParsing -Uri $Url -TimeoutSec 5
+        return ($response.ok -eq $true -and [string]$response.name -eq 'devspace')
     }
     catch {
         return $false
     }
+}
+
+function Test-LocalHealth {
+    param([Parameter(Mandatory = $true)][int]$Port)
+    return Test-HealthUrl -Url "http://127.0.0.1:$Port/healthz"
 }
 
 function Wait-Health {
@@ -364,6 +369,121 @@ function Test-RecordedProcess {
     catch {
         return $false
     }
+}
+
+function Get-OneClickProcessRecord {
+    param(
+        [Parameter(Mandatory = $true)][int]$ProcessId,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+
+    $cim = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop
+    if (-not $cim) {
+        throw "$Label PID $ProcessId is not running."
+    }
+    $process = Get-Process -Id $ProcessId -ErrorAction Stop
+    return [pscustomobject]@{
+        ProcessId = [int]$cim.ProcessId
+        ParentProcessId = [int]$cim.ParentProcessId
+        Name = [string]$cim.Name
+        CommandLine = [string]$cim.CommandLine
+        StartedAtUtc = $process.StartTime.ToUniversalTime().ToString('o')
+    }
+}
+
+function Get-DevSpaceListenerProcessRecord {
+    param([Parameter(Mandatory = $true)][int]$Port)
+
+    $listenerProcessId = Get-ListenerProcessId -Port $Port
+    if (-not $listenerProcessId) {
+        throw "No process is listening on DevSpace port $Port."
+    }
+    return Get-OneClickProcessRecord -ProcessId $listenerProcessId -Label 'DevSpace listener'
+}
+
+function Get-HostedDevTunnelProcessRecord {
+    param([Parameter(Mandatory = $true)][int]$ExpectedParentProcessId)
+
+    $candidates = @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object {
+        $_.Name -ieq 'devtunnel.exe' -and
+        [int]$_.ParentProcessId -eq $ExpectedParentProcessId -and
+        [string]$_.CommandLine -match '(?i)(?:^|\s)host\s+(?:"?[A-Za-z0-9._-]+"?)(?:\s|$)'
+    })
+    if ($candidates.Count -ne 1) {
+        throw "Expected exactly one Dev Tunnel host process for launcher parent $ExpectedParentProcessId; found $($candidates.Count)."
+    }
+    return Get-OneClickProcessRecord -ProcessId ([int]$candidates[0].ProcessId) -Label 'Dev Tunnel host'
+}
+
+function Restore-TextSnapshot {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [AllowNull()][string]$Content,
+        [Parameter(Mandatory = $true)][bool]$Existed
+    )
+
+    if ($Existed) {
+        [System.IO.File]::WriteAllText($FilePath, $Content, [System.Text.UTF8Encoding]::new($false))
+    }
+    elseif (Test-Path -LiteralPath $FilePath) {
+        Remove-Item -LiteralPath $FilePath -Force
+    }
+}
+
+function Repair-OneClickState {
+    $config = Read-JsonFile -FilePath $ConfigPath
+    $auth = Read-JsonFile -FilePath $AuthPath
+    if (-not $config -or -not $auth) {
+        throw 'DevSpace config or owner authentication is missing; refusing state repair.'
+    }
+    if (([string]$auth.ownerToken).Length -lt 16) {
+        throw 'Owner password is missing or too short; refusing state repair.'
+    }
+    [void](Merge-AllowedRoots -ExistingRoots ([string[]]@($config.allowedRoots)) -NewRoots @() -UserProfile $env:USERPROFILE)
+
+    $port = [int]$config.port
+    $publicBaseUrl = [string]$config.publicBaseUrl
+    if (-not (Test-LocalHealth -Port $port)) {
+        throw "Local DevSpace health check failed on port $port; refusing state repair."
+    }
+    if (-not (Test-HealthUrl -Url "$publicBaseUrl/healthz")) {
+        throw 'Public DevSpace health check failed; refusing state repair.'
+    }
+
+    $devSpaceProcess = Get-DevSpaceListenerProcessRecord -Port $port
+    $devTunnelProcess = Get-HostedDevTunnelProcessRecord -ExpectedParentProcessId ([int]$devSpaceProcess.ParentProcessId)
+    $adoption = New-DevSpaceOneClickAdoptionState -Config $config -DevSpaceProcess $devSpaceProcess -DevTunnelProcess $devTunnelProcess -MachineName $env:COMPUTERNAME
+
+    $settingsExisted = Test-Path -LiteralPath $SettingsPath
+    $runtimeExisted = Test-Path -LiteralPath $RuntimePath
+    $settingsSnapshot = if ($settingsExisted) { [System.IO.File]::ReadAllText($SettingsPath) } else { $null }
+    $runtimeSnapshot = if ($runtimeExisted) { [System.IO.File]::ReadAllText($RuntimePath) } else { $null }
+
+    try {
+        Backup-File -FilePath $SettingsPath
+        Backup-File -FilePath $RuntimePath
+        Write-JsonFile -FilePath $SettingsPath -Value $adoption.Settings
+        Write-JsonFile -FilePath $RuntimePath -Value $adoption.Runtime
+
+        $spec = Get-ValidatedSpec
+        $runtime = Read-JsonFile -FilePath $RuntimePath
+        $devSpaceVerified = Test-RecordedProcess -ProcessId ([int]$runtime.devSpacePid) -StartedAtUtc ([string]$runtime.devSpaceStartedAtUtc) -ProcessName 'node' -Port $spec.Port
+        $tunnelVerified = Test-RecordedProcess -ProcessId ([int]$runtime.devTunnelPid) -StartedAtUtc ([string]$runtime.devTunnelStartedAtUtc) -ProcessName 'devtunnel'
+        if (-not $devSpaceVerified -or -not $tunnelVerified) {
+            throw 'Repaired runtime state failed process identity read-back.'
+        }
+        if (-not (Test-LocalHealth -Port $spec.Port) -or -not (Test-HealthUrl -Url "$($spec.PublicBaseUrl)/healthz")) {
+            throw 'Repaired state failed health read-back.'
+        }
+    }
+    catch {
+        Restore-TextSnapshot -FilePath $SettingsPath -Content $settingsSnapshot -Existed $settingsExisted
+        Restore-TextSnapshot -FilePath $RuntimePath -Content $runtimeSnapshot -Existed $runtimeExisted
+        throw
+    }
+
+    Write-Info "Adopted live DevSpace PID $($adoption.Runtime.devSpacePid) and Dev Tunnel PID $($adoption.Runtime.devTunnelPid) without restart."
+    Show-Status
 }
 
 function Show-Status {
@@ -683,5 +803,6 @@ switch ($Action) {
     'copy-password' { Copy-OwnerPassword }
     'agent-status' { Show-AgentStatus }
     'agent-stop' { Stop-Agent }
+    'repair-state' { Repair-OneClickState }
     'restore-subagent-patch' { Restore-SubagentPatch }
 }

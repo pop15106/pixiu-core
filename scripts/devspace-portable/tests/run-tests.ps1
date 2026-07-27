@@ -216,6 +216,49 @@ HTTP: {
     } 'https://alias-7678.jpe1.devtunnels.ms/' 'extracts the raw service JSON from verbose CLI output'
     Assert-Equal @(ConvertTo-DevTunnelLabelArguments -Labels @('devspace', 'oneclick', 'machine-tv7010nb')) @('--labels', 'devspace', '--labels', 'oneclick', '--labels', 'machine-tv7010nb') 'repeats the labels option for current Dev Tunnel CLI'
     Assert-Throws { ConvertTo-DevTunnelLabelArguments -Labels @('invalid label') } 'rejects invalid Dev Tunnel labels'
+
+    $liveConfig = [pscustomobject]@{
+        host = '127.0.0.1'
+        port = 7678
+        publicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+        allowedRoots = @($projectA)
+    }
+    $liveDevSpaceProcess = [pscustomobject]@{
+        ProcessId = 3596
+        ParentProcessId = 3056
+        Name = 'node.exe'
+        CommandLine = '"C:\Program Files\nodejs\node.exe" C:\Users\tester\AppData\Roaming\npm\node_modules\@waishnav\devspace\dist\cli.js serve'
+        StartedAtUtc = '2026-07-25T06:54:04.0000000Z'
+    }
+    $liveTunnelProcess = [pscustomobject]@{
+        ProcessId = 12732
+        ParentProcessId = 3056
+        Name = 'devtunnel.exe'
+        CommandLine = '"C:\Tools\devtunnel.exe" host devspace-mcp-pop15.jpe1'
+        StartedAtUtc = '2026-07-25T06:54:12.0000000Z'
+    }
+    $adoption = New-DevSpaceOneClickAdoptionState -Config $liveConfig -DevSpaceProcess $liveDevSpaceProcess -DevTunnelProcess $liveTunnelProcess -MachineName 'LAPTOP-0965BH7Q' -Now ([datetime]'2026-07-27T03:30:00Z')
+    Assert-Equal $adoption.Settings.tunnelId 'devspace-mcp-pop15.jpe1' 'adopts the active Dev Tunnel host ID'
+    Assert-Equal $adoption.Settings.publicBaseUrl 'https://dxrpsqgc-7678.jpe1.devtunnels.ms' 'adopts the live public origin from config'
+    Assert-Equal $adoption.Runtime.devSpacePid 3596 'records the verified DevSpace listener PID'
+    Assert-Equal $adoption.Runtime.devTunnelPid 12732 'records the verified Dev Tunnel PID'
+    Assert-Equal $adoption.Runtime.devSpaceStartedAtUtc '2026-07-25T06:54:04.0000000Z' 'preserves the DevSpace process identity timestamp'
+    Assert-Throws {
+        New-DevSpaceOneClickAdoptionState -Config $liveConfig -DevSpaceProcess ([pscustomobject]@{
+            ProcessId = 3596; ParentProcessId = 3056; Name = 'node.exe'; CommandLine = 'node unrelated-server.js'; StartedAtUtc = '2026-07-25T06:54:04Z'
+        }) -DevTunnelProcess $liveTunnelProcess -MachineName 'LAPTOP-0965BH7Q'
+    } 'refuses to adopt an unrelated Node listener'
+    Assert-Throws {
+        New-DevSpaceOneClickAdoptionState -Config ([pscustomobject]@{
+            host = '127.0.0.1'; port = 7678; publicBaseUrl = 'https://old-7678.asse.devtunnels.ms'; allowedRoots = @($projectA)
+        }) -DevSpaceProcess $liveDevSpaceProcess -DevTunnelProcess $liveTunnelProcess -MachineName 'LAPTOP-0965BH7Q'
+    } 'refuses a public origin whose region differs from the hosted tunnel'
+    Assert-Throws {
+        New-DevSpaceOneClickAdoptionState -Config $liveConfig -DevSpaceProcess $liveDevSpaceProcess -DevTunnelProcess ([pscustomobject]@{
+            ProcessId = 12732; ParentProcessId = 9999; Name = 'devtunnel.exe'; CommandLine = 'devtunnel.exe host devspace-mcp-pop15.jpe1'; StartedAtUtc = '2026-07-25T06:54:12Z'
+        }) -MachineName 'LAPTOP-0965BH7Q'
+    } 'refuses processes that do not share the same launcher parent'
+
     Assert-Equal (New-DevSpaceTunnelName -ComputerName 'OFFICE_PC 01' -Suffix 'A1B2C3D4') 'devspace-office-pc-01-a1b2c3d4' 'creates a machine-specific tunnel name'
     Assert-Equal (Assert-DevSpaceAgentId -AgentId 'agt_1a2b3c4d') 'agt_1a2b3c4d' 'accepts a valid Agent ID'
     Assert-Throws { Assert-DevSpaceAgentId -AgentId 'agt_1a2b3c4d;taskkill' } 'rejects an unsafe Agent ID'
@@ -228,6 +271,9 @@ HTTP: {
     Assert-Equal $agentAdminSource.Contains('supports DevSpace 1.0.4 only') $true 'version-locks the Agent controller'
     $launcherSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'devspace-oneclick.ps1') -Raw
     Assert-Equal ($launcherSource.Contains("'restore-subagent-patch'") -and $launcherSource.Contains('Restore-DevSpaceSubagentWindowsPatch')) $true 'exposes the verified patch restore action'
+    Assert-Equal ($launcherSource.Contains("'repair-state'") -and $launcherSource.Contains('Repair-OneClickState')) $true 'exposes explicit live-state reconciliation without restart'
+    $repairStateCommand = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '09-REPAIR-STATE.cmd') -Raw
+    Assert-Equal $repairStateCommand.Contains('devspace-oneclick.ps1" repair-state') $true 'ships a dedicated no-restart state repair command'
 
     $fakePackageRoot = Join-Path $testRoot 'fake-devspace'
     $fakeDist = Join-Path $fakePackageRoot 'dist'
