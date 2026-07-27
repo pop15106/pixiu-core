@@ -15,7 +15,7 @@ summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考�
 > 用法：正常 Session 先執行 `scripts/router/resolve-capabilities.js`，只讀 Router 回傳的 Skill。只有盤點、人工查找或 Router 降級時才讀本索引。
 > 高優先路由層：常見 Pixiu 工作流，仍須由 Router 或明確語意觸發，不在 Session 啟動時全文常駐。
 > 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
-> 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 為舊分類參考，不作 runtime 路由。
+> 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 只作導覽與當期盤點，不作 runtime 路由。
 
 ## 高優先路由層（8）
 

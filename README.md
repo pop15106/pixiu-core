@@ -142,20 +142,14 @@ PixiuCore 分成三層來看，比較不容易迷路：
 
 ## Session 啟動規則
 
-每次 AI session 開始時：
+每次 AI Session 開始時：
 
-1. 先讀環境變數 `PIXIU_CORE`；若不存在，預設 `%PIXIU_CORE%`。
-2. 依序讀取：
-   - `vault/README.md`
-   - `user_rules.md`
-   - `vault/identity/founder-profile.md`
-   - `vault/identity/agent-persona.md`
-   - `vault/memory/memory-summary.md`
-3. 若任務涉及 PCLMS，再讀：
-   - `vault/context/pclms-overview.md`
-   - `vault/context/tech-stack.md`
-4. 任何寫入前先說明改動範圍與風險，等待使用者確認。
-5. 修改後做最小可行驗證，並說明驗證結果。
+1. 依序解析 `PIXIU_CORE`、`PIXIU_CORE_PATH`、`%USERPROFILE%\.pixiu-core`。
+2. 只讀 `vault/bootstrap/SESSION-BOOTSTRAP.md` 的常駐硬閘門。
+3. 執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
+4. 只讀 Router 回傳的 `filesToLoad`，最多選 3 個 Capability。
+5. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引；不得退回全文載入 identity、memory、全部 Skills 或治理文件。
+6. 修改後執行與本次改動相符的最小充分驗證，並如實回報未驗證項目。
 
 ## 維護原則
 
@@ -163,7 +157,7 @@ PixiuCore 分成三層來看，比較不容易迷路：
 - `vault/identity/` 與 `vault/memory/` 含個人資料，分享或打包前要清理。
 - 新增 skill 時，同步檢查 `skills/`、`.agent/skills/`、`.agents/skills/` 是否都需要更新。
 - 修改 `.agent/`、`user_rules.md`、流程閘門或 AI 約束時，完成後要詢問是否同步回正式母體。
-- README、`SKILLS_INDEX.md`、`AGENTS.md` 的數量容易漂移；新增或刪除能力時一起更新。
+- `skills/INDEX.md` 是人類可讀的 Skill 單一真源；根 `SKILLS_INDEX.md` 只作導覽與當期盤點，不維護第二份完整清單。
 
 ## 快速盤點指令
 
@@ -173,9 +167,9 @@ PixiuCore 分成三層來看，比較不容易迷路：
 $root = "%PIXIU_CORE%"
 (Get-ChildItem -File "$root\agents").Count
 (Get-ChildItem -File "$root\commands").Count
-(Get-ChildItem -Directory "$root\skills").Count
-(Get-ChildItem -Directory "$root\.agent\skills").Count
-(Get-ChildItem -File "$root\.agent\workflows").Count
+(Get-ChildItem -Directory "$root\skills" | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count
+(Get-ChildItem -Directory "$root\.agents\skills").Count
+(Get-ChildItem -File "$root\.agent\workflows" -Filter "*.md").Count
 (Get-ChildItem -File -Recurse "$root\rules" | Where-Object Extension -eq ".md").Count
 (Get-Content -Raw -Encoding UTF8 "$root\fleet.json" | ConvertFrom-Json).Count
 ```
@@ -440,13 +434,13 @@ cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
 |------|------|------|
 | `PIXIU_CORE` 與 `PIXIU_CORE_PATH` 併存 | 不同工具可能讀不同母體路徑 | 後續統一命名，或在啟動文件明確定義優先序 |
 | `setup.bat` 與 `setup_zh.bat` 職責不一致 | 使用者容易選錯安裝入口 | 保留一個主入口，另一個標成 legacy 或 wrapper |
-| `SKILLS_INDEX.md` 數字仍偏舊 | 技能盤點會誤導 | 下次技能異動時一起翻修 |
+| Canonical 與 portable Skill 發佈層可能漂移 | 宿主可能載入過期或重複能力 | 以 `skills/` 為 canonical，執行 metadata validator 與 Lazy Loading collision gate |
 | `Backup/` 內容龐大 | 打包分享可能帶出歷史或私人內容 | 分享前用 `pack-for-friend` 流程並人工檢查 |
 | 多套工具設定分散 | Claude / Codex / Gemini / OpenCode 行為可能漂移 | 以 `user_rules.md` 與 Vault init 作為共同地基 |
 
 ## 相關文件
 
-- [SKILLS_INDEX.md](SKILLS_INDEX.md)：技能分類索引，目前需要後續校準數量。
+- [SKILLS_INDEX.md](SKILLS_INDEX.md)：技能索引入口與當期盤點；完整分類以 `skills/INDEX.md` 為準。
 - [AGENTS.md](AGENTS.md)：ECC Agent 說明。
 - [CODEX.md](CODEX.md)：Codex 審計協議。
 - [CLAUDE.md](CLAUDE.md)：Claude Code 啟動協議。

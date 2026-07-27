@@ -83,6 +83,31 @@ function measurePixiuSkillSuppression(
   };
 }
 
+const STARTUP_PROFILE_DEFINITIONS = Object.freeze({
+  codex: Object.freeze({
+    files: Object.freeze([
+      'AGENTS.md',
+      'vault/bootstrap/SESSION-BOOTSTRAP.md',
+      '.codex/AGENTS.md'
+    ]),
+    budgetBytes: 8192
+  }),
+  claude: Object.freeze({
+    files: Object.freeze([
+      'CLAUDE.md',
+      'vault/bootstrap/SESSION-BOOTSTRAP.md'
+    ]),
+    budgetBytes: 6144
+  }),
+  gemini: Object.freeze({
+    files: Object.freeze([
+      'GEMINI.md',
+      'vault/bootstrap/SESSION-BOOTSTRAP.md'
+    ]),
+    budgetBytes: 6144
+  })
+});
+
 function measureStartupFiles(root, relativeFiles) {
   let startupFilesBytes = 0;
   let startupFilesLines = 0;
@@ -102,12 +127,22 @@ function measureStartupFiles(root, relativeFiles) {
   return { startupFilesBytes, startupFilesLines, missingStartupFiles };
 }
 
+function measureStartupProfiles(coreRoot, definitions = STARTUP_PROFILE_DEFINITIONS) {
+  return Object.fromEntries(Object.entries(definitions).map(([profileName, definition]) => {
+    const measurement = measureStartupFiles(coreRoot, definition.files);
+    return [profileName, {
+      files: [...definition.files],
+      budgetBytes: definition.budgetBytes,
+      ...measurement,
+      withinBudget: measurement.missingStartupFiles.length === 0 &&
+        measurement.startupFilesBytes <= definition.budgetBytes
+    }];
+  }));
+}
+
 function buildReport(coreRoot) {
-  const startupFiles = [
-    'AGENTS.md',
-    'vault/bootstrap/SESSION-BOOTSTRAP.md',
-    '.codex/AGENTS.md'
-  ];
+  const startupProfiles = measureStartupProfiles(coreRoot);
+  const codexStartup = startupProfiles.codex;
   const roots = [
     path.join(coreRoot, '.agents', 'skills'),
     path.join(coreRoot, 'skills')
@@ -115,7 +150,11 @@ function buildReport(coreRoot) {
 
   return {
     timestamp: new Date().toISOString(),
-    ...measureStartupFiles(coreRoot, startupFiles),
+    startupProfiles,
+    startupFiles: [...codexStartup.files],
+    startupFilesBytes: codexStartup.startupFilesBytes,
+    startupFilesLines: codexStartup.startupFilesLines,
+    missingStartupFiles: [...codexStartup.missingStartupFiles],
     ...measureSkillRoots(roots),
     ...measurePixiuSkillSuppression(coreRoot)
   };
@@ -129,7 +168,9 @@ if (require.main === module) {
 module.exports = {
   listSkills,
   measureSkillRoots,
+  STARTUP_PROFILE_DEFINITIONS,
   measurePixiuSkillSuppression,
   measureStartupFiles,
+  measureStartupProfiles,
   buildReport
 };

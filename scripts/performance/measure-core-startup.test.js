@@ -29,6 +29,48 @@ function testMeasuresStartupFileBytes() {
   assert.deepStrictEqual(result.missingStartupFiles, ['missing.md']);
 }
 
+function testBuildsNamedStartupProfiles() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-startup-profiles-'));
+  fs.mkdirSync(path.join(root, 'vault', 'bootstrap'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.codex'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'AGENTS.md'), 'agents', 'utf8');
+  fs.writeFileSync(path.join(root, 'CLAUDE.md'), 'claude', 'utf8');
+  fs.writeFileSync(path.join(root, 'GEMINI.md'), 'gemini', 'utf8');
+  fs.writeFileSync(path.join(root, '.codex', 'AGENTS.md'), 'codex', 'utf8');
+  fs.writeFileSync(path.join(root, 'vault', 'bootstrap', 'SESSION-BOOTSTRAP.md'), 'bootstrap', 'utf8');
+
+  const profiles = measure.measureStartupProfiles(root);
+  assert.deepStrictEqual(Object.keys(profiles), ['codex', 'claude', 'gemini']);
+  assert.deepStrictEqual(profiles.codex.files, [
+    'AGENTS.md',
+    'vault/bootstrap/SESSION-BOOTSTRAP.md',
+    '.codex/AGENTS.md'
+  ]);
+  assert.strictEqual(profiles.codex.budgetBytes, 8192);
+  assert.strictEqual(profiles.claude.budgetBytes, 6144);
+  assert.strictEqual(profiles.gemini.budgetBytes, 6144);
+  assert.strictEqual(profiles.codex.withinBudget, true);
+  assert.strictEqual(profiles.claude.withinBudget, true);
+  assert.strictEqual(profiles.gemini.withinBudget, true);
+  assert.deepStrictEqual(profiles.codex.missingStartupFiles, []);
+}
+
+function testBuildReportKeepsCodexCompatibilityFields() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-startup-report-'));
+  fs.mkdirSync(path.join(root, 'vault', 'bootstrap'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.codex'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'AGENTS.md'), 'agents', 'utf8');
+  fs.writeFileSync(path.join(root, 'CLAUDE.md'), 'claude', 'utf8');
+  fs.writeFileSync(path.join(root, 'GEMINI.md'), 'gemini', 'utf8');
+  fs.writeFileSync(path.join(root, '.codex', 'AGENTS.md'), 'codex', 'utf8');
+  fs.writeFileSync(path.join(root, 'vault', 'bootstrap', 'SESSION-BOOTSTRAP.md'), 'bootstrap', 'utf8');
+
+  const report = measure.buildReport(root);
+  assert.deepStrictEqual(report.startupProfiles.codex.files, report.startupFiles);
+  assert.strictEqual(report.startupProfiles.codex.startupFilesBytes, report.startupFilesBytes);
+  assert.strictEqual(report.startupProfiles.codex.startupFilesLines, report.startupFilesLines);
+}
+
 function testDetectsPixiuCanonicalPublishingLayer() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-skill-suppression-'));
   const canonical = path.join(root, 'skills');
@@ -58,6 +100,8 @@ function testDetectsPixiuCanonicalPublishingLayer() {
 const tests = [
   testCountsDuplicateSkillNamesAcrossRoots,
   testMeasuresStartupFileBytes,
+  testBuildsNamedStartupProfiles,
+  testBuildReportKeepsCodexCompatibilityFields,
   testDetectsPixiuCanonicalPublishingLayer
 ];
 for (const test of tests) {
