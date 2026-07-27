@@ -1,20 +1,23 @@
 ---
+disable-model-invocation: true
+name: skills-index
+description: "PixiuCore manual Skill routing index; use only when auditing or locating Skills by category."
 type: skills-index
 date: 2026-07-05
 project: PIXIUCORE
 topic: skills-index
 status: active
-summary: skills/ 目錄唯一索引：8 個常駐層（Claude 原生自動觸發）＋81 個參考層（disable-model-invocation，由本索引路由或使用者手動觸發）。
+summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
 ---
 
 # Skills 索引（單一真源）
 
-> 用法：任務命中下表描述 → 用 Read 載入 `skills/<名稱>/SKILL.md` 全文再執行。
-> 常駐層：Claude Code 原生自動觸發（description 常駐 context）。
-> 參考層：標記 `disable-model-invocation: true`，不佔 context；由本索引語意路由、或使用者 `/名稱` 手動觸發。Codex／Gemini 一律走本索引。
-> 維護：新增／刪除 skill 時同步更新本表；根目錄 `SKILLS_INDEX.md` 僅指向本檔，不維護清單。
+> 用法：正常 Session 先執行 `scripts/router/resolve-capabilities.js`，只讀 Router 回傳的 Skill。只有盤點、人工查找或 Router 降級時才讀本索引。
+> 高優先路由層：常見 Pixiu 工作流，仍須由 Router 或明確語意觸發，不在 Session 啟動時全文常駐。
+> 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
+> 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 為舊分類參考，不作 runtime 路由。
 
-## 常駐層（8）
+## 高優先路由層（8）
 
 | Skill | 什麼情境用 |
 |---|---|

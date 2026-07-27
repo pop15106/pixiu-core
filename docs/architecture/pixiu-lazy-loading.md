@@ -101,6 +101,7 @@ powershell -ExecutionPolicy Bypass -File scripts/performance/run-lazy-loading-te
 
 - 啟動常駐內容不超過 8 KB；目前主 checkout 為 `6,705 bytes / 124 lines`
 - 報告同時顯示 raw collision 與套用 canonical suppression 後的 effective collision；目前為 `87 / 0`
+- canonical／portable metadata 驗證皆通過；patched DevSpace 實測為 `91 Skills / 0 diagnostics`
 - Manifest 引用路徑全部存在
 - Skill YAML 警告為 0
 - 普通需求未命中時不載入 Skill

@@ -16,8 +16,11 @@ try {
     node scripts/skills/validate-skill-metadata.test.js
     if ($LASTEXITCODE -ne 0) { throw 'Skill metadata unit tests failed.' }
 
+    node scripts/skills/validate-skill-metadata.js skills
+    if ($LASTEXITCODE -ne 0) { throw 'Canonical Skill metadata validation failed.' }
+
     node scripts/skills/validate-skill-metadata.js .agents/skills
-    if ($LASTEXITCODE -ne 0) { throw 'Skill metadata validation failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Portable Skill metadata validation failed.' }
 
     $report = node scripts/performance/measure-core-startup.js | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0) { throw 'Startup measurement failed.' }
