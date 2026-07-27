@@ -221,16 +221,34 @@ function Get-InstalledTools {
     }
 }
 
+function ConvertFrom-VerboseHttpJson {
+    param([Parameter(Mandatory = $true)][string]$Output)
+
+    $matches = [regex]::Matches(
+        $Output,
+        '(?ms)^HTTP: (?<json>\{.*?\})\r?\n\{'
+    )
+    if ($matches.Count -eq 0) {
+        throw 'Dev Tunnel verbose output contained no raw HTTP JSON response.'
+    }
+    return $matches[$matches.Count - 1].Groups['json'].Value | ConvertFrom-Json
+}
+
 function ConvertFrom-NativeJson {
     param(
         [Parameter(Mandatory = $true)][string]$Executable,
         [Parameter(Mandatory = $true)][string[]]$Arguments,
-        [Parameter(Mandatory = $true)][string]$Operation
+        [Parameter(Mandatory = $true)][string]$Operation,
+        [switch]$UseVerboseHttpJson
     )
 
     $output = (& $Executable @Arguments 2>&1 | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) {
         throw "$Operation failed: $output"
+    }
+
+    if ($UseVerboseHttpJson) {
+        return ConvertFrom-VerboseHttpJson -Output $output
     }
 
     $jsonStart = $output.IndexOf('{')
@@ -301,6 +319,7 @@ Export-ModuleMember -Function @(
     'Install-Dependencies',
     'Get-InstalledTools',
     'ConvertFrom-NativeJson',
+    'ConvertFrom-VerboseHttpJson',
     'Ensure-DevTunnelLogin',
     'Test-LocalPortAvailable',
     'Get-AccountDevSpacePorts'

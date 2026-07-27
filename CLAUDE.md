@@ -1,46 +1,27 @@
-# Pixiu Mothership Connection Protocol
+# Claude Connection Protocol
 
-> [!IMPORTANT]
-> This project is governed by the Pixiu Mothership Core.
-> Follow the low-token startup protocol before any task.
+Claude 以低 Token 模式連結 PixiuCore。
 
-## Bootstrap Protocol
-
-1. **Resolve Core Path**: Use `PIXIU_CORE`, then `PIXIU_CORE_PATH`, then `%USERPROFILE%\.pixiu-core`.
-2. **Read Vault Init**: Read `%PIXIU_CORE%\vault\README.md` to confirm the mothership boundary and init sequence.
-3. **Read Global Rules**: Read `%PIXIU_CORE%\user_rules.md` as the supreme directive. Keep L0 hard gates resident.
-4. **Read Loading Policy**: Read `%PIXIU_CORE%\vault\context\ai-mothership-loading-policy.md` and use it to route L1-L6, skills, workflows, hooks, and agents lazily.
-5. **Read Concise Identity/Memory**: Read `%PIXIU_CORE%\vault\identity\founder-profile.md`, `%PIXIU_CORE%\vault\identity\agent-persona.md`, and `%PIXIU_CORE%\vault\memory\memory-summary.md` as summaries. Do not load recap or decision full text unless triggered.
-6. **State Connection**: Declare `我已連結至 Pixiu 母艦核心，套用全域治理規範。`
-7. **Language Constraint**: Use Traditional Chinese for all thoughts, plans, tool reasons, and responses unless a project file explicitly requires another language.
-
-## Low-Token Operating Rules
-
-- Do not load all skills, workflows, hooks, agents, or recap files at session start.
-- Use semantic routing: the user may say natural phrases such as `現在到哪了`, `收尾`, `看風險`, or `開 agent`; map intent to the needed skill or workflow.
-- Keep `user_rules.md` L0 as the hard gate. L1-L6 details are loaded only when the current task triggers them.
-- Agent team is not default. Judge whether it helps, explain why, and wait for explicit user approval before dispatch.
-- Child agents get compact task packets only; they do not re-read the full mothership.
-
-## Project Environment
-
-- **Mothership Path**: `%PIXIU_CORE%` or fallback path from the bootstrap protocol.
-- **Project Name**: PixiuCore / project-local override.
-
-## Post-task Code Review Protocol
-
-After implementation, before submitting:
-1. Re-read modified files.
-2. Confirm logic, no redundant variables, and no stale fragments.
-3. Check that mothership changes remain portable across devices and paths.
-4. If issues are found, fix and re-audit until verified.
-
-## PixiuCore 母體路由（governance）
+## Session 啟動
 
 1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
-2. Session 開始依序讀：
-   - `vault/README.md`（init 序列）
-   - `vault/governance/INDEX.md`（制度路由：何時讀哪份規則）
-3. 制度本體一律在 `vault/governance/` 與 `vault/context/ai-mothership-loading-policy.md`；本檔不承載規則內容。
-4. 派工、模型選擇、驗收：照 `vault/governance/model-dispatch-rules.md`。
-5. 拿不準要不要問使用者：照 `vault/governance/judgment-rubrics.md`。
+2. 讀取 `vault/bootstrap/SESSION-BOOTSTRAP.md`。
+3. 讀取 `vault/capabilities/capability-manifest.json`，依本次需求選擇最多 3 個 Capability。
+4. 只讀 Manifest 指向的 Skill、Context 與 Governance。
+
+一般 Session 不全文載入 `user_rules.md`、identity、`memory-summary.md`、recap、decisions、全部 Skills、Workflows、Hooks 或 Agents。需要治理原文、舊決策或特定工作流時再按需載入。
+
+## Claude 邊界
+
+- Hooks 以 `ECC_HOOK_PROFILE=minimal|standard|strict` 控制成本。
+- `/devfleet`、`/multi-plan`、`/orchestrate` 或其他 Agent Team 能力需使用者明確同意。
+- 子 Agent 只接收精簡任務包，不重讀完整母體。
+- 完成前重讀修改檔、檢查差異並執行最小充分驗證。
+
+Capability 路由：
+
+```powershell
+node scripts/router/resolve-capabilities.js "<本次需求>"
+```
+
+完整制度按需從 `vault/governance/INDEX.md` 路由。
