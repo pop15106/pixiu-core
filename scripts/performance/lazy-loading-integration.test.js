@@ -15,8 +15,21 @@ function read(relativePath) {
 
 function testStartupPayloadStaysBelowBudget() {
   const report = buildReport(core);
-  assert.strictEqual(report.missingStartupFiles.length, 0);
-  assert.ok(report.startupFilesBytes <= 8192, `啟動內容過大：${report.startupFilesBytes} bytes`);
+  const expectedBudgets = { codex: 8192, claude: 6144, gemini: 6144 };
+
+  for (const [profileName, budgetBytes] of Object.entries(expectedBudgets)) {
+    const profile = report.startupProfiles[profileName];
+    assert.ok(profile, `缺少 ${profileName} 啟動 profile`);
+    assert.strictEqual(profile.budgetBytes, budgetBytes);
+    assert.deepStrictEqual(profile.missingStartupFiles, []);
+    assert.strictEqual(
+      profile.withinBudget,
+      true,
+      `${profileName} 啟動內容過大：${profile.startupFilesBytes}/${budgetBytes} bytes`
+    );
+  }
+
+  assert.strictEqual(report.startupFilesBytes, report.startupProfiles.codex.startupFilesBytes);
 }
 
 function testEntryFilesUseRouterBeforeManifest() {

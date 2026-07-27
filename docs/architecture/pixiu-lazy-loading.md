@@ -99,7 +99,8 @@ powershell -ExecutionPolicy Bypass -File scripts/performance/run-lazy-loading-te
 
 驗收門檻：
 
-- 啟動常駐內容不超過 8 KB；目前主 checkout 為 `6,705 bytes / 124 lines`
+- 啟動預算分 profile 驗證：Codex ≤ 8 KB、Claude ≤ 6 KB、Gemini ≤ 6 KB
+- 目前主 checkout：Codex `6,705 bytes / 124 lines`、Claude `3,939 bytes / 76 lines`、Gemini `3,963 bytes / 76 lines`
 - 報告同時顯示 raw collision 與套用 canonical suppression 後的 effective collision；目前為 `87 / 0`
 - canonical／portable metadata 驗證皆通過；patched DevSpace 實測為 `91 Skills / 0 diagnostics`
 - Manifest 引用路徑全部存在

@@ -25,8 +25,14 @@ try {
     $report = node scripts/performance/measure-core-startup.js | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0) { throw 'Startup measurement failed.' }
 
-    if ($report.startupFilesBytes -gt 8192) {
-        throw "Startup payload exceeds 8 KB: $($report.startupFilesBytes) bytes"
+    foreach ($profileName in @('codex', 'claude', 'gemini')) {
+        $profile = $report.startupProfiles.$profileName
+        if (-not $profile) {
+            throw "Startup profile is missing: $profileName"
+        }
+        if (-not $profile.withinBudget) {
+            throw "Startup profile exceeds budget or has missing files: $profileName ($($profile.startupFilesBytes)/$($profile.budgetBytes) bytes)"
+        }
     }
 
     if ($report.yamlWarnings -ne 0) {
@@ -34,7 +40,10 @@ try {
     }
 
     Write-Host 'PixiuCore lazy-loading verification passed.' -ForegroundColor Green
-    Write-Host "Startup payload: $($report.startupFilesBytes) bytes / $($report.startupFilesLines) lines"
+    foreach ($profileName in @('codex', 'claude', 'gemini')) {
+        $profile = $report.startupProfiles.$profileName
+        Write-Host "Startup profile ${profileName}: $($profile.startupFilesBytes)/$($profile.budgetBytes) bytes / $($profile.startupFilesLines) lines"
+    }
     Write-Host "Raw Skill package collisions: $($report.skillNameCollisions)"
     Write-Host "Effective Skill collisions: $($report.effectiveSkillNameCollisions)"
     Write-Host "Pixiu canonical suppression eligible: $($report.pixiuCanonicalSuppressionEligible)"
