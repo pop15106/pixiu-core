@@ -462,14 +462,33 @@ HTTP: {
     [System.IO.File]::WriteAllText((Join-Path $pixiuWorkspace 'vault\bootstrap\SESSION-BOOTSTRAP.md'), '# bootstrap', [System.Text.UTF8Encoding]::new($false))
     New-TestSkill -Root $pixiuCanonicalSkills -Name 'shared' -Content 'canonical content'
     New-TestSkill -Root $pixiuCanonicalSkills -Name 'canonical-only' -Content 'canonical only'
+    New-Item -ItemType Directory -Path (Join-Path $pixiuCanonicalSkills 'reference-library') -Force | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $pixiuCanonicalSkills 'reference-library\README.md'), '# not a Skill', [System.Text.UTF8Encoding]::new($false))
     New-TestSkill -Root $pixiuPortableSkills -Name 'shared' -Content 'portable publish drift'
     Remove-Item -LiteralPath $globalSkills -Recurse -Force
     New-Item -ItemType Junction -Path $globalSkills -Target $pixiuCanonicalSkills | Out-Null
     $pixiuCanonicalResult = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $pixiuWorkspace -DevSpaceSkillsDirectory $globalSkills
     Assert-Equal $pixiuCanonicalResult ([System.IO.Path]::GetFullPath($pixiuCanonicalSkills)) 'suppresses the PixiuCore portable publishing layer when canonical names cover it'
 
-    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'Subagent patch is idempotent'
     $patchManifest = Join-Path $fakePackageRoot '.devspace-oneclick-patch-manifest.json'
+    $v2Line = '                if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;'
+    $v1Skills = ([System.IO.File]::ReadAllText($fakeSkills)).Replace($v2Line + [Environment]::NewLine, '')
+    [System.IO.File]::WriteAllText($fakeSkills, $v1Skills, [System.Text.UTF8Encoding]::new($false))
+    $v1Manifest = Get-Content -LiteralPath $patchManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+    $v1SkillRecord = @($v1Manifest.files | Where-Object { [string]$_.path -eq 'dist\skills.js' })[0]
+    $v1SkillRecord.patchedSha256 = (Get-FileHash -LiteralPath $fakeSkills -Algorithm SHA256).Hash.ToLowerInvariant()
+    [System.IO.File]::WriteAllText($patchManifest, ($v1Manifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 1 'upgrades a verified v1 Skill mirror patch in place'
+    Assert-Equal ([System.IO.File]::ReadAllText($fakeSkills)).Contains($v2Line) $true 'v1 upgrade ignores non-Skill directories'
+    $upgradedManifest = Get-Content -LiteralPath $patchManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+    $upgradedSkillRecord = @($upgradedManifest.files | Where-Object { [string]$_.path -eq 'dist\skills.js' })[0]
+    Assert-Equal ([string]$upgradedSkillRecord.patchedSha256) ((Get-FileHash -LiteralPath $fakeSkills -Algorithm SHA256).Hash.ToLowerInvariant()) 'v1 upgrade refreshes the verified patch manifest'
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'Subagent patch is idempotent'
+
+    $knownServer = [System.IO.File]::ReadAllText($fakeServer)
+    [System.IO.File]::WriteAllText($fakeServer, ($knownServer + [Environment]::NewLine + '// unknown drift'), [System.Text.UTF8Encoding]::new($false))
+    Assert-Throws { Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'upgrade refuses unknown target drift before writing'
+    [System.IO.File]::WriteAllText($fakeServer, $knownServer, [System.Text.UTF8Encoding]::new($false))
     Assert-Equal (Test-Path -LiteralPath $patchManifest) $true 'records original and patched hashes for safe restore'
     Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 6 'restores all patched files from retained backups'
     Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'restore is idempotent when files already match recorded backups'
