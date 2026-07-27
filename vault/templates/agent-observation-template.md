@@ -6,6 +6,8 @@ system:
 repo:
 topic:
 status: candidate
+scope: project
+source_session:
 summary:
 tags: [agent-learning, observation]
 source_paths:
@@ -16,38 +18,34 @@ verified: false
 
 # Observation -
 
-## Problem
-
-這次遇到的問題是什麼。
-
 ## Context
 
-問題發生的情境、系統、限制條件。
+描述可被回查的情境、限制與觸發點。
 
-## What Worked
+## Action
 
-最後有效的做法。
+記錄當時實際採取的行動，不要補寫未發生的步驟。
 
-## What Misled Us
+## Result
 
-哪些線索一開始看起來像對，但其實會誤導。
+描述行動後的直接結果，可包含部分成功、失敗或副作用。
 
-## Why It Worked
+## Why It Happened
 
-為什麼這個做法有效。
+把可驗證事實與推論分開寫，避免把推論寫成既成事實。
 
-## Reusable Pattern
+## Recommendation
 
-下次遇到類似敘述時，可以先怎麼切。
+寫下下一次可重用的候選做法，保持在 observation 等級，不要直接升格成規則。
 
 ## Evidence
 
-- 檔案：
-- SQL：
-- 對話：
-- 前輩說法：
+- repo 或 vault 相對路徑
+- 關鍵段落、命令輸出或可回查證據
+- 如有推論，標出它依附的證據
 
-## Follow-up
+## Verification
 
-- [ ] 是否升格成 instinct
-- [ ] 是否升格成 decision
+- verifier: manual / model / script
+- result: pass / needs-review / reject
+- notes:

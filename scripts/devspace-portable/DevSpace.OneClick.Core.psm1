@@ -147,6 +147,16 @@ function Merge-DevSpaceConfig {
     return [pscustomobject]$result
 }
 
+function Get-TunnelObject {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$TunnelDocument)
+
+    if ($TunnelDocument.PSObject.Properties['tunnel']) {
+        return $TunnelDocument.tunnel
+    }
+    return $TunnelDocument
+}
+
 function Get-TunnelPublicBaseUrl {
     [CmdletBinding()]
     param(
@@ -154,19 +164,28 @@ function Get-TunnelPublicBaseUrl {
         [Parameter(Mandatory = $true)][ValidateRange(1, 65535)][int]$Port
     )
 
-    $matchingPort = @($TunnelDocument.tunnel.ports) |
+    $tunnel = Get-TunnelObject -TunnelDocument $TunnelDocument
+    $matchingPort = @($tunnel.ports) |
         Where-Object { [int]$_.portNumber -eq $Port } |
         Select-Object -First 1
     if (-not $matchingPort) {
         throw "Tunnel does not expose port $Port."
     }
 
-    $portUriProperty = $matchingPort.PSObject.Properties['portUri']
-    if ($portUriProperty -and -not [string]::IsNullOrWhiteSpace([string]$portUriProperty.Value)) {
-        return Assert-PublicOrigin -PublicBaseUrl ([string]$portUriProperty.Value).TrimEnd('/')
+    $portUri = ''
+    if ($matchingPort.PSObject.Properties['portForwardingUris']) {
+        $portUri = [string](@($matchingPort.portForwardingUris) |
+            Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } |
+            Select-Object -First 1)
+    }
+    if ([string]::IsNullOrWhiteSpace($portUri) -and $matchingPort.PSObject.Properties['portUri']) {
+        $portUri = [string]$matchingPort.portUri
+    }
+    if (-not [string]::IsNullOrWhiteSpace($portUri)) {
+        return Assert-PublicOrigin -PublicBaseUrl $portUri.TrimEnd('/')
     }
 
-    $tunnelIdProperty = $TunnelDocument.tunnel.PSObject.Properties['tunnelId']
+    $tunnelIdProperty = $tunnel.PSObject.Properties['tunnelId']
     $tunnelId = if ($tunnelIdProperty) { [string]$tunnelIdProperty.Value } else { '' }
     if ($tunnelId -notmatch '^(.+)\.([a-z0-9]+)$') {
         throw "Tunnel $tunnelId does not provide a port URI and its region cannot be derived."
@@ -221,6 +240,7 @@ Export-ModuleMember -Function @(
     'Merge-AllowedRoots',
     'Select-DevSpacePort',
     'Merge-DevSpaceConfig',
+    'Get-TunnelObject',
     'Get-TunnelPublicBaseUrl',
     'ConvertTo-DevTunnelLabelArguments',
     'New-DevSpaceTunnelName'

@@ -27,16 +27,13 @@ summary: 定義各 AI 連結 PixiuCore 母體時的低 token 分層載入、語�
 
 ## 常駐層
 
-每次 session 只常駐以下內容：
+每次 Session 只常駐：
 
-1. `user_rules.md` 的 L0 硬閘門與不可違反條款。
-2. `vault/README.md` 的 init 序列與 vault 邊界。
-3. `vault/identity/founder-profile.md` 的使用者偏好摘要。
-4. `vault/identity/agent-persona.md` 的角色定位摘要。
-5. `vault/memory/memory-summary.md` 的索引型摘要，不把 recap 全文當常駐內容。
-6. 本檔的分層載入與語意路由規則。
+1. `vault/bootstrap/SESSION-BOOTSTRAP.md`：L0 硬閘門摘要、降級規則與路由入口。
+2. `vault/capabilities/capability-manifest.json`：能力名稱、觸發詞與必要文件路徑。
+3. 當前專案入口檔中與本次任務直接相關的局部規則。
 
-`user_rules.md` 是最高憲法；本政策只調整載入策略，不降低 L0 約束。
+`user_rules.md` 仍是最高憲法與唯一完整來源，但不在每次啟動時全文載入。遇到治理衝突、審批例外、高風險操作或特殊 Hook 時，再讀對應原文段落。identity、完整 memory summary、recap、decisions 與本政策全文都改為按需載入。
 
 ## L1-L6 路由摘要
 
