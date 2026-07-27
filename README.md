@@ -6,23 +6,23 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 
 ## 目前狀態
 
-盤點日期：2026-05-27
+盤點日期：2026-07-27
 盤點路徑：PixiuCore
 
 | 項目 | 現況 |
 |------|------|
 | Plugin | `everything-claude-code` v1.8.0 |
-| Fleet 專案 | `fleet.json` 目前 30 個路徑 |
+| Fleet 專案 | `fleet.json` 為本機私有清單，路徑數量未納入本次公開盤點 |
 | 頂層 Agents | 27 個，位於 `agents/` |
-| ECC Agents | 29 個，位於 `.agent/agents/`（+skill-opt agent）|
-| Slash Commands | 58 條，位於 `commands/` |
+| ECC Agents | 29 個，位於 `.agent/agents/` |
+| Slash Commands | 59 條，位於 `commands/` |
 | ECC Workflows | 79 條，位於 `.agent/workflows/` |
-| 頂層 Skills | 68 個，位於 `skills/`（+skill-opt；cybersecurity-library 以 submodule 掛載，不計入）|
-| ECC Skills | 148 個，位於 `.agent/skills/`（含本輪新增 6 個資安域 skill）|
-| OpenAI 可攜 Skills | 43 個，位於 `.agents/skills/` |
-| Rules | 51 條 Markdown 規則，位於 `rules/` 與 `.agent/rules/` |
-| Vault | 已啟用，包含 `identity/`、`memory/`、`context/`、`sop/`、`after-action/`、`templates/` |
-| 最近明顯新增 | 2026-05-27：Cybersecurity Library（754 skills submodule）、Architecture Maps、SkillOpt 系統、security-reviewer / architect 全面升級 |
+| Canonical Skills | 89 個目錄型 Skill，位於 `skills/`；metadata validator 另含根層 Skill 檔 |
+| ECC Skills | 149 個，位於 `.agent/skills/` |
+| OpenAI 可攜 Skills | 87 個，位於 `.agents/skills/` |
+| Rules | 102 條 Markdown 規則，位於 `rules/` 與 `.agent/rules/` |
+| Vault | 已啟用，包含 `bootstrap/`、`capabilities/`、`identity/`、`memory/`、`context/`、`sop/`、`after-action/`、`templates/` |
+| 最近明顯新增 | 2026-07-27：Router-first Lazy Loading、Manual Recap deterministic capture、Agent Learning Phase 1/2、DevSpace OneClick state repair、Web 測試控制台 |
 
 > 注意：目前啟動規則優先讀 `PIXIU_CORE`，部分安裝腳本仍設定 `PIXIU_CORE_PATH`。兩者是既有技術債，調整前請確認所有工具相容性。
 
@@ -150,6 +150,16 @@ PixiuCore 分成三層來看，比較不容易迷路：
 4. 只讀 Router 回傳的 `filesToLoad`，最多選 3 個 Capability。
 5. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引；不得退回全文載入 identity、memory、全部 Skills 或治理文件。
 6. 修改後執行與本次改動相符的最小充分驗證，並如實回報未驗證項目。
+
+## Web 測試控制台
+
+本機可用 Web UI 分別執行 Core Evolution、Manual Recap、Auto Recap、Lazy Loading、DevSpace OneClick、Repository Safety，或一鍵執行完整整合測試：
+
+```powershell
+node scripts/test-console/server.js --open
+```
+
+預設網址為 `http://127.0.0.1:8787`。控制台不新增 npm 依賴、只監聽 loopback，且瀏覽器只能呼叫固定白名單模組，不能傳入任意命令。完整使用方式與自動測試入口見 `scripts/test-console/README.md`。
 
 ## 維護原則
 

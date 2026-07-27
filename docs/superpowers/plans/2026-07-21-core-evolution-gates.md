@@ -1,5 +1,7 @@
 # Core Evolution Gates Implementation Plan
 
+- 執行狀態：已完成，2026-07-27 重新驗證 `16 / 16` 通過
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 建立 Resource Identity Gate、MCP Compatibility Gateway 與 Pixiu Extension Package 三個可獨立測試、可串接的核心模組。
@@ -29,10 +31,10 @@
 **Interfaces:**
 - Produces: `normalizeResourceIdentity(input)`、`verifyResourceIdentity(identity, evidence)`、`decideResourceAccess(verification, action)`。
 
-- [ ] Step 1: 撰寫正規化、Digest、冒名與動作授權失敗測試。
-- [ ] Step 2: 執行測試並確認因模組不存在而失敗。
-- [ ] Step 3: 實作最小身分模型、SHA-256 驗證及信任決策。
-- [ ] Step 4: 執行測試並確認通過。
+- [x] Step 1: 撰寫正規化、Digest、冒名與動作授權失敗測試。
+- [x] Step 2: 執行測試並確認因模組不存在而失敗。
+- [x] Step 3: 實作最小身分模型、SHA-256 驗證及信任決策。
+- [x] Step 4: 執行測試並確認通過。
 
 ### Task 2: MCP Compatibility Gateway
 
@@ -43,10 +45,10 @@
 **Interfaces:**
 - Produces: `negotiateMcpVersion(clientVersions, serverVersions, options)`、`validateCanonicalTool(tool)`、`toCanonicalTool(version, tool)`、`fromCanonicalTool(version, tool)`。
 
-- [ ] Step 1: 撰寫穩定版協商、RC 閘門、無共同版本及工具轉換測試。
-- [ ] Step 2: 執行測試並確認失敗。
-- [ ] Step 3: 實作版本排序、Feature Flag 及 Canonical Tool 驗證。
-- [ ] Step 4: 執行測試並確認通過。
+- [x] Step 1: 撰寫穩定版協商、RC 閘門、無共同版本及工具轉換測試。
+- [x] Step 2: 執行測試並確認失敗。
+- [x] Step 3: 實作版本排序、Feature Flag 及 Canonical Tool 驗證。
+- [x] Step 4: 執行測試並確認通過。
 
 ### Task 3: Pixiu Extension Package
 
@@ -58,10 +60,10 @@
 - Consumes: Resource Identity Gate 與 MCP Compatibility Gateway。
 - Produces: `validateExtensionManifest(manifest, context)`、`calculateEffectivePermissions(requested, host, user, policy)`、`createExtensionLock(manifest, files)`。
 
-- [ ] Step 1: 撰寫 Manifest、身分、MCP、權限交集與 Lock Digest 測試。
-- [ ] Step 2: 執行測試並確認失敗。
-- [ ] Step 3: 實作最小 Extension 驗證與鎖定檔模型。
-- [ ] Step 4: 執行測試並確認通過。
+- [x] Step 1: 撰寫 Manifest、身分、MCP、權限交集與 Lock Digest 測試。
+- [x] Step 2: 執行測試並確認失敗。
+- [x] Step 3: 實作最小 Extension 驗證與鎖定檔模型。
+- [x] Step 4: 執行測試並確認通過。
 
 ### Task 4: 整合入口與文件
 
@@ -73,8 +75,15 @@
 **Interfaces:**
 - Produces: 單一入口匯出三個核心模組；整合流程 `validateExtensionCandidate(candidate, context)`。
 
-- [ ] Step 1: 撰寫端到端候選擴充驗證測試。
-- [ ] Step 2: 執行測試並確認失敗。
-- [ ] Step 3: 實作整合入口與文件。
-- [ ] Step 4: 執行全部核心測試。
-- [ ] Step 5: 執行語法檢查、Git diff 與白名單檢查。
+- [x] Step 1: 撰寫端到端候選擴充驗證測試。
+- [x] Step 2: 執行測試並確認失敗。
+- [x] Step 3: 實作整合入口與文件。
+- [x] Step 4: 執行全部核心測試。
+- [x] Step 5: 執行語法檢查、Git diff 與白名單檢查。
+
+## 最新驗證
+
+```text
+node --test scripts/core-evolution/test/*.test.js
+16 tests passed, 0 failed
+```

@@ -1,9 +1,9 @@
-# PixiuCore 合併前現行操作相容性評估
+# PixiuCore 合併與現行操作相容性評估
 
 - 日期：2026-07-27
 - 整合基底：`origin/master` @ `b0bb5af`
-- 整合工作區：DevSpace managed worktree
-- 結論：**程式與檔案合併可行，但合併時不得重啟 DevSpace OneClick；OneClick state 漂移需另行修復後才能宣告 restart-safe。**
+- 整合工作區：先於 DevSpace managed worktree 驗證，後收斂至 `C:\PixiuCore` 的 `master`
+- 結論：**程式整合、現行服務與 no-restart state repair 已驗證；受控 stop/start 與外部 OAuth smoke 尚未執行，因此仍不宣告完整 restart smoke 完成。**
 
 ## 評估範圍
 
@@ -25,12 +25,12 @@
 - Dev Tunnel host process 仍在運作。
 - 執行整合與測試期間，現行 listener PID 未中斷。
 
-### 2. OneClick state 已在本次整合前漂移
+### 2. OneClick state 漂移已由 no-restart repair 修復
 
-- `runtime.json` 記錄的 PID 已失效，但實際有另一個 DevSpace process 正在監聽 7678。
-- `settings.json` 指向的 persistent tunnel 已不存在。
-- 實際 host 中的 tunnel 是另一個 tunnel。
-- 因此現行 `devspace-oneclick.ps1 status` 在整合前即會失敗；這不是本輪變更造成。
+- 整合前 `runtime.json` 的 PID 與 `settings.json` 的 tunnel 已和現行服務漂移。
+- 新增的 `repair-state` 只在本機／公開 health、listener 身分、launcher parent、tunnel ID 與 region 全部一致時接管。
+- 修復不停止也不重啟現行服務，寫回前會備份，read-back 失敗則恢復舊內容。
+- 2026-07-27 最新 `status` 已驗證本機 MCP、公開 MCP、tunnel ID、DevSpace PID 與 Dev Tunnel PID。
 
 ### 3. 合併檔案不會直接中斷現行服務
 
@@ -47,7 +47,7 @@
 ### 5. 既有功能沒有被刪除
 
 - 沒有刪除或重新命名既有 tracked file。
-- 既有 `58` 個 Command 全部保留，新增 `commands/recap.md`。
+- 目前 `59` 個 Command 全部保留，包含新增的 `commands/recap.md`。
 - 既有 `27` 個 Agent 全部保留。
 - 既有 Auto Recap 程式未修改。
 - Core Evolution Gates 程式未修改。
@@ -104,27 +104,23 @@ Manifest 的 Skill 路徑也已由可能過期的 `.agents/skills` 鏡像改為 
 
 ## 驗證結果
 
-| 範圍 | 結果 |
+| 範圍 | 2026-07-27 最新結果 |
 |---|---:|
-| Manual Recap／Deterministic Capture | 8 / 8 |
+| Manual Recap／Deterministic Capture | 41 / 41 |
 | Auto Recap | 6 / 6 |
-| Lazy Loading／Router／Metadata | 25 / 25 |
-| DevSpace OneClick／Dev Tunnel／Skill Patch | 62 / 62 |
+| Lazy Loading／Router／Metadata | 30 / 30 |
+| DevSpace OneClick／Dev Tunnel／Skill Patch | 77 / 77 |
 | Core Evolution Gates | 16 / 16 |
-| **整合 worktree 合計** | **117 / 117** |
-
-另於原始 canonical 工作區重新執行 Deterministic／Manual Recap 完整安全與併發測試：`41 / 41` 通過。
+| Web Test Console 契約 | 10 / 10 |
+| Web API 單模組＋完整整合 | 1 / 1，六步驟全綠 |
 
 其他驗證：
 
-- Startup payload：`11,859 bytes / 264 lines`，低於 `12,288 bytes`。
-- Skill metadata：`87` 個，`0` warning。
-- 實際安裝的 DevSpace `1.0.4`：`14 / 14` patch point 相容。
-- Node syntax：通過。
-- PowerShell parse：通過。
-- `git diff --check`：通過。
-- 衝突標記掃描：通過。
-- 本輪新增／修改非測試檔憑證掃描：通過。
+- Startup payload：Codex `6,705 / 8,192 bytes`、Claude `3,939 / 6,144 bytes`、Gemini `3,963 / 6,144 bytes`。
+- Skill metadata：canonical `90`、portable `87`，均為 `0` warning。
+- Skill raw/effective collision：`87 / 0`。
+- OneClick `status`：本機與公開 MCP、tunnel ID、DevSpace PID、Dev Tunnel PID 全部 verified。
+- Node syntax、PowerShell parse、`git diff --check`、衝突標記與變更檔憑證樣式掃描：通過。
 
 ## 風險評估
 
@@ -144,32 +140,35 @@ Manifest 的 Skill 路徑也已由可能過期的 `.agents/skills` 鏡像改為 
 
 **建議補強**：已加入近期真實語句回歸；合併後仍需開啟新的 smoke Session 驗證一般問答、進度、Recap、PCLMS、Auto／Focus mode。
 
-### 高風險：OneClick restart state
+### 中風險：OneClick 受控重啟尚未 smoke
 
-**觀察事實**：OneClick settings／runtime 與實際 process、tunnel 已漂移。
+**觀察事實**：OneClick settings／runtime 已與現行 process、tunnel 對齊，`status` 可正常驗證。
 
-**潛在風險**：未修復 state 前執行 OneClick `status` 或 `start` 會失敗，且無法保證自動接管目前的手動服務與 tunnel。
+**潛在風險**：目前證據來自 no-restart 接管與健康檢查，尚未證明停止後能以相同設定完整啟動並通過外部 OAuth。
 
-**建議補強**：另開維護窗口，先保留目前可用 MCP URL，再重建或修正 OneClick settings／runtime；完成後才執行受控 stop/start 與外部 MCP smoke test。
+**建議補強**：另開維護窗口，保留目前 MCP URL 與 state 備份，執行受控 `stop → start → local health → public health → OAuth smoke`。
 
 ## 合併判定
 
 ### 可以執行
 
-- 在不重啟現行 DevSpace／Dev Tunnel 的條件下，建立整合 commit 或合併 PixiuCore repository 檔案。
-- 合併後開新的 AI Session 驗證 Bootstrap／Manifest 路由。
+- 建立、提交與推送 PixiuCore repository 變更；Git 操作本身不會重啟現行 DevSpace／Dev Tunnel。
+- 使用 Web Test Console 執行各模組與完整整合測試。
+- 開啟新的 AI Session 驗證 Bootstrap／Manifest 路由。
 
-### 暫時不可執行
+### 需維護窗口
 
-- 合併後立即執行 OneClick `start`、`install`、`stop` 或宣告 restart-safe。
-- 在 OneClick state 未修復前，移除目前正在運作的 DevSpace／Dev Tunnel process。
+- 執行 OneClick `stop`／`start`／`install` 或移除目前正在運作的 process。
+- 宣告完整 restart-safe 前，必須完成外部 MCP OAuth smoke。
 
 ## 最終結論
 
 **本輪程式整合不會直接中斷現行 DevSpace MCP，也沒有刪除既有功能；現行本機 Dev Tunnel 修正已完整保留。**
 
-但目前 OneClick 管理狀態早已與實際服務漂移，因此只能判定：
+目前判定：
 
-- **Merge-safe：是，前提是不重啟現行服務。**
-- **New-session-safe：測試通過，合併後仍需 smoke session。**
-- **Restart-safe：否，需先修復 OneClick state。**
+- **Merge-safe：是。**
+- **Current-service-safe：是，現行本機與公開 MCP 及兩個 PID 已驗證。**
+- **New-session-safe：Router 與本次 Session 已通過；跨 Codex／Claude／Gemini 的完整矩陣仍建議 smoke。**
+- **Restart-state-ready：是，state 已修復並可被 OneClick 辨識。**
+- **Restart-smoke-complete：否，尚未執行受控 stop/start 與外部 OAuth。**

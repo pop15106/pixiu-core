@@ -1,8 +1,8 @@
 # PixiuCore AI Workflow Convergence Implementation Plan
 
-- 執行狀態：整合完成、已驗證，待使用者核准後再決定是否提交／部署
+- 執行狀態：整合已進入 `master`，後續強化、Web 測試控制台與遠端交付由 `docs/superpowers/plans/2026-07-27-pixiucore-test-console.md` 追蹤
 - 整合基底：`origin/master` @ `b0bb5af`
-- 隔離工作區：DevSpace managed worktree（未修改原始 dirty checkout）
+- 執行歷程：先在 DevSpace managed worktree 整合與驗證，再於 2026-07-27 收斂至 `C:\PixiuCore` 的 `master`
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. The user explicitly prohibited agent teams and all subagents, so every step must run inline in the current session. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -178,13 +178,18 @@ Expected: no actionable findings.
 
 ## Verification Result
 
-- Integrated tests: `117` passed (`8` recap integration + `6` auto recap + `25` lazy loading + `62` DevSpace + `16` Core Evolution).
-- Canonical source cross-check: additional `41` deterministic/manual recap tests passed in the original source checkout.
-- Startup payload: `11,859 bytes / 264 lines`（limit `12,288 bytes`）.
-- Skill metadata: `87` Skills checked, `0` warnings.
-- Actual installed DevSpace `1.0.4`: all `14` patch points passed read-only compatibility inspection.
-- Syntax: Node `--check` and PowerShell parser passed.
-- Scans: `git diff --check`、conflict markers、changed-file credential patterns all passed.
+2026-07-27 重新驗證的直接測試入口：
+
+- Core Evolution：`16 / 16`。
+- Deterministic／Manual Recap：`41 / 41`。
+- Auto Recap：`6 / 6`。
+- Lazy Loading／Router／Skill Metadata：`30 / 30`。
+- DevSpace OneClick：`77 / 77`。
+- Web Test Console 契約：`10 / 10`。
+- Web API 真實整合：單模組與六步驟 `integration-all` 全部通過。
+- Startup payload：Codex `6,705 / 8,192 bytes`、Claude `3,939 / 6,144 bytes`、Gemini `3,963 / 6,144 bytes`。
+- Skill metadata：canonical `90`、portable `87`，均為 `0` warning；raw/effective collision 為 `87 / 0`。
+- Scans：`git diff --check`、conflict markers、changed-file credential patterns all passed。
 - Newly fixed integration defects:
   - canonical `母體/` recap paths were falsely classified as machine absolute paths by the generic sensitive-text detector; paths now use dedicated validation.
   - recent natural-language workflow phrases were not routed by the first Manifest version; progress、conversation、verification、Auto／Focus mode and impact-assessment routes now have regression coverage.
@@ -192,11 +197,11 @@ Expected: no actionable findings.
 
 ## Remaining Delivery Boundary
 
-- No Git commit, merge, push, installation or deployment was performed.
-- The integrated candidate remains in the isolated DevSpace worktree for user review.
-- The live MCP remains operational, but existing OneClick `settings.json`／`runtime.json` are already detached from the actual running DevSpace and tunnel processes.
-- Repository merge is safe only when it does not restart the current service. OneClick restart is a separate blocked maintenance step until state is reconciled.
-- Fresh-session smoke tests remain post-merge checks because `%USERPROFILE%\.pixiu-core` points directly at `C:\PixiuCore`.
+- OneClick `settings.json`／`runtime.json` 已透過 no-restart repair 與現行 DevSpace／Dev Tunnel 對齊，`status` 可驗證本機與公開 MCP、tunnel ID 與兩個 PID。
+- 受控 `stop → start → local health → public health → OAuth smoke` 尚未執行，因此只能證明目前服務健康與 state 可接管，不能宣告完整 restart smoke 已完成。
+- Router-first 啟動與本次 DevSpace Session 已實際運作；Codex、Claude、Gemini 各自重新開啟的完整 Fresh Session 矩陣仍屬營運 smoke。
+- Agent Learning 目前有 observation 與 verifier 基礎，但 consolidation、instinct promotion 與 Second Brain 索引仍是後續 Phase。
+- Git commit／push 與本輪 Web 測試控制台交付由 `docs/superpowers/plans/2026-07-27-pixiucore-test-console.md` 記錄，不再由本歷史整合計畫宣告。
 - Full compatibility evidence is recorded in `docs/architecture/pixiucore-merge-compatibility-assessment.md`.
 
 ## Self-Review Result
