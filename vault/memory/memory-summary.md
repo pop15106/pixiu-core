@@ -1,6 +1,6 @@
 ---
 type: memory
-readAt: session-init
+readAt: on-demand
 lastUpdated: 2026-07-13
 tags: [memory, pixiucore]
 ---

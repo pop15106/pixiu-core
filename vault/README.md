@@ -1,8 +1,8 @@
 ---
 type: vault-init
-alwaysApply: true
-readAt: session-start
-priority: highest
+alwaysApply: false
+readAt: on-demand
+priority: routing
 ---
 
 # Pixiu Vault — AI 知識庫初始化
@@ -13,9 +13,10 @@ priority: highest
 ## Init 讀取序列（每次 Session）
 
 ```
-1. vault/bootstrap/SESSION-BOOTSTRAP.md              ← 常駐硬閘門與降級規則
-2. vault/capabilities/capability-manifest.json       ← 依本次需求選最多 3 個能力
-3. Manifest 命中的 Skill／Context／Governance       ← 按需讀取
+1. vault/bootstrap/SESSION-BOOTSTRAP.md              ← 唯一常駐硬閘門與降級規則
+2. scripts/router/resolve-capabilities.js            ← 執行後取得最多 3 個能力與 filesToLoad
+3. Router 命中的 Skill／Context／Governance         ← 按需讀取
+4. Router 無法執行時才以 capability-manifest.json 降級
 ```
 
 以下內容不再每次 Session 自動全文載入：

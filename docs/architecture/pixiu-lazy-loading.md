@@ -11,11 +11,13 @@
   ↓
 vault/bootstrap/SESSION-BOOTSTRAP.md
   ↓
-vault/capabilities/capability-manifest.json
+執行 scripts/router/resolve-capabilities.js
   ↓
-最多 3 個 Capability
+最多 3 個 Capability 與 filesToLoad
   ↓
 命中的 Skill / Context / Governance
+
+Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引。Manifest 是磁碟資料源，不列入正常 Session 常駐內容。
 ```
 
 一般 Session 不再自動全文載入：
@@ -61,7 +63,7 @@ DevSpace 在「直接開啟 PixiuCore repository」時，也會同時發現：
 - 使用者全域 `~/.agents/skills`
 - worktree 內 `.agents/skills`
 
-因此 DevSpace 的 workspace metadata 仍會出現同名 collision。這是宿主 discovery 行為，不等於 Skill 全文進入 LLM Context。一般業務專案不含 PixiuCore 的 `.agents/skills`，只會使用全域入口。
+未套用補丁時，DevSpace 的 workspace metadata 會出現同名 collision；這是宿主 discovery 行為，不等於 Skill 全文進入 LLM Context。套用 Pixiu canonical suppression 後，主 checkout 的 raw collision 仍可量測為 87，但有效 discovery collision 為 0。一般業務專案不含 PixiuCore 的 `.agents/skills`，只會使用全域入口。
 
 DevSpace 1.0.4 的實際 discovery 實作位於 `dist/skills.js`。預設固定合併：
 
@@ -73,7 +75,9 @@ DevSpace 1.0.4 的實際 discovery 實作位於 `dist/skills.js`。預設固定�
 
 `DEVSPACE_SKILL_PATHS` 只有追加語意；DevSpace 1.0.4 沒有 project skill exclude 或覆寫預設 roots 的設定。
 
-OneClick 安裝器已加入版本鎖定補丁：只有當 `<workspace>/.agents/skills` 內每個 Skill 的名稱與 SHA-256 內容都被較早的全域來源完整涵蓋時，才略過 project-local 鏡像。若專案存在獨有 Skill，或同名 Skill 內容不同，該目錄仍正常載入。雜湊期間若檔案缺失或無法讀取則 fail-open 保留 project-local root，避免誤刪專案能力。這能消除 PixiuCore／worktree 的完全鏡像 collision，同時保留一般專案的局部 Skill 與覆寫能力。
+OneClick 安裝器已加入版本鎖定補丁：一般專案只有在 `<workspace>/.agents/skills` 內每個 Skill 的名稱與 SHA-256 內容都被較早來源完整涵蓋時，才略過 project-local 鏡像；若有獨有 Skill、同名不同內容或讀取失敗，均 fail-open 保留專案能力。
+
+PixiuCore 本體另有嚴格特例：workspace 必須存在 `vault/bootstrap/SESSION-BOOTSTRAP.md`，較早的全域 Skill root 實體路徑必須正是該 workspace 的 `skills/`，且 canonical 名稱全集涵蓋 `.agents/skills`。只有三項都成立，才把 `.agents/skills` 視為 portable 發佈層並略過，即使發佈內容有漂移也以 canonical `skills/` 為準。一般專案與非 canonical worktree 不套用此特例。
 
 ## 記憶策略
 
@@ -95,7 +99,8 @@ powershell -ExecutionPolicy Bypass -File scripts/performance/run-lazy-loading-te
 
 驗收門檻：
 
-- 啟動常駐內容不超過 12 KB
+- 啟動常駐內容不超過 8 KB；目前主 checkout 為 `6,705 bytes / 124 lines`
+- 報告同時顯示 raw collision 與套用 canonical suppression 後的 effective collision；目前為 `87 / 0`
 - Manifest 引用路徑全部存在
 - Skill YAML 警告為 0
 - 普通需求未命中時不載入 Skill

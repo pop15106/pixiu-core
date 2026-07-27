@@ -16,15 +16,36 @@ function read(relativePath) {
 function testStartupPayloadStaysBelowBudget() {
   const report = buildReport(core);
   assert.strictEqual(report.missingStartupFiles.length, 0);
-  assert.ok(report.startupFilesBytes <= 12288, `啟動內容過大：${report.startupFilesBytes} bytes`);
+  assert.ok(report.startupFilesBytes <= 8192, `啟動內容過大：${report.startupFilesBytes} bytes`);
 }
 
-function testEntryFilesDoNotRequireFullMemoryAtStartup() {
+function testEntryFilesUseRouterBeforeManifest() {
   for (const relativePath of ['AGENTS.md', 'CODEX.md', 'CLAUDE.md', 'GEMINI.md', '.codex/AGENTS.md']) {
     const content = read(relativePath);
     assert.doesNotMatch(content, /Session (?:開始|啟動).*memory-summary/i);
     assert.match(content, /SESSION-BOOTSTRAP\.md/);
-    assert.match(content, /capability-manifest\.json/);
+    assert.match(content, /resolve-capabilities\.js/);
+    assert.doesNotMatch(content, /(?:讀取|load)\s+`?vault\/capabilities\/capability-manifest\.json/i);
+  }
+}
+
+function testOnlyBootstrapKeepsAutoLoadMarkers() {
+  const bootstrap = read('vault/bootstrap/SESSION-BOOTSTRAP.md');
+  assert.match(bootstrap, /^alwaysApply:\s*true$/m);
+  assert.match(bootstrap, /^readAt:\s*session-start$/m);
+
+  for (const relativePath of [
+    'user_rules.md',
+    'vault/README.md',
+    'vault/identity/founder-profile.md',
+    'vault/identity/agent-persona.md',
+    'vault/memory/memory-summary.md',
+    'rules/common/prompt-engineering.md'
+  ]) {
+    const content = read(relativePath);
+    assert.doesNotMatch(content, /^alwaysApply:\s*true$/m, `${relativePath} 仍標記 alwaysApply`);
+    assert.doesNotMatch(content, /^readAt:\s*(?:session-start|session-init)$/m, `${relativePath} 仍標記 session auto-load`);
+    assert.doesNotMatch(content, /^trigger:\s*always_on$/m, `${relativePath} 仍標記 always_on`);
   }
 }
 
@@ -76,7 +97,9 @@ function testRecentWorkflowPhrasesRemainRoutable() {
     ['幫我收尾，跑驗證', 'code-review'],
     ['auto mode 自動放行', 'runtime-control'],
     ['focus mode 只看結果', 'runtime-control'],
-    ['確認不會影響現行操作跟功能', 'architecture-analysis']
+    ['確認不會影響現行操作跟功能', 'architecture-analysis'],
+    ['根據你對我的了解，整理我的偏好', 'identity-calibration'],
+    ['幫我優化這段 system prompt', 'prompt-engineering']
   ];
 
   for (const [request, expectedCapability] of cases) {
@@ -100,7 +123,8 @@ function testManifestUsesCanonicalSkillSources() {
 
 for (const test of [
   testStartupPayloadStaysBelowBudget,
-  testEntryFilesDoNotRequireFullMemoryAtStartup,
+  testEntryFilesUseRouterBeforeManifest,
+  testOnlyBootstrapKeepsAutoLoadMarkers,
   testBootstrapPreservesCoreInteractionContract,
   testManifestReferencesExistingFiles,
   testRepresentativeRoutes,

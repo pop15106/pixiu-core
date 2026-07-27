@@ -6,9 +6,9 @@
 
 1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
 2. 讀取 `vault/bootstrap/SESSION-BOOTSTRAP.md`。
-3. 讀取 `vault/capabilities/capability-manifest.json`，選擇最多 3 個 Capability。
-4. 只讀 Capability 指向的 Skill、Context 與 Governance 文件。
-5. 一般 Session 不全文讀取 `user_rules.md`、`memory-summary.md`、recap、全部 Skills、Workflows、Hooks 或 Agents。
+3. 執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
+4. 只讀 Router 回傳的 `filesToLoad`，Capability 最多 3 個。
+5. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引；一般 Session 不全文讀取 `user_rules.md`、`memory-summary.md`、recap、全部 Skills、Workflows、Hooks 或 Agents。
 
 `user_rules.md` 仍是 L0 憲法唯一來源；Bootstrap 只保留執行所需的硬閘門摘要。遇到衝突、例外或高風險操作時，再讀相關原文段落。
 

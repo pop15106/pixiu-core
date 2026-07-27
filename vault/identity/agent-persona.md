@@ -1,7 +1,7 @@
 ---
 type: identity
-alwaysApply: true
-readAt: session-init
+alwaysApply: false
+readAt: on-demand
 ---
 
 # Agent Persona — Pixiu AI 統一角色定義

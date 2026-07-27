@@ -1,7 +1,7 @@
 ---
 type: identity
-alwaysApply: true
-readAt: session-init
+alwaysApply: false
+readAt: on-demand
 ---
 
 # Founder Profile — 7010

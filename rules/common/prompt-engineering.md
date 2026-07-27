@@ -1,6 +1,7 @@
 ---
-trigger: always_on
-alwaysApply: true
+trigger: semantic
+alwaysApply: false
+readAt: on-demand
 ---
 
 # 🧠 Prompt Engineering Skill — 自動精煉模組

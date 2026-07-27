@@ -455,6 +455,19 @@ HTTP: {
     $unreadableSkill = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -Mode unreadable
     Assert-Equal $unreadableSkill ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'fails open when a project Skill cannot be read'
 
+    $pixiuWorkspace = Join-Path $skillFixture 'pixiu-core'
+    $pixiuCanonicalSkills = Join-Path $pixiuWorkspace 'skills'
+    $pixiuPortableSkills = Join-Path (Join-Path $pixiuWorkspace '.agents') 'skills'
+    New-Item -ItemType Directory -Path (Join-Path $pixiuWorkspace 'vault\bootstrap') -Force | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $pixiuWorkspace 'vault\bootstrap\SESSION-BOOTSTRAP.md'), '# bootstrap', [System.Text.UTF8Encoding]::new($false))
+    New-TestSkill -Root $pixiuCanonicalSkills -Name 'shared' -Content 'canonical content'
+    New-TestSkill -Root $pixiuCanonicalSkills -Name 'canonical-only' -Content 'canonical only'
+    New-TestSkill -Root $pixiuPortableSkills -Name 'shared' -Content 'portable publish drift'
+    Remove-Item -LiteralPath $globalSkills -Recurse -Force
+    New-Item -ItemType Junction -Path $globalSkills -Target $pixiuCanonicalSkills | Out-Null
+    $pixiuCanonicalResult = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $pixiuWorkspace -DevSpaceSkillsDirectory $globalSkills
+    Assert-Equal $pixiuCanonicalResult ([System.IO.Path]::GetFullPath($pixiuCanonicalSkills)) 'suppresses the PixiuCore portable publishing layer when canonical names cover it'
+
     Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'Subagent patch is idempotent'
     $patchManifest = Join-Path $fakePackageRoot '.devspace-oneclick-patch-manifest.json'
     Assert-Equal (Test-Path -LiteralPath $patchManifest) $true 'records original and patched hashes for safe restore'
