@@ -36,6 +36,87 @@
 - 查看全部或指定 Subagent 狀態：`07-SUBAGENT-STATUS.cmd [Agent ID]`
 - 停止卡住的 Subagent：`08-STOP-SUBAGENT.cmd [Agent ID]`
 - 服務仍正常但 OneClick 狀態失聯時安全接管：`09-REPAIR-STATE.cmd`
+- 安裝每 4 小時健康檢查：`10-INSTALL-WATCHDOG.cmd`
+- 查看 Watchdog 排程與最近結果：`11-WATCHDOG-STATUS.cmd`
+- 立即執行一次健康檢查：`12-RUN-WATCHDOG-NOW.cmd`
+- 移除 Watchdog 排程與本機設定：`13-REMOVE-WATCHDOG.cmd`
+
+## Windows Watchdog
+
+Watchdog 是獨立於 DevSpace MCP 的本機保護層。它會在目前使用者登入 Windows 時執行，之後每 4 小時檢查：
+
+1. `http://127.0.0.1:<OneClick port>/healthz`
+2. 最新 `settings.json` 對應的公開 Dev Tunnel `/healthz`
+
+只有回應同時包含 `ok=true` 與 `name=devspace` 才算健康。公開網址必須是設定 tunnel 查詢結果所對應的 HTTPS `devtunnels.ms` origin，不接受 `/mcp`、其他 path、query、fragment 或錯誤 port。
+
+### 安裝
+
+1. 先確認 `05-STATUS.cmd` 可讀取既有 OneClick 設定。
+2. 雙擊 `10-INSTALL-WATCHDOG.cmd`。
+3. 在本機視窗以遮蔽輸入既有 Telegram Bot Token，再輸入 Channel／Chat ID。
+4. 若同一個設定 tunnel ID 有重複 host，安裝器會列出精確 PID 與命令列；只有輸入 `YES` 才會受控停止 OneClick、整理精確匹配程序並重新啟動。
+5. 安裝完成後執行 `11-WATCHDOG-STATUS.cmd` 確認 task 與最近狀態。
+
+Windows Task 名稱固定為 `Pixiu DevSpace Watchdog`。它使用目前使用者的 Interactive Token 與最低權限執行，登入觸發加每 4 小時觸發，`MultipleInstances=IgnoreNew`、`StartWhenAvailable=true`，單次執行上限 10 分鐘。腳本本身另有 mutex 與 8 分鐘復原上限。
+
+### 自癒範圍
+
+本機或公開 health 任一失敗時，Watchdog 最多復原一次：
+
+1. 只執行 `devtunnel user show -j` 檢查登入。
+2. 未登入時停止並通知，不執行 `user login`，也不開啟瀏覽器。
+3. 以 `DEVSPACE_ONECLICK_NONINTERACTIVE=1` 呼叫既有 OneClick `stop`。
+4. OneClick 拒絕 PID／開始時間／listener 身分時立即停止，不強制關閉。
+5. 只清理由 `settings.json.tunnelId` 精確識別且在停止前再次驗證 PID、開始時間與命令列的殘留 `devtunnel host`。
+6. `host -p 8791`、其他 tunnel ID 或無法驗證的程序不會被處理。
+7. 呼叫 OneClick `start`，重讀 settings，再驗證本機與最新公開 `/healthz`。
+
+### Telegram 與資料保存
+
+本機狀態位於：
+
+```text
+%LOCALAPPDATA%\DevSpaceOneClick\watchdog\
+  config.json
+  state.json
+  watchdog.log
+```
+
+- `config.json` 只保存 Chat ID 與目前 Windows 使用者的 DPAPI ciphertext。
+- Watchdog 目錄與檔案 ACL 只允許目前使用者與 `SYSTEM`。
+- Bot Token 不會出現在 repository、Task Scheduler arguments、state 或 log。
+- 日誌為 UTF-8 JSON Lines，單檔 1 MiB 後輪替，最多保留 5 份。
+- 通知只在首次異常、錯誤分類改變與恢復時傳送；相同異常不重複通知。
+- `notify-connector-failure` 是固定入口，不接受任意錯誤文字、URL 或命令列參數，4 小時內會去重。
+
+### OAuth 與 Connector 邊界
+
+Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也不保存 ChatGPT token。OneClick 既有的 `DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT=1` 只代表 DevSpace 伺服器端可核准可識別的 ChatGPT 流程，不是密碼或登入自動化。
+
+本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`；重新登入必須由使用者在 UI 人工完成。
+
+### 錯誤分類
+
+| 分類 | 意義 | 處理方式 |
+|---|---|---|
+| `SettingsMissing` | OneClick settings 不存在 | 先完成 OneClick 安裝 |
+| `SettingsInvalid` | settings 格式、machine、port 或 origin 不合法 | 使用 `05-STATUS.cmd`／`09-REPAIR-STATE.cmd` 檢查 |
+| `LocalHealthFailed` | 本機 DevSpace 未 ready | Watchdog 嘗試一次受控復原 |
+| `PublicOriginInvalid` | 公開 origin 與 tunnel 查詢結果不一致 | 檢查舊 App URL 與 OneClick settings |
+| `PublicHealthFailed` | 公開 tunnel health 失敗 | Watchdog 嘗試一次受控復原 |
+| `DevTunnelNotLoggedIn` | Microsoft Dev Tunnel 已登出 | 使用者人工執行 OneClick 並完成登入 |
+| `OneClickStopRefused` | runtime 程序身分驗證不符 | 不強制停止；先人工檢查 |
+| `TunnelProcessMismatch` | 殘留程序重新驗證失敗 | 不停止該程序；先人工檢查 |
+| `OneClickStartFailed` | OneClick 啟動失敗 | 查看 OneClick log |
+| `PostRecoveryHealthFailed` | 復原後 health 仍未通過 | 不進行第二次復原 |
+| `ConnectorFailure` | DevSpace Secure／OAuth 端對端失敗 | 人工重新連線與 OAuth |
+| `MutexBusy` | 另一個 Watchdog 正在執行 | 本次直接略過 |
+| `RunTimedOut` | 復原超過 8 分鐘 | 停止後續副作用 |
+
+### 移除
+
+雙擊 `13-REMOVE-WATCHDOG.cmd`，輸入 `REMOVE` 後，只會移除固定 task `Pixiu DevSpace Watchdog` 與 `%LOCALAPPDATA%\DevSpaceOneClick\watchdog`。它不會停止 DevSpace、不會刪除 OneClick settings、Owner password、allowed roots 或其他 Dev Tunnel。
 
 ## Subagent delegation
 
