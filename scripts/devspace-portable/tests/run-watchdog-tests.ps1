@@ -962,6 +962,27 @@ try {
         Assert-Equal $taskSpec.ExecutionTimeLimit.TotalMinutes 10 'bounds Task Scheduler execution'
         Assert-Equal $taskSpec.Arguments.Contains('telegram') $false 'does not place Telegram data in task arguments'
 
+        $accountMatcher = Get-Command Test-WatchdogAccountIdentity -ErrorAction SilentlyContinue
+        if (-not $accountMatcher) {
+            Write-Host '[FAIL] matches Task Scheduler account identities by Windows SID' -ForegroundColor Red
+            Write-Host '  missing: Test-WatchdogAccountIdentity'
+            $script:Failed++
+        }
+        else {
+            $currentAccount = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+            $currentShortAccount = ($currentAccount -split '\\')[-1]
+            Assert-Equal (
+                Test-WatchdogAccountIdentity `
+                    -ActualIdentity $currentShortAccount `
+                    -ExpectedIdentity $currentAccount
+            ) $true 'accepts Task Scheduler local-account normalization'
+            Assert-Equal (
+                Test-WatchdogAccountIdentity `
+                    -ActualIdentity 'definitely-not-the-current-account' `
+                    -ExpectedIdentity $currentAccount
+            ) $false 'rejects a different Task Scheduler account'
+        }
+
         $taskLifecycleEvents = [System.Collections.Generic.List[string]]::new()
         Install-WatchdogTask `
             -TaskSpec $taskSpec `
