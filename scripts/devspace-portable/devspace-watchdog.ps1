@@ -354,19 +354,63 @@ function Set-WatchdogAcl {
     )
 
     $userSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
-    $directoryAcl = New-WatchdogSecurityDescriptor -UserSid $userSid
-    Set-Acl -LiteralPath $DirectoryPath -AclObject $directoryAcl
+    $systemSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-18')
+    $accessSection = [Security.AccessControl.AccessControlSections]::Access
+
+    $directory = Get-Item -LiteralPath $DirectoryPath -ErrorAction Stop
+    if (-not $directory.PSIsContainer) {
+        throw "Watchdog ACL directory target is invalid: $DirectoryPath"
+    }
+    $directoryAcl = $directory.GetAccessControl($accessSection)
+    $directoryAcl.SetAccessRuleProtection($true, $false)
+    $directoryRuleSids = @(
+        $directoryAcl.GetAccessRules(
+            $true,
+            $true,
+            [Security.Principal.SecurityIdentifier]
+        ) |
+            ForEach-Object { $_.IdentityReference } |
+            Sort-Object -Property Value -Unique
+    )
+    foreach ($sid in $directoryRuleSids) {
+        $directoryAcl.PurgeAccessRules($sid)
+    }
+    $inheritance = (
+        [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+        [Security.AccessControl.InheritanceFlags]::ObjectInherit
+    )
+    foreach ($sid in @($userSid, $systemSid)) {
+        $rule = [Security.AccessControl.FileSystemAccessRule]::new(
+            $sid,
+            [Security.AccessControl.FileSystemRights]::FullControl,
+            $inheritance,
+            [Security.AccessControl.PropagationFlags]::None,
+            [Security.AccessControl.AccessControlType]::Allow
+        )
+        [void]$directoryAcl.AddAccessRule($rule)
+    }
+    $directory.SetAccessControl($directoryAcl)
 
     foreach ($filePath in @($FilePaths)) {
         if (-not (Test-Path -LiteralPath $filePath -PathType Leaf)) {
             throw "Watchdog ACL target is missing: $filePath"
         }
-        $fileAcl = [Security.AccessControl.FileSecurity]::new()
+        $file = Get-Item -LiteralPath $filePath -ErrorAction Stop
+        $fileAcl = $file.GetAccessControl($accessSection)
         $fileAcl.SetAccessRuleProtection($true, $false)
-        foreach ($sid in @(
-            $userSid,
-            [Security.Principal.SecurityIdentifier]::new('S-1-5-18')
-        )) {
+        $fileRuleSids = @(
+            $fileAcl.GetAccessRules(
+                $true,
+                $true,
+                [Security.Principal.SecurityIdentifier]
+            ) |
+                ForEach-Object { $_.IdentityReference } |
+                Sort-Object -Property Value -Unique
+        )
+        foreach ($sid in $fileRuleSids) {
+            $fileAcl.PurgeAccessRules($sid)
+        }
+        foreach ($sid in @($userSid, $systemSid)) {
             $rule = [Security.AccessControl.FileSystemAccessRule]::new(
                 $sid,
                 [Security.AccessControl.FileSystemRights]::FullControl,
@@ -374,7 +418,7 @@ function Set-WatchdogAcl {
             )
             [void]$fileAcl.AddAccessRule($rule)
         }
-        Set-Acl -LiteralPath $filePath -AclObject $fileAcl
+        $file.SetAccessControl($fileAcl)
     }
 }
 
