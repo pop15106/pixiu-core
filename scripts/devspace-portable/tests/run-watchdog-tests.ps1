@@ -383,6 +383,37 @@ try {
             $currentSid.Value
         ) 'applies the restricted ACL to Watchdog files'
 
+        $aclNoPrivilegeRoot = Join-Path $testRoot 'acl-no-privilege-root'
+        New-Item -ItemType Directory -Path $aclNoPrivilegeRoot -Force | Out-Null
+        $aclNoPrivilegeFile = Join-Path $aclNoPrivilegeRoot 'config.json'
+        [System.IO.File]::WriteAllText(
+            $aclNoPrivilegeFile,
+            '{}',
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        Set-Item -LiteralPath 'Function:\Set-Acl' -Value {
+            throw [Security.AccessControl.PrivilegeNotHeldException]::new(
+                'SeSecurityPrivilege is unavailable.'
+            )
+        }
+        try {
+            try {
+                Set-WatchdogAcl `
+                    -DirectoryPath $aclNoPrivilegeRoot `
+                    -FilePaths @($aclNoPrivilegeFile)
+                Write-Host '[PASS] applies Watchdog DACL without Set-Acl security privilege' -ForegroundColor Green
+                $script:Passed++
+            }
+            catch {
+                Write-Host '[FAIL] applies Watchdog DACL without Set-Acl security privilege' -ForegroundColor Red
+                Write-Host "  error type: $($_.Exception.GetType().FullName)"
+                $script:Failed++
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath 'Function:\Set-Acl' -ErrorAction SilentlyContinue
+        }
+
         $logPath = Join-Path $testRoot 'watchdog.log'
         $logPaths = [pscustomobject]@{ LogPath = $logPath }
         Write-WatchdogLog `
