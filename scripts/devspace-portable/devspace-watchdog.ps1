@@ -1395,6 +1395,39 @@ function New-WatchdogTaskSpec {
     }
 }
 
+function Test-WatchdogAccountIdentity {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ActualIdentity,
+        [Parameter(Mandatory = $true)][string]$ExpectedIdentity
+    )
+
+    if ([string]::Equals(
+        $ActualIdentity,
+        $ExpectedIdentity,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+        return $true
+    }
+
+    try {
+        $actualSid = (
+            [Security.Principal.NTAccount]::new($ActualIdentity)
+        ).Translate([Security.Principal.SecurityIdentifier])
+        $expectedSid = (
+            [Security.Principal.NTAccount]::new($ExpectedIdentity)
+        ).Translate([Security.Principal.SecurityIdentifier])
+    }
+    catch {
+        return $false
+    }
+    return [string]::Equals(
+        [string]$actualSid.Value,
+        [string]$expectedSid.Value,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )
+}
+
 function Assert-WatchdogTaskMatchesSpec {
     [CmdletBinding()]
     param(
@@ -1416,11 +1449,9 @@ function Assert-WatchdogTaskMatchesSpec {
         ([double]$Task.ExecutionTimeLimitMinutes -eq 10),
         ([string]$Task.RunLevel -eq 'Limited'),
         ([string]$Task.LogonType -eq 'Interactive'),
-        [string]::Equals(
-            [string]$Task.UserId,
-            [string]$TaskSpec.UserId,
-            [System.StringComparison]::OrdinalIgnoreCase
-        )
+        (Test-WatchdogAccountIdentity `
+            -ActualIdentity ([string]$Task.UserId) `
+            -ExpectedIdentity ([string]$TaskSpec.UserId))
     )
     if ($checks -contains $false) {
         throw 'Watchdog task read-back does not match the required safe specification.'
