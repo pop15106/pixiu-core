@@ -271,6 +271,10 @@ function Ensure-DevTunnelLogin {
     catch {
     }
 
+    if ($env:DEVSPACE_ONECLICK_NONINTERACTIVE -eq '1') {
+        throw 'Microsoft Dev Tunnel is not logged in. Interactive login is required.'
+    }
+
     Write-PlatformInfo 'A browser will open for Microsoft Dev Tunnel login.'
     & $DevTunnel user login | Out-Host
     if ($LASTEXITCODE -ne 0) {

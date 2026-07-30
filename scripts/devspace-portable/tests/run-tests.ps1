@@ -142,6 +142,31 @@ try {
     Assert-Equal $mergedConfig.port 7678 'persists the selected port'
     Assert-Equal $existingConfig.port 7000 'does not mutate the input config'
 
+    $loginMarker = Join-Path $testRoot 'unexpected-devtunnel-login.marker'
+    $fakeLoggedOutDevTunnel = Join-Path $testRoot 'fake-logged-out-devtunnel.cmd'
+    $fakeLoggedOutDevTunnelContent = @"
+@echo off
+if "%1"=="user" if "%2"=="show" echo {"status":"Logged out"}& exit /b 0
+if "%1"=="user" if "%2"=="login" type nul > "$loginMarker"& exit /b 0
+exit /b 2
+"@
+    [System.IO.File]::WriteAllText(
+        $fakeLoggedOutDevTunnel,
+        $fakeLoggedOutDevTunnelContent,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    $previousNonInteractive = $env:DEVSPACE_ONECLICK_NONINTERACTIVE
+    try {
+        $env:DEVSPACE_ONECLICK_NONINTERACTIVE = '1'
+        Assert-Throws {
+            Ensure-DevTunnelLogin -DevTunnel $fakeLoggedOutDevTunnel
+        } 'non-interactive login check refuses browser login'
+        Assert-Equal (Test-Path -LiteralPath $loginMarker) $false 'non-interactive login check never invokes user login'
+    }
+    finally {
+        $env:DEVSPACE_ONECLICK_NONINTERACTIVE = $previousNonInteractive
+    }
+
     $fakeDevTunnel = Join-Path $testRoot 'fake-devtunnel.cmd'
     $fakeDevTunnelContent = @"
 @echo off
