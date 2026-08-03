@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-28T02:00:00.000Z",
+  "sourceOfTruth": "vault-markdown",
+  "includes": [
+    "verified observations",
+    "verifier reports",
+    "instincts",
+    "promote candidates"
+  ],
+  "excludes": [
+    "consolidation-runs",
+    "unverified observations"
+  ],
+  "documents": [
+    {
+      "type": "agent-instinct",
+      "path": "vault/memory/agent-learning/instincts/2026-07-28-effective-state-readback.md",
+      "sha256": "3f7fc3d52c6ca6fa1107096923efd9e02aedbed1711b307c8ee8267745c56882",
+      "date": "2026-07-28",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "effective-state-readback",
+      "status": "active"
+    },
+    {
+      "type": "agent-observation",
+      "path": "vault/memory/agent-learning/observations/2026-07-26-pixiucore-entry-file-conflicts-need-observation.md",
+      "sha256": "1df773417237482fa5ca5e46fbbe8f94c8c2347c4dafa78e5166f2fb085948d1",
+      "date": "2026-07-26",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "entry-file-conflicts-need-observation",
+      "status": "verified"
+    },
+    {
+      "type": "agent-observation",
+      "path": "vault/memory/agent-learning/observations/2026-07-26-pixiucore-hook-config-needs-readback.md",
+      "sha256": "62e74fd4909c999dab9ec88af300dedf3346c1e69466d05640948de2b27e4291",
+      "date": "2026-07-26",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "hook-config-needs-readback",
+      "status": "verified"
+    },
+    {
+      "type": "agent-observation",
+      "path": "vault/memory/agent-learning/observations/2026-07-26-pixiucore-hook-state-is-not-learning-evidence.md",
+      "sha256": "319d2a50dfbae654c35aee6517732233c4961713b423c31540b84d5ef355317f",
+      "date": "2026-07-26",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "hook-state-is-not-learning-evidence",
+      "status": "verified"
+    },
+    {
+      "type": "agent-promote-candidate",
+      "path": "vault/memory/agent-learning/promote-candidates/2026-07-28-effective-state-readback-candidate.md",
+      "sha256": "4c97a684ee79babd71f725d2c0769a86c0c08342a01d5cc310cd8c4e79da9ecc",
+      "date": "2026-07-28",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "effective-state-readback",
+      "status": "needs-approval"
+    },
+    {
+      "type": "agent-verifier-report",
+      "path": "vault/memory/agent-learning/verifier-reports/2026-07-26-entry-file-conflicts-need-observation-verification.md",
+      "sha256": "cea1fb3ee36a46b129ac26e8932576ab7ce020671165ce71b82e57229f8c526c",
+      "date": "2026-07-28",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "entry-file-conflicts-need-observation",
+      "status": "pass"
+    },
+    {
+      "type": "agent-verifier-report",
+      "path": "vault/memory/agent-learning/verifier-reports/2026-07-26-hook-config-needs-readback-verification.md",
+      "sha256": "c02ea54746d2d6c8a19d2c0f80c2858dcf09ce122554f64dbc600eee513e9018",
+      "date": "2026-07-28",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "hook-config-needs-readback",
+      "status": "pass"
+    },
+    {
+      "type": "agent-verifier-report",
+      "path": "vault/memory/agent-learning/verifier-reports/2026-07-26-hook-state-is-not-learning-evidence-verification.md",
+      "sha256": "6e2921478283de0656132555d2baca24a88013aa96da8dbdd6295dab95385ef1",
+      "date": "2026-07-28",
+      "project": "PIXIUCORE",
+      "system": "PIXIUCORE",
+      "repo": "pixiu-core",
+      "topic": "hook-state-is-not-learning-evidence",
+      "status": "pass"
+    }
+  ]
+}

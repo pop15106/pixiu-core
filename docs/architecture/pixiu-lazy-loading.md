@@ -79,6 +79,10 @@ OneClick 安裝器已加入版本鎖定補丁：一般專案只有在 `<workspac
 
 PixiuCore 本體另有嚴格特例：workspace 必須存在 `vault/bootstrap/SESSION-BOOTSTRAP.md`，較早的全域 Skill root 實體路徑必須正是該 workspace 的 `skills/`，且 canonical 名稱全集涵蓋 `.agents/skills`。只有三項都成立，才把 `.agents/skills` 視為 portable 發佈層並略過，即使發佈內容有漂移也以 canonical `skills/` 為準。一般專案與非 canonical worktree 不套用此特例。
 
+## 使用者層入口
+
+`~/.codex/AGENTS.md`、`~/.claude/CLAUDE.md` 與 `~/.gemini/GEMINI.md` 是可能漂移的獨立副本，不視為母體單一真源。以 `scripts/entry-sync/` 產生短橋接入口，讓使用者層檔案只負責解析母體、讀取 repo 入口與執行 Router；junction、Hook bridge 與 DevSpace 補丁只做唯讀檢查，不由同步工具修改。完整模型與安全流程見 `docs/architecture/pixiu-global-entry-live-bindings.md`。
+
 ## 記憶策略
 
 Session 啟動只在需要跨 Session 資訊時讀：

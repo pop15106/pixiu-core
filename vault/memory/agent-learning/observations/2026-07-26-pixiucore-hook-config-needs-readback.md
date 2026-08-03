@@ -5,7 +5,7 @@ project: PIXIUCORE
 system: PIXIUCORE
 repo: pixiu-core
 topic: hook-config-needs-readback
-status: candidate
+status: verified
 scope: project
 source_session: retrospective-from-vault
 summary: Repo hook files alone were not enough to explain live Claude hook behavior during the 2026-07 governance repair cycle.
@@ -16,7 +16,7 @@ source_paths:
 related_notes:
   - vault/context/agent-metacognition-memory-system-plan.md
 confidence: 0.55
-verified: false
+verified: true
 ---
 
 # Observation - Hook Config Needs Readback
@@ -50,6 +50,7 @@ verified: false
 
 ## Verification
 
-- verifier: manual checklist pending
-- result: needs-review
-- notes: 還需要下一筆可獨立驗證案例，才能判斷這是否該升格為 instinct。
+- verifier: codex-manual-review
+- result: pass
+- destination: instinct
+- notes: 來源可回讀，repo 與生效設定的雙來源結論有直接證據。

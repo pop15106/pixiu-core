@@ -16,6 +16,18 @@ try {
     node scripts/skills/validate-skill-metadata.test.js
     if ($LASTEXITCODE -ne 0) { throw 'Skill metadata unit tests failed.' }
 
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/entry-sync/tests/run-tests.ps1
+    if ($LASTEXITCODE -ne 0) { throw 'Global entry sync tests failed.' }
+
+    node --test scripts/agent-learning/agent-learning.test.js
+    if ($LASTEXITCODE -ne 0) { throw 'Agent Learning tests failed.' }
+
+    node --test scripts/setup/install-to-codex.test.js
+    if ($LASTEXITCODE -ne 0) { throw 'Codex Hook installer tests failed.' }
+
+    node --test scripts/setup/codex-project-config.test.js
+    if ($LASTEXITCODE -ne 0) { throw 'Codex project config tests failed.' }
+
     node scripts/skills/validate-skill-metadata.js skills
     if ($LASTEXITCODE -ne 0) { throw 'Canonical Skill metadata validation failed.' }
 

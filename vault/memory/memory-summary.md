@@ -1,7 +1,7 @@
 ---
 type: memory
 readAt: on-demand
-lastUpdated: 2026-07-27
+lastUpdated: 2026-07-30
 tags: [memory, pixiucore]
 ---
 
@@ -24,6 +24,13 @@ tags: [memory, pixiucore]
 
 | 日期 | 狀態 | 主題 | 摘要 | 連結 |
 |---|---|---|---|---|
+| 2026-07-30 | 已完成 | Side Effect Receipt Gate 完成與推送 | Side Effect Receipt Runtime P0 Gate 已完成驗證與推送，遠端 main 基線為 a486ebe，下一步接續 Key Ring Rotation 或 Artifact Evidence。 | [[vault/memory/recaps/NEED_TO_KNOW_AI/2026-07/2026-07-30-NEED_TO_KNOW_AI-side-effect-receipt-gate.md\|recap]] |
+| 2026-07-28 | 部分完成 | PixiuCore AI 工作流 1 至 5 執行 | Workflow Lab 真實 Codex 角色鏈與 Agent Learning Phase 3–5 已完成；全域入口套用、受控重啟、Claude／Gemini Fresh Session 與 Git 交付仍受外部環境邊界阻擋。 | [[vault/memory/recaps/母體/2026-07/2026-07-28-母體-AI工作流1至5執行.md\|recap]] |
+| 2026-07-28 | 追蹤中 | PixiuCore AI 工作流未完成盤點 | 本機核心與測試全綠；待完成全域入口套用與提交、Workflow Lab 合併與 Live smoke、受控重啟 OAuth、Agent Learning 後續與第二大腦 live 驗證。 | [[vault/memory/recaps/母體/2026-07/2026-07-28-母體-AI工作流未完成盤點.md\|recap]] |
+| 2026-07-28 | 已驗證 | Crypto Market Signal Phase 2 完成驗證 | Phase 2 本機功能與安全驗證完成，Codex OAuth canary 已對齊指定模型並通過；Polymarket live canary 仍受本機 DNS 與 TLS 信任鏈攔截。 | [[vault/memory/recaps/CRYPTO_MARKET_SIGNAL/2026-07/2026-07-28-CRYPTO_MARKET_SIGNAL-Phase2完成驗證.md\|recap]] |
+| 2026-07-27 | 追蹤中 | Crypto Market Signal Phase 2 完成與後續缺口 | Phase 2 新聞、Codex OAuth 分析覆核、受保護 API 與 Telegram long polling 已驗證；尚缺 Phase 1 真實資料與 V2 契約、Phase 3 前端 E2E，以及本地 commit | [[vault/memory/recaps/CRYPTO_MARKET_SIGNAL/2026-07/2026-07-27-CRYPTO_MARKET_SIGNAL-Phase2完成與後續缺口\|recap]] |
+| 2026-07-27 | 追蹤中 | Bruno Telegram Live Bridge | 正式白名單、Codex CLI OAuth 回覆與真實 inbound E2E 已通過；只剩 Windows Task Scheduler 實際安裝 | [[vault/memory/recaps/BRUNO_BUTLER/2026-07/2026-07-27-BRUNO_BUTLER-Telegram-live-bridge\|recap]] |
+| 2026-07-27 | 追蹤中 | Bruno Butler 離線核心驗證與提交待辦 | 離線核心、GPS／OwnTracks 與品質閘門全綠；僅剩本地 Git commit，真實外部部署維持未啟用 | [[vault/memory/recaps/BRUNO_BUTLER/2026-07/2026-07-27-BRUNO_BUTLER-離線核心驗證與提交待辦\|recap]] |
 | 2026-07-27 | 已完成並推送；重啟 smoke 待維護窗口 | AI Workflow 收斂＋Web 測試控制台 | Router-first Lazy Loading、Manual Recap deterministic capture、Agent Learning Phase 1/2、OneClick no-restart state repair 已進入 master；新增 localhost Web UI，可分別執行六模組與完整整合測試。最新直接驗證：Core 16/16、Manual 41/41、Auto 6/6、Lazy 30/30、OneClick 77/77、Console 10/10、Web API integration 全綠；尚待受控 stop/start＋OAuth smoke 與跨工具 Fresh Session 矩陣 | [[docs/superpowers/specs/2026-07-27-pixiucore-test-console-design\|測試控制台設計]] |
 | 2026-07-07 | 已完成 | Codex 治理對齊＋合併上 master＋日結時序修正 | Codex 端四道 guardrails 確認全註冊（走 bridge 呼叫母體同一份 js，今天修的版本自動生效）；本輪工作合併回 master（雙向分歧 6 vs 17，用 -X theirs 保住 cybersecurity 754 skills＋架構圖，可攜性閘門過）；daily-digest prompt 修時序（改掃昨天＋強制實掃＋去識別化），治掉普遍誤判「無來源」 | [[skills/INDEX\|skills 分層]] |
 | 2026-07-05 | 已完成 | Governance 覆核＋hook 攔截鏈修復 | fresh-context 覆核通過；auto-recap 跨日單檔＋去識別化（測試 6/6）；guardrails 補密鑰樣式＋PowerShell、secret-scan／mothership-sync 兩個死 hook 修活（tool_response 正確欄位＋JSON decision 回饋）；實測打通 auto-mode 閘門（斷點：settings.json 副本漂移）；alignment 第 5 節新增 hook 副本對照；skills 分層完成（8 常駐＋81 參考層 disable-model-invocation）＋`skills/INDEX.md` 單一真源索引 | [[2026-07-05-PIXIUCORE-claude-code-hooks-effective-config-is-settings-json\|observation]] |

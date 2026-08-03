@@ -5,7 +5,7 @@ project: PIXIUCORE
 system: PIXIUCORE
 repo: pixiu-core
 topic: entry-file-conflicts-need-observation
-status: candidate
+status: verified
 scope: project
 source_session: retrospective-from-vault
 summary: Governance explicitly requires entry-file conflicts to be captured as observations instead of being silently normalized.
@@ -17,7 +17,7 @@ source_paths:
 related_notes:
   - vault/context/agent-metacognition-memory-system-plan.md
 confidence: 0.47
-verified: false
+verified: true
 ---
 
 # Observation - Entry File Conflicts Need Observation
@@ -51,6 +51,7 @@ PixiuCore 同時存在多個入口檔與治理檔。2026-07 的 alignment 文件
 
 ## Verification
 
-- verifier: manual checklist pending
-- result: needs-review
-- notes: 還需要更多跨入口、可回查的實例，才能決定是否升級成 instinct 或 decision。
+- verifier: codex-manual-review
+- result: pass
+- destination: instinct
+- notes: 治理來源可回讀，衝突處理範圍與升格邊界明確。

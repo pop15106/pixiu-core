@@ -5,7 +5,7 @@ project: PIXIUCORE
 system: PIXIUCORE
 repo: pixiu-core
 topic: hook-state-is-not-learning-evidence
-status: candidate
+status: verified
 scope: project
 source_session: retrospective-from-vault
 summary: July 2026 governance notes consistently treat hook-state as machine state to exclude from search, indexing, and agent-learning evidence.
@@ -18,7 +18,7 @@ source_paths:
 related_notes:
   - vault/context/agent-metacognition-memory-system-plan.md
 confidence: 0.58
-verified: false
+verified: true
 ---
 
 # Observation - Hook State Is Not Learning Evidence
@@ -52,6 +52,7 @@ verified: false
 
 ## Verification
 
-- verifier: manual checklist pending
-- result: needs-review
-- notes: 需再確認這個候選 observation 是否應被視為專案內規則，或只是治理層的一次性修復結論。
+- verifier: codex-manual-review
+- result: pass
+- destination: instinct
+- notes: 治理文件一致排除 hook-state，沒有把機器狀態誤寫成知識。

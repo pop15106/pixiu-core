@@ -161,6 +161,16 @@ node scripts/test-console/server.js --open
 
 預設網址為 `http://127.0.0.1:8787`。控制台不新增 npm 依賴、只監聽 loopback，且瀏覽器只能呼叫固定白名單模組，不能傳入任意命令。完整使用方式與自動測試入口見 `scripts/test-console/README.md`。
 
+## Workflow Lab
+
+角色型 Workflow Lab 可輸入需求或商業邏輯，分別執行轉譯器、PM、SA、SD、PG、QA、檢核官、文件、Need-to-Know 與人工核准，也能勾選部分流程或執行完整 AI SDLC：
+
+```powershell
+node scripts/workflow-lab/server.js --open
+```
+
+預設網址為 `http://127.0.0.1:8792`。Offline Contract 不呼叫模型；Live Smoke 會為每個角色建立獨立 `codex exec --ephemeral` Session，PG 只有在人工核准後才能建立隔離 Worktree，且一律禁止 Push、Merge、Deploy、DB 寫入與依賴變更。完整模組、單模組 Fixture、RED 退回、安全與測試方式見 `scripts/workflow-lab/README.md`。
+
 ## 維護原則
 
 - 不直接整包載入母體，只讀任務需要的 rules、skills、memory、context。
