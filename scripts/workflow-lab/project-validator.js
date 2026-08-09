@@ -49,21 +49,47 @@ function isPathInside(root, target) {
     && !path.isAbsolute(relative);
 }
 
+function splitConfiguredPaths(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return [];
+  }
+  return value
+    .split(path.delimiter)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function normalizeAllowedRoots(values) {
+  const homePath = fs.existsSync(os.homedir())
+    ? fs.realpathSync.native(os.homedir())
+    : path.resolve(os.homedir());
+  return values
+    .filter((root) => typeof root === 'string' && fs.existsSync(root))
+    .map((root) => fs.realpathSync.native(path.resolve(root)))
+    .filter((root) => root !== path.parse(root).root && root !== homePath);
+}
+
 function createProjectValidator(options = {}) {
+  const environment = options.environment || process.env;
+  const repoRoot = path.resolve(options.repoRoot || path.join(__dirname, '..', '..'));
   const defaultAllowedProjects = [
-    process.env.PIXIU_CORE,
-    process.env.PIXIU_CORE_PATH,
-    'C:\\PixiuCore'
+    environment.PIXIU_CORE,
+    environment.PIXIU_CORE_PATH,
+    repoRoot
   ].filter(Boolean);
-  const allowedProjectInputs = options.allowedProjects || defaultAllowedProjects;
-  const allowedRootInputs = options.allowedRoots || ['D:\\Project'];
+  const configuredProjectRoots = splitConfiguredPaths(environment.PIXIU_PROJECT_ROOTS);
+  const defaultAllowedRoots = configuredProjectRoots.length > 0
+    ? configuredProjectRoots
+    : ['D:\\Project'];
+  const allowedProjectInputs = options.allowedProjects ?? defaultAllowedProjects;
+  const allowedRootInputs = options.allowedRoots ?? defaultAllowedRoots;
   const allowedProjects = allowedProjectInputs
     .filter((project) => typeof project === 'string' && fs.existsSync(project))
     .map((project) => fs.realpathSync.native(path.resolve(project)));
-  const allowedRoots = allowedRootInputs
-    .filter((root) => typeof root === 'string' && fs.existsSync(root))
-    .map((root) => fs.realpathSync.native(path.resolve(root)));
-  const fleetPath = options.fleetPath || path.join(process.env.PIXIU_CORE || 'C:\\PixiuCore', 'fleet.json');
+  const allowedRoots = normalizeAllowedRoots(allowedRootInputs);
+  const defaultCorePath = defaultAllowedProjects
+    .find((candidate) => typeof candidate === 'string' && fs.existsSync(candidate)) || repoRoot;
+  const fleetPath = options.fleetPath || path.join(defaultCorePath, 'fleet.json');
   const gitRunner = options.gitRunner || defaultGitRunner;
 
   function ensureAllowed(targetPath) {

@@ -198,10 +198,18 @@ Workflow Lab 不提供：
 Live Smoke 可：
 
 1. 從 `fleet.json` 選擇專案。
-2. 輸入明確允許的 `C:\PixiuCore`。
-3. 輸入 `D:\Project` 下的具體專案路徑。
+2. 輸入目前 Workflow Lab 所在的 PixiuCore repo，或 `PIXIU_CORE`／`PIXIU_CORE_PATH` 指向的母體。
+3. 輸入 `PIXIU_PROJECT_ROOTS` 白名單根目錄下的具體專案路徑；多個根目錄使用作業系統的 path delimiter 分隔（Windows 為 `;`）。
 
-磁碟根目錄、整個使用者家目錄、允許根目錄本身與範圍外路徑都會被拒絕。
+例如 Windows PowerShell：
+
+```powershell
+$env:PIXIU_CORE = 'E:\AI\PixiuCore'
+$env:PIXIU_PROJECT_ROOTS = 'E:\Work;F:\Repos'
+node scripts/workflow-lab/server.js --open
+```
+
+未設定 `PIXIU_PROJECT_ROOTS` 時，若本機存在 `D:\Project`，仍保留舊版相容行為。磁碟根目錄、整個使用者家目錄、允許根目錄本身與範圍外路徑都會被拒絕。
 
 ## Artifact 與 Log
 
