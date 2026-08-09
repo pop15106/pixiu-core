@@ -477,8 +477,30 @@ HTTP: {
     Assert-Equal $differentContent ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'keeps same-name project Skills whose SHA-256 differs'
 
     [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'global content', [System.Text.UTF8Encoding]::new($false))
+    $explicitProjectRoot = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($projectSkills)
+    Assert-Equal $explicitProjectRoot $canonicalGlobalSkills 'explicit config.skillPaths cannot re-add an exact project mirror'
+
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'project override', [System.Text.UTF8Encoding]::new($false))
+    $caseAlias = $projectSkills.ToUpperInvariant()
+    $caseDeduped = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($caseAlias)
+    Assert-Equal $caseDeduped ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'deduplicates case-only project root aliases'
+
+    $junctionAlias = Join-Path $skillFixture 'project-skills-junction'
+    New-Item -ItemType Junction -Path $junctionAlias -Target $projectSkills | Out-Null
+    $junctionDeduped = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($junctionAlias)
+    Assert-Equal $junctionDeduped ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'deduplicates junction aliases without losing project priority'
+
+    $notARoot = Join-Path $skillFixture 'not-a-skill-root'
+    [System.IO.File]::WriteAllText($notARoot, 'not a directory', [System.Text.UTF8Encoding]::new($false))
+    $fileRoot = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($notARoot)
+    Assert-Equal $fileRoot ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'ignores a configured file path without interrupting discovery'
+
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'global content', [System.Text.UTF8Encoding]::new($false))
     $unreadableSkill = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -Mode unreadable
     Assert-Equal $unreadableSkill ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'fails open when a project Skill cannot be read'
+
+    $missingDuringDiscovery = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -Mode missing
+    Assert-Equal $missingDuringDiscovery ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'fails open when a Skill disappears during discovery'
 
     $pixiuWorkspace = Join-Path $skillFixture 'pixiu-core'
     $pixiuCanonicalSkills = Join-Path $pixiuWorkspace 'skills'
@@ -515,8 +537,68 @@ HTTP: {
     Assert-Throws { Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'upgrade refuses unknown target drift before writing'
     [System.IO.File]::WriteAllText($fakeServer, $knownServer, [System.Text.UTF8Encoding]::new($false))
     Assert-Equal (Test-Path -LiteralPath $patchManifest) $true 'records original and patched hashes for safe restore'
+
+    $currentPatchedSkills = [System.IO.File]::ReadAllText($fakeSkills)
+    $patchedFiles = [ordered]@{}
+    $patchedFiles[(Join-Path $fakeDist 'local-agent-runtime.js')] = $patchedRuntime
+    $patchedFiles[(Join-Path $fakeDist 'local-agent-profiles.js')] = $patchedProfiles
+    $patchedFiles[(Join-Path $fakeSdkDist 'index.js')] = $patchedSdk
+    $patchedFiles[$fakeCli] = $patchedCli
+    $patchedFiles[$fakeServer] = $patchedServer
+    $patchedFiles[$fakeSkills] = $currentPatchedSkills
+    $skillsBackup = "$fakeSkills.devspace-oneclick-original"
+    $originalSkillsBackup = [System.IO.File]::ReadAllText($skillsBackup)
+
+    [System.IO.File]::WriteAllText($fakeSkills, ($currentPatchedSkills + [Environment]::NewLine + '// same-version hotfix'), [System.Text.UTF8Encoding]::new($false))
+    $runtimeBeforeTargetDriftRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses an unknown same-version target update'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeTargetDriftRestore 'target drift refusal writes no earlier file'
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        [System.IO.File]::WriteAllText([string]$entry.Key, [string]$entry.Value, [System.Text.UTF8Encoding]::new($false))
+    }
+
+    [System.IO.File]::WriteAllText($skillsBackup, 'unknown backup drift', [System.Text.UTF8Encoding]::new($false))
+    $runtimeBeforeBackupDriftRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses backup drift'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeBackupDriftRestore 'backup drift refusal writes no earlier file'
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        [System.IO.File]::WriteAllText([string]$entry.Key, [string]$entry.Value, [System.Text.UTF8Encoding]::new($false))
+    }
+    [System.IO.File]::WriteAllText($skillsBackup, $originalSkillsBackup, [System.Text.UTF8Encoding]::new($false))
+
+    $missingBackup = "$skillsBackup.missing-test"
+    Move-Item -LiteralPath $skillsBackup -Destination $missingBackup
+    $runtimeBeforeMissingBackupRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses an incomplete backup set'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeMissingBackupRestore 'missing backup refusal writes no earlier file'
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        [System.IO.File]::WriteAllText([string]$entry.Key, [string]$entry.Value, [System.Text.UTF8Encoding]::new($false))
+    }
+    Move-Item -LiteralPath $missingBackup -Destination $skillsBackup
+
+    [System.IO.File]::WriteAllText((Join-Path $fakePackageRoot 'package.json'), '{"version":"1.0.5","type":"module"}', [System.Text.UTF8Encoding]::new($false))
+    $runtimeBeforeVersionDriftRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses version drift'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeVersionDriftRestore 'version drift refusal writes no file'
+    [System.IO.File]::WriteAllText((Join-Path $fakePackageRoot 'package.json'), '{"version":"1.0.4","type":"module"}', [System.Text.UTF8Encoding]::new($false))
+
     Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 6 'restores all patched files from retained backups'
     Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'restore is idempotent when files already match recorded backups'
+
+    $manifestWithoutBackups = "$patchManifest.no-backup-test"
+    Move-Item -LiteralPath $patchManifest -Destination $manifestWithoutBackups
+    $movedBackups = @()
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        $backup = "$($entry.Key).devspace-oneclick-original"
+        $movedBackup = "$backup.no-backup-test"
+        Move-Item -LiteralPath $backup -Destination $movedBackup
+        $movedBackups += [pscustomobject]@{ Backup = $backup; Moved = $movedBackup }
+    }
+    Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'restore safely no-ops when no retained backups exist'
+    Move-Item -LiteralPath $manifestWithoutBackups -Destination $patchManifest
+    foreach ($entry in $movedBackups) {
+        Move-Item -LiteralPath $entry.Moved -Destination $entry.Backup
+    }
 
     $profileConfig = Join-Path $testRoot 'profile-config'
     $profileSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'agents'
