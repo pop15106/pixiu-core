@@ -1390,8 +1390,23 @@ function New-WatchdogTaskSpec {
         MultipleInstances = 'IgnoreNew'
         StartWhenAvailable = $true
         ExecutionTimeLimit = [TimeSpan]::FromMinutes(10)
+        RestartCount = 15
+        RestartInterval = [TimeSpan]::FromMinutes(15)
         RunLevel = 'Limited'
         LogonType = 'Interactive'
+    }
+}
+
+function Get-WatchdogTaskSettingsParameters {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$TaskSpec)
+
+    return @{
+        MultipleInstances = [string]$TaskSpec.MultipleInstances
+        StartWhenAvailable = [bool]$TaskSpec.StartWhenAvailable
+        ExecutionTimeLimit = [TimeSpan]$TaskSpec.ExecutionTimeLimit
+        RestartCount = [int]$TaskSpec.RestartCount
+        RestartInterval = [TimeSpan]$TaskSpec.RestartInterval
     }
 }
 
@@ -1447,6 +1462,8 @@ function Assert-WatchdogTaskMatchesSpec {
         ([string]$Task.MultipleInstances -eq 'IgnoreNew'),
         ($Task.StartWhenAvailable -eq $true),
         ([double]$Task.ExecutionTimeLimitMinutes -eq 10),
+        ([int]$Task.RestartCount -eq [int]$TaskSpec.RestartCount),
+        ([double]$Task.RestartIntervalMinutes -eq [double]$TaskSpec.RestartInterval.TotalMinutes),
         ([string]$Task.RunLevel -eq 'Limited'),
         ([string]$Task.LogonType -eq 'Interactive'),
         (Test-WatchdogAccountIdentity `
@@ -1614,10 +1631,8 @@ function Register-WatchdogScheduledTask {
         -UserId ([string]$TaskSpec.UserId) `
         -LogonType Interactive `
         -RunLevel Limited
-    $settings = New-ScheduledTaskSettingsSet `
-        -MultipleInstances IgnoreNew `
-        -StartWhenAvailable `
-        -ExecutionTimeLimit $TaskSpec.ExecutionTimeLimit
+    $settingsParameters = Get-WatchdogTaskSettingsParameters -TaskSpec $TaskSpec
+    $settings = New-ScheduledTaskSettingsSet @settingsParameters
 
     Register-ScheduledTask `
         -TaskName ([string]$TaskSpec.TaskName) `
@@ -1666,6 +1681,9 @@ function Get-WatchdogScheduledTaskSnapshot {
     $executionMinutes = (
         ConvertFrom-WatchdogTaskDuration -Value $task.Settings.ExecutionTimeLimit
     ).TotalMinutes
+    $restartIntervalMinutes = (
+        ConvertFrom-WatchdogTaskDuration -Value $task.Settings.RestartInterval
+    ).TotalMinutes
     $runLevel = if ([string]$task.Principal.RunLevel -in @('Limited', 'LeastPrivilege')) {
         'Limited'
     }
@@ -1689,6 +1707,8 @@ function Get-WatchdogScheduledTaskSnapshot {
         MultipleInstances = [string]$task.Settings.MultipleInstances
         StartWhenAvailable = [bool]$task.Settings.StartWhenAvailable
         ExecutionTimeLimitMinutes = [double]$executionMinutes
+        RestartCount = [int]$task.Settings.RestartCount
+        RestartIntervalMinutes = [double]$restartIntervalMinutes
         RunLevel = $runLevel
         LogonType = $logonType
         UserId = [string]$task.Principal.UserId
@@ -2021,6 +2041,32 @@ function Invoke-WatchdogMain {
     return & $CommandHandlers[$Action]
 }
 
+function Get-WatchdogActionExitCode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('install', 'run', 'status', 'remove', 'notify-connector-failure', 'test-telegram')]
+        [string]$Action,
+        $Result
+    )
+
+    if ($Action -ne 'run') {
+        return 0
+    }
+    if (-not $Result) {
+        return 1
+    }
+
+    switch ([string](Get-WatchdogRecordValue -Record $Result -Name 'Status' -DefaultValue 'unknown')) {
+        'healthy' { return 0 }
+        'skipped' { return 0 }
+        'unhealthy' { return 2 }
+        default { return 1 }
+    }
+}
+
 if ($MyInvocation.InvocationName -ne '.') {
-    Invoke-WatchdogMain -Action $Action
+    $result = Invoke-WatchdogMain -Action $Action
+    $result
+    exit (Get-WatchdogActionExitCode -Action $Action -Result $result)
 }

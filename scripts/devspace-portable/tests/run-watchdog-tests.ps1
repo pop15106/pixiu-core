@@ -960,7 +960,25 @@ try {
         Assert-Equal $taskSpec.RunLevel 'Limited' 'uses least-privilege task execution'
         Assert-Equal $taskSpec.LogonType 'Interactive' 'uses the current interactive token'
         Assert-Equal $taskSpec.ExecutionTimeLimit.TotalMinutes 10 'bounds Task Scheduler execution'
+        Assert-Equal ([int](Get-WatchdogRecordValue -Record $taskSpec -Name 'RestartCount' -DefaultValue 0)) 15 'retries a failed Watchdog task fifteen times'
+        $taskRestartInterval = Get-WatchdogRecordValue `
+            -Record $taskSpec `
+            -Name 'RestartInterval' `
+            -DefaultValue ([TimeSpan]::Zero)
+        Assert-Equal $taskRestartInterval.TotalMinutes 15 'retries a failed Watchdog task every fifteen minutes'
         Assert-Equal $taskSpec.Arguments.Contains('telegram') $false 'does not place Telegram data in task arguments'
+
+        $settingsParameterBuilder = Get-Command Get-WatchdogTaskSettingsParameters -ErrorAction SilentlyContinue
+        if (-not $settingsParameterBuilder) {
+            Write-Host '[FAIL] passes the retry policy to Windows Task Scheduler settings' -ForegroundColor Red
+            Write-Host '  missing: Get-WatchdogTaskSettingsParameters'
+            $script:Failed++
+        }
+        else {
+            $taskSettingsParameters = Get-WatchdogTaskSettingsParameters -TaskSpec $taskSpec
+            Assert-Equal ([int]$taskSettingsParameters.RestartCount) 15 'passes the retry count to Windows Task Scheduler'
+            Assert-Equal $taskSettingsParameters.RestartInterval.TotalMinutes 15 'passes the retry interval to Windows Task Scheduler'
+        }
 
         $accountMatcher = Get-Command Test-WatchdogAccountIdentity -ErrorAction SilentlyContinue
         if (-not $accountMatcher) {
@@ -1002,6 +1020,8 @@ try {
                     MultipleInstances = 'IgnoreNew'
                     StartWhenAvailable = $true
                     ExecutionTimeLimitMinutes = 10
+                    RestartCount = 15
+                    RestartIntervalMinutes = 15
                     RunLevel = 'Limited'
                     LogonType = 'Interactive'
                     UserId = $taskSpec.UserId
@@ -1033,6 +1053,8 @@ try {
                         MultipleInstances = 'IgnoreNew'
                         StartWhenAvailable = $true
                         ExecutionTimeLimitMinutes = 10
+                        RestartCount = 15
+                        RestartIntervalMinutes = 15
                         RunLevel = 'Limited'
                         LogonType = 'Interactive'
                         UserId = $taskSpec.UserId
@@ -1048,6 +1070,45 @@ try {
             'readback',
             'rollback:Pixiu DevSpace Watchdog'
         ) 'removes only the mismatched fixed task'
+
+        $retrySpec = [pscustomobject]@{}
+        foreach ($property in $taskSpec.PSObject.Properties) {
+            Add-Member -InputObject $retrySpec -NotePropertyName $property.Name -NotePropertyValue $property.Value
+        }
+        if (-not $retrySpec.PSObject.Properties['RestartCount']) {
+            Add-Member -InputObject $retrySpec -NotePropertyName RestartCount -NotePropertyValue 15
+        }
+        if (-not $retrySpec.PSObject.Properties['RestartInterval']) {
+            Add-Member `
+                -InputObject $retrySpec `
+                -NotePropertyName RestartInterval `
+                -NotePropertyValue ([TimeSpan]::FromMinutes(15))
+        }
+        $matchingRetrySnapshot = [pscustomobject]@{
+            TaskName = $retrySpec.TaskName
+            Execute = $retrySpec.Execute
+            Arguments = $retrySpec.Arguments
+            AtLogOn = $true
+            RepetitionIntervalHours = 4
+            MultipleInstances = 'IgnoreNew'
+            StartWhenAvailable = $true
+            ExecutionTimeLimitMinutes = 10
+            RestartCount = 15
+            RestartIntervalMinutes = 15
+            RunLevel = 'Limited'
+            LogonType = 'Interactive'
+            UserId = $retrySpec.UserId
+        }
+        $restartCountMismatch = $matchingRetrySnapshot | Select-Object *
+        $restartCountMismatch.RestartCount = 14
+        Assert-Throws {
+            Assert-WatchdogTaskMatchesSpec -Task $restartCountMismatch -TaskSpec $retrySpec
+        } 'rejects a task whose retry count differs from the safe specification'
+        $restartIntervalMismatch = $matchingRetrySnapshot | Select-Object *
+        $restartIntervalMismatch.RestartIntervalMinutes = 30
+        Assert-Throws {
+            Assert-WatchdogTaskMatchesSpec -Task $restartIntervalMismatch -TaskSpec $retrySpec
+        } 'rejects a task whose retry interval differs from the safe specification'
 
         $installPaths = Get-WatchdogPaths -StateRoot (Join-Path $testRoot 'install-watchdog')
         $installToken = ConvertTo-SecureString `
@@ -1390,6 +1451,35 @@ exit /b 23
             'notify-connector-failure',
             'test-telegram'
         ) 'dispatches only the six fixed Watchdog actions'
+
+        $exitCodeMapper = Get-Command Get-WatchdogActionExitCode -ErrorAction SilentlyContinue
+        if (-not $exitCodeMapper) {
+            Write-Host '[FAIL] maps Watchdog action results to process exit codes' -ForegroundColor Red
+            Write-Host '  missing: Get-WatchdogActionExitCode'
+            $script:Failed++
+        }
+        else {
+            Assert-Equal (
+                Get-WatchdogActionExitCode `
+                    -Action 'run' `
+                    -Result ([pscustomobject]@{ Status = 'healthy'; ErrorCategory = $null })
+            ) 0 'returns success when the scheduled Watchdog is healthy'
+            Assert-Equal (
+                Get-WatchdogActionExitCode `
+                    -Action 'run' `
+                    -Result ([pscustomobject]@{ Status = 'skipped'; ErrorCategory = 'MutexBusy' })
+            ) 0 'does not retry when another Watchdog instance owns the mutex'
+            Assert-Equal (
+                Get-WatchdogActionExitCode `
+                    -Action 'run' `
+                    -Result ([pscustomobject]@{ Status = 'unhealthy'; ErrorCategory = 'TunnelProcessMismatch' })
+            ) 2 'returns a retryable failure when Watchdog recovery fails'
+            Assert-Equal (
+                Get-WatchdogActionExitCode `
+                    -Action 'status' `
+                    -Result ([pscustomobject]@{ Status = 'unhealthy'; ErrorCategory = 'TunnelProcessMismatch' })
+            ) 0 'does not apply the scheduled-run failure code to status commands'
+        }
     }
 }
 finally {
