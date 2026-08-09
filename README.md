@@ -169,7 +169,7 @@ node scripts/test-console/server.js --open
 node scripts/workflow-lab/server.js --open
 ```
 
-預設網址為 `http://127.0.0.1:8792`。Offline Contract 不呼叫模型；Live Smoke 會為每個角色建立獨立 `codex exec --ephemeral` Session，PG 只有在人工核准後才能建立隔離 Worktree，且一律禁止 Push、Merge、Deploy、DB 寫入與依賴變更。完整模組、單模組 Fixture、RED 退回、安全與測試方式見 `scripts/workflow-lab/README.md`。
+預設網址為 `http://127.0.0.1:8792`。Offline Contract 不呼叫模型；Live Smoke 會為每個角色建立獨立 `codex exec --ephemeral` Session，PG 只有在人工核准後才能建立隔離 Worktree，且一律禁止 Push、Merge、Deploy、DB 寫入與依賴變更。母體路徑可由 `PIXIU_CORE`／`PIXIU_CORE_PATH` 指定，一般專案白名單可用 `PIXIU_PROJECT_ROOTS` 設定多個根目錄。完整模組、單模組 Fixture、RED 退回、安全與測試方式見 `scripts/workflow-lab/README.md`。
 
 ## 維護原則
 

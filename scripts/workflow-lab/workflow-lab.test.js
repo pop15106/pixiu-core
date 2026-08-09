@@ -753,6 +753,45 @@ test('Project Validator 接受明確允許的專案本身', () => {
   assert.equal(descriptor.branch, 'main');
 });
 
+test('Project Validator 預設從 repo 與 PIXIU_PROJECT_ROOTS 建立可攜白名單', () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-workflow-core-'));
+  const allowedRootA = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-workflow-env-a-'));
+  const allowedRootB = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-workflow-env-b-'));
+  const projectPath = path.join(allowedRootA, 'project-a');
+  fs.mkdirSync(path.join(projectPath, '.git'), { recursive: true });
+  const validator = createProjectValidator({
+    environment: {
+      PIXIU_PROJECT_ROOTS: [allowedRootA, allowedRootB].join(path.delimiter)
+    },
+    repoRoot,
+    gitRunner(args) {
+      return args.includes('--show-current')
+        ? { status: 0, stdout: 'main\n', stderr: '' }
+        : { status: 0, stdout: 'abc123\n', stderr: '' };
+    }
+  });
+
+  assert.deepEqual(validator.allowedRoots, [
+    fs.realpathSync.native(allowedRootA),
+    fs.realpathSync.native(allowedRootB)
+  ]);
+  assert.equal(validator.allowedProjects.includes(fs.realpathSync.native(repoRoot)), true);
+  assert.equal(
+    validator.validate({ source: 'manual', path: projectPath }, { requireGit: true }).sourcePath,
+    fs.realpathSync.native(projectPath)
+  );
+});
+
+test('Project Validator 不接受磁碟根目錄或使用者家目錄作為專案白名單根', () => {
+  const allowedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-workflow-safe-root-'));
+  const validator = createProjectValidator({
+    allowedProjects: [],
+    allowedRoots: [path.parse(allowedRoot).root, os.homedir(), allowedRoot]
+  });
+
+  assert.deepEqual(validator.allowedRoots, [fs.realpathSync.native(allowedRoot)]);
+});
+
 test('Project Validator 接受允許根目錄內專案並回傳 Git 描述', () => {
   const allowedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-workflow-allowed-'));
   const projectPath = path.join(allowedRoot, 'project-a');
