@@ -21,7 +21,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 
 | 你正要做的事 | 讀這份 |
 |---|---|
-| 派工給 subagent、選模型、定驗收 | `model-dispatch-rules.md`＋`delegation-templates.md`（套模板） |
+| 啟動 agent team、選模式、派工、選模型、定驗收 | `agent-team-mode-policy.md`＋`model-dispatch-rules.md`＋`delegation-templates.md`（套模板） |
 | 拿不準：要不要問使用者／算不算完成／要不要升級／方向對不對 | `judgment-rubrics.md` |
 | 踩坑了、想記東西、想改 vault 檔案 | `maintenance-protocol.md`（第 1 節權限分級、第 2 節教訓迴路） |
 | 每月首次 session、或使用者說「做月維護」 | `maintenance-protocol.md` 第 6 節 |
@@ -49,6 +49,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 | `full-repo-audit-2026-07-03.md` | 2026-07-03 全 repo 審查（skills/agents/hooks 等） | 不更新（下次審查開新檔） |
 | `entry-files-alignment.md` | 入口檔路由制度＋各檔最小路由文字 | 低 |
 | `minimal-implementation-ladder.md` | 實作前最小化梯：反過度工程、少依賴、少 token，但不覆蓋安全與驗證 | 低 |
+| `agent-team-mode-policy.md` | 跨 AI Agent Team 啟動閘門、平衡／省錢／品質模式與能力映射 | 低 |
 | `model-dispatch-rules.md` | 派工、模型、回報、升降級、驗證 | 型號對照節常更新，其餘低 |
 | `judgment-rubrics.md` | 七類判斷的判準/正例/反例/動作 | 低 |
 | `delegation-templates.md` | 五型派工模板＋失敗軌跡格式 | 低 |

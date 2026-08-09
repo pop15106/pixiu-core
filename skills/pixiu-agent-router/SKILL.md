@@ -28,6 +28,10 @@ Behavior:
 Use `assisted` when the task matches a routing trigger but the user did not explicitly ask for subagents, parallelism, fleet mode, or an agent team.
 
 Behavior:
+- Read `%PIXIU_CORE%/vault/governance/agent-team-mode-policy.md` before dispatch.
+- If the user has not selected 平衡／省錢／品質優先／自訂模式, ask for one mode and stop; do not spawn yet.
+- The user's mode reply authorizes dispatch for the current task only. If the mode was included in the trigger message, proceed without asking again.
+- A question about whether Agent Team is useful stays `assisted`; it is consultation, not fleet permission.
 - Read `references/agent-routing-map.md`.
 - Select the strongest matching Pixiu agent.
 - Read only the selected `%PIXIU_CORE%/agents/<agent>.md` files.
@@ -66,8 +70,8 @@ Behavior:
    - `PIXIU_CORE_PATH`
    - `%USERPROFILE%/.pixiu-core`
 2. Confirm `%PIXIU_CORE%/agents` exists.
-3. Read `references/agent-routing-map.md`.
-4. Choose `manual`, `assisted`, or `fleet`.
+3. Read `references/agent-routing-map.md`; for `fleet`, also read `vault/governance/agent-team-mode-policy.md`.
+4. Choose `manual`, `assisted`, or `fleet`; before fleet dispatch, resolve the user's cost/quality mode and current model availability.
 5. Read only the agent files needed for the selected route.
 6. Execute the task under the selected mode.
 7. When the task changes code, route a review/verification pass:
@@ -81,6 +85,7 @@ Behavior:
 - Treat Pixiu agents as prompt and workflow references, not as new Codex runtime agent types.
 - Do not load all 27 agent files by default. Use the routing map first, then read only selected files.
 - Prefer `assisted` for normal work; use `fleet` only on explicit current-turn permission.
+- Never invent a model or effort value. Apply the shared policy's capability tier and documented fallback when the requested setting is unavailable.
 - For small single-file edits, keep the work local unless the user asks for a fleet.
 - For legacy Java or repo tracing, prefer the `legacy-java-flow-tracing` skill when available, then use this router if agent dispatch or reviewer routing is needed.
 - For second-brain or vault questions, treat second-brain as a lead only. Use local vault/repo evidence as source of truth.
