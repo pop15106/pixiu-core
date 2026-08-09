@@ -6,7 +6,7 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 
 ## 目前狀態
 
-盤點日期：2026-07-27
+盤點日期：2026-08-09
 盤點路徑：PixiuCore
 
 | 項目 | 現況 |
@@ -17,14 +17,17 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 | ECC Agents | 29 個，位於 `.agent/agents/` |
 | Slash Commands | 59 條，位於 `commands/` |
 | ECC Workflows | 79 條，位於 `.agent/workflows/` |
-| Canonical Skills | 89 個目錄型 Skill，位於 `skills/`；metadata validator 另含根層 Skill 檔 |
-| ECC Skills | 149 個，位於 `.agent/skills/` |
+| Capability Router | 13 個 Capability，單次需求硬上限 3 個 |
+| Canonical Skills | 89 個目錄型 Skill，位於 `skills/`；加上根層 `INDEX.md` 後 validator 共檢查 90 個 |
+| ECC Skills | 149 個有效 Skill，位於 `.agent/skills/` |
 | OpenAI 可攜 Skills | 87 個，位於 `.agents/skills/` |
 | Rules | 102 條 Markdown 規則，位於 `rules/` 與 `.agent/rules/` |
-| Vault | 已啟用，包含 `bootstrap/`、`capabilities/`、`identity/`、`memory/`、`context/`、`sop/`、`after-action/`、`templates/` |
-| 最近明顯新增 | 2026-07-27：Router-first Lazy Loading、Manual Recap deterministic capture、Agent Learning Phase 1/2、DevSpace OneClick state repair、Web 測試控制台 |
+| Governance | 11 份入口、判準、派工、維護與稽核文件，位於 `vault/governance/` |
+| Automation Scripts | 143 個檔案，分布於 `scripts/` 的安裝、同步、路由、驗證、DevSpace 與 Workflow 工具 |
+| Vault | 已啟用，包含 `bootstrap/`、`capabilities/`、`governance/`、`identity/`、`memory/`、`projects/`、`context/`、`sop/`、`after-action/`、`templates/` |
+| 最近明顯新增 | 2026-08-09：母體瘦身、Skill 8+81 分層、最小實作梯、跨 AI Agent Team 三模式、Workflow Lab、全域入口同步、DevSpace watchdog／手動重連，以及 93 項 OneClick／Discovery 回歸保障 |
 
-> 注意：目前啟動規則優先讀 `PIXIU_CORE`，部分安裝腳本仍設定 `PIXIU_CORE_PATH`。兩者是既有技術債，調整前請確認所有工具相容性。
+> 注意：目前啟動規則優先讀 `PIXIU_CORE`，`PIXIU_CORE_PATH` 保留作相容別名；初始化器會同時設定兩者。部分 legacy 工具仍先讀舊名稱，移除前要先完成入口對齊。
 
 ## Quick Start（新人第一步）
 
@@ -36,9 +39,19 @@ PixiuCore 的目標不是把每個 AI 工具改成同一個樣子，而是讓 Cl
 setup_zh.bat
 ```
 
-執行後重新開啟終端機與 IDE，讓 `%PIXIU_CORE%` 環境變數生效。
+執行後重新開啟終端機與 IDE，讓 `%PIXIU_CORE%` 與相容用的 `%PIXIU_CORE_PATH%` 生效。
 
-### Step 2：安裝 Claude Code hooks & skills
+### Step 2：同步低 Token 全域入口
+
+將 Codex、Claude 與 Gemini 的使用者層入口改成短橋接檔；每個 Session 再由母體 Router 按需求載入能力：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "scripts\entry-sync\Sync-PixiuGlobalEntries.ps1" -Action Apply -ConfirmApply
+```
+
+這個工具只管理三個使用者層入口，套用前會先備份並驗證；不會修改 hooks、junction 或 DevSpace。
+
+### Step 3：安裝 Claude Code hooks & skills
 
 需要 PowerShell 7+（`pwsh`）：
 
@@ -46,7 +59,7 @@ setup_zh.bat
 pwsh -File "scripts\setup\install-to-cli.ps1"
 ```
 
-### Step 3：初始化 Cybersecurity Library submodule
+### Step 4：初始化 Cybersecurity Library submodule
 
 ```bash
 git submodule update --init --recursive
@@ -54,7 +67,7 @@ git submodule update --init --recursive
 
 完成後 `skills/cybersecurity-library/` 會有 754 個資安技能。
 
-### Step 4：建立 fleet.json（選用）
+### Step 5：建立 fleet.json（選用）
 
 `fleet.json` 不在 repo 內（含個人路徑），需自行建立：
 
@@ -67,7 +80,7 @@ git submodule update --init --recursive
 
 放在 repo 根目錄即可。
 
-### Step 5：設定 SECOND_BRAIN_PATH（選用）
+### Step 6：設定 SECOND_BRAIN_PATH（選用）
 
 若要使用 `second-brain-health-check` skill，需設定環境變數：
 
@@ -96,7 +109,7 @@ PixiuCore 分成三層來看，比較不容易迷路：
 | `user_rules.md` | Pixiu L0 憲法，最高優先級規範 |
 | `CLAUDE.md` | Claude Code 啟動與母艦連線協議 |
 | `CODEX.md` | Codex 審計與 Vault init 協議 |
-| `AGENTS.md` | ECC Agent 全域說明 |
+| `AGENTS.md` | PixiuCore 專案治理與能力路由入口 |
 | `agents/` | 頂層專業代理定義 |
 | `commands/` | 可被工具載入的 Slash command 定義 |
 | `skills/` | Pixiu / 專案常用技能入口 |
@@ -121,8 +134,10 @@ PixiuCore 分成三層來看，比較不容易迷路：
 
 | 腳本 | 用途 |
 |------|------|
-| `setup_zh.bat` | 目前較完整的 Windows 安裝入口，會設定 `PIXIU_CORE_PATH`，並寫入 Gemini、Claude Code、Codex、Copilot / VS Code 相關設定 |
-| `setup.bat` | 較輕量的 Gemini 安裝腳本，主要設定 `PIXIU_CORE_PATH` 與 `~/.gemini/GEMINI.md` |
+| `setup_zh.bat` | Windows 中文包裝入口；呼叫 `Tools/pixiu-init.ps1` 建立穩定 junction、設定 `PIXIU_CORE`／`PIXIU_CORE_PATH`，並初始化各工具入口 |
+| `setup.bat` | 與中文版使用相同初始化器的英文包裝入口 |
+| `scripts/entry-sync/Sync-PixiuGlobalEntries.ps1` | 將 Codex、Claude、Gemini 使用者層入口同步為 Router-first 短橋接檔；套用前備份並支援受控還原 |
+| `scripts/setup/bootstrap.ps1` | 新機器的一鍵部署入口：初始化 submodule、環境變數、junction、Claude Code 與 Codex 接線 |
 | `scripts/setup/install-to-cli.ps1` | 將 Pixiu commands、skills、hooks 接到 `~/.claude/`，讓 Claude Code CLI 能看到母體能力 |
 | `scripts/setup/uninstall-from-cli.ps1` | 回滾 Claude Code CLI 注入，不動母體原始檔 |
 | `uninstall.bat` | 移除 Pixiu 對使用者環境的整合設定 |
@@ -131,7 +146,7 @@ PixiuCore 分成三層來看，比較不容易迷路：
 
 ### Fleet 同步
 
-`fleet.json` 是母艦管理的專案清單，目前包含 PCLMS、PFTZ、PEPIS、PTWCS 等 30 個路徑。日常同步工具在 `Tools/`：
+`fleet.json` 是不進版控的本機私有專案清單，實際數量與路徑依裝置而異。日常同步工具在 `Tools/`：
 
 - `Tools\sync-pixiu-fleet.ps1`
 - `Tools\一鍵母艦同步.bat`
@@ -150,6 +165,60 @@ PixiuCore 分成三層來看，比較不容易迷路：
 4. 只讀 Router 回傳的 `filesToLoad`，最多選 3 個 Capability。
 5. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引；不得退回全文載入 identity、memory、全部 Skills 或治理文件。
 6. 修改後執行與本次改動相符的最小充分驗證，並如實回報未驗證項目。
+
+## 母體瘦身：低 Token、按需載入、最小實作
+
+這裡的「瘦身」不是移除治理或安全，而是降低每個 Session 的固定 Context、重複 Skill 與不必要實作。安全閘門、錯誤處理、驗證、審批與使用者指定行為不得因瘦身而省略。
+
+| 機制 | 現在的做法 | 效果 |
+|------|------------|------|
+| Router-first 啟動 | 常駐 `SESSION-BOOTSTRAP.md`，再由需求命中最多 3 個 Capability | 不再開場全文載入規則、身份、記憶、Skills、Workflows、Hooks 與 Agents |
+| Skill 分層 | `skills/` 分成 8 個高優先路由能力與 81 個參考能力；正常 Session 不全文讀 `skills/INDEX.md` | 保留 89 個 canonical Skill，但只載入本次需要的檔案 |
+| 發佈層去重 | `skills/` 是 canonical，`.agents/skills/` 是 OpenAI／Codex 可攜發佈層 | DevSpace canonical suppression 將有效同名 collision 壓到 0，不刪可攜能力 |
+| 記憶按需 | 只有涉及舊決策、前次進度或跨 Session 經驗時，才從 `SESSION-INDEX.md` 追到原文 | recap、decision 與完整 memory 不再成為每次啟動底噪 |
+| 最小實作梯 | 依序檢查：不用新增 → repo 已有 → 標準庫 → 原生平台 → 既有依賴 → 更小共用點 → 最小正確實作 | 減少額外檔案、依賴、抽象與重複程式碼 |
+
+### 2026-08-09 驗證基線
+
+| 驗證項目 | 實測結果 | 門檻／判定 |
+|----------|----------|-------------|
+| Codex 常駐入口 | 6,705 bytes／124 行 | ≤ 8 KB，通過 |
+| Claude 常駐入口 | 3,939 bytes／76 行 | ≤ 6 KB，通過 |
+| Gemini 常駐入口 | 3,963 bytes／76 行 | ≤ 6 KB，通過 |
+| Skill collision | Raw 87／Effective 0 | canonical suppression 生效 |
+| OneClick／Discovery | 93 passed／0 failed | 包含 SHA-256、junction、大小寫別名、讀取競態與安全 restore |
+| Entry Sync | 41 passed／0 failed | Codex、Claude、Gemini 短入口同步與還原通過 |
+| Skill metadata | Canonical 90／Portable 87 | YAML、唯一名稱與必要欄位通過 |
+| Capability Router | 13 個 Capability；單次最多 3 個 | 無命中或 Manifest 故障時不退回全量載入 |
+
+完整架構與量測門檻見 `docs/architecture/pixiu-lazy-loading.md`；實作範圍判斷以 `vault/governance/minimal-implementation-ladder.md` 為準。可用下列命令驗證啟動預算、Router、Skill metadata、collision 與 Manifest 引用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/performance/run-lazy-loading-tests.ps1
+```
+
+## Agent Team 與 Subagent
+
+Agent Team 是跨 AI 的受控執行模式，不是預設行為。Claude、Codex、Gemini 或其他工具可以使用各自原生的 subagent／agent／thread 能力，但共同遵守 `vault/governance/agent-team-mode-policy.md`。
+
+| 模式 | 適合情境 | 同時執行上限 |
+|------|----------|----------------|
+| 平衡（推薦） | 一般跨模組工作，在品質、速度與成本之間取平衡 | 3 個 subagent |
+| 省錢 | 邊界清楚、可由較低階模型完成的工作 | 2 個 subagent |
+| 品質優先 | 架構、安全、DB、複雜根因或高風險驗收 | 3 個 subagent |
+
+啟動規則：
+
+- 只說「啟動 agent team」時，AI 先詢問平衡／省錢／品質優先／自訂模式，不得立即派工。
+- 同一句已指定模式時，AI 先顯示派工表，再啟動本任務；授權不跨任務或 Session 沿用。
+- 「你建議要開 agent team 嗎？」只代表諮詢，不是派工授權。
+- 小型問答、單檔修改或單一路徑文件調整留在主 Agent；只有可獨立並行的跨模組探索、實作、測試或審查才建議組隊。
+- 每個 subagent 只取得精簡任務包：目標、允許路徑、禁止事項、必要來源、驗收條件與回報格式，不重讀完整母體。
+- 寫入型 worker 的檔案白名單必須互斥；writer 不驗自己的成果，最終結果由 fresh-context 角色或可重現測試獨立驗收。
+- 模式不等於刪檔、DB 寫入、套件安裝、母體寫入或外部推送的授權；這些動作仍各自受 L0 閘門約束。
+- 環境沒有 subagent 能力時，退化為單體分段執行，不宣稱已啟動 Agent Team。
+
+模型名稱與可用 effort 會隨平台改變，README 不複製易過時清單；執行前依 `vault/governance/model-dispatch-rules.md` 驗證當下可用能力並套用降級規則。
 
 ## Web 測試控制台
 
@@ -174,6 +243,8 @@ node scripts/workflow-lab/server.js --open
 ## 維護原則
 
 - 不直接整包載入母體，只讀任務需要的 rules、skills、memory、context。
+- 瘦身只減少固定載入與不必要實作，不得刪減安全、驗證、錯誤處理或審批。
+- Agent Team 只有在使用者明確選定模式後才能派工；subagent 只接收精簡任務包。
 - `vault/identity/` 與 `vault/memory/` 含個人資料，分享或打包前要清理。
 - 新增 skill 時，同步檢查 `skills/`、`.agent/skills/`、`.agents/skills/` 是否都需要更新。
 - 修改 `.agent/`、`user_rules.md`、流程閘門或 AI 約束時，完成後要詢問是否同步回正式母體。
@@ -184,13 +255,20 @@ node scripts/workflow-lab/server.js --open
 在 PowerShell 內可用以下指令重新計數：
 
 ```powershell
-$root = "%PIXIU_CORE%"
+$root = if ($env:PIXIU_CORE) {
+    $env:PIXIU_CORE
+} elseif ($env:PIXIU_CORE_PATH) {
+    $env:PIXIU_CORE_PATH
+} else {
+    Join-Path $env:USERPROFILE ".pixiu-core"
+}
 (Get-ChildItem -File "$root\agents").Count
 (Get-ChildItem -File "$root\commands").Count
 (Get-ChildItem -Directory "$root\skills" | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count
 (Get-ChildItem -Directory "$root\.agents\skills").Count
 (Get-ChildItem -File "$root\.agent\workflows" -Filter "*.md").Count
-(Get-ChildItem -File -Recurse "$root\rules" | Where-Object Extension -eq ".md").Count
+(Get-ChildItem -File -Recurse "$root\rules", "$root\.agent\rules" | Where-Object Extension -eq ".md").Count
+((Get-Content -Raw -Encoding UTF8 "$root\vault\capabilities\capability-manifest.json" | ConvertFrom-Json).capabilities).Count
 (Get-Content -Raw -Encoding UTF8 "$root\fleet.json" | ConvertFrom-Json).Count
 ```
 
@@ -452,8 +530,8 @@ cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
 
 | 項目 | 影響 | 建議 |
 |------|------|------|
-| `PIXIU_CORE` 與 `PIXIU_CORE_PATH` 併存 | 不同工具可能讀不同母體路徑 | 後續統一命名，或在啟動文件明確定義優先序 |
-| `setup.bat` 與 `setup_zh.bat` 職責不一致 | 使用者容易選錯安裝入口 | 保留一個主入口，另一個標成 legacy 或 wrapper |
+| `PIXIU_CORE` 與 `PIXIU_CORE_PATH` 併存 | 新流程已統一優先序，但部分 legacy 工具仍先讀舊名稱 | 初始化器暫時同時設定兩者；完成所有入口對齊後再移除相容別名 |
+| 初始化、工具接線與短入口同步分散在不同腳本 | 只跑部分步驟時，全域入口或 hooks 可能仍是舊版 | 依 Quick Start 執行；後續再收斂為單一總入口 |
 | Canonical 與 portable Skill 發佈層可能漂移 | 宿主可能載入過期或重複能力 | 以 `skills/` 為 canonical，執行 metadata validator 與 Lazy Loading collision gate |
 | `Backup/` 內容龐大 | 打包分享可能帶出歷史或私人內容 | 分享前用 `pack-for-friend` 流程並人工檢查 |
 | 多套工具設定分散 | Claude / Codex / Gemini / OpenCode 行為可能漂移 | 以 `user_rules.md` 與 Vault init 作為共同地基 |
@@ -461,7 +539,13 @@ cat vault/memory/skill-opt-rejected.md   # 待下次 Slow Update 的候選
 ## 相關文件
 
 - [SKILLS_INDEX.md](SKILLS_INDEX.md)：技能索引入口與當期盤點；完整分類以 `skills/INDEX.md` 為準。
-- [AGENTS.md](AGENTS.md)：ECC Agent 說明。
+- [vault/bootstrap/SESSION-BOOTSTRAP.md](vault/bootstrap/SESSION-BOOTSTRAP.md)：低 Token Session 的常駐硬閘門與 Router 入口。
+- [docs/architecture/pixiu-lazy-loading.md](docs/architecture/pixiu-lazy-loading.md)：母體瘦身架構、量測門檻與回滾方式。
+- [skills/INDEX.md](skills/INDEX.md)：8+81 Skill 人工索引；正常 Session 仍先走 Router。
+- [vault/governance/minimal-implementation-ladder.md](vault/governance/minimal-implementation-ladder.md)：實作前最小化梯。
+- [vault/governance/agent-team-mode-policy.md](vault/governance/agent-team-mode-policy.md)：跨 AI Agent Team 三模式、啟動閘門與 subagent 邊界。
+- [vault/governance/model-dispatch-rules.md](vault/governance/model-dispatch-rules.md)：模型、effort、升降級與驗收規則。
+- [AGENTS.md](AGENTS.md)：PixiuCore 專案治理與能力路由入口。
 - [CODEX.md](CODEX.md)：Codex 審計協議。
 - [CLAUDE.md](CLAUDE.md)：Claude Code 啟動協議。
 - [PLUGIN_SCHEMA_NOTES.md](PLUGIN_SCHEMA_NOTES.md)：Plugin manifest 注意事項。
