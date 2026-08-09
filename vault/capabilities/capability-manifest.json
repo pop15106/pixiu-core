@@ -126,12 +126,12 @@
     {
       "id": "agent-routing",
       "summary": "Agent Team、子代理與模型分派。",
-      "keywords": ["agent team", "多 agent", "子代理", "派工", "平行處理", "agent router"],
+      "keywords": ["agent team", "多 agent", "子代理", "派工", "平行處理", "agent router", "平衡模式", "省錢模式", "品質優先模式"],
       "priority": 45,
       "load": {
-        "skills": ["skills/pixiu-agent-router/SKILL.md"],
+        "skills": [],
         "contexts": [],
-        "governance": ["vault/governance/model-dispatch-rules.md", "vault/governance/delegation-templates.md"]
+        "governance": ["vault/governance/agent-team-mode-policy.md", "vault/governance/model-dispatch-rules.md", "vault/governance/delegation-templates.md"]
       }
     },
     {

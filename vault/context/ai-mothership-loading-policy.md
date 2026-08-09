@@ -68,7 +68,7 @@ AI 不得要求使用者一定說出精準 skill 名稱。觸發方式分三層�
 | 實作、修 bug、重構、加依賴、加檔案、怕過度工程、想省 token | `vault/governance/minimal-implementation-ladder.md`（按需載入摘要；不得覆蓋 L0、安全、審批、驗證） |
 | auto mode、自動放行、不要每次問 | `skills/claude-code-auto-mode-policy/SKILL.md` |
 | focus mode、只看結果、隱藏步驟 | `user_rules.md` 的 Focus mode 閘門與相關 verify loop |
-| agent team、多 agent、平行處理 | `skills/pixiu-agent-router/SKILL.md`，且必須先取得使用者同意 |
+| agent team、多 agent、平行處理 | `vault/governance/agent-team-mode-policy.md`；再載入目前 AI 可用的派工 adapter（Codex 使用 `skills/pixiu-agent-router/SKILL.md`） |
 | legacy Java、Servlet、mapper、SQL flow | `skills/legacy-java-flow-tracing/SKILL.md` |
 | 第二大腦失敗、Qdrant、NVIDIA 查詢問題 | `skills/second-brain-health-check/SKILL.md` |
 
@@ -89,7 +89,7 @@ Agent team 是倍增器，不是預設模式。
 1. 每次需求先判斷是否建議啟用 agent team，但不得自動啟用。
 2. 小型問答、單檔小修、單一路徑文件調整，保留在主 AI 本地處理。
 3. 只有跨模組、跨技術棧、獨立可並行的探索/實作/審查任務，才提議 agent team。
-4. 使用者明確同意後，才讀 `skills/pixiu-agent-router/SKILL.md` 與必要 agent 檔。
+4. 使用者明確同意後，先讀 `vault/governance/agent-team-mode-policy.md` 選擇平衡／省錢／品質模式，再讀目前 AI 可用的派工 adapter 與必要 agent 檔。
 5. 子 agent 不重讀整包母體，只接收精簡任務包：任務目標、允許路徑、必要 L0 規則、相關檔案、驗證標準。
 6. 子 agent 的任務包應包含 `minimal-implementation-ladder.md` 的短 checklist：先重用、少新增、保留安全與驗證。
 7. 子 agent 不得回寫母體、刪檔、安裝套件或改動未授權路徑，除非主 AI 已取得使用者明確授權。
