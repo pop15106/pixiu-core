@@ -370,6 +370,34 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
+    $workflowLoaderReplacement = @(
+        'import { formatLocalAgentProviderAvailabilitySummary, getLocalAgentProviderAvailabilitySnapshot, } from "./local-agent-availability.js";'
+        'import { pathToFileURL } from "node:url";'
+        'const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE'
+        '    ? await import(pathToFileURL(process.env.DEVSPACE_WORKFLOW_MODULE).href)'
+        '    : undefined;'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE' -Pattern 'import \{ formatLocalAgentProviderAvailabilitySummary, getLocalAgentProviderAvailabilitySnapshot, \} from "\.\/local-agent-availability\.js";' -Replacement $workflowLoaderReplacement -Description 'cross-session workflow module loading') {
+        $changed++
+    }
+
+    $workflowRegistrationReplacement = @(
+        '    // DevSpace OneClick: expose resumable process sessions to ChatGPT Web.'
+        '    registerCodexProcessTools(server, config, workspaces, processSessions);'
+        '    // DevSpace OneClick: expose durable cross-session handoff and review tools.'
+        '    devSpaceWorkflowModule?.registerDevSpaceWorkflowTools({'
+        '        server, config, workspaces, registerAppTool, z,'
+        '    });'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'DevSpace OneClick: expose durable cross-session handoff and review tools.' -Pattern '\s*\/\/ DevSpace OneClick: expose resumable process sessions to ChatGPT Web\.\r?\n\s*registerCodexProcessTools\(server, config, workspaces, processSessions\);' -Replacement ([Environment]::NewLine + $workflowRegistrationReplacement) -Description 'ChatGPT Web workflow tools') {
+        $changed++
+    }
+
+    $workflowGuidanceReplacement = 'Use workflow_create, workflow_list, workflow_update, workflow_run, and workflow_sync for durable cross-session handoff or independent review. Use exec_command for npm, builds, tests, and DevSpace Agent status commands'
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Use workflow_create, workflow_list, workflow_update, workflow_run, and workflow_sync' -Pattern 'Use exec_command for npm, builds, tests, and DevSpace Agent status commands' -Replacement $workflowGuidanceReplacement -Description 'ChatGPT Web workflow guidance') {
+        $changed++
+    }
+
     if (Set-PatchedTextFile -FilePath $skillsPath -AlreadyPatchedText 'projectSkillMirrorSha256' -Pattern 'import \{ existsSync(?:, readdirSync)? \} from "node:fs";' -Replacement ('import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";' + [Environment]::NewLine + 'import { createHash } from "node:crypto";') -Description 'safe skill mirror inspection') {
         $changed++
     }
@@ -570,6 +598,42 @@ function Install-DevSpaceAgentProfiles {
     return [string[]]$installed
 }
 
+function Install-DevSpaceWorkflowModule {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceFile,
+        [Parameter(Mandatory = $true)][string]$BinDirectory
+    )
+
+    if (-not (Test-Path -LiteralPath $SourceFile -PathType Leaf)) {
+        throw "DevSpace workflow module source is missing: $SourceFile"
+    }
+    if (-not (Test-Path -LiteralPath $BinDirectory)) {
+        New-Item -ItemType Directory -Path $BinDirectory -Force | Out-Null
+    }
+    $target = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
+    $sourceHash = Get-DevSpacePatchFileSha256 -FilePath $SourceFile
+    if (Test-Path -LiteralPath $target -PathType Leaf) {
+        $targetHash = Get-DevSpacePatchFileSha256 -FilePath $target
+        if ([string]::Equals($sourceHash, $targetHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return [pscustomobject]@{ Path = $target; Changed = $false }
+        }
+        Copy-Item -LiteralPath $target -Destination "$target.devspace-oneclick.bak" -Force
+    }
+
+    $temporary = "$target.$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        Copy-Item -LiteralPath $SourceFile -Destination $temporary -Force
+        Move-Item -LiteralPath $temporary -Destination $target -Force
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporary) {
+            Remove-Item -LiteralPath $temporary -Force
+        }
+    }
+    return [pscustomobject]@{ Path = $target; Changed = $true }
+}
+
 function ConvertTo-DevSpaceBashPath {
     param([Parameter(Mandatory = $true)][string]$FilePath)
 
@@ -765,6 +829,7 @@ Export-ModuleMember -Function @(
     'Install-DevSpaceSubagentWindowsPatch',
     'Restore-DevSpaceSubagentWindowsPatch',
     'Install-DevSpaceAgentProfiles',
+    'Install-DevSpaceWorkflowModule',
     'Install-DevSpaceAgentCliShim',
     'Get-DevSpaceAgentStatus',
     'Stop-DevSpaceAgent'

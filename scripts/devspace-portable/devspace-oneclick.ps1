@@ -38,6 +38,9 @@ $LogRoot = Join-Path $StateRoot 'logs'
 $ShimRoot = Join-Path $StateRoot 'bin'
 $AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
 $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
+$WorkflowModuleSource = Join-Path $PSScriptRoot 'DevSpace.WorkflowStore.mjs'
+$WorkflowModulePath = Join-Path $ShimRoot 'DevSpace.WorkflowStore.mjs'
+$WorkflowStateRoot = Join-Path $StateRoot 'workflow'
 
 function Write-Info {
     param([Parameter(Mandatory = $true)][string]$Message)
@@ -514,6 +517,7 @@ function Set-DevSpaceEnvironment {
         [Parameter(Mandatory = $true)]$Spec,
         [Parameter(Mandatory = $true)][string]$BashPath,
         [Parameter(Mandatory = $true)][string]$NodePath,
+        [Parameter(Mandatory = $true)][string]$DevSpaceCli,
         [Parameter(Mandatory = $true)][string]$ShimDirectory
     )
 
@@ -534,6 +538,9 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_WIDGETS', 'off', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '1', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_AGENT_DIR', (Join-Path $ConfigRoot 'agents'), 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_MODULE', $WorkflowModulePath, 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_STATE_DIR', $WorkflowStateRoot, 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_CLI', $DevSpaceCli, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
 }
 
@@ -552,21 +559,34 @@ function Start-Stack {
     $patchCount = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
+    $workflowInstall = Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot
+    $runtimeComponentsChanged = $patchCount -gt 0 -or $workflowInstall.Changed
     if ($patchCount -gt 0) {
         Write-Info "Applied $patchCount DevSpace 1.0.4 Windows subagent compatibility fixes."
     }
 
+    $stoppedForRuntimeUpdate = $false
     if (Test-LocalHealth -Port $spec.Port) {
         if ($runtime) {
             $devSpaceOwned = Test-RecordedProcess -ProcessId ([int]$runtime.devSpacePid) -StartedAtUtc ([string]$runtime.devSpaceStartedAtUtc) -ProcessName 'node' -Port $spec.Port
             $tunnelOwned = Test-RecordedProcess -ProcessId ([int]$runtime.devTunnelPid) -StartedAtUtc ([string]$runtime.devTunnelStartedAtUtc) -ProcessName 'devtunnel'
             if ($devSpaceOwned -and $tunnelOwned) {
-                Write-Info 'DevSpace is already running.'
-                Show-Status
-                return
+                if ($runtimeComponentsChanged) {
+                    Write-Info 'Updated DevSpace runtime components; restarting the owned stack.'
+                    Stop-Stack
+                    $runtime = $null
+                    $stoppedForRuntimeUpdate = $true
+                }
+                else {
+                    Write-Info 'DevSpace is already running.'
+                    Show-Status
+                    return
+                }
             }
         }
-        throw "Port $($spec.Port) is already serving DevSpace outside this launcher."
+        if (-not $stoppedForRuntimeUpdate) {
+            throw "Port $($spec.Port) is already serving DevSpace outside this launcher."
+        }
     }
 
     $listener = Get-ListenerProcessId -Port $spec.Port
@@ -579,7 +599,7 @@ function Start-Stack {
 
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     [void](Get-TunnelSettings -DevTunnel $tools.DevTunnel)
-    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node -ShimDirectory $ShimRoot
+    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -ShimDirectory $ShimRoot
 
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $devSpaceOut = Join-Path $LogRoot "devspace-$stamp.out.log"
@@ -772,6 +792,7 @@ function Install-OneClick {
     [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
+    [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     $roots = Get-InstallRoots
     $settings = Get-TunnelSettings -DevTunnel $tools.DevTunnel -Create
