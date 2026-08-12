@@ -1,6 +1,6 @@
 # DevSpace One-Click for Windows
 
-這個資料夾是純 DevSpace + Microsoft Dev Tunnel 的可攜安裝器，不包含 Orchestrator，也不會使用 OpenAI API key。
+這個資料夾是純 DevSpace + Microsoft Dev Tunnel 的可攜安裝器，不包含 Orchestrator，也不會使用 OpenAI API key。AI 工作執行一律交給已完成訂閱登入的本機 CLI，不直接呼叫 AI provider API。
 
 ## 最簡單的使用方式
 
@@ -87,14 +87,14 @@ Windows Task 名稱固定為 `Pixiu DevSpace Watchdog`。它使用目前使用�
 - Watchdog 目錄與檔案 ACL 只允許目前使用者與 `SYSTEM`。
 - Bot Token 不會出現在 repository、Task Scheduler arguments、state 或 log。
 - 日誌為 UTF-8 JSON Lines，單檔 1 MiB 後輪替，最多保留 5 份。
-- 通知只在首次異常、錯誤分類改變與恢復時傳送；相同異常不重複通知。
-- `notify-connector-failure` 是固定入口，不接受任意錯誤文字、URL 或命令列參數，4 小時內會去重。
+- 通知只在首次異常、錯誤分類改變與恢復時傳送；相同異常不重複通知。對具備有效 OneClick 設定的可復原異常，Watchdog 會先以非互動模式執行固定的 `15-FORCE-RECONNECT.cmd`，重讀設定並驗證本機／公開 `/healthz` 與公開 `/mcp` OAuth Bearer challenge；驗證成功才推播「已自動重連並驗證」，驗證仍失敗才推播異常。
+- `notify-connector-failure` 是固定入口，不接受任意錯誤文字、URL 或命令列參數，4 小時內會去重；它使用與一般可復原異常相同的 Force Reconnect 與驗證流程。
 
 ### OAuth 與 Connector 邊界
 
 Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也不保存 ChatGPT token。OneClick 既有的 `DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT=1` 只代表 DevSpace 伺服器端可核准可識別的 ChatGPT 流程，不是密碼或登入自動化。
 
-本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`；重新登入必須由使用者在 UI 人工完成。
+本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`。該入口會先執行 `15-FORCE-RECONNECT.cmd`，確認 local／public health 與 MCP OAuth challenge 都正常後才推播「已自動重連並驗證」；若任一步仍失敗，則推播「自動重連失敗」與固定錯誤分類。公開 `/mcp` challenge 只能證明 MCP／OAuth 入口有正常回覆，特定 ChatGPT 帳號的 OAuth token 是否有效仍以 heartbeat 後續成功取得 `workspaceId` 為唯一端對端證據；需要重新登入時仍由使用者在 UI 人工完成。
 
 ### 錯誤分類
 
@@ -109,8 +109,10 @@ Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也�
 | `OneClickStopRefused` | runtime 程序身分驗證不符 | 不強制停止；先人工檢查 |
 | `TunnelProcessMismatch` | 殘留程序重新驗證失敗 | 不停止該程序；先人工檢查 |
 | `OneClickStartFailed` | OneClick 啟動失敗 | 查看 OneClick log |
-| `PostRecoveryHealthFailed` | 復原後 health 仍未通過 | 不進行第二次復原 |
-| `ConnectorFailure` | DevSpace Secure／OAuth 端對端失敗 | 人工重新連線與 OAuth |
+| `PostRecoveryHealthFailed` | 復原後 health 仍未通過 | 不宣告恢復；通知驗證失敗 |
+| `ForceReconnectFailed` | `15-FORCE-RECONNECT.cmd` 執行失敗 | 不宣告恢復；通知自動重連失敗 |
+| `PostRecoveryConnectorResponseFailed` | 重連後 `/mcp` 未回預期 OAuth Bearer challenge | 不宣告恢復；等待後續 heartbeat／人工檢查 |
+| `ConnectorFailure` | DevSpace Secure／OAuth 端對端失敗 | 先執行固定 Force Reconnect 與回覆驗證，再依結果通知 |
 | `MutexBusy` | 另一個 Watchdog 正在執行 | 本次直接略過 |
 | `RunTimedOut` | 復原超過 8 分鐘 | 停止後續副作用 |
 

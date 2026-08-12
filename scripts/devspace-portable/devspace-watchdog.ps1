@@ -484,6 +484,8 @@ function Assert-WatchdogErrorCategory {
         'TunnelProcessMismatch',
         'OneClickStartFailed',
         'PostRecoveryHealthFailed',
+        'ForceReconnectFailed',
+        'PostRecoveryConnectorResponseFailed',
         'TelegramConfigInvalid',
         'TelegramDeliveryFailed',
         'ConnectorFailure',
@@ -634,7 +636,8 @@ function Get-WatchdogNotificationDecision {
             $kind = 'Anomaly'
         }
     }
-    elseif ($previousStatus -eq 'unhealthy') {
+    elseif ((Get-WatchdogRecordValue -Record $CurrentResult -Name 'RecoverySucceeded' -DefaultValue $false) -eq $true -or
+        $previousStatus -eq 'unhealthy') {
         $kind = 'Recovery'
     }
 
@@ -724,9 +727,30 @@ function ConvertTo-WatchdogTelegramText {
     Assert-WatchdogMessage -Message $Message
     $kind = [string]$Message.Kind
     $title = switch ($kind) {
-        'Anomaly' { 'DevSpace 異常' }
-        'Recovery' { 'DevSpace 已恢復' }
-        'ConnectorFailure' { 'DevSpace Connector 異常' }
+        'Anomaly' {
+            if ($Message.RecoveryAttempted -eq $true) {
+                'DevSpace 自動重連失敗'
+            }
+            else {
+                'DevSpace 異常'
+            }
+        }
+        'Recovery' {
+            if ([string]$Message.ConnectorStatus -eq 'ready' -and $Message.RecoveryAttempted -eq $true) {
+                'DevSpace Connector 已自動重連並驗證'
+            }
+            else {
+                'DevSpace 已恢復'
+            }
+        }
+        'ConnectorFailure' {
+            if ($Message.RecoveryAttempted -eq $true) {
+                'DevSpace Connector 自動重連失敗'
+            }
+            else {
+                'DevSpace Connector 異常'
+            }
+        }
         'Test' { 'DevSpace Watchdog 測試' }
     }
     $lines = @(
@@ -841,6 +865,177 @@ function Invoke-OneClickAction {
         ([string]$Dependencies.OneClickPath) `
         $Action `
         $environment | Out-Null
+}
+
+function Invoke-WatchdogForceReconnect {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][hashtable]$Dependencies)
+
+    $environment = @{
+        DEVSPACE_ONECLICK_NONINTERACTIVE = '1'
+        DEVSPACE_ONECLICK_NO_PAUSE = '1'
+    }
+    & $Dependencies.InvokeForceReconnect `
+        ([string]$Dependencies.ForceReconnectPath) `
+        $environment | Out-Null
+}
+
+function Test-WatchdogConnectorResponse {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$PublicBaseUrl,
+        [Parameter(Mandatory = $true)][scriptblock]$InvokeConnectorRequest
+    )
+
+    $portMatch = [regex]::Match(
+        $PublicBaseUrl,
+        '-(?<port>[0-9]{1,5})\.[a-z0-9]+\.devtunnels\.ms$',
+        [Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+    if (-not $portMatch.Success) {
+        return [pscustomobject]@{
+            Healthy = $false
+            StatusCode = $null
+        }
+    }
+
+    try {
+        $origin = Assert-WatchdogPublicOrigin `
+            -PublicBaseUrl $PublicBaseUrl `
+            -Port ([int]$portMatch.Groups['port'].Value)
+        $response = & $InvokeConnectorRequest "$origin/mcp"
+        $statusCode = [int](Get-WatchdogRecordValue -Record $response -Name 'StatusCode')
+        $challenge = [string](Get-WatchdogRecordValue -Record $response -Name 'WwwAuthenticate')
+        $metadataMatch = [regex]::Match(
+            $challenge,
+            '(?i)\bresource_metadata\s*=\s*(?:"(?<quoted>[^"]+)"|(?<bare>[^,\s]+))'
+        )
+        $metadata = if ($metadataMatch.Groups['quoted'].Success) {
+            [string]$metadataMatch.Groups['quoted'].Value
+        }
+        elseif ($metadataMatch.Groups['bare'].Success) {
+            [string]$metadataMatch.Groups['bare'].Value
+        }
+        else {
+            ''
+        }
+        $expectedMetadata = "$origin/.well-known/oauth-protected-resource/mcp"
+        $healthy = $statusCode -eq 401 -and
+            $challenge -match '(?i)\bBearer\b' -and
+            [string]::Equals(
+                $metadata,
+                $expectedMetadata,
+                [System.StringComparison]::OrdinalIgnoreCase
+            )
+        return [pscustomobject]@{
+            Healthy = $healthy
+            StatusCode = $statusCode
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            Healthy = $false
+            StatusCode = $null
+        }
+    }
+}
+
+function Invoke-WatchdogConnectorRecovery {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$State,
+        [Parameter(Mandatory = $true)][hashtable]$Dependencies
+    )
+
+    $fallbackOrigin = [string](Get-WatchdogRecordValue `
+        -Record $State `
+        -Name 'publicBaseUrl' `
+        -DefaultValue '')
+    try {
+        & $Dependencies.ForceReconnect
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = 'unhealthy'
+            ErrorCategory = 'ForceReconnectFailed'
+            LocalStatus = 'unknown'
+            PublicStatus = 'unknown'
+            ConnectorStatus = 'down'
+            LocalStatusCode = $null
+            PublicStatusCode = $null
+            PublicBaseUrl = $fallbackOrigin
+            RecoveryAttempted = $true
+            RecoverySucceeded = $false
+        }
+    }
+
+    try {
+        $freshSettings = & $Dependencies.ReadSettings
+        $postProbe = & $Dependencies.Probe $freshSettings
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = 'unhealthy'
+            ErrorCategory = 'PostRecoveryHealthFailed'
+            LocalStatus = 'unknown'
+            PublicStatus = 'unknown'
+            ConnectorStatus = 'down'
+            LocalStatusCode = $null
+            PublicStatusCode = $null
+            PublicBaseUrl = $fallbackOrigin
+            RecoveryAttempted = $true
+            RecoverySucceeded = $false
+        }
+    }
+
+    if ([string]$postProbe.Status -ne 'healthy') {
+        return [pscustomobject]@{
+            Status = 'unhealthy'
+            ErrorCategory = 'PostRecoveryHealthFailed'
+            LocalStatus = [string]$postProbe.LocalStatus
+            PublicStatus = [string]$postProbe.PublicStatus
+            ConnectorStatus = 'down'
+            LocalStatusCode = Get-WatchdogRecordValue -Record $postProbe -Name 'LocalStatusCode'
+            PublicStatusCode = Get-WatchdogRecordValue -Record $postProbe -Name 'PublicStatusCode'
+            PublicBaseUrl = [string]$postProbe.PublicBaseUrl
+            RecoveryAttempted = $true
+            RecoverySucceeded = $false
+        }
+    }
+
+    try {
+        $connector = & $Dependencies.VerifyConnectorResponse ([string]$postProbe.PublicBaseUrl)
+    }
+    catch {
+        $connector = $null
+    }
+    if (-not $connector -or $connector.Healthy -ne $true) {
+        return [pscustomobject]@{
+            Status = 'unhealthy'
+            ErrorCategory = 'PostRecoveryConnectorResponseFailed'
+            LocalStatus = [string]$postProbe.LocalStatus
+            PublicStatus = [string]$postProbe.PublicStatus
+            ConnectorStatus = 'down'
+            LocalStatusCode = Get-WatchdogRecordValue -Record $postProbe -Name 'LocalStatusCode'
+            PublicStatusCode = Get-WatchdogRecordValue -Record $postProbe -Name 'PublicStatusCode'
+            PublicBaseUrl = [string]$postProbe.PublicBaseUrl
+            RecoveryAttempted = $true
+            RecoverySucceeded = $false
+        }
+    }
+
+    return [pscustomobject]@{
+        Status = 'healthy'
+        ErrorCategory = $null
+        LocalStatus = [string]$postProbe.LocalStatus
+        PublicStatus = [string]$postProbe.PublicStatus
+        ConnectorStatus = 'ready'
+        LocalStatusCode = Get-WatchdogRecordValue -Record $postProbe -Name 'LocalStatusCode'
+        PublicStatusCode = Get-WatchdogRecordValue -Record $postProbe -Name 'PublicStatusCode'
+        PublicBaseUrl = [string]$postProbe.PublicBaseUrl
+        RecoveryAttempted = $true
+        RecoverySucceeded = $true
+    }
 }
 
 function Invoke-WatchdogProbe {
@@ -1076,7 +1271,6 @@ function Invoke-WatchdogRun {
 
     $correlationId = [guid]::NewGuid()
     try {
-        $startedAtUtc = (& $Dependencies.GetNow).ToUniversalTime()
         try {
             $settings = & $Dependencies.ReadSettings
             $result = & $Dependencies.Probe $settings
@@ -1101,11 +1295,9 @@ function Invoke-WatchdogRun {
 
         if ([string]$result.Status -eq 'unhealthy' -and
             [string]$result.ErrorCategory -notin @('SettingsMissing', 'SettingsInvalid')) {
-            $result = Invoke-WatchdogRecovery `
-                -InitialProbe $result `
-                -Settings $settings `
-                -StartedAtUtc $startedAtUtc `
-                -Dependencies $Dependencies
+            $result = & $Dependencies.RecoverConnector ([pscustomobject]@{
+                publicBaseUrl = [string]$result.PublicBaseUrl
+            })
         }
 
         $previousState = & $Dependencies.ReadState
@@ -1230,6 +1422,7 @@ function New-WatchdogDependencies {
     $watchdogPaths = Get-WatchdogPaths -StateRoot (Join-Path $OneClickStateRoot 'watchdog')
     $settingsPath = Join-Path $OneClickStateRoot 'settings.json'
     $oneClickPath = Join-Path $PSScriptRoot 'devspace-oneclick.ps1'
+    $forceReconnectPath = Join-Path $PSScriptRoot '15-FORCE-RECONNECT.cmd'
     $tools = Get-InstalledTools
 
     $invokeHttp = {
@@ -1266,11 +1459,85 @@ function New-WatchdogDependencies {
             -Settings $Settings `
             -Dependencies $probeDependencies
     }.GetNewClosure()
+    $invokeConnectorRequest = {
+        param($Url)
+        try {
+            $response = Invoke-WebRequest `
+                -UseBasicParsing `
+                -Method Get `
+                -Uri $Url `
+                -Headers @{ Accept = 'application/json, text/event-stream' } `
+                -TimeoutSec 10 `
+                -ErrorAction Stop
+            return [pscustomobject]@{
+                StatusCode = [int]$response.StatusCode
+                WwwAuthenticate = [string]$response.Headers['WWW-Authenticate']
+            }
+        }
+        catch {
+            $httpResponse = $_.Exception.Response
+            if (-not $httpResponse) {
+                throw
+            }
+            $headers = $httpResponse.Headers
+            $challenge = if ($headers) {
+                [string]$headers['WWW-Authenticate']
+            }
+            else {
+                ''
+            }
+            return [pscustomobject]@{
+                StatusCode = [int]$httpResponse.StatusCode
+                WwwAuthenticate = $challenge
+            }
+        }
+    }
+    $verifyConnectorResponse = {
+        param($PublicBaseUrl)
+        return Test-WatchdogConnectorResponse `
+            -PublicBaseUrl $PublicBaseUrl `
+            -InvokeConnectorRequest $invokeConnectorRequest
+    }.GetNewClosure()
+    $invokeForceReconnect = {
+        param($ForceReconnectScript, $Environment)
+        $previousMode = $env:DEVSPACE_ONECLICK_NONINTERACTIVE
+        $previousNoPause = $env:DEVSPACE_ONECLICK_NO_PAUSE
+        try {
+            $env:DEVSPACE_ONECLICK_NONINTERACTIVE = [string]$Environment.DEVSPACE_ONECLICK_NONINTERACTIVE
+            $env:DEVSPACE_ONECLICK_NO_PAUSE = [string]$Environment.DEVSPACE_ONECLICK_NO_PAUSE
+            & $env:ComSpec /d /c "`"$ForceReconnectScript`""
+            if ($LASTEXITCODE -ne 0) {
+                throw "Force Reconnect failed with exit code $LASTEXITCODE."
+            }
+        }
+        finally {
+            $env:DEVSPACE_ONECLICK_NONINTERACTIVE = $previousMode
+            $env:DEVSPACE_ONECLICK_NO_PAUSE = $previousNoPause
+        }
+    }.GetNewClosure()
+    $forceReconnect = {
+        Invoke-WatchdogForceReconnect -Dependencies @{
+            ForceReconnectPath = $forceReconnectPath
+            InvokeForceReconnect = $invokeForceReconnect
+        }
+    }.GetNewClosure()
+    $recoverConnector = {
+        param($State)
+        return Invoke-WatchdogConnectorRecovery `
+            -State $State `
+            -Dependencies @{
+                ForceReconnect = $forceReconnect
+                ReadSettings = $readSettings
+                Probe = $probe
+                VerifyConnectorResponse = $verifyConnectorResponse
+            }
+    }.GetNewClosure()
 
     return @{
         Paths = $watchdogPaths
         SettingsPath = $settingsPath
         OneClickPath = $oneClickPath
+        ForceReconnectPath = $forceReconnectPath
         DevTunnelPath = [string]$tools.DevTunnel
         AcquireMutex = { Enter-WatchdogMutex }
         GetNow = { [DateTime]::UtcNow }
@@ -1303,6 +1570,10 @@ function New-WatchdogDependencies {
                 $env:DEVSPACE_ONECLICK_NONINTERACTIVE = $previousMode
             }
         }
+        InvokeForceReconnect = $invokeForceReconnect
+        ForceReconnect = $forceReconnect
+        VerifyConnectorResponse = $verifyConnectorResponse
+        RecoverConnector = $recoverConnector
         GetProcessRecords = {
             return @(
                 Get-CimInstance Win32_Process -Filter "Name='devtunnel.exe'" |
@@ -1829,6 +2100,13 @@ function New-WatchdogLifecycleDependencies {
             $runDependencies = & $runDependenciesFactory
             return Invoke-WatchdogRun -Dependencies $runDependencies
         }.GetNewClosure()
+        RecoverConnector = {
+            param($State)
+            $runDependencies = & $runDependenciesFactory
+            return Invoke-WatchdogConnectorRecovery `
+                -State $State `
+                -Dependencies $runDependencies
+        }.GetNewClosure()
         GetTask = {
             return Get-WatchdogScheduledTaskSnapshot
         }
@@ -1907,25 +2185,19 @@ function Invoke-WatchdogConnectorFailure {
             }
         }
 
+        $recovery = & $Dependencies.RecoverConnector $state
         $config = & $Dependencies.ReadConfig
-        $serviceStatus = [string](Get-WatchdogRecordValue `
-            -Record $state `
-            -Name 'status' `
-            -DefaultValue 'unknown')
         $message = [pscustomobject]@{
-            Kind = 'ConnectorFailure'
+            Kind = if ($recovery.RecoverySucceeded -eq $true) { 'Recovery' } else { 'ConnectorFailure' }
             MachineName = [string]$Dependencies.MachineName
             CheckedAtUtc = $now.ToString('o')
-            LocalStatus = $serviceStatus
-            PublicStatus = $serviceStatus
-            ConnectorStatus = 'down'
-            RecoveryAttempted = $false
-            RecoverySucceeded = $false
-            ErrorCategory = 'ConnectorFailure'
-            PublicBaseUrl = [string](Get-WatchdogRecordValue `
-                -Record $state `
-                -Name 'publicBaseUrl' `
-                -DefaultValue '')
+            LocalStatus = [string]$recovery.LocalStatus
+            PublicStatus = [string]$recovery.PublicStatus
+            ConnectorStatus = [string]$recovery.ConnectorStatus
+            RecoveryAttempted = [bool]$recovery.RecoveryAttempted
+            RecoverySucceeded = [bool]$recovery.RecoverySucceeded
+            ErrorCategory = $recovery.ErrorCategory
+            PublicBaseUrl = [string]$recovery.PublicBaseUrl
         }
         $delivery = & $Dependencies.SendMessage $config $message
         if ($delivery.Delivered -eq $true) {
@@ -1934,7 +2206,12 @@ function Invoke-WatchdogConnectorFailure {
         return [pscustomobject]@{
             Delivered = $delivery.Delivered
             Deduplicated = $false
-            ErrorCategory = $delivery.ErrorCategory
+            ErrorCategory = if ($delivery.Delivered -eq $true) {
+                $recovery.ErrorCategory
+            }
+            else {
+                $delivery.ErrorCategory
+            }
             StatusCode = $delivery.StatusCode
         }
     }
