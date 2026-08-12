@@ -32,6 +32,13 @@ const PROFILE_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const MODEL_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$/;
 const IDEMPOTENCY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/;
 const GENESIS_HASH = "0".repeat(64);
+const SENSITIVE_CREDENTIAL_PATTERNS = [
+  /\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|token|secret|password|authorization)\b["']?\s*[:=]\s*["']?(?:(?:Bearer|Basic)\s+)?[A-Za-z0-9._~+\/=\-]{8,}["']?/giu,
+  /\bBearer\s+[A-Za-z0-9._~+\/-]{8,}/giu,
+  /\b(?:sk-[A-Za-z0-9_-]{8,}|ghp_[A-Za-z0-9]{8,}|github_pat_[A-Za-z0-9_]{8,}|xox[baprs]-[A-Za-z0-9-]{8,})\b/giu,
+  /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/gu,
+  /-----BEGIN(?: [A-Z0-9]+)* PRIVATE KEY-----[\s\S]*?(?:-----END(?: [A-Z0-9]+)* PRIVATE KEY-----|$)/giu,
+];
 
 function fail(message) {
   throw new Error(message);
@@ -63,6 +70,33 @@ function booleanValue(value, label, fallback) {
   if (value === undefined) return fallback;
   if (typeof value !== "boolean") fail(`${label} must be a boolean.`);
   return value;
+}
+
+function containsSensitiveCredential(value, seen = new WeakSet()) {
+  if (typeof value === "string") {
+    return SENSITIVE_CREDENTIAL_PATTERNS.some((pattern) => {
+      pattern.lastIndex = 0;
+      return pattern.test(value);
+    });
+  }
+  if (!value || typeof value !== "object" || seen.has(value)) return false;
+  seen.add(value);
+  return Object.values(value).some((item) => containsSensitiveCredential(item, seen));
+}
+
+function assertNoSensitiveCredential(value) {
+  if (containsSensitiveCredential(value)) {
+    fail("Workflow data contains a sensitive credential and cannot be persisted.");
+  }
+}
+
+function redactSensitiveCredentials(value, label, maxLength) {
+  const text = optionalString(value, label, maxLength);
+  if (text === undefined) return undefined;
+  return SENSITIVE_CREDENTIAL_PATTERNS.reduce((current, pattern) => {
+    pattern.lastIndex = 0;
+    return current.replace(pattern, "[REDACTED]");
+  }, text);
 }
 
 function normalizePath(path) {
@@ -306,6 +340,7 @@ async function writeSnapshot(paths, state) {
 }
 
 async function appendTaskEvent(paths, state, input) {
+  assertNoSensitiveCredential(input.task);
   const withoutHash = {
     schemaVersion: 1,
     eventId: input.eventId,
@@ -753,7 +788,11 @@ export function createWorkflowController(options = {}) {
             const run = task.runs.find((candidate) => candidate.runId === preparedRun.runId);
             if (run) {
               run.status = "error";
-              run.error = String(error?.message ?? error).slice(0, 8_000);
+              run.error = redactSensitiveCredentials(
+                String(error?.message ?? error),
+                "Agent error",
+                8_000,
+              );
               run.endedAt = now();
             }
             return task;
@@ -796,12 +835,12 @@ export function createWorkflowController(options = {}) {
           const currentRun = current.runs.find((candidate) => candidate.runId === runId);
           if (!currentRun) fail(`Unknown workflow run: ${runId}`);
           currentRun.status = requiredString(record.status, "Agent status", 32);
-          currentRun.latestResponse = optionalString(
+          currentRun.latestResponse = redactSensitiveCredentials(
             record.latestResponse,
             "Agent response",
             100_000,
           );
-          currentRun.error = optionalString(record.error, "Agent error", 20_000);
+          currentRun.error = redactSensitiveCredentials(record.error, "Agent error", 20_000);
           currentRun.syncedAt = now();
           if (["idle", "error", "stopped"].includes(currentRun.status)) currentRun.endedAt = now();
           return current;

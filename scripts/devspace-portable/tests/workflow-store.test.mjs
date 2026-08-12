@@ -10,7 +10,7 @@ import {
   resolveLocalAgentPolicy,
 } from "../DevSpace.WorkflowStore.mjs";
 
-async function createFixture() {
+async function createFixture(options = {}) {
   const stateDirectory = await mkdtemp(join(tmpdir(), "devspace-workflow-test-"));
   let sequence = 0;
   const adapterCalls = [];
@@ -30,7 +30,7 @@ async function createFixture() {
         return { agentId: `agt_${String(adapterCalls.length).padStart(8, "0")}` };
       },
       async get(agentId) {
-        return {
+        return options.agentRecord ?? {
           agentId,
           status: "idle",
           latestResponse: "verified output",
@@ -88,6 +88,36 @@ test("create is idempotent and replay produces the same task", async () => {
       sessionRef: "another-session",
     });
     assert.deepEqual(replayed, first);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("persistent workflow fields reject credential-like values before ledger creation", async () => {
+  const fixture = await createFixture();
+  try {
+    await assert.rejects(
+      fixture.controller.createTask(
+        baseCreate({
+          objective: "Call the service with api_key=fixture-secret-value-1234",
+          idempotencyKey: "reject-secret-create-001",
+        }),
+      ),
+      /sensitive credential/i,
+    );
+    await assert.rejects(
+      fixture.controller.createTask(
+        baseCreate({
+          objective: 'Load {"apiKey":"fixture-json-secret-value-5678"}',
+          idempotencyKey: "reject-json-secret-create-001",
+        }),
+      ),
+      /sensitive credential/i,
+    );
+    await assert.rejects(
+      readFile(join(fixture.stateDirectory, "workflow-events.jsonl"), "utf8"),
+      (error) => error?.code === "ENOENT",
+    );
   } finally {
     await fixture.cleanup();
   }
@@ -378,6 +408,64 @@ test("worker run receives selected model and effort, then sync records output", 
     });
     assert.equal(task.runs.at(-1).status, "idle");
     assert.equal(task.runs.at(-1).latestResponse, "verified output");
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("Agent sync redacts credential-like runtime output before persistence", async () => {
+  const fixture = await createFixture({
+    agentRecord: {
+      status: "idle",
+      latestResponse: [
+        "completed with Bearer fixture-runtime-token-1234",
+        "-----BEGIN PRIVATE KEY-----",
+        "fixture-private-material-9012",
+        "-----END PRIVATE KEY-----",
+      ].join("\n"),
+      error:
+        '{"authorization":"Basic Zml4dHVyZS1iYXNpYy1zZWNyZXQtdmFsdWU="}',
+    },
+  });
+  try {
+    let task = await fixture.controller.createTask(
+      baseCreate({ idempotencyKey: "redact-runtime-create-001" }),
+    );
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "redact-runtime-claim-001",
+    });
+    task = await fixture.controller.runTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      role: "worker",
+      expectedRevision: task.revision,
+      idempotencyKey: "redact-runtime-run-001",
+    });
+    task = await fixture.controller.syncTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      runId: task.runs.at(-1).runId,
+      expectedRevision: task.revision,
+      idempotencyKey: "redact-runtime-sync-001",
+    });
+
+    assert.match(task.runs.at(-1).latestResponse, /\[REDACTED\]/);
+    assert.match(task.runs.at(-1).error, /\[REDACTED\]/);
+    const ledger = await readFile(join(fixture.stateDirectory, "workflow-events.jsonl"), "utf8");
+    assert.doesNotMatch(
+      ledger,
+      /fixture-runtime-token-1234|Zml4dHVyZS1iYXNpYy1zZWNyZXQtdmFsdWU=|fixture-private-material-9012/,
+    );
   } finally {
     await fixture.cleanup();
   }
