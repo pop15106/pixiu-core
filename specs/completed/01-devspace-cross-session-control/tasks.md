@@ -16,5 +16,5 @@
 
 - 2026-08-12：使用者已明確允許 Agent Team 品質模式與直接實作。
 - 2026-08-12：主 worktree 的 watchdog/README/tests 有既存修改，本功能在 detached 隔離 worktree 開發並避開重疊檔案。
-- 2026-08-12：portable suite 105/105、workflow Node tests 11/11、獨立 Agent acceptance PASS。
+- 2026-08-12：portable suite 105/105、workflow Node tests 13/13、Watchdog tests 162/162、獨立 Agent acceptance PASS。
 - 2026-08-12：實際 DevSpace 1.0.4 已更新；MCP session 建立 200、工具呼叫 200、stderr 為空。
