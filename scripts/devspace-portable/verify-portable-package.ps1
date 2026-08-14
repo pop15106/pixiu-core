@@ -24,6 +24,12 @@ if ([int]$manifest.schemaVersion -ne 1) {
 
 $requiredPayload = @(
     '00-SETUP-OR-UPDATE.cmd',
+    'START-CONNECTION.cmd',
+    'DISCONNECT.cmd',
+    'FORCE-RECONNECT.cmd',
+    'QA-CHECK.cmd',
+    'QUICK-GUIDE.txt',
+    'QA-TROUBLESHOOTING.txt',
     'devspace-oneclick.ps1',
     'DevSpace.WorkflowStore.mjs',
     'DevSpace.OneClick.Subagents.psm1',
