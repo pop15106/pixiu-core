@@ -16,6 +16,15 @@
 
 也可以把一個專案資料夾直接拖到 `00-SETUP-OR-UPDATE.cmd` 上。第一次安裝會用該資料夾作為 allowed root；既有安裝則會把它加入 allowedRoots 後再更新。
 
+不熟 DevSpace 的使用者只需要先記住四個檔案：
+
+- `START-CONNECTION.cmd`：啟動連線。
+- `DISCONNECT.cmd`：中斷連線，但保留所有本機設定與 workflow state。
+- `FORCE-RECONNECT.cmd`：ChatGPT 連不上或工具異常時，安全停止、重新啟動並驗證。
+- `QA-CHECK.cmd`：不知道問題在哪裡時先執行，畫面會顯示建議的 QA 排查順序。
+
+最短說明請看 `QUICK-GUIDE.txt`；完整異常處理流程請看 `QA-TROUBLESHOOTING.txt`。
+
 ## 每台電腦如何避免衝突
 
 - 每台電腦會建立自己的 tunnel ID 和公開網址。
@@ -30,10 +39,16 @@
 ## 日常操作
 
 - 第一次安裝或日後更新（建議入口）：`00-SETUP-OR-UPDATE.cmd`
+- 友善啟動入口：`START-CONNECTION.cmd`
+- 友善中斷入口：`DISCONNECT.cmd`
+- 友善強制重連入口：`FORCE-RECONNECT.cmd`
+- QA 快速檢查：`QA-CHECK.cmd`
+- 最短使用說明：`QUICK-GUIDE.txt`
+- QA 異常處理手冊：`QA-TROUBLESHOOTING.txt`
 - 僅執行舊式首次安裝流程：`01-INSTALL-AND-START.cmd`
 - 新增可存取資料夾：`02-ADD-FOLDER.cmd`
-- 啟動後端：`03-START.cmd`
-- 停止後端：`04-STOP.cmd`
+- 啟動後端（原始入口）：`03-START.cmd`
+- 停止後端（原始入口）：`04-STOP.cmd`
 - 查看 URL、port、tunnel ID、allowedRoots：`05-STATUS.cmd`
 - 把 Owner password 複製到剪貼簿：`06-COPY-PASSWORD.cmd`
 - 查看全部或指定 Subagent 狀態：`07-SUBAGENT-STATUS.cmd [Agent ID]`
