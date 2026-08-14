@@ -458,7 +458,9 @@ HTTP: {
     Assert-Equal $patchedServer.Contains('if (config.toolMode === "codex")') $false 'registers process-session tools outside Codex mode'
     Assert-Equal $patchedServer.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE') $true 'loads the durable workflow module from the managed path'
     Assert-Equal $patchedServer.Contains('registerDevSpaceWorkflowTools') $true 'registers cross-session workflow tools for ChatGPT Web'
-    Assert-Equal $patchedServer.Contains('Use workflow_create, workflow_list, workflow_update, workflow_run, and workflow_sync') $true 'guides ChatGPT Web to the workflow tools'
+    Assert-Equal $patchedServer.Contains('Use workflow_create, workflow_list, and workflow_update for durable cross-session coordination') $true 'guides ChatGPT Web to workflow coordination tools'
+    Assert-Equal $patchedServer.Contains('Treat clear natural-language continuation intent') $true 'auto-routes clear cross-session intent without tool-name vocabulary'
+    Assert-Equal $patchedServer.Contains('Never call workflow_run because of continuation intent alone') $true 'keeps workflow_run behind separate explicit user model authorization'
     Assert-Equal $patchedSkills.Contains('projectSkillMirrorSha256') $true 'uses SHA-256-aware project skill mirror detection'
 
     $skillFixture = Join-Path $testRoot 'skill-discovery'

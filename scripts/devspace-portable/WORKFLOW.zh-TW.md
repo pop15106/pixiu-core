@@ -5,8 +5,29 @@
 - `workflow_create`：建立工作，選擇 `single_session`、`same_project` 或 `cross_project`。
 - `workflow_list`：在新的對話列出可接手工作，或查詢指定 `taskId`。
 - `workflow_update`：claim、handoff、acknowledge、review、complete 或 block。
-- `workflow_run`：啟動本地 worker/reviewer Agent；可為這次 run 覆寫模型與推理強度。
-- `workflow_sync`：把 Agent 的最新狀態與輸出同步回工作 ledger。
+- `workflow_run`：只有使用者在目前對話明確要求使用 Agent／model 時，才啟動本地 worker/reviewer Agent；未授權會直接拒絕。
+- `workflow_sync`：只同步已由使用者明確授權啟動的 Agent run。
+
+## 自然語意觸發
+
+日常使用不需要記 `workflow_create`、`handoff`、`claim`、`acknowledge` 等工具名稱。只要使用者明確表示「工作要由另一個 Session、另一個對話或另一個專案接續」，就視為 workflow 意圖。
+
+可直接觸發的說法例如：
+
+- 「下一個 session 繼續」
+- 「另一個對話接手」
+- 「我等等開新聊天繼續」
+- 「這個交給另一個專案處理」
+- 「從這個 repo 換到另一個 repo 接著做」
+
+行為規則：
+
+- 目前 Session 要交棒：建立或沿用相符 task，必要時 claim，再 handoff。
+- 新 Session 表示接續／接手：先 `workflow_list`；若只有一個明確相符的 pending handoff，直接 acknowledge。
+- 同一 repo 的另一個 Session 使用 `same_project`；明確指定另一個已開啟 repo 才使用 `cross_project`。
+- 若目標、scope 或候選 task 不唯一，才詢問使用者。
+- 「先這樣」、「等等再說」等單純結束語不觸發，除非上下文明確指出之後要由另一個 Session／專案接續。
+- 自然語意接力只會使用 `workflow_create`、`workflow_list`、`workflow_update`。它不授權 `workflow_run`，也不代表允許啟動 Agent／model。
 
 ## 最短流程
 
@@ -21,8 +42,8 @@
   - `same_project`：同一 project root 的其他對話可以接手。
   - `cross_project`：先分別 `open_workspace`，再把其他 `workspaceId` 放入 `relatedWorkspaceIds`。
 - `idempotencyKey`：每個操作一個唯一值；重試同一操作時沿用原值。
-- `model`／`reasoningEffort`：預設執行政策。
-- `deepResearch`／`proMode`：是否要求該能力。
+- `model`／`reasoningEffort`：可選。純 workflow 建立、接手與 handoff 不需要指定；只有使用者明確要求模型覆寫時才填。
+- `deepResearch`／`proMode`：可選；只有使用者明確要求對應能力時才填。
 - `unsupportedBehavior`：
   - `block`：執行器不支援就拒絕啟動。
   - `explicit_degrade`：允許降級，但 run 會同時保存 requested/effective policy 與警告。
@@ -59,7 +80,9 @@ owner 呼叫 `workflow_update(action="request_review")`，指定不同的 `revie
 
 ## 模型、Deep Research 與 Pro
 
-DevSpace 本地 Codex Agent adapter 目前可以實際傳入 `model` 與 `reasoningEffort`。每次 `workflow_run` 也可以覆寫這兩項。
+純 `workflow_create`／`workflow_list`／`workflow_update` 不會啟動任何模型。`workflow_run` 有硬性授權閘門：只有使用者在目前對話明確要求使用 Agent／model 時，呼叫端才可設定 `userAuthorizedModelRun=true`；否則 server 直接拒絕。
+
+`model` 與 `reasoningEffort` 都是可選覆寫。未指定時，`workflow_run` 使用選定 DevSpace Agent profile 的既有預設，不在 workflow 建立階段預先綁定模型。
 
 Deep Research 與 Pro 是獨立政策欄位，但目前本地 Agent adapter 無法替 ChatGPT Web 切換 UI 模式，也不能冒充 Responses API 的 Deep Research/Pro 執行器。因此：
 

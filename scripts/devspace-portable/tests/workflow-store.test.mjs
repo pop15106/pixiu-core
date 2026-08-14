@@ -370,6 +370,71 @@ test("local policy blocks or explicitly records unsupported Deep Research and Pr
   assert.equal(resolved.warnings.length, 2);
 });
 
+test("workflow_run requires explicit user authorization before starting an Agent", async () => {
+  const fixture = await createFixture();
+  try {
+    let task = await fixture.controller.createTask(baseCreate());
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "auth-gate-claim-001",
+    });
+    await assert.rejects(
+      fixture.controller.runTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "session-a",
+        actor: "alice",
+        role: "worker",
+        expectedRevision: task.revision,
+        idempotencyKey: "auth-gate-run-001",
+      }),
+      /explicit user authorization/i,
+    );
+    assert.equal(fixture.adapterCalls.length, 0);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("authorized workflow_run can omit model and reasoning overrides", async () => {
+  const fixture = await createFixture();
+  try {
+    let task = await fixture.controller.createTask(
+      baseCreate({ policy: {}, idempotencyKey: "profile-default-create-001" }),
+    );
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "profile-default-claim-001",
+    });
+    task = await fixture.controller.runTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      role: "worker",
+      userAuthorizedModelRun: true,
+      expectedRevision: task.revision,
+      idempotencyKey: "profile-default-run-001",
+    });
+    assert.equal(fixture.adapterCalls[0].model, undefined);
+    assert.equal(fixture.adapterCalls[0].reasoningEffort, undefined);
+    assert.equal(task.runs.at(-1).effectivePolicy.model, undefined);
+    assert.equal(task.runs.at(-1).effectivePolicy.reasoningEffort, undefined);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
 test("worker run receives selected model and effort, then sync records output", async () => {
   const fixture = await createFixture();
   try {
@@ -390,6 +455,7 @@ test("worker run receives selected model and effort, then sync records output", 
       actor: "alice",
       role: "worker",
       profile: "codex-worker",
+      userAuthorizedModelRun: true,
       expectedRevision: task.revision,
       idempotencyKey: "run-worker-001",
     });
@@ -446,6 +512,7 @@ test("Agent sync redacts credential-like runtime output before persistence", asy
       sessionRef: "session-a",
       actor: "alice",
       role: "worker",
+      userAuthorizedModelRun: true,
       expectedRevision: task.revision,
       idempotencyKey: "redact-runtime-run-001",
     });
@@ -490,6 +557,7 @@ test("retrying workflow_run with the same key does not start a second Agent", as
       sessionRef: "session-a",
       actor: "alice",
       role: "worker",
+      userAuthorizedModelRun: true,
       expectedRevision: task.revision,
       idempotencyKey: "retry-run-001",
     };
@@ -544,6 +612,7 @@ test("Agent start finalization preserves a concurrent handoff revision", async (
       sessionRef: "session-a",
       actor: "alice",
       role: "worker",
+      userAuthorizedModelRun: true,
       expectedRevision: task.revision,
       idempotencyKey: "race-run-001",
     });
@@ -647,6 +716,25 @@ test("MCP registration exposes five workflow tools and functional create/list ha
     for (const registration of registered.values()) {
       assert.deepEqual(registration.descriptor._meta, {});
     }
+    assert.ok(
+      "userAuthorizedModelRun" in registered.get("workflow_run").descriptor.inputSchema,
+      "workflow_run exposes an explicit user-authorization gate",
+    );
+    assert.match(
+      registered.get("workflow_create").descriptor.description,
+      /another chat, session, or project/i,
+      "workflow_create advertises natural-language cross-session intent",
+    );
+    assert.match(
+      registered.get("workflow_list").descriptor.description,
+      /continue, resume, or take over/i,
+      "workflow_list advertises resume/take-over discovery",
+    );
+    assert.match(
+      registered.get("workflow_update").descriptor.description,
+      /Natural-language continuation intent is enough/i,
+      "workflow_update does not require tool-name vocabulary",
+    );
     const createdResponse = await registered.get("workflow_create").handler({
       workspaceId: "ws-alpha",
       relatedWorkspaceIds: ["ws-beta"],
@@ -656,15 +744,12 @@ test("MCP registration exposes five workflow tools and functional create/list ha
       objective: "Coordinate two projects",
       acceptanceCriteria: ["Both roots can see the task"],
       requireReview: true,
-      model: "gpt-5.6-sol",
-      reasoningEffort: "xhigh",
-      deepResearch: false,
-      proMode: false,
-      unsupportedBehavior: "block",
       idempotencyKey: "mcp-create-001",
     });
     const created = JSON.parse(createdResponse.structuredContent.result);
     assert.equal(created.scope, "cross_project");
+    assert.equal(created.executionPolicy.model, undefined);
+    assert.equal(created.executionPolicy.reasoningEffort, undefined);
     const listedResponse = await registered.get("workflow_list").handler({
       workspaceId: "ws-beta",
       sessionRef: "session-web-b",
