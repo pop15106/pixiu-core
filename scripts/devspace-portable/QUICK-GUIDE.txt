@@ -1,0 +1,50 @@
+Pixiu DevSpace OneClick｜快速使用說明
+====================================
+
+第一次安裝 / 更新
+-----------------
+雙擊：00-SETUP-OR-UPDATE.cmd
+
+第一次使用時會自動安裝需要的工具、設定 DevSpace、Microsoft Dev Tunnel、跨 Session / 跨專案 workflow。
+已安裝過時會保留原本的 tunnel、Owner password、allowed folders 與 workflow state，只更新程式與 patch。
+
+平常最常用的 4 個檔案
+---------------------
+1. START-CONNECTION.cmd
+   啟動 DevSpace 連線。
+
+2. DISCONNECT.cmd
+   中斷 DevSpace 連線。
+   不會刪除設定、tunnel、Owner password 或 workflow 狀態。
+
+3. FORCE-RECONNECT.cmd
+   ChatGPT 突然連不上、工具失效或連線怪怪的時使用。
+   會安全停止 → 重新啟動 → 檢查狀態。
+
+4. QA-CHECK.cmd
+   不知道問題在哪裡時先跑這個。
+   它會顯示目前狀態與建議的異常處理順序。
+
+跨 Session / 跨專案
+--------------------
+安裝完成後已內建，不需要另外安裝。
+平常可以直接說：
+「下一個 session 繼續」
+「另一個對話接手」
+「交給另一個專案繼續」
+
+純 workflow 接力不會自動啟動 Agent / model。
+只有你在目前對話明確要求使用 Agent / model 時才允許 workflow_run。
+
+ChatGPT 第一次設定
+-----------------
+安裝完成後，畫面會顯示 MCP URL 與 Owner password。
+在 ChatGPT 建立 DevSpace App，使用該 MCP URL，驗證方式選 OAuth。
+
+遇到異常
+--------
+先雙擊 QA-CHECK.cmd。
+詳細排查請看：QA-TROUBLESHOOTING.txt
+
+進階原始工具仍保留：
+03-START.cmd / 04-STOP.cmd / 05-STATUS.cmd / 09-REPAIR-STATE.cmd / 15-FORCE-RECONNECT.cmd
