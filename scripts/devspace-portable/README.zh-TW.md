@@ -4,15 +4,17 @@
 
 ## 最簡單的使用方式
 
-1. 把整個資料夾解壓縮到新電腦。
-2. 雙擊 `01-INSTALL-AND-START.cmd`。
-3. 輸入要授權的專案資料夾。多個資料夾用分號分隔。
+1. 把整個 `DevSpace-OneClick` 資料夾解壓縮到新電腦。
+2. 雙擊 `00-SETUP-OR-UPDATE.cmd`。
+3. 第一次使用時輸入要授權的專案資料夾。多個資料夾用分號分隔。
 4. 瀏覽器開啟時，登入 Microsoft Dev Tunnel。可以使用和其他電腦相同的 Microsoft 帳號。
 5. 等畫面顯示 `READY FOR CHATGPT WEB`。
 6. 複製畫面上的 MCP URL，在 ChatGPT 開發者模式建立自訂 App，驗證方式選 OAuth。
 7. OAuth 核准頁出現時，輸入畫面上的 Owner password。
 
-也可以把一個專案資料夾直接拖到 `01-INSTALL-AND-START.cmd` 上。
+之後拿到新版 portable 套件時，覆蓋／解壓到新的資料夾後再次執行 `00-SETUP-OR-UPDATE.cmd` 即可。它會辨識既有 OneClick 設定，保留這台電腦的 tunnel、Owner password、allowedRoots、workflow ledger 與其他本機 state，只更新 DevSpace 套件、Windows patch、workflow module、Agent profiles 與啟動設定。
+
+也可以把一個專案資料夾直接拖到 `00-SETUP-OR-UPDATE.cmd` 上。第一次安裝會用該資料夾作為 allowed root；既有安裝則會把它加入 allowedRoots 後再更新。
 
 ## 每台電腦如何避免衝突
 
@@ -27,7 +29,8 @@
 
 ## 日常操作
 
-- 安裝並首次啟動：`01-INSTALL-AND-START.cmd`
+- 第一次安裝或日後更新（建議入口）：`00-SETUP-OR-UPDATE.cmd`
+- 僅執行舊式首次安裝流程：`01-INSTALL-AND-START.cmd`
 - 新增可存取資料夾：`02-ADD-FOLDER.cmd`
 - 啟動後端：`03-START.cmd`
 - 停止後端：`04-STOP.cmd`
@@ -119,6 +122,26 @@ Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也�
 ### 移除
 
 雙擊 `13-REMOVE-WATCHDOG.cmd`，輸入 `REMOVE` 後，只會移除固定 task `Pixiu DevSpace Watchdog` 與 `%LOCALAPPDATA%\DevSpaceOneClick\watchdog`。它不會停止 DevSpace、不會刪除 OneClick settings、Owner password、allowed roots 或其他 Dev Tunnel。
+
+## 跨 Session／跨專案 workflow
+
+Portable 套件已內建 `DevSpace.WorkflowStore.mjs`，安裝或更新時會自動部署，不需要另外複製。ChatGPT App Refresh actions 後會提供 `workflow_create`、`workflow_list`、`workflow_update`、`workflow_run`、`workflow_sync`。
+
+純跨 Session／跨專案接力只使用 create/list/update，不會啟動模型。使用者可以直接用自然語意，例如「下一個 session 繼續」、「另一個對話接手」、「交給另一個專案處理」；不需要記 workflow 或 handoff 工具名稱。`workflow_run` 另有 `userAuthorizedModelRun=true` 的硬性閘門，只有使用者在目前對話明確要求使用 Agent／model 時才可執行。
+
+完整使用方式見 `WORKFLOW.zh-TW.md`。
+
+## 建立可分發 ZIP
+
+在 PixiuCore 原始碼 repo 內雙擊 `BUILD-PORTABLE-ZIP.cmd`，或執行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-portable-package.ps1
+```
+
+預設輸出到 `scripts/devspace-portable/dist/DevSpace-OneClick-YYYYMMDD-<commit>.zip`。Builder 使用明確 allowlist，只打包 OneClick 腳本、workflow module、Agent profiles、說明文件與完整性驗證器；不打包 `%USERPROFILE%\.devspace`、`%LOCALAPPDATA%\DevSpaceOneClick`、Owner password、Microsoft／ChatGPT token、tunnel ID、allowedRoots、workflow ledger 或 log。
+
+ZIP 內含 `PORTABLE-MANIFEST.json`。`00-SETUP-OR-UPDATE.cmd` 在發佈包中會先驗證檔案 SHA-256 與檔案集合，再進行安裝／更新；若 payload 被修改或多出未納管檔案會 fail closed。
 
 ## Subagent delegation
 
