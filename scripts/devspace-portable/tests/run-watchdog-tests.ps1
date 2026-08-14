@@ -483,6 +483,16 @@ try {
             -CurrentResult ([pscustomobject]@{ status = 'healthy'; errorCategory = $null })
         Assert-Equal $recovered.Kind 'Recovery' 'notifies an unhealthy to healthy transition'
 
+        $autoRecovered = Get-WatchdogNotificationDecision `
+            -PreviousState ([pscustomobject]@{ status = 'healthy'; lastErrorCategory = $null }) `
+            -CurrentResult ([pscustomobject]@{
+                status = 'healthy'
+                errorCategory = $null
+                RecoveryAttempted = $true
+                RecoverySucceeded = $true
+            })
+        Assert-Equal $autoRecovered.Kind 'Recovery' 'notifies after an anomaly is auto-recovered in the same run'
+
         $connectorState = [pscustomobject]@{
             lastConnectorFailureNotifiedAtUtc = $null
         }
@@ -533,6 +543,34 @@ try {
         Assert-Equal $telegramResult.Delivered $true 'delivers a fixed structured Telegram notification'
         Assert-Equal @($telegramTokens) @($plainToken) 'decrypts the token only for the Telegram adapter'
         Assert-Equal (($telegramResult | ConvertTo-Json -Compress).Contains($plainToken)) $false 'does not return the Telegram token'
+
+        $connectorRecoveryText = ConvertTo-WatchdogTelegramText -Message ([pscustomobject]@{
+            Kind = 'Recovery'
+            MachineName = 'TEST-MACHINE'
+            CheckedAtUtc = '2026-07-29T04:00:00.0000000Z'
+            LocalStatus = 'ready'
+            PublicStatus = 'ready'
+            ConnectorStatus = 'ready'
+            RecoveryAttempted = $true
+            RecoverySucceeded = $true
+            ErrorCategory = $null
+            PublicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+        })
+        Assert-Equal $connectorRecoveryText.StartsWith('DevSpace Connector ') $true 'labels a verified Connector recovery explicitly'
+
+        $connectorFailureText = ConvertTo-WatchdogTelegramText -Message ([pscustomobject]@{
+            Kind = 'ConnectorFailure'
+            MachineName = 'TEST-MACHINE'
+            CheckedAtUtc = '2026-07-29T04:00:00.0000000Z'
+            LocalStatus = 'ready'
+            PublicStatus = 'ready'
+            ConnectorStatus = 'down'
+            RecoveryAttempted = $true
+            RecoverySucceeded = $false
+            ErrorCategory = 'PostRecoveryConnectorResponseFailed'
+            PublicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+        })
+        Assert-Equal $connectorFailureText.StartsWith('DevSpace Connector ') $true 'labels a failed Connector auto-recovery explicitly'
         Assert-Throws {
             Send-WatchdogTelegram `
                 -Config $telegramConfig `
@@ -579,6 +617,9 @@ try {
         'New-WatchdogDependencies',
         'Enter-WatchdogMutex',
         'Invoke-OneClickAction',
+        'Invoke-WatchdogForceReconnect',
+        'Test-WatchdogConnectorResponse',
+        'Invoke-WatchdogConnectorRecovery',
         'Invoke-WatchdogProbe',
         'Invoke-WatchdogRecovery',
         'Invoke-WatchdogRun'
@@ -661,6 +702,115 @@ try {
             }
         }
         Assert-Equal @($oneClickCalls) @('stop:1') 'forces non-interactive OneClick execution'
+
+        $forceReconnectCalls = [System.Collections.Generic.List[string]]::new()
+        Invoke-WatchdogForceReconnect -Dependencies @{
+            ForceReconnectPath = 'C:\safe\15-FORCE-RECONNECT.cmd'
+            InvokeForceReconnect = {
+                param($ForceReconnectPath, $Environment)
+                [void]$forceReconnectCalls.Add(
+                    "$ForceReconnectPath|$($Environment.DEVSPACE_ONECLICK_NONINTERACTIVE)|$($Environment.DEVSPACE_ONECLICK_NO_PAUSE)"
+                )
+            }
+        }
+        Assert-Equal @($forceReconnectCalls) @('C:\safe\15-FORCE-RECONNECT.cmd|1|1') 'executes the fixed Force Reconnect command non-interactively without pause'
+
+        $connectorResponse = Test-WatchdogConnectorResponse `
+            -PublicBaseUrl 'https://dxrpsqgc-7678.jpe1.devtunnels.ms' `
+            -InvokeConnectorRequest {
+                param($Url)
+                [pscustomobject]@{
+                    StatusCode = 401
+                    WwwAuthenticate = 'Bearer error="invalid_token", resource_metadata="https://dxrpsqgc-7678.jpe1.devtunnels.ms/.well-known/oauth-protected-resource/mcp"'
+                }
+            }
+        Assert-Equal $connectorResponse.Healthy $true 'accepts the expected public MCP OAuth challenge as a valid response'
+        $wrongMetadataConnectorResponse = Test-WatchdogConnectorResponse `
+            -PublicBaseUrl 'https://dxrpsqgc-7678.jpe1.devtunnels.ms' `
+            -InvokeConnectorRequest {
+                param($Url)
+                [pscustomobject]@{
+                    StatusCode = 401
+                    WwwAuthenticate = 'Bearer error="invalid_token", resource_metadata="https://attacker.example/.well-known/oauth-protected-resource/mcp"'
+                }
+            }
+        Assert-Equal $wrongMetadataConnectorResponse.Healthy $false 'rejects an OAuth challenge whose resource metadata points at another origin'
+        $invalidConnectorResponse = Test-WatchdogConnectorResponse `
+            -PublicBaseUrl 'https://dxrpsqgc-7678.jpe1.devtunnels.ms' `
+            -InvokeConnectorRequest {
+                param($Url)
+                [pscustomobject]@{ StatusCode = 502; WwwAuthenticate = '' }
+            }
+        Assert-Equal $invalidConnectorResponse.Healthy $false 'rejects a non-OAuth MCP response'
+
+        $connectorRecoveryEvents = [System.Collections.Generic.List[string]]::new()
+        $connectorRecovery = Invoke-WatchdogConnectorRecovery `
+            -State ([pscustomobject]@{
+                status = 'healthy'
+                publicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+            }) `
+            -Dependencies @{
+                ForceReconnect = { [void]$connectorRecoveryEvents.Add('force-reconnect') }
+                ReadSettings = {
+                    [void]$connectorRecoveryEvents.Add('settings:reread')
+                    [pscustomobject]$validSettings
+                }
+                Probe = {
+                    param($FreshSettings)
+                    [void]$connectorRecoveryEvents.Add('probe')
+                    [pscustomobject]@{
+                        Status = 'healthy'
+                        ErrorCategory = $null
+                        LocalStatus = 'ready'
+                        PublicStatus = 'ready'
+                        LocalStatusCode = 200
+                        PublicStatusCode = 200
+                        PublicBaseUrl = [string]$FreshSettings.publicBaseUrl
+                    }
+                }
+                VerifyConnectorResponse = {
+                    param($PublicBaseUrl)
+                    [void]$connectorRecoveryEvents.Add('connector-response')
+                    [pscustomobject]@{ Healthy = $true; StatusCode = 401 }
+                }
+            }
+        Assert-Equal $connectorRecovery.Status 'healthy' 'marks Connector recovery healthy only after all post-checks pass'
+        Assert-Equal $connectorRecovery.ConnectorStatus 'ready' 'marks Connector response ready after the OAuth challenge check'
+        Assert-Equal $connectorRecovery.RecoverySucceeded $true 'marks the Force Reconnect recovery successful'
+        Assert-Equal @($connectorRecoveryEvents) @(
+            'force-reconnect',
+            'settings:reread',
+            'probe',
+            'connector-response'
+        ) 'runs Force Reconnect before health and MCP response verification'
+
+        $failedConnectorRecovery = Invoke-WatchdogConnectorRecovery `
+            -State ([pscustomobject]@{
+                status = 'healthy'
+                publicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+            }) `
+            -Dependencies @{
+                ForceReconnect = { }
+                ReadSettings = { [pscustomobject]$validSettings }
+                Probe = {
+                    param($FreshSettings)
+                    [pscustomobject]@{
+                        Status = 'healthy'
+                        ErrorCategory = $null
+                        LocalStatus = 'ready'
+                        PublicStatus = 'ready'
+                        LocalStatusCode = 200
+                        PublicStatusCode = 200
+                        PublicBaseUrl = [string]$FreshSettings.publicBaseUrl
+                    }
+                }
+                VerifyConnectorResponse = {
+                    param($PublicBaseUrl)
+                    [pscustomobject]@{ Healthy = $false; StatusCode = 502 }
+                }
+            }
+        Assert-Equal $failedConnectorRecovery.ErrorCategory 'PostRecoveryConnectorResponseFailed' 'keeps Connector recovery unhealthy when MCP response verification fails'
+        Assert-Equal $failedConnectorRecovery.RecoverySucceeded $false 'does not claim recovery before the response check passes'
 
         $initialFailure = [pscustomobject]@{
             Status = 'unhealthy'
@@ -858,6 +1008,60 @@ try {
             'log:RunCompleted',
             'mutex:release'
         ) 'releases the mutex after a healthy run'
+
+        $autoRecoveryEvents = [System.Collections.Generic.List[string]]::new()
+        $autoRecoveryResult = Invoke-WatchdogRun -Dependencies @{
+            AcquireMutex = {
+                [pscustomobject]@{ Acquired = $true; Release = { } }
+            }
+            GetNow = { [datetime]'2026-07-29T00:00:00Z' }
+            ReadSettings = { [pscustomobject]$validSettings }
+            Probe = {
+                param($Settings)
+                [void]$autoRecoveryEvents.Add('probe:unhealthy')
+                [pscustomobject]@{
+                    Status = 'unhealthy'
+                    ErrorCategory = 'PublicHealthFailed'
+                    LocalStatus = 'ready'
+                    PublicStatus = 'down'
+                    PublicBaseUrl = [string]$Settings.publicBaseUrl
+                    RecoveryAttempted = $false
+                    RecoverySucceeded = $false
+                }
+            }
+            RecoverConnector = {
+                param($State)
+                [void]$autoRecoveryEvents.Add('force-reconnect-and-verify')
+                [pscustomobject]@{
+                    Status = 'healthy'
+                    ErrorCategory = $null
+                    LocalStatus = 'ready'
+                    PublicStatus = 'ready'
+                    ConnectorStatus = 'ready'
+                    LocalStatusCode = 200
+                    PublicStatusCode = 200
+                    PublicBaseUrl = [string]$State.publicBaseUrl
+                    RecoveryAttempted = $true
+                    RecoverySucceeded = $true
+                }
+            }
+            ReadState = {
+                [pscustomobject]@{ status = 'healthy'; lastErrorCategory = $null }
+            }
+            WriteState = { param($State) }
+            Notify = {
+                param($Decision, $Result, $Now)
+                [void]$autoRecoveryEvents.Add("notify:$([string]$Decision.Kind)")
+                [pscustomobject]@{ Delivered = $true }
+            }
+            WriteLog = { param($Event, $Data, $CorrelationId) }
+        }
+        Assert-Equal $autoRecoveryResult.Status 'healthy' 'returns healthy after the fixed Force Reconnect path recovers an anomaly'
+        Assert-Equal @($autoRecoveryEvents) @(
+            'probe:unhealthy',
+            'force-reconnect-and-verify',
+            'notify:Recovery'
+        ) 'runs fixed reconnect and verification before notifying recovery from a Watchdog anomaly'
 
         $busyEvents = [System.Collections.Generic.List[string]]::new()
         $busyResult = Invoke-WatchdogRun -Dependencies @{
@@ -1352,6 +1556,7 @@ exit /b 23
 
     $commandFunctions = @(
         'Invoke-WatchdogConnectorFailure',
+        'Invoke-WatchdogConnectorRecovery',
         'Invoke-WatchdogTestTelegram'
     )
     $missingCommandFunctions = @($commandFunctions | Where-Object {
@@ -1363,7 +1568,8 @@ exit /b 23
         $script:Failed++
     }
     else {
-        $connectorMessages = [System.Collections.Generic.List[string]]::new()
+        $connectorEvents = [System.Collections.Generic.List[string]]::new()
+        $connectorMessages = [System.Collections.Generic.List[object]]::new()
         $connectorStates = [System.Collections.Generic.List[object]]::new()
         $connectorDependencies = @{
             AcquireMutex = {
@@ -1382,19 +1588,38 @@ exit /b 23
                 param($State)
                 [void]$connectorStates.Add($State)
             }
+            RecoverConnector = {
+                param($State)
+                [void]$connectorEvents.Add('recover')
+                [pscustomobject]@{
+                    Status = 'healthy'
+                    ErrorCategory = $null
+                    LocalStatus = 'ready'
+                    PublicStatus = 'ready'
+                    ConnectorStatus = 'ready'
+                    PublicBaseUrl = [string]$State.publicBaseUrl
+                    RecoveryAttempted = $true
+                    RecoverySucceeded = $true
+                }
+            }
             ReadConfig = { $telegramConfig }
             SendMessage = {
                 param($Config, $Message)
-                [void]$connectorMessages.Add([string]$Message.Kind)
+                [void]$connectorEvents.Add("notify:$([string]$Message.Kind)")
+                [void]$connectorMessages.Add($Message)
                 [pscustomobject]@{ Delivered = $true; ErrorCategory = $null; StatusCode = 200 }
             }
             MachineName = 'TEST-MACHINE'
         }
         $connectorResult = Invoke-WatchdogConnectorFailure -Dependencies $connectorDependencies
-        Assert-Equal $connectorResult.Delivered $true 'sends the fixed ConnectorFailure notification'
-        Assert-Equal @($connectorMessages) @('ConnectorFailure') 'does not accept arbitrary Connector notification content'
+        Assert-Equal $connectorResult.Delivered $true 'sends a notification only after Connector auto-recovery completes'
+        Assert-Equal @($connectorEvents) @('recover', 'notify:Recovery') 'runs recovery before sending the successful notification'
+        Assert-Equal $connectorMessages.Count 1 'sends one Connector recovery notification'
+        Assert-Equal $connectorMessages[0].ConnectorStatus 'ready' 'reports the verified Connector response as ready'
+        Assert-Equal $connectorMessages[0].RecoverySucceeded $true 'reports successful Force Reconnect recovery'
         Assert-Equal $connectorStates.Count 1 'persists the Connector notification cooldown'
 
+        $connectorEvents.Clear()
         $connectorMessages.Clear()
         $connectorDependencies.ReadState = {
             return $connectorStates[0]
@@ -1402,7 +1627,48 @@ exit /b 23
         $connectorDependencies.GetNow = { [datetime]'2026-07-29T03:59:59Z' }
         $deduplicatedConnector = Invoke-WatchdogConnectorFailure -Dependencies $connectorDependencies
         Assert-Equal $deduplicatedConnector.Deduplicated $true 'deduplicates the fixed Connector command within four hours'
-        Assert-Equal @($connectorMessages) @() 'does not send a duplicate Connector notification'
+        Assert-Equal @($connectorEvents) @() 'does not reconnect or notify again inside the four-hour cooldown'
+
+        $failedConnectorMessages = [System.Collections.Generic.List[object]]::new()
+        $failedConnector = Invoke-WatchdogConnectorFailure -Dependencies @{
+            AcquireMutex = {
+                [pscustomobject]@{ Acquired = $true; Release = { } }
+            }
+            GetNow = { [datetime]'2026-07-29T08:00:00Z' }
+            ReadState = {
+                [pscustomobject]@{
+                    status = 'healthy'
+                    lastErrorCategory = $null
+                    lastConnectorFailureNotifiedAtUtc = $null
+                    publicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+                }
+            }
+            WriteState = { param($State) }
+            RecoverConnector = {
+                param($State)
+                [pscustomobject]@{
+                    Status = 'unhealthy'
+                    ErrorCategory = 'PostRecoveryConnectorResponseFailed'
+                    LocalStatus = 'ready'
+                    PublicStatus = 'ready'
+                    ConnectorStatus = 'down'
+                    PublicBaseUrl = [string]$State.publicBaseUrl
+                    RecoveryAttempted = $true
+                    RecoverySucceeded = $false
+                }
+            }
+            ReadConfig = { $telegramConfig }
+            SendMessage = {
+                param($Config, $Message)
+                [void]$failedConnectorMessages.Add($Message)
+                [pscustomobject]@{ Delivered = $true; ErrorCategory = $null; StatusCode = 200 }
+            }
+            MachineName = 'TEST-MACHINE'
+        }
+        Assert-Equal $failedConnector.Delivered $true 'notifies after an auto-recovery attempt still fails'
+        Assert-Equal $failedConnectorMessages[0].Kind 'ConnectorFailure' 'keeps the final notification as ConnectorFailure when verification is still red'
+        Assert-Equal $failedConnectorMessages[0].RecoveryAttempted $true 'reports that Force Reconnect was attempted before the failure notification'
+        Assert-Equal $failedConnectorMessages[0].ErrorCategory 'PostRecoveryConnectorResponseFailed' 'reports the sanitized post-recovery failure category'
 
         $testMessages = [System.Collections.Generic.List[string]]::new()
         $testTelegramResult = Invoke-WatchdogTestTelegram -Dependencies @{
