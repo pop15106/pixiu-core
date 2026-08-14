@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
+    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -783,6 +783,28 @@ function Invoke-Doctor {
     Write-Host $output
 }
 
+function Write-ReadyForChatGpt {
+    param(
+        [Parameter(Mandatory = $true)]$Spec,
+        [Parameter(Mandatory = $true)][string]$OwnerToken,
+        [Parameter(Mandatory = $true)][string]$Mode
+    )
+
+    $mcpUrl = "$($Spec.PublicBaseUrl)/mcp"
+    if (Get-Command Set-Clipboard -ErrorAction SilentlyContinue) {
+        Set-Clipboard -Value $mcpUrl
+        Write-Info 'The public MCP URL was copied to the clipboard.'
+    }
+
+    Write-Host ''
+    Write-Host 'READY FOR CHATGPT WEB' -ForegroundColor Green
+    Write-Host "Mode: $Mode" -ForegroundColor DarkGray
+    Write-Host "MCP URL: $mcpUrl" -ForegroundColor Cyan
+    Write-Host "Owner password: $OwnerToken" -ForegroundColor Yellow
+    Write-Host 'Cross-session and cross-project workflow tools are included.' -ForegroundColor Green
+    Write-Host 'Keep the Owner password private. Use 06-COPY-PASSWORD.cmd when needed again.'
+}
+
 function Install-OneClick {
     Ensure-Directory -Directory $ConfigRoot
     Ensure-Directory -Directory $StateRoot
@@ -801,21 +823,62 @@ function Install-OneClick {
 
     Invoke-Doctor -Tools $tools
     Start-Stack
+    $spec = Get-ValidatedSpec
+    Write-ReadyForChatGpt -Spec $spec -OwnerToken $ownerToken -Mode 'installed'
+}
 
-    $mcpUrl = "$($settings.publicBaseUrl)/mcp"
-    if (Get-Command Set-Clipboard -ErrorAction SilentlyContinue) {
-        Set-Clipboard -Value $mcpUrl
-        Write-Info 'The public MCP URL was copied to the clipboard.'
+function Update-OneClick {
+    Ensure-Directory -Directory $ConfigRoot
+    Ensure-Directory -Directory $StateRoot
+    Ensure-Directory -Directory $LogRoot
+
+    $spec = Get-ValidatedSpec
+    $inputPaths = @(Split-RootInput -InputText $Path)
+    if ($inputPaths.Count -gt 0) {
+        $roots = @(Merge-AllowedRoots -ExistingRoots $spec.Roots -NewRoots $inputPaths -UserProfile $env:USERPROFILE)
+        if ($roots.Count -gt $spec.Roots.Count) {
+            Save-DevSpaceConfig -Roots $roots -Settings $spec.Settings
+            Write-Info 'Allowed roots updated before package refresh.'
+            $spec = Get-ValidatedSpec
+        }
     }
 
-    Write-Host ''
-    Write-Host 'READY FOR CHATGPT WEB' -ForegroundColor Green
-    Write-Host "MCP URL: $mcpUrl" -ForegroundColor Cyan
-    Write-Host "Owner password: $ownerToken" -ForegroundColor Yellow
-    Write-Host 'Keep the Owner password private. Use 06-COPY-PASSWORD.cmd when needed again.'
+    $runtime = Read-JsonFile -FilePath $RuntimePath
+    if ((Test-LocalHealth -Port $spec.Port) -and -not $runtime) {
+        throw 'DevSpace is running without a recorded OneClick runtime. Run 09-REPAIR-STATE.cmd before updating.'
+    }
+    if ($runtime) {
+        Write-Info 'Stopping the recorded stack before refreshing dependencies and patches...'
+        Stop-Stack
+    }
+
+    $tools = Install-Dependencies -DevSpacePackage $DevSpacePackage
+    Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
+    Start-Stack
+    Invoke-Doctor -Tools $tools
+
+    $updatedSpec = Get-ValidatedSpec
+    Write-ReadyForChatGpt -Spec $updatedSpec -OwnerToken $updatedSpec.OwnerToken -Mode 'updated'
+}
+
+function Setup-OrUpdate {
+    $setupFiles = @($ConfigPath, $AuthPath, $SettingsPath)
+    $existingCount = @($setupFiles | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }).Count
+    if ($existingCount -eq 0) {
+        Write-Info 'No existing OneClick setup was found. Running first-time installation.'
+        Install-OneClick
+        return
+    }
+    if ($existingCount -ne $setupFiles.Count) {
+        throw 'A partial OneClick setup was detected. Repair or remove the incomplete local state before using automatic update.'
+    }
+
+    Write-Info 'Existing OneClick setup detected. Preserving local identity and updating the portable runtime.'
+    Update-OneClick
 }
 
 switch ($Action) {
+    'setup-or-update' { Setup-OrUpdate }
     'install' { Install-OneClick }
     'start' { Start-Stack }
     'stop' { Stop-Stack }
