@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "maxCapabilitiesPerRequest": 3,
+  "capabilities": [
+    {
+      "id": "legacy-java",
+      "summary": "追蹤 Legacy Java、PCLMS、Servlet、Struts、Spring、SQL 與 Procedure 流程。",
+      "keywords": ["java", "pclms", "pepis", "pisso", "ptwcs", "struts", "servlet", "spring", "dao", "sql", "procedure", "排程", "報表", "流程"],
+      "priority": 30,
+      "load": {
+        "skills": ["skills/legacy-java-flow-tracing/SKILL.md"],
+        "contexts": ["vault/context/tech-stack.md", "vault/context/pclms-overview.md"],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
+      "id": "code-implementation",
+      "summary": "實作功能、修正缺陷與重構。",
+      "keywords": ["實作", "修正", "修 bug", "bug", "開發", "重構", "修改程式", "加功能"],
+      "priority": 20,
+      "load": {
+        "skills": ["skills/tdd-workflow/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
+      "id": "code-review",
+      "summary": "程式碼正確性、可維護性與回歸風險審查。",
+      "keywords": ["code review", "審查程式", "檢查程式", "review", "回歸風險", "收尾", "跑驗證", "驗證", "測試", "確認能交付", "/go"],
+      "priority": 25,
+      "load": {
+        "skills": ["skills/pixiu-verify-loop/SKILL.md", "skills/verification-loop/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/judgment-rubrics.md"]
+      }
+    },
+    {
+      "id": "security-review",
+      "summary": "資安、秘密資料、權限、輸入驗證與弱點檢查。",
+      "keywords": ["資安", "安全", "漏洞", "弱點", "secret", "token", "密碼", "權限", "owasp", "紅隊"],
+      "priority": 50,
+      "load": {
+        "skills": ["skills/security-review/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/judgment-rubrics.md"]
+      }
+    },
+    {
+      "id": "architecture-analysis",
+      "summary": "架構、根因、影響範圍、效能與方案比較。",
+      "keywords": ["架構", "根因", "root cause", "影響", "影響範圍", "現行操作", "功能影響", "效能", "瓶頸", "方案比較", "風險評估"],
+      "priority": 25,
+      "load": {
+        "skills": [],
+        "contexts": ["vault/context/ai-mothership-loading-policy.md", ".agent/workflows/impact-assessment.md"],
+        "governance": ["vault/governance/judgment-rubrics.md"]
+      }
+    },
+    {
+      "id": "research",
+      "summary": "公開資料、Repo、論文與技術文章研究。",
+      "keywords": ["研究", "repo", "github", "論文", "文章", "搜尋", "查資料", "近期", "最新"],
+      "priority": 15,
+      "load": {
+        "skills": ["skills/deep-research/SKILL.md"],
+        "contexts": [],
+        "governance": []
+      }
+    },
+    {
+      "id": "documentation",
+      "summary": "文件、說明、報告與長文產出。",
+      "keywords": ["文件", "報告", "說明書", "readme", "整理文件", "簡報內容"],
+      "priority": 10,
+      "load": {
+        "skills": [],
+        "contexts": [],
+        "governance": []
+      }
+    },
+    {
+      "id": "identity-calibration",
+      "summary": "使用者偏好、角色定位與跨模型人格校準。",
+      "keywords": ["我的偏好", "個人偏好", "我的習慣", "你應該知道我", "根據你對我的了解", "角色定位", "人格校準", "我是誰"],
+      "priority": 32,
+      "load": {
+        "skills": [],
+        "contexts": ["vault/identity/founder-profile.md", "vault/identity/agent-persona.md"],
+        "governance": []
+      }
+    },
+    {
+      "id": "prompt-engineering",
+      "summary": "Prompt、提示詞與 system prompt 精煉。",
+      "keywords": ["prompt", "提示詞", "提示語", "system prompt", "優化 prompt", "改寫 prompt", "提示工程"],
+      "priority": 18,
+      "load": {
+        "skills": [],
+        "contexts": ["rules/common/prompt-engineering.md"],
+        "governance": []
+      }
+    },
+    {
+      "id": "recap-memory",
+      "summary": "Session 摘要、舊決策與跨 Session 記憶。",
+      "keywords": ["recap", "摘要", "現在到哪", "做到哪", "目前進度", "進度", "下一步", "之前", "上次", "前面", "剛剛", "對話", "紀錄", "記憶", "接續", "繼續", "昨天"],
+      "priority": 40,
+      "load": {
+        "skills": ["skills/pixiu-session-recap/SKILL.md"],
+        "contexts": ["vault/memory/SESSION-INDEX.md"],
+        "governance": ["vault/sop/recap-standard.md"]
+      }
+    },
+    {
+      "id": "runtime-control",
+      "summary": "Auto mode、Focus mode 與執行授權邊界。",
+      "keywords": ["auto mode", "自動模式", "自動放行", "跳過確認", "focus mode", "只看結果", "隱藏步驟"],
+      "priority": 45,
+      "load": {
+        "skills": ["skills/claude-code-auto-mode-policy/SKILL.md"],
+        "contexts": [],
+        "governance": ["user_rules.md"]
+      }
+    },
+    {
+      "id": "agent-routing",
+      "summary": "Agent Team、子代理與模型分派。",
+      "keywords": ["agent team", "多 agent", "子代理", "派工", "平行處理", "agent router", "平衡模式", "省錢模式", "品質優先模式"],
+      "priority": 45,
+      "load": {
+        "skills": [],
+        "contexts": [],
+        "governance": ["vault/governance/agent-team-mode-policy.md", "vault/governance/model-dispatch-rules.md", "vault/governance/delegation-templates.md"]
+      }
+    },
+    {
+      "id": "second-brain",
+      "summary": "第二大腦、Qdrant、n8n 與 Embedding 健檢。",
+      "keywords": ["第二大腦", "qdrant", "n8n", "embedding", "nvidia", "記憶庫"],
+      "priority": 35,
+      "load": {
+        "skills": ["skills/second-brain-health-check/SKILL.md"],
+        "contexts": [],
+        "governance": []
+      }
+    }
+  ]
+}

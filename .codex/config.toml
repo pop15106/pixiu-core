@@ -19,13 +19,8 @@ approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 web_search = "live"
 
-# External notifications receive a JSON payload on stdin.
-notify = [
-  "terminal-notifier",
-  "-title", "Codex ECC",
-  "-message", "Task completed!",
-  "-sound", "default",
-]
+# `notify` 只支援使用者層 `~/.codex/config.toml`，專案層設定會被忽略。
+# 需要通知時請在使用者層設定，避免每個 Fresh Session 產生警告。
 
 # Prefer AGENTS.md and project-local .codex/AGENTS.md for instructions.
 # model_instructions_file replaces built-in instructions instead of AGENTS.md,
@@ -79,16 +74,8 @@ args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
 # Codex multi-agent support is experimental as of March 2026.
 multi_agent = true
 
-# Profiles — switch with `codex -p <name>`
-[profiles.strict]
-approval_policy = "on-request"
-sandbox_mode = "read-only"
-web_search = "cached"
-
-[profiles.yolo]
-approval_policy = "never"
-sandbox_mode = "workspace-write"
-web_search = "live"
+# Profiles 只支援使用者層 `~/.codex/config.toml`。
+# 可在使用者層建立 strict／yolo 等 Profile，再以 `codex -p <name>` 切換。
 
 [agents]
 max_threads = 6

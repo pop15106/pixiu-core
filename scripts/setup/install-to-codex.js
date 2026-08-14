@@ -29,6 +29,7 @@ function resolveCore() {
 
 const toPosix = p => String(p).replace(/\\/g, '/');
 const toWin = p => String(p).replace(/\//g, '\\');
+const quoteExecutable = value => `"${String(value).replace(/"/g, '\\"')}"`;
 
 function generate({ core, nodeExe, target }) {
   const bridge = path.join(core, 'scripts', 'codex-bridge', 'pixiu-global-hook-bridge.js');
@@ -38,8 +39,10 @@ function generate({ core, nodeExe, target }) {
 
   // 在物件層替換（不在 JSON 文字層），讓 stringify 正確轉義 Windows 路徑的反斜線
   const config = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
-  const nPosix = toPosix(nodeExe), nWin = toWin(nodeExe);
-  const bPosix = toPosix(bridge), bWin = toWin(bridge);
+  const nPosix = quoteExecutable(toPosix(nodeExe));
+  const nWin = quoteExecutable(toWin(nodeExe));
+  const bPosix = toPosix(bridge);
+  const bWin = toWin(bridge);
   for (const ev of Object.keys(config.hooks || {})) {
     for (const group of config.hooks[ev]) {
       for (const h of group.hooks || []) {
@@ -71,4 +74,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { generate, resolveCore, toPosix, toWin };
+module.exports = { generate, quoteExecutable, resolveCore, toPosix, toWin };

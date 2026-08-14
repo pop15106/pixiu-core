@@ -1,27 +1,32 @@
 /vault/memory/*
 !/vault/memory/memory-summary.md
+!/vault/memory/SESSION-INDEX.md
+!/vault/memory/agent-learning/
+!/vault/memory/agent-learning/**
 
-# 閮剖??孵?瑼?嚗?閮剖?敺 setup.bat ???
+# 本機產生的私人設定與安裝狀態，不納入版本控制
 .github/copilot-instructions.md
 fleet.json
 .agent/ecc-install-state.json
 scripts/hooks/debug-input.json
 .claude/settings.local.json
 
-# Hook debug payload嚗璈葫閰衣嚗???commit嚗?
-# vault ?遢?桅?嚗?犖鞈?嚗???commit嚗?vault_backup_*/
+# Hook debug payload 與 vault 備份可能包含敏感內容，不得提交
+vault_backup_*/
 
-# ?犖霅鞈?嚗rivate but excluded from tracking嚗?vault/identity/
+# 身分資料屬私人內容，不納入版本控制
+vault/identity/
 
-# Pixiu 雿輻?蕭頩?/ audit logs嚗 email嚗??鈭恬?
+# Pixiu 執行報告與 audit logs 可能包含本機或郵件資訊
 .agent/pixiu/reports/
 
-# Hook 璈???thread-watcher 蝑?嚗??脩???/state/
+# Hook runtime、thread-watcher 與 recap review 暫存狀態
+/state/
 /recap-review-*
 
+# Governance 自動備份
 /vault/governance/backups/
 
-/state/
-
+# 通用備份檔
 *.bak
 *.bak-*

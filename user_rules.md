@@ -1,6 +1,7 @@
 ---
-trigger: always_on
-alwaysApply: true
+trigger: governance-trigger
+alwaysApply: false
+readAt: on-demand
 ---
 # 📜 User Rules — 專案最高憲法
 
@@ -117,8 +118,9 @@ alwaysApply: true
 - **🛡️ 防禦性架構審閱 (Defensive Architecture Review) [NEW][HARD]**：
   - 在進行重構或安全性改動時，**必須**透過 `impact-assessment.md` 規範，強制納入「邊界一致性」、「效能關聯性」與「視圖狀態同步」三維度評估。
 - **🌐 跨模型行為骨幹 (Cross-Model Behavior Backbone) [NEW][HARD]**：
-  - Session 啟動時，**必須**自動載入 `skills/opus-behavior-core/SKILL.md` 作為人格與判斷骨幹，與本檔（`user_rules.md`）併行生效。
-  - 當偵測到非 Anthropic 模型接管（Cursor、Windsurf、Copilot、Gemini、Codex 等）時，**必須**將該 Skill 的五層規則（認知／資訊／行動／溝通／安全）摘錄進 system prompt 或 `AGENTS.md` 首節，彌補原生行為常數缺口。
+  - Session 啟動時只常駐 `vault/bootstrap/SESSION-BOOTSTRAP.md` 內的行為摘要；不得自動全文載入 `skills/opus-behavior-core/SKILL.md`。
+  - 當任務涉及複雜架構判斷、跨模型人格校準、Agent 行為設計或使用者明確要求「行為骨幹／Opus 規則」時，才按需載入完整 `skills/opus-behavior-core/SKILL.md`。
+  - 非 Anthropic 模型以 Bootstrap 的認知／資訊／行動／溝通／安全摘要作為預設姿勢，不把完整 Skill 複製進 system prompt 或入口檔。
   - 當本骨幹（L1–L5）與本檔衝突時，**本檔（L0 憲法）優先**；骨幹僅在不違反 L0 的前提下提供預設姿勢。
 - **🧮 Opus 4.7 運行參數政策 (Runtime Parameter Policy) [NEW][HARD]**：使用 Claude Opus 4.7 時，**必須**遵守以下原生參數規則，違反會直接 400 錯誤或造成預期外行為。
   **版本適用註記（2026-07-03）**：本節僅針對 Opus 4.7 驗證；對 Opus 4.8、Sonnet 5、Fable 5 的適用性【未確認】——使用新版模型時，先查官方文件確認 tokenizer 與參數行為，再決定是否沿用本節數值，不得直接照搬：

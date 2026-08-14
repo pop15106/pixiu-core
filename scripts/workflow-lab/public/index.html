@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>PixiuCore Workflow Lab</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="background-grid" aria-hidden="true"></div>
+  <header class="hero shell">
+    <div>
+      <p class="eyebrow">PIXIUCORE · ROLE WORKFLOW TESTING</p>
+      <h1>Workflow Lab</h1>
+      <p class="hero-copy">輸入需求或商業邏輯，分別驗證角色模組、部分流程與完整 AI SDLC。</p>
+    </div>
+    <div class="service-status" aria-live="polite">
+      <span id="health-dot" class="status-dot"></span>
+      <div>
+        <strong id="health-label">正在連線</strong>
+        <small id="live-availability">檢查 Live Smoke…</small>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell layout">
+    <section class="panel input-panel" aria-labelledby="input-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="input-title">需求與商業邏輯</h2>
+        </div>
+        <span class="privacy-badge">原文只留在本次頁面</span>
+      </div>
+
+      <div class="field-grid two-columns">
+        <label class="field">
+          <span>需求描述</span>
+          <textarea id="requirement-input" rows="7" placeholder="例如：新增帳單覆核流程，超過指定金額時需要第二人核准。"></textarea>
+        </label>
+        <label class="field">
+          <span>商業邏輯</span>
+          <textarea id="business-logic-input" rows="7" placeholder="例如：amount > 100000 → REVIEW；主管核准後才能進入付款。"></textarea>
+        </label>
+      </div>
+
+      <div class="field-grid three-columns">
+        <label class="field">
+          <span>預期結果</span>
+          <textarea id="expected-outcome-input" rows="4" placeholder="最後希望得到什麼結果"></textarea>
+        </label>
+        <label class="field">
+          <span>限制條件</span>
+          <textarea id="constraints-input" rows="4" placeholder="每行一項，例如：禁止修改 DB schema"></textarea>
+        </label>
+        <label class="field">
+          <span>驗收條件</span>
+          <textarea id="acceptance-criteria-input" rows="4" placeholder="每行一項；留空時由 PM Fixture 產生"></textarea>
+        </label>
+      </div>
+
+      <div class="field-grid two-columns artifact-input-grid">
+        <label class="field">
+          <span>敏感詞</span>
+          <textarea id="sensitive-terms-input" rows="5" placeholder="每行一項，例如客戶名稱、內部欄位、演算法代號"></textarea>
+        </label>
+        <label class="field">
+          <span>手動上游 Artifacts（JSON）</span>
+          <textarea id="upstream-artifacts-input" rows="5" spellcheck="false" placeholder='Strict 單模組可貼入，例如：{"pm-artifact-v1":{"acceptanceCriteria":["回傳 GREEN"]}}'></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel settings-panel" aria-labelledby="settings-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">02</p>
+          <h2 id="settings-title">執行模式與專案</h2>
+        </div>
+      </div>
+
+      <div class="option-groups">
+        <fieldset class="option-group">
+          <legend>執行模式</legend>
+          <label class="choice-card">
+            <input id="mode-offline" type="radio" name="execution-mode" value="offline" checked>
+            <span><strong>Offline Contract</strong><small>快速、穩定、不消耗 Codex 額度</small></span>
+          </label>
+          <label class="choice-card">
+            <input id="mode-live" type="radio" name="execution-mode" value="live">
+            <span><strong>Live Smoke</strong><small>每個角色使用獨立 Fresh Codex Session</small></span>
+          </label>
+        </fieldset>
+
+        <fieldset class="option-group">
+          <legend>資訊模式</legend>
+          <label class="choice-card">
+            <input id="input-need-to-know" type="radio" name="input-mode" value="need-to-know" checked>
+            <span><strong>Need-to-Know</strong><small>預設遮罩，只傳遞角色必要資料</small></span>
+          </label>
+          <label class="choice-card warning-choice">
+            <input id="input-raw" type="radio" name="input-mode" value="raw-pass-through">
+            <span><strong>原文直通</strong><small>僅供 A/B 測試，執行前會停在核准點</small></span>
+          </label>
+        </fieldset>
+
+        <fieldset class="option-group">
+          <legend>流程範圍</legend>
+          <label class="choice-card compact-choice">
+            <input id="selection-single" type="radio" name="selection-mode" value="single">
+            <span><strong>單模組</strong></span>
+          </label>
+          <label class="choice-card compact-choice">
+            <input id="selection-partial" type="radio" name="selection-mode" value="partial" checked>
+            <span><strong>部分流程</strong></span>
+          </label>
+          <label class="choice-card compact-choice">
+            <input id="selection-full" type="radio" name="selection-mode" value="full">
+            <span><strong>完整流程</strong></span>
+          </label>
+        </fieldset>
+      </div>
+
+      <div class="field-grid three-columns project-grid">
+        <label class="field">
+          <span>專案來源</span>
+          <select id="project-source">
+            <option value="manual">手動路徑</option>
+            <option value="fleet">Fleet 專案</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Fleet</span>
+          <select id="project-fleet" disabled>
+            <option value="">沒有選擇</option>
+          </select>
+        </label>
+        <label class="field wide-field">
+          <span>專案路徑</span>
+          <input id="project-path" type="text" placeholder="Offline 可留空；Live 請選擇 PIXIU_PROJECT_ROOTS 白名單內專案">
+        </label>
+      </div>
+
+      <div class="field-grid two-columns compact-grid">
+        <label class="field">
+          <span>單模組 Fixture</span>
+          <select id="fixture-mode">
+            <option value="strict">Strict Contract</option>
+            <option value="assisted-fixture">Assisted Fixture</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>測試情境</span>
+          <select id="test-scenario">
+            <option value="green">正常 GREEN</option>
+            <option value="qa-red">QA RED／人工退回</option>
+            <option value="checker-red">檢核官 RED</option>
+            <option value="canary-leak">Canary 洩漏</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel workflow-panel" aria-labelledby="workflow-title">
+      <div class="section-heading workflow-heading">
+        <div>
+          <p class="section-number">03</p>
+          <h2 id="workflow-title">角色模組編排</h2>
+        </div>
+        <div class="toggle-row">
+          <label class="switch-label">
+            <input id="advanced-order-toggle" type="checkbox">
+            <span>進階排序</span>
+          </label>
+          <label class="switch-label danger-switch">
+            <input id="unsafe-order-toggle" type="checkbox" disabled>
+            <span>允許不安全順序</span>
+          </label>
+        </div>
+      </div>
+
+      <p class="section-help">一般模式依 SDLC 固定順序執行；開啟進階排序後可用上下按鈕調整。</p>
+      <div id="module-list" class="module-list" aria-live="polite"></div>
+
+      <div class="run-actions">
+        <button id="run-workflow" class="primary-button" type="button">
+          <span>執行 Workflow</span>
+          <small>Offline 預設不消耗模型額度</small>
+        </button>
+        <button id="cancel-run" class="secondary-button danger-button" type="button" hidden>取消目前執行</button>
+      </div>
+    </section>
+
+    <section id="approval-panel" class="panel approval-panel" aria-labelledby="approval-title" hidden>
+      <div class="approval-icon" aria-hidden="true">!</div>
+      <div class="approval-content">
+        <p class="section-number">人工核准</p>
+        <h2 id="approval-title">流程已暫停</h2>
+        <p id="approval-message">等待你的決定。</p>
+        <label class="field approval-return-field">
+          <span>退回角色</span>
+          <select id="approval-return-module"></select>
+        </label>
+        <div class="approval-actions">
+          <button id="approve-run" class="primary-button small-button" type="button">核准並繼續</button>
+          <button id="reject-run" class="secondary-button danger-button" type="button">拒絕並結束</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel result-panel" aria-labelledby="result-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">04</p>
+          <h2 id="result-title">執行結果</h2>
+        </div>
+        <p id="run-summary" class="run-summary">尚未執行 Workflow。</p>
+      </div>
+      <div id="run-step-list" class="step-list">
+        <div class="empty-state">角色結果會顯示在這裡。</div>
+      </div>
+    </section>
+
+    <section class="panel artifact-panel" aria-labelledby="artifact-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">05</p>
+          <h2 id="artifact-title">遮罩後 Artifacts</h2>
+        </div>
+      </div>
+      <div class="artifact-layout">
+        <div id="artifact-list" class="artifact-list">
+          <p class="empty-state">尚無可持久化產物。</p>
+        </div>
+        <pre id="artifact-viewer" class="artifact-viewer">選擇 Artifact 後顯示內容。</pre>
+      </div>
+    </section>
+
+    <section class="panel log-panel" aria-labelledby="log-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">06</p>
+          <h2 id="log-title">遮罩後執行 Log</h2>
+        </div>
+      </div>
+      <pre id="run-log" class="run-log">等待執行…</pre>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

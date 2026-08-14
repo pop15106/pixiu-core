@@ -1,204 +1,53 @@
-# Everything Claude Code (ECC) — Agent Instructions
+# PixiuCore Agent Instructions
 
-This is a **production-ready AI coding plugin** providing 25 specialized agents, 108 skills, 57 commands, and automated hook workflows for software development.
+本 repository 由 PixiuCore 治理。Session 啟動時只讀 `vault/bootstrap/SESSION-BOOTSTRAP.md`；其餘規則、能力、記憶與工作流依本次需求按需載入。
 
-## Pixiu Mothership Loading Policy
+## 啟動流程
 
-<!-- HERMES_GLOBAL_ROUTER_START -->
+1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
+2. 讀取 `vault/bootstrap/SESSION-BOOTSTRAP.md`。
+3. 執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
+4. 只讀 Router 回傳的 `filesToLoad`，Capability 最多 3 個。
+5. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引；一般 Session 不全文讀取 `user_rules.md`、`memory-summary.md`、recap、全部 Skills、Workflows、Hooks 或 Agents。
 
-## Hermes Global Task Router
+`user_rules.md` 仍是 L0 憲法唯一來源；Bootstrap 只保留執行所需的硬閘門摘要。遇到衝突、例外或高風險操作時，再讀相關原文段落。
 
-When the user explicitly asks to use Hermes, route the request through Hermes instead of directly implementing in the current folder.
+## 常駐底線
 
-Trigger phrases include:
-- `請幫我用 Hermes`
-- `用 Hermes`
-- `透過 Hermes`
-- `交給 Hermes`
-- `Hermes gate`
-- `Hermes 分配 AI`
+- 使用者本次明確指令優先。
+- 回覆、計畫、工具理由與程式註解使用繁體中文。
+- 寫入前需使用者明確授權；刪檔、DB 寫入、Git push、依賴異動與秘密資料屬高風險操作。
+- 不猜測 repo、runtime、framework、DB 或業務事實；讀取來源驗證。
+- 只做完成需求所需的最小變更。
+- Agent Team 需使用者明確同意；子 Agent 只拿精簡任務包，不重讀整個母體。
+- 完成前執行與變更相符的測試、檢查或主路徑驗證。
 
-On trigger:
-1. Resolve Hermes home: use `$env:HERMES_HOME` if set; otherwise use `%USERPROFILE%\Documents\hermes 多AI 工作流`.
-2. Do not treat the current folder being empty or not a git repo as permission to bypass Hermes.
-3. Submit and immediately run the Hermes task with:
+## Hermes 路由
 
-```powershell
-$hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:USERPROFILE\Documents\hermes 多AI 工作流" }
-powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-submit-and-run.ps1" -Text "<verbatim user request>" -SourceEntrance "codex"
-```
-
-4. Report `taskId`, run status, state path, and report path to the user.
-5. If the script fails, report the exact error and stop. Do not silently implement the task directly unless the user explicitly says not to use Hermes.
-
-For approval-only actions, use:
+只有使用者明確要求「用 Hermes」「透過 Hermes」「交給 Hermes」「Hermes gate」或同義語句時才啟用。
 
 ```powershell
 $hermes = if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:USERPROFILE\Documents\hermes 多AI 工作流" }
-powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-gate.ps1" -TaskId "<taskId>" -Decision approve -By "<user>" -Comment "<reason>"
+powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-submit-and-run.ps1" -Text "<使用者原始需求>" -SourceEntrance "codex"
 ```
 
-<!-- HERMES_GLOBAL_ROUTER_END -->
+執行後回報 `taskId`、狀態、state path 與 report path。腳本失敗時回報原始錯誤並停止，不得靜默改成本地直接實作。
 
-This repository is governed by PixiuCore. Before using agents, skills, workflows, or hooks, follow `vault/context/ai-mothership-loading-policy.md`.
+## 常用路由
 
-Key rules:
-- At session start, read `vault/README.md` (init sequence) and `vault/governance/INDEX.md` (governance routing hub). Governance rule bodies live under `vault/governance/`; this file does not carry them.
-- Entry-file precedence and conflict handling: `vault/governance/entry-files-alignment.md` section 3.
-- Keep L0 hard gates resident; keep L1-L6 as a short routing summary and load details only when triggered.
-- Use semantic routing as well as keywords. The user should not need to name exact skills or workflows.
-- Agent team is not default. Judge whether it is useful, explain why, and wait for explicit user approval before dispatch.
-- Child agents receive a compact task packet only: goal, allowed paths, relevant L0 constraints, evidence files, and verification criteria.
-- Resolve the mothership path through `PIXIU_CORE`, then `PIXIU_CORE_PATH`, then `%USERPROFILE%\.pixiu-core`; do not require one machine-specific path.
+- 實作／修 bug／重構：`vault/governance/minimal-implementation-ladder.md`
+- 派工／模型／驗收：`vault/governance/model-dispatch-rules.md`
+- 判斷是否完成、詢問或升級：`vault/governance/judgment-rubrics.md`
+- 修改入口檔：`vault/governance/entry-files-alignment.md`
+- Recap／接續 Session：先讀 `vault/memory/SESSION-INDEX.md`
+- Capability 路由：`node scripts/router/resolve-capabilities.js "<需求>"`
 
-## Core Principles
+## 專案結構
 
-1. **Agent-Aware** — Judge whether specialized agents are useful, then ask for approval before dispatching
-2. **Test-Driven** — Write tests before implementation, 80%+ coverage required
-3. **Security-First** — Never compromise on security; validate all inputs
-4. **Immutability** — Always create new objects, never mutate existing ones
-5. **Plan Before Execute** — Plan complex features before writing code
+- `.agents/skills/`：Codex／OpenAI 可攜 Skill 發佈層
+- `skills/`：Pixiu 共用 Skill 來源
+- `agents/`：專門 Agent 定義
+- `vault/`：治理、Context、記憶與 SOP
+- `scripts/`：安裝、Hook、路由與驗證工具
 
-## Available Agents
-
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| planner | Implementation planning | Complex features, refactoring |
-| architect | System design and scalability | Architectural decisions |
-| tdd-guide | Test-driven development | New features, bug fixes |
-| code-reviewer | Code quality and maintainability | After writing/modifying code |
-| security-reviewer | Vulnerability detection | Before commits, sensitive code |
-| build-error-resolver | Fix build/type errors | When build fails |
-| e2e-runner | End-to-end Playwright testing | Critical user flows |
-| refactor-cleaner | Dead code cleanup | Code maintenance |
-| doc-updater | Documentation and codemaps | Updating docs |
-| go-reviewer | Go code review | Go projects |
-| go-build-resolver | Go build errors | Go build failures |
-| kotlin-reviewer | Kotlin code review | Kotlin/Android/KMP projects |
-| kotlin-build-resolver | Kotlin/Gradle build errors | Kotlin build failures |
-| database-reviewer | PostgreSQL/Supabase specialist | Schema design, query optimization |
-| python-reviewer | Python code review | Python projects |
-| java-reviewer | Java and Spring Boot code review | Java/Spring Boot projects |
-| java-build-resolver | Java/Maven/Gradle build errors | Java build failures |
-| chief-of-staff | Communication triage and drafts | Multi-channel email, Slack, LINE, Messenger |
-| loop-operator | Autonomous loop execution | Run loops safely, monitor stalls, intervene |
-| harness-optimizer | Harness config tuning | Reliability, cost, throughput |
-| rust-reviewer | Rust code review | Rust projects |
-| rust-build-resolver | Rust build errors | Rust build failures |
-
-## Agent Orchestration
-
-Judge agent fit proactively, but do not dispatch agents without explicit user approval:
-- Complex feature requests → **planner**
-- Code just written/modified → **code-reviewer**
-- Bug fix or new feature → **tdd-guide**
-- Architectural decision → **architect**
-- Security-sensitive code → **security-reviewer**
-- Multi-channel communication triage → **chief-of-staff**
-- Autonomous loops / loop monitoring → **loop-operator**
-- Harness config reliability and cost → **harness-optimizer**
-
-Use parallel execution only after approval and only for independent operations with disjoint scopes. Dispatch packets and reporting contracts follow `vault/governance/model-dispatch-rules.md` and `vault/governance/delegation-templates.md`.
-
-## Security Guidelines
-
-**Before ANY commit:**
-- No hardcoded secrets (API keys, passwords, tokens)
-- All user inputs validated
-- SQL injection prevention (parameterized queries)
-- XSS prevention (sanitized HTML)
-- CSRF protection enabled
-- Authentication/authorization verified
-- Rate limiting on all endpoints
-- Error messages don't leak sensitive data
-
-**Secret management:** NEVER hardcode secrets. Use environment variables or a secret manager. Validate required secrets at startup. Rotate any exposed secrets immediately.
-
-**If security issue found:** STOP → use security-reviewer agent → fix CRITICAL issues → rotate exposed secrets → review codebase for similar issues.
-
-## Coding Style
-
-**Immutability (CRITICAL):** Always create new objects, never mutate. Return new copies with changes applied.
-
-**File organization:** Many small files over few large ones. 200-400 lines typical, 800 max. Organize by feature/domain, not by type. High cohesion, low coupling.
-
-**Error handling:** Handle errors at every level. Provide user-friendly messages in UI code. Log detailed context server-side. Never silently swallow errors.
-
-**Input validation:** Validate all user input at system boundaries. Use schema-based validation. Fail fast with clear messages. Never trust external data.
-
-**Code quality checklist:**
-- Functions small (<50 lines), files focused (<800 lines)
-- No deep nesting (>4 levels)
-- Proper error handling, no hardcoded values
-- Readable, well-named identifiers
-
-## Testing Requirements
-
-**Minimum coverage: 80%**
-
-Test types (all required):
-1. **Unit tests** — Individual functions, utilities, components
-2. **Integration tests** — API endpoints, database operations
-3. **E2E tests** — Critical user flows
-
-**TDD workflow (mandatory):**
-1. Write test first (RED) — test should FAIL
-2. Write minimal implementation (GREEN) — test should PASS
-3. Refactor (IMPROVE) — verify coverage 80%+
-
-Troubleshoot failures: check test isolation → verify mocks → fix implementation (not tests, unless tests are wrong).
-
-> Legacy-project scope note: for legacy systems without test infrastructure (e.g., PCLMS-era Java), apply `vault/governance/judgment-rubrics.md` section 5 minimum verification (compile + relevant tests where they exist + main-path run) instead of blocking on the 80% target; do not add test frameworks without user approval.
-
-## Development Workflow
-
-1. **Plan** — Use planner agent, identify dependencies and risks, break into phases
-2. **TDD** — Use tdd-guide agent, write tests first, implement, refactor
-3. **Review** — Use code-reviewer agent immediately, address CRITICAL/HIGH issues
-4. **Capture knowledge in the right place**
-   - Personal debugging notes, preferences, and temporary context → auto memory
-   - Team/project knowledge (architecture decisions, API changes, runbooks) → the project's existing docs structure
-   - If the current task already produces the relevant docs or code comments, do not duplicate the same information elsewhere
-   - If there is no obvious project doc location, ask before creating a new top-level file
-5. **Commit** — Conventional commits format, comprehensive PR summaries
-
-## Git Workflow
-
-**Commit format:** `<type>: <description>` — Types: feat, fix, refactor, docs, test, chore, perf, ci
-
-**PR workflow:** Analyze full commit history → draft comprehensive summary → include test plan → push with `-u` flag.
-
-## Architecture Patterns
-
-**API response format:** Consistent envelope with success indicator, data payload, error message, and pagination metadata.
-
-**Repository pattern:** Encapsulate data access behind standard interface (findAll, findById, create, update, delete). Business logic depends on abstract interface, not storage mechanism.
-
-**Skeleton projects:** Search for battle-tested templates, evaluate with parallel agents (security, extensibility, relevance), clone best match, iterate within proven structure.
-
-## Performance
-
-**Context management:** Avoid last 20% of context window for large refactoring and multi-file features. Lower-sensitivity tasks (single edits, docs, simple fixes) tolerate higher utilization.
-
-**Build troubleshooting:** Use build-error-resolver agent → analyze errors → fix incrementally → verify after each fix.
-
-## Project Structure
-
-```
-agents/          — 25 specialized subagents
-skills/          — 102 workflow skills and domain knowledge
-commands/        — 57 slash commands
-hooks/           — Trigger-based automations
-rules/           — Always-follow guidelines (common + per-language)
-scripts/         — Cross-platform Node.js utilities
-mcp-configs/     — 14 MCP server configurations
-tests/           — Test suite
-```
-
-## Success Metrics
-
-- All tests pass with 80%+ coverage
-- No security vulnerabilities
-- Code is readable and maintainable
-- Performance is acceptable
-- User requirements are met
+不要在入口檔列出完整 Skill 或 Agent 清單；新增能力時更新 Capability Manifest。

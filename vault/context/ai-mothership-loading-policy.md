@@ -27,16 +27,15 @@ summary: 定義各 AI 連結 PixiuCore 母體時的低 token 分層載入、語�
 
 ## 常駐層
 
-每次 session 只常駐以下內容：
+每次 Session 只常駐：
 
-1. `user_rules.md` 的 L0 硬閘門與不可違反條款。
-2. `vault/README.md` 的 init 序列與 vault 邊界。
-3. `vault/identity/founder-profile.md` 的使用者偏好摘要。
-4. `vault/identity/agent-persona.md` 的角色定位摘要。
-5. `vault/memory/memory-summary.md` 的索引型摘要，不把 recap 全文當常駐內容。
-6. 本檔的分層載入與語意路由規則。
+1. `vault/bootstrap/SESSION-BOOTSTRAP.md`：L0 硬閘門摘要、降級規則與 Router 入口。
+2. 當前專案入口檔中與本次任務直接相關的局部規則。
+3. `scripts/router/resolve-capabilities.js` 的精簡輸出：最多 3 個 Capability 與 `filesToLoad`。
 
-`user_rules.md` 是最高憲法；本政策只調整載入策略，不降低 L0 約束。
+`vault/capabilities/capability-manifest.json` 是 Router 的磁碟資料源，不在正常 Session 中全文常駐；只有 Router 無法執行時才作降級索引。
+
+`user_rules.md` 仍是最高憲法與唯一完整來源，但不在每次啟動時全文載入。遇到治理衝突、審批例外、高風險操作或特殊 Hook 時，再讀對應原文段落。identity、完整 memory summary、recap、decisions 與本政策全文都改為按需載入。
 
 ## L1-L6 路由摘要
 
@@ -69,7 +68,7 @@ AI 不得要求使用者一定說出精準 skill 名稱。觸發方式分三層�
 | 實作、修 bug、重構、加依賴、加檔案、怕過度工程、想省 token | `vault/governance/minimal-implementation-ladder.md`（按需載入摘要；不得覆蓋 L0、安全、審批、驗證） |
 | auto mode、自動放行、不要每次問 | `skills/claude-code-auto-mode-policy/SKILL.md` |
 | focus mode、只看結果、隱藏步驟 | `user_rules.md` 的 Focus mode 閘門與相關 verify loop |
-| agent team、多 agent、平行處理 | `skills/pixiu-agent-router/SKILL.md`，且必須先取得使用者同意 |
+| agent team、多 agent、平行處理 | `vault/governance/agent-team-mode-policy.md`；再載入目前 AI 可用的派工 adapter（Codex 使用 `skills/pixiu-agent-router/SKILL.md`） |
 | legacy Java、Servlet、mapper、SQL flow | `skills/legacy-java-flow-tracing/SKILL.md` |
 | 第二大腦失敗、Qdrant、NVIDIA 查詢問題 | `skills/second-brain-health-check/SKILL.md` |
 
@@ -90,7 +89,7 @@ Agent team 是倍增器，不是預設模式。
 1. 每次需求先判斷是否建議啟用 agent team，但不得自動啟用。
 2. 小型問答、單檔小修、單一路徑文件調整，保留在主 AI 本地處理。
 3. 只有跨模組、跨技術棧、獨立可並行的探索/實作/審查任務，才提議 agent team。
-4. 使用者明確同意後，才讀 `skills/pixiu-agent-router/SKILL.md` 與必要 agent 檔。
+4. 使用者明確同意後，先讀 `vault/governance/agent-team-mode-policy.md` 選擇平衡／省錢／品質模式，再讀目前 AI 可用的派工 adapter 與必要 agent 檔。
 5. 子 agent 不重讀整包母體，只接收精簡任務包：任務目標、允許路徑、必要 L0 規則、相關檔案、驗證標準。
 6. 子 agent 的任務包應包含 `minimal-implementation-ladder.md` 的短 checklist：先重用、少新增、保留安全與驗證。
 7. 子 agent 不得回寫母體、刪檔、安裝套件或改動未授權路徑，除非主 AI 已取得使用者明確授權。

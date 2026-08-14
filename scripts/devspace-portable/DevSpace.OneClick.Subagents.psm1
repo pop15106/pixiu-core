@@ -40,6 +40,140 @@ function Get-DevSpaceAgentRecordText {
     return Format-DevSpaceAgentText -Value $property.Value -MaxLength $MaxLength
 }
 
+function Get-DevSpacePatchFileSha256 {
+    param([Parameter(Mandatory = $true)][string]$FilePath)
+
+    $stream = [System.IO.File]::OpenRead($FilePath)
+    try {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            return ([System.BitConverter]::ToString($sha256.ComputeHash($stream))).Replace('-', '').ToLowerInvariant()
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
+function Get-DevSpacePatchTargets {
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    return @(
+        'dist\local-agent-runtime.js',
+        'dist\local-agent-profiles.js',
+        'node_modules\@openai\codex-sdk\dist\index.js',
+        'dist\cli.js',
+        'dist\server.js',
+        'dist\skills.js'
+    ) | ForEach-Object {
+        $target = Join-Path $PackageRoot $_
+        [pscustomobject]@{
+            RelativePath = $_
+            Target = $target
+            Backup = "$target.devspace-oneclick-original"
+        }
+    }
+}
+
+function Write-DevSpacePatchManifest {
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    $files = @(
+        foreach ($entry in @(Get-DevSpacePatchTargets -PackageRoot $PackageRoot)) {
+            if (-not (Test-Path -LiteralPath $entry.Target) -or -not (Test-Path -LiteralPath $entry.Backup)) {
+                throw "Cannot record DevSpace patch state because a target or backup is missing: $($entry.RelativePath)"
+            }
+            [ordered]@{
+                path = $entry.RelativePath
+                backupSha256 = Get-DevSpacePatchFileSha256 -FilePath $entry.Backup
+                patchedSha256 = Get-DevSpacePatchFileSha256 -FilePath $entry.Target
+            }
+        }
+    )
+    $manifest = [ordered]@{
+        schemaVersion = 1
+        devSpaceVersion = '1.0.4'
+        files = $files
+    }
+    $manifestPath = Join-Path $PackageRoot '.devspace-oneclick-patch-manifest.json'
+    $temporaryPath = "$manifestPath.$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        [System.IO.File]::WriteAllText(
+            $temporaryPath,
+            ($manifest | ConvertTo-Json -Depth 5),
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        Move-Item -LiteralPath $temporaryPath -Destination $manifestPath -Force
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporaryPath) {
+            Remove-Item -LiteralPath $temporaryPath -Force
+        }
+    }
+}
+
+function Assert-DevSpacePatchInstallState {
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    $targets = @(Get-DevSpacePatchTargets -PackageRoot $PackageRoot)
+    $manifestPath = Join-Path $PackageRoot '.devspace-oneclick-patch-manifest.json'
+    $existingBackups = @($targets | Where-Object { Test-Path -LiteralPath $_.Backup })
+
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        if ($existingBackups.Count -gt 0) {
+            throw "DevSpace patch manifest is missing; refusing to upgrade unverified backups: $manifestPath"
+        }
+        return
+    }
+
+    try {
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    }
+    catch {
+        throw "DevSpace patch manifest is unreadable; refusing to upgrade: $manifestPath"
+    }
+    if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.devSpaceVersion -ne '1.0.4') {
+        throw "DevSpace patch manifest is unsupported; refusing to upgrade: $manifestPath"
+    }
+
+    $manifestFiles = @($manifest.files)
+    if ($manifestFiles.Count -ne $targets.Count) {
+        throw "DevSpace patch manifest file set is incomplete; refusing to upgrade: $manifestPath"
+    }
+    $manifestByPath = @{}
+    foreach ($file in $manifestFiles) {
+        $relativePath = [string]$file.path
+        if ([string]::IsNullOrWhiteSpace($relativePath) -or $manifestByPath.ContainsKey($relativePath)) {
+            throw "DevSpace patch manifest contains an invalid file entry; refusing to upgrade: $manifestPath"
+        }
+        $manifestByPath[$relativePath] = $file
+    }
+
+    foreach ($entry in $targets) {
+        if (-not $manifestByPath.ContainsKey($entry.RelativePath)) {
+            throw "DevSpace patch manifest is missing $($entry.RelativePath); refusing to upgrade."
+        }
+        if (-not (Test-Path -LiteralPath $entry.Target) -or -not (Test-Path -LiteralPath $entry.Backup)) {
+            throw "DevSpace patch target or backup is missing for $($entry.RelativePath); refusing to upgrade."
+        }
+
+        $record = $manifestByPath[$entry.RelativePath]
+        $backupHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Backup
+        $targetHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Target
+        if (-not [string]::Equals($backupHash, [string]$record.backupSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "DevSpace patch backup drift detected for $($entry.RelativePath); refusing to upgrade."
+        }
+        $knownPatched = [string]::Equals($targetHash, [string]$record.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)
+        $alreadyRestored = [string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)
+        if (-not $knownPatched -and -not $alreadyRestored) {
+            throw "Unknown DevSpace 1.0.4 target drift detected for $($entry.RelativePath); refusing to upgrade."
+        }
+    }
+}
+
 function Set-PatchedTextFile {
     param(
         [Parameter(Mandatory = $true)][string]$FilePath,
@@ -97,6 +231,8 @@ function Install-DevSpaceSubagentWindowsPatch {
     $sdkPath = Join-Path $packageRoot 'node_modules\@openai\codex-sdk\dist\index.js'
     $cliPath = Join-Path $packageRoot 'dist\cli.js'
     $serverPath = Join-Path $packageRoot 'dist\server.js'
+    $skillsPath = Join-Path $packageRoot 'dist\skills.js'
+    Assert-DevSpacePatchInstallState -PackageRoot $packageRoot
     $changed = 0
 
     $runtimeGitReplacement = @(
@@ -234,7 +370,175 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
+    if (Set-PatchedTextFile -FilePath $skillsPath -AlreadyPatchedText 'projectSkillMirrorSha256' -Pattern 'import \{ existsSync(?:, readdirSync)? \} from "node:fs";' -Replacement ('import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";' + [Environment]::NewLine + 'import { createHash } from "node:crypto";') -Description 'safe skill mirror inspection') {
+        $changed++
+    }
+
+    $skillMirrorReplacement = @(
+        '    function canonicalSkillRoot(path) {'
+        '        try {'
+        '            if (path === undefined || !existsSync(path) || !statSync(path).isDirectory()) return undefined;'
+        '            return realpathSync.native ? realpathSync.native(path) : realpathSync(path);'
+        '        } catch {'
+        '            return undefined;'
+        '        }'
+        '    }'
+        '    function skillEntries(root) {'
+        '        try {'
+        '            const entries = new Map();'
+        '            for (const entry of readdirSync(root, { withFileTypes: true })) {'
+        '                if (!entry.isDirectory()) continue;'
+        '                const skillFile = join(root, entry.name, "SKILL.md");'
+        '                if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;'
+        '                entries.set(entry.name, createHash("sha256").update(readFileSync(skillFile)).digest("hex"));'
+        '            }'
+        '            return entries;'
+        '        } catch {'
+        '            return undefined;'
+        '        }'
+        '    }'
+        '    function projectSkillMirrorSha256(candidate, earlierPaths) {'
+        '        const candidateEntries = skillEntries(candidate);'
+        '        if (candidateEntries === undefined || candidateEntries.size === 0) return false;'
+        '        const earlierEntries = earlierPaths.map(skillEntries);'
+        '        if (earlierEntries.some((entries) => entries === undefined)) return false;'
+        '        const hashesByName = new Map();'
+        '        for (const entries of earlierEntries) for (const [name, hash] of entries) {'
+        '            const hashes = hashesByName.get(name) ?? new Set();'
+        '            hashes.add(hash);'
+        '            hashesByName.set(name, hashes);'
+        '        }'
+        '        return [...candidateEntries].every(([name, hash]) => {'
+        '            const hashes = hashesByName.get(name);'
+        '            return hashes !== undefined && hashes.size === 1 && hashes.has(hash);'
+        '        });'
+        '    }'
+        '    function pixiuCanonicalSkillMirror(candidate, earlierPaths) {'
+        '        const bootstrap = resolve(cwd, "vault", "bootstrap", "SESSION-BOOTSTRAP.md");'
+        '        const canonical = canonicalSkillRoot(resolve(cwd, "skills"));'
+        '        if (!existsSync(bootstrap) || canonical === undefined || !earlierPaths.includes(canonical)) return false;'
+        '        const candidateEntries = skillEntries(candidate);'
+        '        const canonicalEntries = skillEntries(canonical);'
+        '        if (candidateEntries === undefined || canonicalEntries === undefined || candidateEntries.size === 0) return false;'
+        '        return [...candidateEntries.keys()].every((name) => canonicalEntries.has(name));'
+        '    }'
+        '    function resolvedSkillRoot(path) {'
+        '        try { return canonicalSkillRoot(resolveSkillPath(path, cwd)); } catch { return undefined; }'
+        '    }'
+        '    const defaultPaths = defaultPathCandidates.map(canonicalSkillRoot).filter((path) => path !== undefined);'
+        '    const projectSkillPath = canonicalSkillRoot(resolve(cwd, ".agents", "skills"));'
+        '    const earlierPaths = projectSkillPath === undefined ? [] : defaultPaths.slice(0, defaultPaths.findIndex((path) => path === projectSkillPath));'
+        '    const skipProjectSkillPath = projectSkillPath !== undefined && ('
+        '        projectSkillMirrorSha256(projectSkillPath, earlierPaths) ||'
+        '        pixiuCanonicalSkillMirror(projectSkillPath, earlierPaths)'
+        '    );'
+        '    const orderedPaths = ['
+        '        ...(projectSkillPath !== undefined && !skipProjectSkillPath ? [projectSkillPath] : []),'
+        '        ...defaultPaths.filter((path) => path !== projectSkillPath),'
+        '        ...(config.skillPaths ?? []).map(resolvedSkillRoot).filter((path) => path !== undefined && (!skipProjectSkillPath || path !== projectSkillPath)),'
+        '    ];'
+        '    const seen = new Set();'
+        '    return orderedPaths'
+        '        .filter((path) => {'
+        '            const key = process.platform === "win32" ? path.toLowerCase() : path;'
+        '            if (seen.has(key)) return false;'
+        '            seen.add(key);'
+        '            return true;'
+        '        })'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $skillsPath -AlreadyPatchedText 'projectSkillMirrorSha256' -Pattern 'const defaultPaths = defaultPathCandidates\.filter\(\(path\) => path !== undefined && existsSync\(path\)\);\r?\n[\s\S]*?return \[\.\.\.(?:defaultPaths|filteredDefaultPaths), \.\.\.config\.skillPaths\]' -Replacement $skillMirrorReplacement -Description 'content-aware project skill mirror suppression') {
+        $changed++
+    }
+
+    $skillEntryUpgradeReplacement = @(
+        '                const skillFile = join(root, entry.name, "SKILL.md");'
+        '                if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;'
+        '                entries.set(entry.name, createHash("sha256").update(readFileSync(skillFile)).digest("hex"));'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $skillsPath -AlreadyPatchedText 'if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;' -Pattern 'const skillFile = join\(root, entry\.name, "SKILL\.md"\);\r?\n\s*entries\.set\(entry\.name, createHash\("sha256"\)\.update\(readFileSync\(skillFile\)\)\.digest\("hex"\)\);' -Replacement $skillEntryUpgradeReplacement -Description 'ignore non-Skill directories during mirror inspection') {
+        $changed++
+    }
+
+    if ($changed -gt 0) {
+        Write-DevSpacePatchManifest -PackageRoot $packageRoot
+    }
     return $changed
+}
+
+function Restore-DevSpaceSubagentWindowsPatch {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$DevSpaceCli)
+
+    $packageRoot = Split-Path -Parent (Split-Path -Parent $DevSpaceCli)
+    $packageJsonPath = Join-Path $packageRoot 'package.json'
+    if (-not (Test-Path -LiteralPath $packageJsonPath)) {
+        throw "DevSpace package metadata is missing: $packageJsonPath"
+    }
+
+    $package = Get-Content -LiteralPath $packageJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ([string]$package.version -ne '1.0.4') {
+        throw "The bundled Windows subagent restore supports DevSpace 1.0.4 only; found $($package.version)."
+    }
+
+    $targets = @(Get-DevSpacePatchTargets -PackageRoot $packageRoot)
+    $manifestPath = Join-Path $packageRoot '.devspace-oneclick-patch-manifest.json'
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        if (@($targets | Where-Object { Test-Path -LiteralPath $_.Backup }).Count -eq 0) {
+            return 0
+        }
+        throw "DevSpace patch manifest is missing; refusing to restore from unverified backups: $manifestPath"
+    }
+
+    try {
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    }
+    catch {
+        throw "DevSpace patch manifest is unreadable; refusing to restore: $manifestPath"
+    }
+    if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.devSpaceVersion -ne '1.0.4') {
+        throw "DevSpace patch manifest is unsupported; refusing to restore: $manifestPath"
+    }
+    $manifestFiles = @($manifest.files)
+    if ($manifestFiles.Count -ne $targets.Count) {
+        throw "DevSpace patch manifest file set is incomplete; refusing to restore: $manifestPath"
+    }
+    $manifestByPath = @{}
+    foreach ($file in $manifestFiles) {
+        $relativePath = [string]$file.path
+        if ([string]::IsNullOrWhiteSpace($relativePath) -or $manifestByPath.ContainsKey($relativePath)) {
+            throw "DevSpace patch manifest contains an invalid file entry; refusing to restore: $manifestPath"
+        }
+        $manifestByPath[$relativePath] = $file
+    }
+
+    $restoreTargets = @()
+    foreach ($entry in $targets) {
+        if (-not $manifestByPath.ContainsKey($entry.RelativePath)) {
+            throw "DevSpace patch manifest is missing $($entry.RelativePath); refusing to restore."
+        }
+        if (-not (Test-Path -LiteralPath $entry.Target) -or -not (Test-Path -LiteralPath $entry.Backup)) {
+            throw "DevSpace patch target or backup is missing for $($entry.RelativePath); refusing to restore."
+        }
+
+        $record = $manifestByPath[$entry.RelativePath]
+        $backupHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Backup
+        $targetHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Target
+        if (-not [string]::Equals($backupHash, [string]$record.backupSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "DevSpace patch backup drift detected for $($entry.RelativePath); refusing to restore."
+        }
+        if ([string]::Equals($targetHash, [string]$record.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $restoreTargets += $entry
+            continue
+        }
+        if (-not [string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unknown DevSpace 1.0.4 target drift detected for $($entry.RelativePath); refusing to restore."
+        }
+    }
+
+    foreach ($entry in $restoreTargets) {
+        Copy-Item -LiteralPath $entry.Backup -Destination $entry.Target -Force
+    }
+    return $restoreTargets.Count
 }
 
 function Install-DevSpaceAgentProfiles {
@@ -459,6 +763,7 @@ Export-ModuleMember -Function @(
     'Format-DevSpaceAgentText',
     'Get-DevSpaceAgentRecordText',
     'Install-DevSpaceSubagentWindowsPatch',
+    'Restore-DevSpaceSubagentWindowsPatch',
     'Install-DevSpaceAgentProfiles',
     'Install-DevSpaceAgentCliShim',
     'Get-DevSpaceAgentStatus',

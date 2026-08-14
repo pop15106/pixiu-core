@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PixiuCore 測試控制台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">LOCAL VERIFICATION</p>
+        <h1>PixiuCore 測試控制台</h1>
+        <p class="hero-copy">分開驗證每個核心模組，或一鍵執行完整整合測試。所有命令皆由固定白名單提供，瀏覽器無法輸入任意指令。</p>
+      </div>
+      <div class="health-card">
+        <span class="status-dot" id="health-dot"></span>
+        <div>
+          <strong id="health-label">正在連線</strong>
+          <small>127.0.0.1 only</small>
+        </div>
+      </div>
+    </header>
+
+    <section class="integration-panel" aria-labelledby="integration-title">
+      <div>
+        <p class="eyebrow">FULL WORKFLOW</p>
+        <h2 id="integration-title">完整整合測試</h2>
+        <p>依序執行六個模組；任何一步失敗就停止，保留完整日誌與各步驟結果。</p>
+      </div>
+      <button class="primary-button" id="integration-run" type="button">執行完整整合測試</button>
+    </section>
+
+    <section class="section-block" aria-labelledby="module-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">MODULE TESTS</p>
+          <h2 id="module-title">單模組測試</h2>
+        </div>
+        <p id="module-summary">載入測試模組中…</p>
+      </div>
+      <div class="module-grid" id="module-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="run-panel" aria-labelledby="run-title">
+      <div class="run-toolbar">
+        <div>
+          <p class="eyebrow">RUN OUTPUT</p>
+          <h2 id="run-title">執行狀態</h2>
+          <p id="run-summary">尚未執行測試。</p>
+        </div>
+        <button class="secondary-button" id="cancel-run" type="button" hidden>取消目前測試</button>
+      </div>
+      <div class="step-list" id="step-list"></div>
+      <pre class="run-log" id="run-log" tabindex="0">等待測試輸出…</pre>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>

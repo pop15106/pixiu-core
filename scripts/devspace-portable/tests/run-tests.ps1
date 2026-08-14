@@ -33,6 +33,66 @@ function Assert-Throws {
     }
 }
 
+function Assert-ActionEqual {
+    param([scriptblock]$Action, $Expected, [string]$Name)
+    try {
+        $actual = & $Action
+        Assert-Equal $actual $Expected $Name
+    }
+    catch {
+        Write-Host "[FAIL] $Name" -ForegroundColor Red
+        Write-Host "  error: $($_.Exception.Message)"
+        $script:Failed++
+    }
+}
+
+function New-TestSkill {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Content
+    )
+
+    $skillDirectory = Join-Path $Root $Name
+    New-Item -ItemType Directory -Path $skillDirectory -Force | Out-Null
+    [System.IO.File]::WriteAllText(
+        (Join-Path $skillDirectory 'SKILL.md'),
+        $Content,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
+function Invoke-FakeEffectiveSkillPaths {
+    param(
+        [Parameter(Mandatory = $true)][string]$RunnerPath,
+        [Parameter(Mandatory = $true)][string]$SkillsModulePath,
+        [Parameter(Mandatory = $true)][string]$WorkingDirectory,
+        [Parameter(Mandatory = $true)][string]$DevSpaceSkillsDirectory,
+        [string[]]$SkillPaths = @(),
+        [ValidateSet('normal', 'unreadable', 'missing')][string]$Mode = 'normal'
+    )
+
+    $configJson = @{
+        devspaceSkillsDir = $DevSpaceSkillsDirectory
+        skillPaths = @($SkillPaths)
+    } | ConvertTo-Json -Compress
+    $configBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($configJson))
+    $nodeHome = Join-Path (Split-Path -Parent $WorkingDirectory) 'node-home'
+    New-Item -ItemType Directory -Path $nodeHome -Force | Out-Null
+    $previousUserProfile = $env:USERPROFILE
+    try {
+        $env:USERPROFILE = $nodeHome
+        $output = & node $RunnerPath $SkillsModulePath $WorkingDirectory $configBase64 $Mode 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "Fake skill discovery failed: $output"
+        }
+        return [string]$output
+    }
+    finally {
+        $env:USERPROFILE = $previousUserProfile
+    }
+}
+
 $modulePath = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.OneClick.Core.psm1'
 Import-Module $modulePath -Force
 Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.OneClick.Platform.psm1') -Force -DisableNameChecking
@@ -82,6 +142,31 @@ try {
     Assert-Equal $mergedConfig.port 7678 'persists the selected port'
     Assert-Equal $existingConfig.port 7000 'does not mutate the input config'
 
+    $loginMarker = Join-Path $testRoot 'unexpected-devtunnel-login.marker'
+    $fakeLoggedOutDevTunnel = Join-Path $testRoot 'fake-logged-out-devtunnel.cmd'
+    $fakeLoggedOutDevTunnelContent = @"
+@echo off
+if "%1"=="user" if "%2"=="show" echo {"status":"Logged out"}& exit /b 0
+if "%1"=="user" if "%2"=="login" type nul > "$loginMarker"& exit /b 0
+exit /b 2
+"@
+    [System.IO.File]::WriteAllText(
+        $fakeLoggedOutDevTunnel,
+        $fakeLoggedOutDevTunnelContent,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    $previousNonInteractive = $env:DEVSPACE_ONECLICK_NONINTERACTIVE
+    try {
+        $env:DEVSPACE_ONECLICK_NONINTERACTIVE = '1'
+        Assert-Throws {
+            Ensure-DevTunnelLogin -DevTunnel $fakeLoggedOutDevTunnel
+        } 'non-interactive login check refuses browser login'
+        Assert-Equal (Test-Path -LiteralPath $loginMarker) $false 'non-interactive login check never invokes user login'
+    }
+    finally {
+        $env:DEVSPACE_ONECLICK_NONINTERACTIVE = $previousNonInteractive
+    }
+
     $fakeDevTunnel = Join-Path $testRoot 'fake-devtunnel.cmd'
     $fakeDevTunnelContent = @"
 @echo off
@@ -100,6 +185,24 @@ exit /b 2
     }
     Assert-Equal (Get-TunnelPublicBaseUrl -TunnelDocument $tunnel -Port 7678) 'https://machine-7678.jpe1.devtunnels.ms' 'derives an HTTPS origin without /mcp'
 
+    $modernTunnel = [pscustomobject]@{
+        tunnelId = 'machine.jpe1'
+        ports = @([pscustomobject]@{
+            portNumber = 7678
+            protocol = 'http'
+            portForwardingUris = @('https://alias-7678.jpe1.devtunnels.ms/')
+        })
+    }
+    Assert-ActionEqual {
+        (Get-TunnelObject -TunnelDocument $tunnel).ports[0].portNumber
+    } 7678 'unwraps the legacy tunnel response before reading ports'
+    Assert-ActionEqual {
+        (Get-TunnelObject -TunnelDocument $modernTunnel).ports[0].portNumber
+    } 7678 'accepts the current tunnel response before reading ports'
+    Assert-ActionEqual {
+        Get-TunnelPublicBaseUrl -TunnelDocument $modernTunnel -Port 7678
+    } 'https://alias-7678.jpe1.devtunnels.ms' 'derives an HTTPS origin from current portForwardingUris'
+
     $tunnelWithoutPortUri = [pscustomobject]@{
         tunnel = [pscustomobject]@{
             tunnelId = 'devspace-tv7010nb-a1b2c3d4.jpe1'
@@ -107,8 +210,80 @@ exit /b 2
         }
     }
     Assert-Equal (Get-TunnelPublicBaseUrl -TunnelDocument $tunnelWithoutPortUri -Port 7676) 'https://devspace-tv7010nb-a1b2c3d4-7676.jpe1.devtunnels.ms' 'derives the public origin when current Dev Tunnel JSON omits portUri'
+
+    $verboseHttpOutput = @'
+trace line
+HTTP: {
+  "tunnelId": "machine.jpe1",
+  "ports": [
+    {
+      "portNumber": 7678,
+      "portForwardingUris": [
+        "https://alias-7678.jpe1.devtunnels.ms/"
+      ]
+    }
+  ]
+}
+{
+  "tunnel": {
+    "tunnelId": "machine.jpe1",
+    "ports": [
+      {
+        "portNumber": 7678,
+        "protocol": "http"
+      }
+    ]
+  }
+}
+'@
+    Assert-ActionEqual {
+        (ConvertFrom-VerboseHttpJson -Output $verboseHttpOutput).ports[0].portForwardingUris[0]
+    } 'https://alias-7678.jpe1.devtunnels.ms/' 'extracts the raw service JSON from verbose CLI output'
     Assert-Equal @(ConvertTo-DevTunnelLabelArguments -Labels @('devspace', 'oneclick', 'machine-tv7010nb')) @('--labels', 'devspace', '--labels', 'oneclick', '--labels', 'machine-tv7010nb') 'repeats the labels option for current Dev Tunnel CLI'
     Assert-Throws { ConvertTo-DevTunnelLabelArguments -Labels @('invalid label') } 'rejects invalid Dev Tunnel labels'
+
+    $liveConfig = [pscustomobject]@{
+        host = '127.0.0.1'
+        port = 7678
+        publicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+        allowedRoots = @($projectA)
+    }
+    $liveDevSpaceProcess = [pscustomobject]@{
+        ProcessId = 3596
+        ParentProcessId = 3056
+        Name = 'node.exe'
+        CommandLine = '"C:\Program Files\nodejs\node.exe" C:\Users\tester\AppData\Roaming\npm\node_modules\@waishnav\devspace\dist\cli.js serve'
+        StartedAtUtc = '2026-07-25T06:54:04.0000000Z'
+    }
+    $liveTunnelProcess = [pscustomobject]@{
+        ProcessId = 12732
+        ParentProcessId = 3056
+        Name = 'devtunnel.exe'
+        CommandLine = '"C:\Tools\devtunnel.exe" host devspace-mcp-pop15.jpe1'
+        StartedAtUtc = '2026-07-25T06:54:12.0000000Z'
+    }
+    $adoption = New-DevSpaceOneClickAdoptionState -Config $liveConfig -DevSpaceProcess $liveDevSpaceProcess -DevTunnelProcess $liveTunnelProcess -MachineName 'LAPTOP-0965BH7Q' -Now ([datetime]'2026-07-27T03:30:00Z')
+    Assert-Equal $adoption.Settings.tunnelId 'devspace-mcp-pop15.jpe1' 'adopts the active Dev Tunnel host ID'
+    Assert-Equal $adoption.Settings.publicBaseUrl 'https://dxrpsqgc-7678.jpe1.devtunnels.ms' 'adopts the live public origin from config'
+    Assert-Equal $adoption.Runtime.devSpacePid 3596 'records the verified DevSpace listener PID'
+    Assert-Equal $adoption.Runtime.devTunnelPid 12732 'records the verified Dev Tunnel PID'
+    Assert-Equal $adoption.Runtime.devSpaceStartedAtUtc '2026-07-25T06:54:04.0000000Z' 'preserves the DevSpace process identity timestamp'
+    Assert-Throws {
+        New-DevSpaceOneClickAdoptionState -Config $liveConfig -DevSpaceProcess ([pscustomobject]@{
+            ProcessId = 3596; ParentProcessId = 3056; Name = 'node.exe'; CommandLine = 'node unrelated-server.js'; StartedAtUtc = '2026-07-25T06:54:04Z'
+        }) -DevTunnelProcess $liveTunnelProcess -MachineName 'LAPTOP-0965BH7Q'
+    } 'refuses to adopt an unrelated Node listener'
+    Assert-Throws {
+        New-DevSpaceOneClickAdoptionState -Config ([pscustomobject]@{
+            host = '127.0.0.1'; port = 7678; publicBaseUrl = 'https://old-7678.asse.devtunnels.ms'; allowedRoots = @($projectA)
+        }) -DevSpaceProcess $liveDevSpaceProcess -DevTunnelProcess $liveTunnelProcess -MachineName 'LAPTOP-0965BH7Q'
+    } 'refuses a public origin whose region differs from the hosted tunnel'
+    Assert-Throws {
+        New-DevSpaceOneClickAdoptionState -Config $liveConfig -DevSpaceProcess $liveDevSpaceProcess -DevTunnelProcess ([pscustomobject]@{
+            ProcessId = 12732; ParentProcessId = 9999; Name = 'devtunnel.exe'; CommandLine = 'devtunnel.exe host devspace-mcp-pop15.jpe1'; StartedAtUtc = '2026-07-25T06:54:12Z'
+        }) -MachineName 'LAPTOP-0965BH7Q'
+    } 'refuses processes that do not share the same launcher parent'
+
     Assert-Equal (New-DevSpaceTunnelName -ComputerName 'OFFICE_PC 01' -Suffix 'A1B2C3D4') 'devspace-office-pc-01-a1b2c3d4' 'creates a machine-specific tunnel name'
     Assert-Equal (Assert-DevSpaceAgentId -AgentId 'agt_1a2b3c4d') 'agt_1a2b3c4d' 'accepts a valid Agent ID'
     Assert-Throws { Assert-DevSpaceAgentId -AgentId 'agt_1a2b3c4d;taskkill' } 'rejects an unsafe Agent ID'
@@ -119,6 +294,11 @@ exit /b 2
     $agentAdminSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.AgentAdmin.mjs') -Raw
     Assert-Equal ($agentAdminSource.Contains('Previous status:') -and $agentAdminSource.Contains('Previous error:')) $true 'preserves prior Agent failure details when stopped'
     Assert-Equal $agentAdminSource.Contains('supports DevSpace 1.0.4 only') $true 'version-locks the Agent controller'
+    $launcherSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'devspace-oneclick.ps1') -Raw
+    Assert-Equal ($launcherSource.Contains("'restore-subagent-patch'") -and $launcherSource.Contains('Restore-DevSpaceSubagentWindowsPatch')) $true 'exposes the verified patch restore action'
+    Assert-Equal ($launcherSource.Contains("'repair-state'") -and $launcherSource.Contains('Repair-OneClickState')) $true 'exposes explicit live-state reconciliation without restart'
+    $repairStateCommand = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '09-REPAIR-STATE.cmd') -Raw
+    Assert-Equal $repairStateCommand.Contains('devspace-oneclick.ps1" repair-state') $true 'ships a dedicated no-restart state repair command'
 
     $fakePackageRoot = Join-Path $testRoot 'fake-devspace'
     $fakeDist = Join-Path $fakePackageRoot 'dist'
@@ -126,7 +306,7 @@ exit /b 2
     New-Item -ItemType Directory -Path $fakeDist, $fakeSdkDist -Force | Out-Null
     [System.IO.File]::WriteAllText(
         (Join-Path $fakePackageRoot 'package.json'),
-        '{"version":"1.0.4"}',
+        '{"version":"1.0.4","type":"module"}',
         [System.Text.UTF8Encoding]::new($false)
     )
 
@@ -204,12 +384,63 @@ exit /b 2
     $fakeServer = Join-Path $fakeDist 'server.js'
     [System.IO.File]::WriteAllText($fakeServer, $serverSource, [System.Text.UTF8Encoding]::new($false))
 
-    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 12 'applies all DevSpace 1.0.4 Windows patches'
+    $skillsSource = @(
+        'import { existsSync } from "node:fs";'
+        'import { homedir } from "node:os";'
+        'import { join, resolve } from "node:path";'
+        'function resolveSkillPath(path) { return path; }'
+        'export function effectiveSkillPaths(config, cwd) {'
+        '    const defaultPathCandidates = ['
+        '        join(homedir(), ".agents", "skills"),'
+        '        resolve(cwd, ".agents", "skills"),'
+        '        config.devspaceSkillsDir,'
+        '    ];'
+        '    const defaultPaths = defaultPathCandidates.filter((path) => path !== undefined && existsSync(path));'
+        '    const seen = new Set();'
+        '    return [...defaultPaths, ...config.skillPaths]'
+        '        .map((path) => resolveSkillPath(path, cwd))'
+        '        .filter((path) => {'
+        '        if (seen.has(path))'
+        '            return false;'
+        '        seen.add(path);'
+        '        return true;'
+        '    });'
+        '}'
+    ) -join [Environment]::NewLine
+    $fakeSkills = Join-Path $fakeDist 'skills.js'
+    [System.IO.File]::WriteAllText($fakeSkills, $skillsSource, [System.Text.UTF8Encoding]::new($false))
+
+    $skillRunner = Join-Path $fakeDist 'run-effective-skill-paths.mjs'
+    $skillRunnerSource = @(
+        'import fs from "node:fs";'
+        'import { syncBuiltinESMExports } from "node:module";'
+        'import { pathToFileURL } from "node:url";'
+        'const [modulePath, cwd, configBase64, mode] = process.argv.slice(2);'
+        'if (mode !== "normal") {'
+        '    const originalReadFileSync = fs.readFileSync;'
+        '    fs.readFileSync = (path, ...args) => {'
+        '        if (/[\\/]\.agents[\\/]skills[\\/].*SKILL\.md$/i.test(String(path))) {'
+        '            const error = new Error("simulated Skill read failure");'
+        '            error.code = mode === "missing" ? "ENOENT" : "EACCES";'
+        '            throw error;'
+        '        }'
+        '        return originalReadFileSync(path, ...args);'
+        '    };'
+        '    syncBuiltinESMExports();'
+        '}'
+        'const { effectiveSkillPaths } = await import(pathToFileURL(modulePath).href);'
+        'const config = JSON.parse(Buffer.from(configBase64, "base64").toString("utf8"));'
+        'console.log(effectiveSkillPaths(config, cwd).join("|"));'
+    ) -join [Environment]::NewLine
+    [System.IO.File]::WriteAllText($skillRunner, $skillRunnerSource, [System.Text.UTF8Encoding]::new($false))
+
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 14 'applies all DevSpace 1.0.4 Windows patches'
     $patchedRuntime = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
     $patchedProfiles = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-profiles.js'))
     $patchedSdk = [System.IO.File]::ReadAllText((Join-Path $fakeSdkDist 'index.js'))
     $patchedCli = [System.IO.File]::ReadAllText($fakeCli)
     $patchedServer = [System.IO.File]::ReadAllText($fakeServer)
+    $patchedSkills = [System.IO.File]::ReadAllText($fakeSkills)
     Assert-Equal $patchedRuntime.Contains('skipGitRepoCheck: true') $true 'allows explicitly authorized non-Git workspaces'
     Assert-Equal $patchedRuntime.Contains('shell_environment_policy:') $true 'injects the Node and npm PATH into Codex'
     Assert-Equal $patchedRuntime.Contains('Subagent timed out after ') $true 'enforces bounded Agent execution'
@@ -222,7 +453,152 @@ exit /b 2
     Assert-Equal $patchedCli.Contains('const isShortAgentCommand') $true 'forces short Agent commands to exit'
     Assert-Equal $patchedServer.Contains('Use exec_command for npm, builds, tests, and DevSpace Agent status commands') $true 'guides ChatGPT Web to use process sessions for long commands'
     Assert-Equal $patchedServer.Contains('if (config.toolMode === "codex")') $false 'registers process-session tools outside Codex mode'
+    Assert-Equal $patchedSkills.Contains('projectSkillMirrorSha256') $true 'uses SHA-256-aware project skill mirror detection'
+
+    $skillFixture = Join-Path $testRoot 'skill-discovery'
+    $globalSkills = Join-Path (Join-Path (Join-Path $skillFixture 'node-home') '.agents') 'skills'
+    $projectWorkspace = Join-Path $skillFixture 'project'
+    $projectSkills = Join-Path (Join-Path $projectWorkspace '.agents') 'skills'
+    New-TestSkill -Root $globalSkills -Name 'shared' -Content 'global content'
+    New-TestSkill -Root $projectSkills -Name 'shared' -Content 'global content'
+    $canonicalGlobalSkills = [System.IO.Path]::GetFullPath($globalSkills)
+    $canonicalProjectSkills = [System.IO.Path]::GetFullPath($projectSkills)
+
+    $exactMirror = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills
+    Assert-Equal $exactMirror $canonicalGlobalSkills 'removes project root only when every Skill name and SHA-256 matches an earlier root'
+
+    New-TestSkill -Root $projectSkills -Name 'project-only' -Content 'project customisation'
+    $partialOverlap = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills
+    Assert-Equal $partialOverlap ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'keeps project-local root first for partially overlapping Skills'
+
+    Remove-Item -LiteralPath (Join-Path $projectSkills 'project-only') -Recurse -Force
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'project override', [System.Text.UTF8Encoding]::new($false))
+    $differentContent = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills
+    Assert-Equal $differentContent ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'keeps same-name project Skills whose SHA-256 differs'
+
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'global content', [System.Text.UTF8Encoding]::new($false))
+    $explicitProjectRoot = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($projectSkills)
+    Assert-Equal $explicitProjectRoot $canonicalGlobalSkills 'explicit config.skillPaths cannot re-add an exact project mirror'
+
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'project override', [System.Text.UTF8Encoding]::new($false))
+    $caseAlias = $projectSkills.ToUpperInvariant()
+    $caseDeduped = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($caseAlias)
+    Assert-Equal $caseDeduped ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'deduplicates case-only project root aliases'
+
+    $junctionAlias = Join-Path $skillFixture 'project-skills-junction'
+    New-Item -ItemType Junction -Path $junctionAlias -Target $projectSkills | Out-Null
+    $junctionDeduped = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($junctionAlias)
+    Assert-Equal $junctionDeduped ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'deduplicates junction aliases without losing project priority'
+
+    $notARoot = Join-Path $skillFixture 'not-a-skill-root'
+    [System.IO.File]::WriteAllText($notARoot, 'not a directory', [System.Text.UTF8Encoding]::new($false))
+    $fileRoot = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -SkillPaths @($notARoot)
+    Assert-Equal $fileRoot ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'ignores a configured file path without interrupting discovery'
+
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $projectSkills 'shared') 'SKILL.md'), 'global content', [System.Text.UTF8Encoding]::new($false))
+    $unreadableSkill = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -Mode unreadable
+    Assert-Equal $unreadableSkill ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'fails open when a project Skill cannot be read'
+
+    $missingDuringDiscovery = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $projectWorkspace -DevSpaceSkillsDirectory $globalSkills -Mode missing
+    Assert-Equal $missingDuringDiscovery ($canonicalProjectSkills + '|' + $canonicalGlobalSkills) 'fails open when a Skill disappears during discovery'
+
+    $pixiuWorkspace = Join-Path $skillFixture 'pixiu-core'
+    $pixiuCanonicalSkills = Join-Path $pixiuWorkspace 'skills'
+    $pixiuPortableSkills = Join-Path (Join-Path $pixiuWorkspace '.agents') 'skills'
+    New-Item -ItemType Directory -Path (Join-Path $pixiuWorkspace 'vault\bootstrap') -Force | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $pixiuWorkspace 'vault\bootstrap\SESSION-BOOTSTRAP.md'), '# bootstrap', [System.Text.UTF8Encoding]::new($false))
+    New-TestSkill -Root $pixiuCanonicalSkills -Name 'shared' -Content 'canonical content'
+    New-TestSkill -Root $pixiuCanonicalSkills -Name 'canonical-only' -Content 'canonical only'
+    New-Item -ItemType Directory -Path (Join-Path $pixiuCanonicalSkills 'reference-library') -Force | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $pixiuCanonicalSkills 'reference-library\README.md'), '# not a Skill', [System.Text.UTF8Encoding]::new($false))
+    New-TestSkill -Root $pixiuPortableSkills -Name 'shared' -Content 'portable publish drift'
+    Remove-Item -LiteralPath $globalSkills -Recurse -Force
+    New-Item -ItemType Junction -Path $globalSkills -Target $pixiuCanonicalSkills | Out-Null
+    $pixiuCanonicalResult = Invoke-FakeEffectiveSkillPaths -RunnerPath $skillRunner -SkillsModulePath $fakeSkills -WorkingDirectory $pixiuWorkspace -DevSpaceSkillsDirectory $globalSkills
+    Assert-Equal $pixiuCanonicalResult ([System.IO.Path]::GetFullPath($pixiuCanonicalSkills)) 'suppresses the PixiuCore portable publishing layer when canonical names cover it'
+
+    $patchManifest = Join-Path $fakePackageRoot '.devspace-oneclick-patch-manifest.json'
+    $v2Line = '                if (!existsSync(skillFile) || !statSync(skillFile).isFile()) continue;'
+    $v1Skills = ([System.IO.File]::ReadAllText($fakeSkills)).Replace($v2Line + [Environment]::NewLine, '')
+    [System.IO.File]::WriteAllText($fakeSkills, $v1Skills, [System.Text.UTF8Encoding]::new($false))
+    $v1Manifest = Get-Content -LiteralPath $patchManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+    $v1SkillRecord = @($v1Manifest.files | Where-Object { [string]$_.path -eq 'dist\skills.js' })[0]
+    $v1SkillRecord.patchedSha256 = (Get-FileHash -LiteralPath $fakeSkills -Algorithm SHA256).Hash.ToLowerInvariant()
+    [System.IO.File]::WriteAllText($patchManifest, ($v1Manifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 1 'upgrades a verified v1 Skill mirror patch in place'
+    Assert-Equal ([System.IO.File]::ReadAllText($fakeSkills)).Contains($v2Line) $true 'v1 upgrade ignores non-Skill directories'
+    $upgradedManifest = Get-Content -LiteralPath $patchManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+    $upgradedSkillRecord = @($upgradedManifest.files | Where-Object { [string]$_.path -eq 'dist\skills.js' })[0]
+    Assert-Equal ([string]$upgradedSkillRecord.patchedSha256) ((Get-FileHash -LiteralPath $fakeSkills -Algorithm SHA256).Hash.ToLowerInvariant()) 'v1 upgrade refreshes the verified patch manifest'
     Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'Subagent patch is idempotent'
+
+    $knownServer = [System.IO.File]::ReadAllText($fakeServer)
+    [System.IO.File]::WriteAllText($fakeServer, ($knownServer + [Environment]::NewLine + '// unknown drift'), [System.Text.UTF8Encoding]::new($false))
+    Assert-Throws { Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'upgrade refuses unknown target drift before writing'
+    [System.IO.File]::WriteAllText($fakeServer, $knownServer, [System.Text.UTF8Encoding]::new($false))
+    Assert-Equal (Test-Path -LiteralPath $patchManifest) $true 'records original and patched hashes for safe restore'
+
+    $currentPatchedSkills = [System.IO.File]::ReadAllText($fakeSkills)
+    $patchedFiles = [ordered]@{}
+    $patchedFiles[(Join-Path $fakeDist 'local-agent-runtime.js')] = $patchedRuntime
+    $patchedFiles[(Join-Path $fakeDist 'local-agent-profiles.js')] = $patchedProfiles
+    $patchedFiles[(Join-Path $fakeSdkDist 'index.js')] = $patchedSdk
+    $patchedFiles[$fakeCli] = $patchedCli
+    $patchedFiles[$fakeServer] = $patchedServer
+    $patchedFiles[$fakeSkills] = $currentPatchedSkills
+    $skillsBackup = "$fakeSkills.devspace-oneclick-original"
+    $originalSkillsBackup = [System.IO.File]::ReadAllText($skillsBackup)
+
+    [System.IO.File]::WriteAllText($fakeSkills, ($currentPatchedSkills + [Environment]::NewLine + '// same-version hotfix'), [System.Text.UTF8Encoding]::new($false))
+    $runtimeBeforeTargetDriftRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses an unknown same-version target update'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeTargetDriftRestore 'target drift refusal writes no earlier file'
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        [System.IO.File]::WriteAllText([string]$entry.Key, [string]$entry.Value, [System.Text.UTF8Encoding]::new($false))
+    }
+
+    [System.IO.File]::WriteAllText($skillsBackup, 'unknown backup drift', [System.Text.UTF8Encoding]::new($false))
+    $runtimeBeforeBackupDriftRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses backup drift'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeBackupDriftRestore 'backup drift refusal writes no earlier file'
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        [System.IO.File]::WriteAllText([string]$entry.Key, [string]$entry.Value, [System.Text.UTF8Encoding]::new($false))
+    }
+    [System.IO.File]::WriteAllText($skillsBackup, $originalSkillsBackup, [System.Text.UTF8Encoding]::new($false))
+
+    $missingBackup = "$skillsBackup.missing-test"
+    Move-Item -LiteralPath $skillsBackup -Destination $missingBackup
+    $runtimeBeforeMissingBackupRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses an incomplete backup set'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeMissingBackupRestore 'missing backup refusal writes no earlier file'
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        [System.IO.File]::WriteAllText([string]$entry.Key, [string]$entry.Value, [System.Text.UTF8Encoding]::new($false))
+    }
+    Move-Item -LiteralPath $missingBackup -Destination $skillsBackup
+
+    [System.IO.File]::WriteAllText((Join-Path $fakePackageRoot 'package.json'), '{"version":"1.0.5","type":"module"}', [System.Text.UTF8Encoding]::new($false))
+    $runtimeBeforeVersionDriftRestore = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
+    Assert-Throws { Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli } 'restore refuses version drift'
+    Assert-Equal ([System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))) $runtimeBeforeVersionDriftRestore 'version drift refusal writes no file'
+    [System.IO.File]::WriteAllText((Join-Path $fakePackageRoot 'package.json'), '{"version":"1.0.4","type":"module"}', [System.Text.UTF8Encoding]::new($false))
+
+    Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 6 'restores all patched files from retained backups'
+    Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'restore is idempotent when files already match recorded backups'
+
+    $manifestWithoutBackups = "$patchManifest.no-backup-test"
+    Move-Item -LiteralPath $patchManifest -Destination $manifestWithoutBackups
+    $movedBackups = @()
+    foreach ($entry in $patchedFiles.GetEnumerator()) {
+        $backup = "$($entry.Key).devspace-oneclick-original"
+        $movedBackup = "$backup.no-backup-test"
+        Move-Item -LiteralPath $backup -Destination $movedBackup
+        $movedBackups += [pscustomobject]@{ Backup = $backup; Moved = $movedBackup }
+    }
+    Assert-Equal (Restore-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'restore safely no-ops when no retained backups exist'
+    Move-Item -LiteralPath $manifestWithoutBackups -Destination $patchManifest
+    foreach ($entry in $movedBackups) {
+        Move-Item -LiteralPath $entry.Moved -Destination $entry.Backup
+    }
 
     $profileConfig = Join-Path $testRoot 'profile-config'
     $profileSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'agents'
