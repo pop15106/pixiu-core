@@ -57,11 +57,11 @@ stateDiagram-v2
 
 ## Web 工具
 
-- `workflow_create`：建立工作並選擇 scope、模型、reasoning effort、Deep Research、Pro mode 與 unsupported behavior。
-- `workflow_list`：列出目前 workspace/session 可見工作，或取得單一 task。
-- `workflow_update`：claim、handoff、acknowledge、request_review、submit_review、resume、complete、block。
-- `workflow_run`：以 worker 或 reviewer 身分啟動 DevSpace Agent；模型與推理強度由 task policy 帶入。
-- `workflow_sync`：同步 Agent session 狀態與輸出到 ledger。
+- `workflow_create`：建立工作並選擇 scope；模型、reasoning effort、Deep Research、Pro mode 與 unsupported behavior 均為可選執行政策，不影響純協作流程。使用者明確說「下一個 Session／另一個對話／另一個專案接手」即可自然語意觸發，不要求工具名稱。
+- `workflow_list`：列出目前 workspace/session 可見工作，或取得單一 task。新 Session 表示接續／接手時先列出候選；只有多個合理候選時才詢問。
+- `workflow_update`：claim、handoff、acknowledge、request_review、submit_review、resume、complete、block。自然語意接力由系統映射到這些狀態動作。
+- `workflow_run`：只有目前對話中的使用者明確授權使用 Agent／model 時才可啟動 worker 或 reviewer；server 會驗證 `userAuthorizedModelRun=true`。模型與推理強度可由 task/run 覆寫，未指定時使用 Agent profile 預設。跨 Session 接力語意本身不構成授權。
+- `workflow_sync`：只同步已授權啟動的 Agent session 狀態與輸出到 ledger。
 
 ## 安全與失敗策略
 

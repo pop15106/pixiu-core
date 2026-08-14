@@ -138,10 +138,10 @@ function validatePolicy(input = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     fail("Execution policy must be an object.");
   }
-  const model = requiredString(input.model, "model", 80);
-  if (!MODEL_PATTERN.test(model)) fail("Model contains unsupported characters.");
-  const reasoningEffort = requiredString(input.reasoningEffort, "reasoning effort", 16);
-  if (!EFFORTS.has(reasoningEffort)) {
+  const model = optionalString(input.model, "model", 80);
+  if (model && !MODEL_PATTERN.test(model)) fail("Model contains unsupported characters.");
+  const reasoningEffort = optionalString(input.reasoningEffort, "reasoning effort", 16);
+  if (reasoningEffort && !EFFORTS.has(reasoningEffort)) {
     fail(`Reasoning effort must be one of: ${[...EFFORTS].join(", ")}.`);
   }
   const unsupportedBehavior = requiredString(
@@ -153,8 +153,8 @@ function validatePolicy(input = {}) {
     fail("Unsupported behavior must be block or explicit_degrade.");
   }
   return {
-    model,
-    reasoningEffort,
+    ...(model ? { model } : {}),
+    ...(reasoningEffort ? { reasoningEffort } : {}),
     deepResearch: booleanValue(input.deepResearch, "deepResearch", false),
     proMode: booleanValue(input.proMode, "proMode", false),
     unsupportedBehavior,
@@ -712,6 +712,9 @@ export function createWorkflowController(options = {}) {
     },
 
     async runTask(input) {
+      if (input.userAuthorizedModelRun !== true) {
+        fail("workflow_run requires explicit user authorization to use an Agent/model in the current conversation.");
+      }
       if (!agentAdapter?.start) fail("DevSpace Agent adapter is not configured.");
       const role = requiredString(input.role, "run role", 16);
       if (role !== "worker" && role !== "reviewer") fail("Run role must be worker or reviewer.");
@@ -901,14 +904,18 @@ export function createDevSpaceAgentAdapter(options = {}) {
     async start(input) {
       const profile = requiredString(input.profile, "Agent profile", 64);
       if (!PROFILE_PATTERN.test(profile)) fail("Agent profile contains unsupported characters.");
-      const model = requiredString(input.model, "model", 80);
-      if (!MODEL_PATTERN.test(model)) fail("Model contains unsupported characters.");
-      const effort = requiredString(input.reasoningEffort, "reasoning effort", 16);
-      if (!EFFORTS.has(effort)) fail("Unsupported reasoning effort.");
+      const model = optionalString(input.model, "model", 80);
+      if (model && !MODEL_PATTERN.test(model)) fail("Model contains unsupported characters.");
+      const effort = optionalString(input.reasoningEffort, "reasoning effort", 16);
+      if (effort && !EFFORTS.has(effort)) fail("Unsupported reasoning effort.");
       const prompt = requiredString(input.prompt, "Agent prompt", 20_000);
+      const commandArgs = [devSpaceCli, "agents", "run", profile];
+      if (model) commandArgs.push("--model", model);
+      if (effort) commandArgs.push("--thinking", effort);
+      commandArgs.push(prompt);
       const child = spawn(
         nodePath,
-        [devSpaceCli, "agents", "run", profile, "--model", model, "--thinking", effort, prompt],
+        commandArgs,
         {
           cwd: normalizePath(input.workspaceRoot),
           env: {
@@ -981,8 +988,8 @@ export function registerDevSpaceWorkflowTools({
   const actorField = z.string().min(1).max(128).describe("Stable actor name for this Web session or Agent.");
   const idempotencyField = z.string().min(8).max(128).describe("Unique retry key; reuse it only for the same operation.");
   const policyFields = {
-    model: z.string().min(1).max(80).describe("Requested model, for example gpt-5.6-sol or gpt-5.6-terra."),
-    reasoningEffort: z.enum(["none", "low", "medium", "high", "xhigh", "max"]),
+    model: z.string().min(1).max(80).optional().describe("Optional model override. Set it only when the user explicitly chooses a model."),
+    reasoningEffort: z.enum(["none", "low", "medium", "high", "xhigh", "max"]).optional().describe("Optional reasoning override. Set it only when the user explicitly chooses a reasoning level."),
     deepResearch: z.boolean().optional().describe("Request Deep Research for a capable future adapter."),
     proMode: z.boolean().optional().describe("Request API reasoning.mode=pro for a capable future adapter."),
     unsupportedBehavior: z.enum(["block", "explicit_degrade"]).optional(),
@@ -990,7 +997,7 @@ export function registerDevSpaceWorkflowTools({
 
   registerAppTool(server, "workflow_create", {
     title: "Create workflow task",
-    description: "Create a durable DevSpace task for single-session, same-project, or cross-project handoff. Records requested model, reasoning effort, Deep Research, and Pro mode.",
+    description: "Create a durable DevSpace task for single-session, same-project, or cross-project handoff. Use this automatically when the user clearly says work should continue in another chat, session, or project; the user does not need to say workflow or handoff. Pure coordination does not start an Agent/model. Model and reasoning overrides are optional metadata only.",
     inputSchema: {
       workspaceId: z.string().min(1),
       relatedWorkspaceIds: z.array(z.string().min(1)).max(20).optional(),
@@ -1021,7 +1028,7 @@ export function registerDevSpaceWorkflowTools({
 
   registerAppTool(server, "workflow_list", {
     title: "List workflow tasks",
-    description: "List tasks visible to the current workspace/session, or get one task by ID.",
+    description: "List tasks visible to the current workspace/session, or get one task by ID. Use this first when a new chat/session says it should continue, resume, or take over work from another session or project. If exactly one pending handoff clearly matches, continue with acknowledge; ask only when multiple plausible tasks remain.",
     inputSchema: {
       workspaceId: z.string().min(1),
       sessionRef: sessionField,
@@ -1038,7 +1045,7 @@ export function registerDevSpaceWorkflowTools({
 
   registerAppTool(server, "workflow_update", {
     title: "Update workflow task",
-    description: "Claim, hand off, acknowledge, review, resume, complete, or block a task with revision-based concurrency control.",
+    description: "Claim, hand off, acknowledge, review, resume, complete, or block a task with revision-based concurrency control. Natural-language continuation intent is enough; users do not need to name claim, handoff, or acknowledge. Do not infer an Agent/model run from workflow coordination.",
     inputSchema: {
       workspaceId: z.string().min(1),
       sessionRef: sessionField,
@@ -1069,7 +1076,7 @@ export function registerDevSpaceWorkflowTools({
 
   registerAppTool(server, "workflow_run", {
     title: "Run workflow Agent",
-    description: "Start a DevSpace worker or independent reviewer using this run's selected model and reasoning effort. Unsupported Deep Research/Pro requests are blocked or explicitly degraded.",
+    description: "Start a DevSpace worker or independent reviewer only after the user explicitly asks to use an Agent/model in the current conversation. Pure workflow coordination must use create/list/update without this tool. Model and reasoning overrides are optional; omitted values use the selected DevSpace profile defaults. Unsupported Deep Research/Pro requests are blocked or explicitly degraded.",
     inputSchema: {
       workspaceId: z.string().min(1),
       sessionRef: sessionField,
@@ -1080,8 +1087,9 @@ export function registerDevSpaceWorkflowTools({
       prompt: z.string().min(1).max(8_000).optional(),
       expectedRevision: z.number().int().positive(),
       idempotencyKey: idempotencyField,
-      model: policyFields.model.optional(),
-      reasoningEffort: policyFields.reasoningEffort.optional(),
+      userAuthorizedModelRun: z.boolean().describe("Must be true only when the user explicitly authorized using an Agent/model in the current conversation."),
+      model: policyFields.model,
+      reasoningEffort: policyFields.reasoningEffort,
       deepResearch: policyFields.deepResearch,
       proMode: policyFields.proMode,
       unsupportedBehavior: policyFields.unsupportedBehavior,

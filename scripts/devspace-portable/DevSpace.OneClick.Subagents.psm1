@@ -393,8 +393,21 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
-    $workflowGuidanceReplacement = 'Use workflow_create, workflow_list, workflow_update, workflow_run, and workflow_sync for durable cross-session handoff or independent review. Use exec_command for npm, builds, tests, and DevSpace Agent status commands'
-    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Use workflow_create, workflow_list, workflow_update, workflow_run, and workflow_sync' -Pattern 'Use exec_command for npm, builds, tests, and DevSpace Agent status commands' -Replacement $workflowGuidanceReplacement -Description 'ChatGPT Web workflow guidance') {
+    $workflowGuidanceReplacement = 'Use workflow_create, workflow_list, and workflow_update for durable cross-session coordination. Treat clear natural-language continuation intent such as "continue in the next session", "another chat should take over", "I will open a new chat and continue", or an explicitly named other project taking over as a workflow request; do not require the user to say workflow, handoff, claim, or acknowledge. When the current session is handing work off, create or reuse the matching task, claim it if needed, then hand it off. When a new session says it is resuming or taking over, call workflow_list first and acknowledge the single clearly matching pending handoff. Use same_project for another session in the same workspace root and cross_project only when the target project workspace is explicitly known and opened. Ask only when the target, scope, or matching task is ambiguous or when multiple plausible tasks remain. Do not create a workflow from vague closure such as "先這樣" without clear continuation intent. Never call workflow_run because of continuation intent alone; workflow_run requires separate explicit user authorization in the current conversation to use an Agent/model. Use workflow_sync only for a run that the user already authorized. Use exec_command for npm, builds, tests, and DevSpace Agent status commands'
+    $serverContentForWorkflowGuidance = [System.IO.File]::ReadAllText($serverPath)
+    $workflowGuidanceCandidates = @(
+        'Use workflow_create, workflow_list, workflow_update, workflow_run, and workflow_sync for durable cross-session handoff or independent review. Use exec_command for npm, builds, tests, and DevSpace Agent status commands',
+        'Use workflow_create, workflow_list, and workflow_update for durable cross-session coordination. Do not call workflow_run unless the user explicitly asks in the current conversation to use an Agent/model; workflow_run enforces this authorization gate. Use workflow_sync only for a run that the user already authorized. Use exec_command for npm, builds, tests, and DevSpace Agent status commands'
+    )
+    foreach ($candidate in $workflowGuidanceCandidates) {
+        if ($serverContentForWorkflowGuidance.Contains($candidate)) {
+            if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Treat clear natural-language continuation intent' -Pattern ([regex]::Escape($candidate)) -Replacement $workflowGuidanceReplacement -Description 'upgrade ChatGPT Web workflow semantic guidance') {
+                $changed++
+                $serverContentForWorkflowGuidance = [System.IO.File]::ReadAllText($serverPath)
+            }
+        }
+    }
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Treat clear natural-language continuation intent' -Pattern 'Use exec_command for npm, builds, tests, and DevSpace Agent status commands' -Replacement $workflowGuidanceReplacement -Description 'ChatGPT Web workflow guidance') {
         $changed++
     }
 
