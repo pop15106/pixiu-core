@@ -22,6 +22,12 @@ $portableRoot = Split-Path -Parent $PSScriptRoot
 $builder = Join-Path $portableRoot 'build-portable-package.ps1'
 $verifier = Join-Path $portableRoot 'verify-portable-package.ps1'
 $launcher = Join-Path $portableRoot '00-SETUP-OR-UPDATE.cmd'
+$startConnection = Join-Path $portableRoot 'START-CONNECTION.cmd'
+$disconnect = Join-Path $portableRoot 'DISCONNECT.cmd'
+$forceReconnect = Join-Path $portableRoot 'FORCE-RECONNECT.cmd'
+$qaCheck = Join-Path $portableRoot 'QA-CHECK.cmd'
+$quickGuide = Join-Path $portableRoot 'QUICK-GUIDE.txt'
+$qaGuide = Join-Path $portableRoot 'QA-TROUBLESHOOTING.txt'
 $oneClick = Join-Path $portableRoot 'devspace-oneclick.ps1'
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("devspace-portable-package-test-" + [guid]::NewGuid().ToString('N'))
 $outputRoot = Join-Path $testRoot 'out'
@@ -31,6 +37,14 @@ try {
     New-Item -ItemType Directory -Path $outputRoot, $extractRoot -Force | Out-Null
 
     Assert-True (Test-Path -LiteralPath $launcher -PathType Leaf) 'ships the setup-or-update launcher'
+    Assert-True ((Test-Path -LiteralPath $startConnection -PathType Leaf) -and (Test-Path -LiteralPath $disconnect -PathType Leaf) -and (Test-Path -LiteralPath $forceReconnect -PathType Leaf)) 'ships friendly start, disconnect, and force-reconnect launchers'
+    Assert-True ((Test-Path -LiteralPath $qaCheck -PathType Leaf) -and (Test-Path -LiteralPath $quickGuide -PathType Leaf) -and (Test-Path -LiteralPath $qaGuide -PathType Leaf)) 'ships QA check and beginner troubleshooting guides'
+    $forceReconnectText = [System.IO.File]::ReadAllText($forceReconnect)
+    Assert-True $forceReconnectText.Contains('15-FORCE-RECONNECT.cmd') 'friendly force-reconnect delegates to the verified reconnect flow'
+    $qaCheckText = [System.IO.File]::ReadAllText($qaCheck)
+    Assert-True ($qaCheckText.Contains('09-REPAIR-STATE.cmd') -and $qaCheckText.Contains('Refresh the DevSpace App actions')) 'QA check prints the bounded troubleshooting order'
+    $qaGuideText = [System.IO.File]::ReadAllText($qaGuide)
+    Assert-True ($qaGuideText.Contains('Owner password') -and $qaGuideText.Contains('ChatGPT OAuth token') -and $qaGuideText.Contains('Telegram Bot Token')) 'QA guide warns users not to disclose secrets'
     $builderText = [System.IO.File]::ReadAllText($builder)
     Assert-True ($builderText.Contains("[string]`$OutputDirectory") -and $builderText.Contains("Join-Path `$PSScriptRoot 'dist'")) 'portable builder resolves its default output after PSScriptRoot is available'
     $launcherText = [System.IO.File]::ReadAllText($launcher)
@@ -58,6 +72,8 @@ try {
         Assert-True (Test-Path -LiteralPath $manifestPath -PathType Leaf) 'release ZIP contains the integrity manifest'
         Assert-True (Test-Path -LiteralPath (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') -PathType Leaf) 'release ZIP contains the cross-session workflow module'
         Assert-True (Test-Path -LiteralPath (Join-Path $packageRoot 'WORKFLOW.zh-TW.md') -PathType Leaf) 'release ZIP contains cross-session usage documentation'
+        Assert-True ((Test-Path -LiteralPath (Join-Path $packageRoot 'START-CONNECTION.cmd') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'DISCONNECT.cmd') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'FORCE-RECONNECT.cmd') -PathType Leaf)) 'release ZIP contains friendly connection controls'
+        Assert-True ((Test-Path -LiteralPath (Join-Path $packageRoot 'QA-CHECK.cmd') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'QUICK-GUIDE.txt') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'QA-TROUBLESHOOTING.txt') -PathType Leaf)) 'release ZIP contains QA guidance'
 
         $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
         Assert-True ($manifest.includesCrossSessionWorkflow -eq $true) 'manifest explicitly declares cross-session workflow support'
