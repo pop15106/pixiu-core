@@ -23,6 +23,7 @@
 - 獨立 GPT-5.6 Sol reviewer：PASS，無 blocking finding。
 - Codex 安全收斂：ledger 持久化前拒絕疑似憑證，Agent runtime 輸出寫入前遮罩敏感值。
 - 真實 runtime：DevSpace/Tunnel PID verified，MCP session 建立 200、工具呼叫 200，最新 stderr 空白。
+- 2026-08-14 再驗證：portable 105/105、workflow 13/13、Watchdog 162/162 全數通過；live managed workflow module 已更新到最終 hardening 版本，local/public health 與 MCP OAuth `resource_metadata` 同源檢查均正常。
 - 現有 watchdog、watchdog tests 與既存 README 修改未被本功能覆寫。
 
 ## 已知限制
