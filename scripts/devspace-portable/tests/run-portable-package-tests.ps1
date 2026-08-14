@@ -31,6 +31,8 @@ try {
     New-Item -ItemType Directory -Path $outputRoot, $extractRoot -Force | Out-Null
 
     Assert-True (Test-Path -LiteralPath $launcher -PathType Leaf) 'ships the setup-or-update launcher'
+    $builderText = [System.IO.File]::ReadAllText($builder)
+    Assert-True ($builderText.Contains("[string]`$OutputDirectory") -and $builderText.Contains("Join-Path `$PSScriptRoot 'dist'")) 'portable builder resolves its default output after PSScriptRoot is available'
     $launcherText = [System.IO.File]::ReadAllText($launcher)
     Assert-True ($launcherText.Contains('PORTABLE-MANIFEST.json') -and $launcherText.Contains('setup-or-update')) 'launcher verifies release packages and calls the unified setup/update action'
 
