@@ -1,0 +1,6 @@
+interface:
+  display_name: "PRD Breakdown"
+  short_description: "Split approved PRDs into traceable vertical slices with blocker edges"
+  default_prompt: "Break the PRD into independently verifiable tracer-bullet tickets, preserve Decision and AC traceability, and use Expand-Migrate-Contract for wide refactors."
+policy:
+  allow_implicit_invocation: false

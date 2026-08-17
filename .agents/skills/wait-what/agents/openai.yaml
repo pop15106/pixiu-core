@@ -1,0 +1,6 @@
+interface:
+  display_name: "Wait What"
+  short_description: "Re-explain the current concept without changing task state"
+  default_prompt: "Explain the current concept with one concrete example first, use canonical vocabulary, and keep all task and decision state unchanged."
+policy:
+  allow_implicit_invocation: false

@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: prd-create
 description: "Use when user wants to draft a PRD (Product Requirements Document) from raw input (meeting transcripts, hand-waved descriptions, scattered decisions). Workflow: load org's PRD Guideline + writing discipline → lock execution mode (human-run vs unattended-agent-run) → ingest raw input → quiz user numbered-list iterate to fill §1-§15 → draft v0.1 → handle stakeholder merge (review feedback, surface conflicts) → lock v1.0 + sanitize per ADO publication contract → publish to ADO Wiki. For an agent-run PRD, §13 carries the unattended-execution discipline (machine-checkable AC + traffic-light + 3-exits + stop-and-ask), aligned with goal-engineer's loop-run-protocol. Pure prompt-driven — Claude is the runtime, no Python helper. Trigger phrases: 寫 PRD / PRD 撰寫 / prd-create / 初版 PRD / 起 PRD."
 version: 0.2.0
@@ -67,13 +68,13 @@ Claude 讀進來，識別：
 - **Constraints**（時程 / 預算 / hardware / 政策 / 法規）
 - **Domain context**（IoT / web app / hardware POC / agent system 等）
 
-不確定的直接列為 question 給 user，**不擅自 fabricate**。
+不確定事項先送入 Decision Ledger 分類。Repo／正式文件可查者標 `FACT` 自行驗證；真正需要 user 拍板者才標 `USER_DECISION`；需要 SA／PM／外部權威者標 `EXTERNAL_EXPERT` 並轉 `to-questionnaire`。**不擅自 fabricate**。
 
-### Phase 3: Quiz loop（First-Principles 啟動）
+### Phase 3: Decision Grilling（First-Principles 啟動）
 
-**MANDATORY**: 走 org's PRD Guideline 的 First-Principles 啟動紀律 — Problem / Goal / Non-Goal / Constraints **任一缺即停下對齊**，不先寫架構。
+**MANDATORY**: 顯式使用 `decision-grilling`。走 org's PRD Guideline First-Principles 紀律：Problem / Goal / Non-Goal / Constraints **任一 unresolved 即停下對齊**，不先寫架構。
 
-對 §1-§15 章節，識別 raw input 沒涵蓋的部分，按優先順序 quiz user：
+對 §1-§15 章節識別缺口並建立 Decision nodes；下列順序是 domain question library，不代表每題都要問 user：
 
 ```
 最優先（缺一即停）:
@@ -86,13 +87,15 @@ Claude 讀進來，識別：
   §6-§10 + §12-§15
 ```
 
-**Quiz pattern**: numbered-list iterate（不要一口氣丟所有 questions，認知負擔太大）。Caller 回答 → update internal context → 再 quiz 下一輪缺漏。
+**Frontier pattern**: 預設一次只顯示一個最高優先 Decision。Caller 回答 → update Decision Ledger → 重新計算 Frontier。只有 caller 明示 `--batch` 才能同輪提出互不依賴的多題。
 
-**MANDATORY**: 遇不確定的事一律明說「這是猜的」+ 列為 question，不擅自 hard-code assumption。
+**MANDATORY**: 遇不確定事項先標 resolver，不把猜測 hard-code 成 PRD。Decision Ledger 保存 decision/rationale/evidence；PRD 只保存正式結論與 Decision ID，不複製完整問答紀錄。
+
+Frontier 清空後執行 Shared Understanding Gate；P0/P1 Decision 未 resolved、deferred 或 out-of-scope 前，不進 Phase 4。
 
 ### Phase 4: Draft v0.1
 
-當 §1-§4 + §11 + §14 已收滿 → draft markdown PRD。
+當 §1-§4 + §11 + §14 已收滿，且 Shared Understanding Gate 已由 user 確認 → draft markdown PRD。PRD 的關鍵 requirement／constraint／AC 應引用相關 Decision ID。
 
 結構（fixed order，per org's PRD Guideline 15 章）：
 
@@ -140,8 +143,8 @@ User 把 PRD 給 implementer / cross-team review；對方可能：
 
 Claude 處理 merge：
 - **Fact 補充**：直接 sync 進 PRD（如 implementer survey 結果、新規格）
-- **答案 Q&A**：sync 進 §14 Open Questions table（標 ✅ + 答案來源）
-- **衝突**（如 implementer 答案 vs PRD §2 Constraint 矛盾）：**surface 給 user 拍板**，**不擅自 merge**
+- **答案 Q&A**：先同步對應 Decision ID 的 evidence/resolution，再把正式結論 sync 進 §14 Open Questions table（標 ✅ + 答案來源）
+- **衝突**（如 implementer 答案 vs PRD §2 Constraint 矛盾）：reopen 對應 Decision branch，**surface 給 user 拍板**，**不擅自 merge**
   - 衝突 surface 範例：「Implementer survey 結果建議升級 hardware 規格 → 跟 PRD §2 Constraint 『使用既有 hardware 不採購』矛盾。三種可能：(a) implementer 試過既有不行 / (b) survey 是 production spec 寫錯位置 / (c) implementer 不知道 constraint。需 user 拍板」
 
 User 拍板後 update PRD，bump version v0.1 → v0.2。重複 stakeholder loop 直到 user 滿意。
@@ -241,7 +244,7 @@ Caller 不確定怎麼寫某章節時，可貼 fixture 對應段給 Claude 對�
 - **`prd-breakdown`（同 repo）**：拿 prd-create 產出的 PRD.md → 拆 vertical slice → push ADO tasks。Chain：`prd-create` → `prd-breakdown` → ADO
 - **`spec` skill（同 repo）**：caller 自家開發 spec workflow（spec.md / plan.md / tasks.md / report.md）。`prd-create` 產出 PRD 作 input；`spec` 是「caller 自身 codebase 開發 spec」不是「產品需求 PRD」
 - **`goal-engineer`（同 repo）**：當 PRD 要交 agent 無人值守跑，§13 的執行紀律對齊它的 `references/loop-run-protocol.md`（同一份正典）。分工：prd-create 寫「build 什麼」、loop-run-protocol 寫「agent 怎麼無人值守跑 + 回報」。goal-engineer 本身做的是 generate-and-select dispatch（≠ build-to-spec PRD），兩者 archetype 不同
-- 這些 skill 透過 markdown 文件對接，不互相 import
+- Skill 依賴與 invocation policy 以 `vault/capabilities/skill-dependency-manifest.json` 為正式來源；Router／Harness 需顯式解析必要 primitive，不依賴文字提及自行猜載入
 
 ## Important rules
 

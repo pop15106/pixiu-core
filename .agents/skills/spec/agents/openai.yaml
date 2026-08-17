@@ -1,0 +1,6 @@
+interface:
+  display_name: "Spec"
+  short_description: "User-started spec workflow with Decision Ledger and test seams"
+  default_prompt: "Clarify blockers through Decision Grilling, preserve Decision IDs, define test seams, and stop at the shared-understanding gate before implementation."
+policy:
+  allow_implicit_invocation: false

@@ -16,6 +16,7 @@ TDD guidance for Spring Boot services with 80%+ coverage (unit + integration).
 
 ## Workflow
 
+0) Identify the public test seam first. Map it to the relevant AC/Decision ID when a spec exists. Prefer controller/service/repository boundaries that verify observable behavior rather than private implementation details. Expected results must come from an independent source; a bug-fix test should reproduce the original symptom.
 1) Write tests first (they should fail)
 2) Implement minimal code to pass
 3) Refactor with tests green

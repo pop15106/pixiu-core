@@ -1,0 +1,6 @@
+interface:
+  display_name: "Domain Modeling"
+  short_description: "Propose evidence-backed domain vocabulary and ADR changes"
+  default_prompt: "Identify ambiguous domain terms, validate them against concrete scenarios and code, then propose glossary or ADR patches without writing formal sources."
+policy:
+  allow_implicit_invocation: true

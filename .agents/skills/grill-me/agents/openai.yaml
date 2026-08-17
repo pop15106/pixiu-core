@@ -1,0 +1,6 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "User-started stateless decision interview with zero side effects"
+  default_prompt: "Run a focused decision interview. Ask one highest-priority question at a time and do not write files, spawn agents, or implement."
+policy:
+  allow_implicit_invocation: false

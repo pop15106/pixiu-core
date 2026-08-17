@@ -80,6 +80,19 @@ For each design decision, document:
 - Appropriate caching
 - Lazy loading
 
+### 6. Design Vocabulary And Heuristics
+Use these terms when evaluating change shape:
+- **Module**: a cohesive unit that hides internal complexity.
+- **Interface**: a stable behavioral boundary; one implementation does not automatically make an interface unnecessary.
+- **Depth**: prefer simple public surfaces backed by substantial internal capability.
+- **Seam**: a boundary where behavior can be independently replaced or tested.
+- **Adapter**: isolate external protocols, frameworks, or infrastructure from domain logic.
+- **Leverage**: prefer a small change at the right shared boundary over repeated caller fixes.
+- **Locality**: keep related knowledge and behavior close enough to change safely.
+- **Deletion Test**: if removing an abstraction would not increase coupling, risk, or test difficulty, question whether it earns its cost.
+
+For Java/Spring, keep interfaces when they provide a transaction/proxy boundary, package contract, change-isolation seam, or meaningful test surface. Treat these as heuristics, not mechanical violations.
+
 ## Common Patterns
 
 ### Frontend Patterns

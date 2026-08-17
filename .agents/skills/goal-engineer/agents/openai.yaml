@@ -1,0 +1,6 @@
+interface:
+  display_name: "Goal Engineer"
+  short_description: "User-started goal-loop dispatch author with Decision Frontier discovery"
+  default_prompt: "Resolve loop design decisions through Decision Grilling, preserve human final selection, and write the dispatch only after shared understanding is confirmed."
+policy:
+  allow_implicit_invocation: false

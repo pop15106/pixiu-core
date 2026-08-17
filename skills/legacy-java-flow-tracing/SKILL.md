@@ -37,6 +37,15 @@ Use this order unless the evidence clearly demands another route:
 - For near-name sibling repos such as `pepis_ap` and `pisso_ap`, confirm cwd/repo and actual file existence before reusing memory.
 - Treat second-brain and memory as leads. The repo, vault source, log, SQL, or test output is the final evidence.
 
+## Handoff To Diagnosing Bugs
+
+本 Skill 的責任是先證明 active code path 與資料流，不取代系統化 debug loop。當使用者要修 bug、確認 root cause 或建立 regression 時：
+
+1. 先完成本 Skill 的 evidence chain。
+2. 把已確認的 entrypoint、active branch、SQL／Procedure、runtime evidence 與未驗證點交給 `diagnosing-bugs`。
+3. 由 `diagnosing-bugs` 建立 red-capable repro、可證偽 hypothesis、regression test 與 fix verification。
+4. 沒有 red-capable evidence 時，不把「看起來最可疑的路徑」宣稱成 root cause。
+
 ## Output Contract
 
 Prefer this concise structure:

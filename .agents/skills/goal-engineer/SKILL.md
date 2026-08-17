@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: goal-engineer
 description: "Use when the user wants to AUTHOR an unattended, goal-driven evaluator-optimizer loop of the GENERATE-AND-SELECT kind (generate candidates → grade against a rubric → iterate by reason-code → keep the best; the human picks the final selection) that a fresh-session agent runs hands-off while the human only watches traffic-light push notifications. Interview-style forcing questions lock the spec, then it emits a self-contained dispatch markdown + a channel-agnostic notification protocol. This is the upstream SPEC AUTHOR, NOT a runtime: the dispatch is run by Claude Code's /goal, a headless `-p` session, or any unattended agent — /goal is the engine, this writes what you feed it. NOT for build-to-spec PRDs (that is prd-create), NOT a time scheduler (/loop or cron), NOT a recurring-push registrar (skill-cron)."
 version: 0.3.0
@@ -29,18 +30,20 @@ This skill **produces a spec + a notification protocol. It does NOT run the loop
 ## 執行規則
 
 1. 跟 user 互動用 user 的語言;產出的 dispatch 文件:section 標題可雙語、內文用 user 語言。
-2. **Forcing questions 一次問一塊**,每塊推到具體答案才往下(不要一次丟 7 題、會拿到淺答案)。
-3. **不替 user 腦補**。不知道就問——整個重點是「規格精確到能 blind hand-off」。
+2. **顯式使用 `decision-grilling`**。Q1–Q7 是 domain question library，不是固定問卷；依 Decision Frontier 預設一次只問一個最高優先 blocker。
+3. **不替 user 腦補**。Repo／runtime／config 可查者先標 `FACT` 自行驗證；只有真正需要 user 拍板的項目才問 user。
 4. dispatch 文件輸出到 user 指定路徑(預設 `docs/<task>_dispatch.md`)。
 5. **接到 build-to-spec 需求**(寫 codebase 到滿足 AC / 產 PRD)→ 不硬套本 skill,導去 `prd-create`。
 
 ## Stage Detection（自動判斷）
 
 1. user 指名既有 dispatch 文件 / 說「resume」→ 載入它、跳到沒填完的洞。
-2. user 描述新的無人值守 generate-and-select loop 需求 → 跑 Forcing Questions。
+2. user 描述新的無人值守 generate-and-select loop 需求 → 建立 Decision Ledger，跑 `decision-grilling`。
 3. 只打 `/goal-engineer` → 問「你想讓 loop 自己磨什麼?(產什麼候選、怎樣算挑到好的?)」
 
-## Forcing Questions（鎖規格 — 一塊一塊問）
+## Decision Grilling Question Library（鎖規格）
+
+先將每個未知項分類成 `FACT`、`USER_DECISION`、`EXPERIENTIAL`、`EXTERNAL_EXPERT` 或 `MANUAL_ACTION`。Q1–Q7 只在對應 Decision 尚未被正式來源回答、且位於目前 Frontier 時才問；預設一次一題。Human final selection 永遠維持 `USER_DECISION`。
 
 **Q1 — 目標 + 工作項**
 loop 要**產出 / 優化什麼**?它迭代的**離散工作項**是什麼?
@@ -75,13 +78,13 @@ agent **絕對不能做**什麼?scope 邊界、禁止動作、只有人能決定
 
 **Q7 — 通知通道**（channel-agnostic、這塊最常踩坑）
 - **哪個通道?** Telegram(預設)/ Discord / iMessage / Slack / 其他 — user 自由指定。
-- **credential 哪來?** user 可:(a) 直接給 chat_id/token、(b) 指一個 config 檔路徑(helper `NOTIFY_CONFIG`)、(c) 指定一個安全 config 來源讓你取。🔴 **dispatch 只記「來源是哪個 env var / config」、永不寫 secret 本身**。把「creds 從哪來」問到具體。
+- **credential 哪來?** 優先查 repo/config 是否已定義安全來源名稱；能查到來源名稱就當 `FACT`，不要重問。若仍需 user 指定，可選:(a) 指定 env var 名稱、(b) 指一個 config 檔路徑(helper `NOTIFY_CONFIG`)、(c) 指定其他安全 config 來源。🔴 **dispatch 只記來源名稱／路徑，永不讀出或寫入 secret 本身**。
 - **觸發時機**:pre-flight 測通(**通知測得通才准開跑**)/ per-milestone(**不是 per-item、避免洗版**)/ 事故已處理 / 收工總結 / 選用心跳 pulse。
 - **格式**:紅綠燈 🟢🟡🔴(見 `references/notify-protocol.md`)。
 
 ## 產出 dispatch 文件
 
-用 Q1–Q7 的答案填 `references/dispatch-template.md` → 寫到指定路徑。執行紀律(3 出口 / delta / pre-flight / 機器 AC / 可重現)對齊 `references/loop-run-protocol.md`。然後**自審**:
+Frontier 清空後先執行 Shared Understanding Gate；所有 P0/P1 Decision 已 resolved、deferred 或 out-of-scope，且 user 明確確認後，才用已解決 Decision 填 `references/dispatch-template.md` → 寫到指定路徑。Decision Ledger 保存 rationale/evidence；dispatch 只保存正式結論與必要 Decision ID，不複製完整訪談。執行紀律(3 出口 / delta / pre-flight / 機器 AC / 可重現)對齊 `references/loop-run-protocol.md`。然後**自審**:
 - 每段都具體、無「TBD / 看情況」(模糊 = 不能 hand-off)。
 - 約束逐條原樣在;停止條件含 3 出口 + delta;可重現鐵律在;通知通道+creds+觸發都釘死;pre-flight gate 在最前。
 - 回報一份 **handoff checklist**(讓 user 一眼知道怎麼接、不用追問):
@@ -137,6 +140,7 @@ dispatch 寫好後(尤其它會進 repo 或交給無人值守跑),**主動問 us
 - **`prd-create`(同 monorepo)**:**build-to-spec** 的規格作者(產 PRD)。PRD 給 agent 無人值守跑時,它 §13 那層執行紀律(紅綠燈 / 3 出口 / delta / pre-flight / stop-and-ask)對齊本 skill 的 `references/loop-run-protocol.md`。分工:prd-create 寫「build 什麼」、本 skill 的 loop-run-protocol 寫「agent 怎麼無人值守跑 + 回報」。
 - **`skill-cron`(同 monorepo)**:心跳/排程器,**scheduler-agnostic**。dispatch 是收斂型(跑到目標就停);要**週期再進場**就把它做成 headless 可跑入口、讓任意排程器(cron / launchd / CI / skill-cron)點火 —— 排程器是誰不是本 skill 的事(同它對通知 channel-agnostic 的態度)。
 - **`/loop`(內建,external)**:time-interval 重跑,跟本 skill 的 goal 收斂是不同維度。
+- **Skill dependency**: 必要 primitive 與 invocation policy 以 `vault/capabilities/skill-dependency-manifest.json` 為正式來源，由 Router／Harness 顯式解析。
 
 ## References（用本 skill 時必讀 dispatch-template + loop-run-protocol + notify-protocol;用 shell helper 才讀/複製 notify.sh）
 

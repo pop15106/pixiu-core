@@ -1,0 +1,6 @@
+interface:
+  display_name: "To Questionnaire"
+  short_description: "Turn external-expert decision gaps into answerable questionnaires"
+  default_prompt: "Create a minimal-context questionnaire with Decision IDs, options, impacts, and a clear ledger sync contract."
+policy:
+  allow_implicit_invocation: false

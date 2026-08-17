@@ -18,6 +18,11 @@ This skill ensures all code development follows TDD principles with comprehensiv
 
 ## Core Principles
 
+### 0. Identify the Test Seam First
+Before writing a test, name the public or observable seam where behavior can be verified. Map that seam to the relevant Acceptance Criteria and Decision ID when a spec exists. Expected results must come from an independent authoritative source; do not generate the expected value with the production code under test.
+
+For bug fixes, the preferred first red test reproduces the user's original symptom. If no correct test seam exists, record the architecture limitation and the smallest alternative verification before changing production code.
+
 ### 1. Tests BEFORE Code
 ALWAYS write tests first, then implement code to make tests pass.
 

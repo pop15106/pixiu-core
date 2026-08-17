@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: spec
 description: "Spec-driven 開發流程 — 從模糊需求到驗收結案。自動判斷專案狀態，引導 user 走完：需求釐清 → 技術審查 → 實作 → 驗收 → 結案報告。"
 version: 1.2.0
@@ -85,9 +86,9 @@ triggers: ["spec", "開 spec", "建 spec", "新功能"]
 
 ### 流程
 
-1. **釐清問題（Forcing Questions）**
+1. **Decision Grilling（Forcing Questions 作為 domain question library）**
 
-   逐題問，每題推到拿到具體答案為止。不要一次丟 5 個問題。
+   顯式使用 `decision-grilling`：先把未知事項分成 `FACT`、`USER_DECISION`、`EXPERIENTIAL`、`EXTERNAL_EXPERT`、`MANUAL_ACTION`，可查的 FACT 先自行驗證。Forcing Questions 只作候選題庫，不照固定順序全部詢問；依 Decision Ledger Frontier 排序，預設一次只問一個最高優先 blocker。只有 user 明示 `--batch` 才能同輪提出互不依賴的多題。
 
    **Q1: 痛點確認**
    「這個專案要解決什麼具體問題？誰會遇到這個問題？」
@@ -148,10 +149,12 @@ triggers: ["spec", "開 spec", "建 spec", "新功能"]
    - 如果 `specs/` 下已有其他 spec，讀它們的 spec.md 了解已完成的部分
    - 這些資訊用來避免重複和衝突
 
-2. **釐清需求**（跟 user 對話，最多 3-5 個問題）
-   - 只問會影響設計的問題
-   - 不問 user 已經在需求描述中回答過的問題
-   - 如果從 DESIGN.md 能找到答案，不要再問
+2. **釐清需求（Decision Ledger）**
+   - 顯式使用 `decision-grilling`；只問會影響設計且現在阻塞下游的 Decision
+   - Repo、DESIGN.md、既有 spec、ADR 或目前對話能直接回答的 FACT 先查證，不問 user
+   - 預設一次只問 Frontier 第一題，不以「最多 3-5 題」取代 dependency ordering
+   - 每個結論保留 Decision ID；P0/P1 Decision 在進入正式 spec 前需 resolved、deferred 或 out-of-scope
+   - Frontier 清空後執行 Shared Understanding Gate；user 未確認前不建立或修改正式 spec 檔
 
 3. **建立 spec 資料夾**
    - 命名：`specs/active/NN-feature-name/`
@@ -176,6 +179,7 @@ triggers: ["spec", "開 spec", "建 spec", "新功能"]
 - **輸出（Outputs）：** [交付物：新檔案 / 新 API endpoint / 新測試 / schema migration]
 - **驗收（Acceptance）：** [指向下方 AC 列表，或直接摘要「見 AC-1〜AC-3」]
 - **邊界（Boundaries）：** [指向下方「不做的事」，或直接摘要]
+- **Decision Trace：** [列出影響本 spec 的 Decision ID，如 D-001、D-004]
 
 ## 背景
 
@@ -183,9 +187,15 @@ triggers: ["spec", "開 spec", "建 spec", "新功能"]
 
 ## 驗收條件
 
-- [ ] AC-1: [具體、可測試的條件]
-- [ ] AC-2: [具體、可測試的條件]
-- [ ] AC-3: ...
+- [ ] AC-1 `[D-001]`: [具體、可測試的條件]
+- [ ] AC-2 `[D-002]`: [具體、可測試的條件]
+- [ ] AC-3 `[D-xxx]`: ...
+
+## Test Seams
+
+| Seam | 驗證行為 | 對應 AC | 測試層級 | Authoritative expected result |
+|---|---|---|---|---|
+| [public seam] | [observable behavior] | AC-1 | unit / integration / E2E / manual | [獨立 expected source] |
 
 ## 不做的事
 
@@ -278,9 +288,11 @@ triggers: ["spec", "開 spec", "建 spec", "新功能"]
    - 太細（「寫一個 function」）→ 合併
    - 太粗（「完成整個模組」）→ 拆開
 
-8. **呈現給 user**
-   - 列出三份檔案的摘要（不用全文印出來，user 可以自己開檔案看）
-   - 問：「spec 看起來 OK 嗎？要調整什麼？確認後我們就開始實作。」
+8. **呈現給 user + Shared Understanding Gate**
+   - 列出三份檔案的摘要與關聯 Decision ID（不用全文印出來，user 可以自己開檔案看）
+   - 確認 Decision Ledger 沒有 P0/P1 孤立 blocker，FACT 有 evidence，AC 能追到 Decision ID 與 Test Seam
+   - 問：「以上 shared understanding 是否正確？確認後才進 implementation。」
+   - user 確認 shared understanding 只代表需求理解完成；派工、實作、commit、push 仍分別遵守既有授權閘門
 
 ---
 

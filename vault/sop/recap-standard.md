@@ -41,8 +41,9 @@ repo: repo-name
 topic: kebab-case-topic
 status: done | follow-up | paused | verified-local | procedure-pending
 tags: [recap, session, project-key, topic-key]
+recap_mode: manual
 source_paths:
-  - %PROJECT_ROOT%/path/to/important/source
+  - vault/path/to/important/source.md
 summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ---
 ```
@@ -65,26 +66,41 @@ summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ```
 
 ### 3. ✅ 本次完成
-*   簡述本次會話達成的里程碑或修正的 Bug。
+*   簡述本次會話達成的里程碑或修正的 Bug，並附驗證狀態。
 
-### 4. ⚠️ 發現的問題 / 踩坑
+### 4. 📐 正式來源與目前狀態
+*   Primary source：相對路徑。
+*   Decision Ledger：相對路徑或 `Session-only`。
+*   Unresolved Decision IDs：只列 ID。
+*   Verification：artifact／command + pass/fail。
+*   Next skill / entry：下一個可執行入口。
+
+> 已存在 spec、plan、tasks、Decision Ledger、ADR、CONTEXT 或 report 時，本 Recap 只保存 pointer、狀態與一句摘要，不複製正文。
+
+### 5. ⚠️ 發現的問題 / 踩坑
 *   記錄開發過程中發現的潛在風險、程式碼臭味或技術債。
 
-### 5. 🎯 重要決策 (表格格式)
-| 日期 | 決策 | 選擇 | 原因 |
-|------|------|------|------|
-| YYYY-MM-DD | 決策主題 | 最終採取的方案 | 決策背後的權衡分析 |
+### 6. 🎯 重要決策索引
+| Decision ID | 狀態 | 一句結論 | Primary source |
+|---|---|---|---|
+| D-001 | RESOLVED | 一句正式結論 | `specs/active/.../decisions.json` |
 
-### 6. 📅 待辦 (使用者/AI 共用)
+完整 rationale、棄選方案與 reopen history 留在 Decision Ledger／ADR，不複製到 Recap。
+
+### 7. 🧭 Phase Boundary
+*   建議：Continue / Clear / Handoff / Subagent / Compact。
+*   理由：說明為何此時採這個 boundary。
+
+### 8. 📅 待辦 (使用者/AI 共用)
 *   [ ] 尚未完成的具體步驟。
 
-### 7. 💡 補充筆記
+### 9. 💡 補充筆記
 <!-- 你可以在這裡補充 -->
 *   任何有助於理解脈絡的補充資訊。
 
 ---
 
-### 8. 頁尾標記
+### 10. 頁尾標記
 `*由 [AI 名稱] (Cowork) 自動產生，可手動編輯*`
 
 ---

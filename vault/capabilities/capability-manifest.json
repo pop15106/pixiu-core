@@ -25,6 +25,28 @@
       }
     },
     {
+      "id": "decision-discovery",
+      "summary": "以 Decision Ledger、Frontier 與 Shared Understanding Gate 收斂模糊需求與高影響決策。",
+      "keywords": ["grill", "grill-me", "需求釐清", "把需求問清楚", "決策", "decision", "需求模糊", "shared understanding", "frontier"],
+      "priority": 38,
+      "load": {
+        "skills": ["skills/decision-grilling/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/decision-ledger-standard.md", "vault/governance/source-of-truth-map.md"]
+      }
+    },
+    {
+      "id": "bug-diagnosis",
+      "summary": "建立 red-capable repro、可證偽假設、regression test 與 root-cause evidence。",
+      "keywords": ["重現", "repro", "root cause", "根因", "debug", "診斷", "regression", "回歸測試"],
+      "priority": 34,
+      "load": {
+        "skills": ["skills/diagnosing-bugs/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
       "id": "code-review",
       "summary": "程式碼正確性、可維護性與回歸風險審查。",
       "keywords": ["code review", "審查程式", "檢查程式", "review", "回歸風險", "收尾", "跑驗證", "驗證", "測試", "確認能交付", "/go"],

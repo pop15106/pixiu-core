@@ -1,0 +1,6 @@
+interface:
+  display_name: "PRD Create"
+  short_description: "User-started PRD authoring with governed Decision Ledger discovery"
+  default_prompt: "Ingest raw input, resolve First-Principles blockers through Decision Grilling, preserve Decision IDs, then draft only after shared understanding is confirmed."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decision Grilling"
+  short_description: "Resolve facts and high-impact decisions one frontier item at a time"
+  default_prompt: "Classify unknowns, verify facts first, then ask the highest-priority unresolved decision and stop at the shared-understanding gate."
+policy:
+  allow_implicit_invocation: true

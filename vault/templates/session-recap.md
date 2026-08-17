@@ -29,6 +29,15 @@ summary: "{{summary}}"
 
 -
 
+## 正式來源與狀態
+
+- Primary source: `{{primary_source}}`
+- Decision Ledger: `{{decision_ledger_or_session_only}}`
+- Unresolved Decision IDs: {{decision_ids_or_none}}
+- Next skill / entry: `{{next_entry}}`
+
+> 已存在 spec、ADR、Decision Ledger、plan 或 report 時，本 recap 只保存 pointer、一句狀態與未解 ID，不複製正式來源正文。
+
 ## 證據與流程
 
 -
@@ -40,6 +49,11 @@ summary: "{{summary}}"
 ## 驗證
 
 -
+
+## Phase Boundary
+
+- 建議：Continue / Clear / Handoff / Subagent / Compact
+- 理由：
 
 ## 下一步
 

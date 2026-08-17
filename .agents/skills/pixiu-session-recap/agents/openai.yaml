@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pixiu Session Recap"
+  short_description: "Write governed pointer-only recaps and phase-boundary handoffs"
+  default_prompt: "Create a Pixiu recap that indexes primary sources, unresolved Decision IDs, verification state, and the next phase boundary without duplicating formal source content."
+policy:
+  allow_implicit_invocation: true

@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: spec-improve
 description: Review and improve existing spec-driven development artifacts. Use when the user asks to optimize, review, score, audit, strengthen, renovate, or fill gaps in an existing spec, especially files under specs/active or specs/completed such as spec.md, plan.md, and tasks.md. This skill scores the spec first, explains strengths and weaknesses, recommends missing details, then asks the user focused clarification questions before any rewrite or file change.
 ---
@@ -14,8 +15,9 @@ This skill only handles spec quality. Do not use DOCX generation workflows here.
 1. Read first, edit later. Never rewrite or modify spec files until the user explicitly approves.
 2. Review the current spec as written. Do not invent business rules, file paths, acceptance criteria, or exclusions.
 3. Score before suggesting changes. The user needs the diagnosis before the renovation plan.
-4. Ask focused questions after the review. Prefer blockers and ambiguities over nice-to-have questions.
-5. Keep the original `spec` skill's contract: `spec.md` is requirements, `plan.md` is implementation approach, `tasks.md` is executable checklist.
+4. Convert review gaps into Decision Ledger nodes and use `decision-grilling` to resolve them. Prefer blockers and ambiguities over nice-to-have questions.
+5. Default to one visible question at a time; the internal Frontier may contain multiple nodes. Only explicit `--batch` can show multiple independent questions.
+6. Keep the original `spec` skill's contract: `spec.md` is requirements, `plan.md` is implementation approach, `tasks.md` is executable checklist.
 
 ## Stage Detection
 
@@ -57,8 +59,8 @@ Score out of 100. Give each category a number and one sentence of evidence.
 | Inputs and outputs | 10 | Data, commands, APIs, files, or UI flows are named clearly. |
 | Edge cases and failure paths | 10 | Empty input, invalid format, missing dependency, large input, and permission issues are covered when relevant. |
 | Technical feasibility | 10 | Plan fits the repo's stack, architecture, and constraints. |
-| Test strategy | 10 | Automated or manual verification maps back to acceptance criteria. |
-| Task readiness | 10 | Tasks are actionable, ordered, and small enough to complete and verify. |
+| Test strategy | 10 | Automated or manual verification maps back to acceptance criteria, names a test seam, and uses an independent expected source. |
+| Task readiness | 10 | Tasks are actionable, ordered, small enough to complete and verify, and traceable to AC/Decision IDs. |
 
 Quality bands:
 
@@ -101,9 +103,9 @@ Respond in Traditional Chinese using this structure:
 
 Keep the review blunt and useful. If the spec is weak, say so directly and explain the consequence.
 
-## Clarifying Questions
+## Clarifying Questions（Decision Frontier）
 
-Ask at most 5 questions per turn. Order them by implementation risk:
+Review 後先把缺口分類成 Decision nodes，再使用 `decision-grilling`：
 
 1. Scope blockers: what is included, excluded, or allowed to change?
 2. Acceptance blockers: how can the result be verified?
@@ -111,15 +113,22 @@ Ask at most 5 questions per turn. Order them by implementation risk:
 4. Dependency blockers: what upstream modules, APIs, specs, or constraints apply?
 5. UX or operational details: wording, display, manual steps, deployment, rollback.
 
-Do not ask questions already answered by the spec, `DESIGN.md`, or project files. Quote the source if the answer is already present.
+規則：
+
+- Repo、spec、`DESIGN.md`、ADR 或 project files 可回答者標為 `FACT` 並自行查證，不問 user。
+- 真正需要 user 拍板者標 `USER_DECISION`。
+- 需 prototype 才能回答者標 `EXPERIENTIAL`。
+- 需 SA／PM／外部 domain owner 回答者標 `EXTERNAL_EXPERT`，轉 `to-questionnaire`。
+- 預設每輪只顯示 Frontier 第一題，不再用「最多 5 題」當詢問上限。
+- 已有來源回答的問題不得重問；需要時引用來源作為 evidence。
 
 ## After The User Answers
 
 When the user answers clarification questions:
 
-1. Summarize the new facts.
-2. Re-score only the affected categories.
-3. Propose one of these next actions:
+1. 更新對應 Decision resolution、rationale 與 evidence；新答案推翻舊決策時 reopen branch。
+2. Summarize the new facts and re-score only the affected categories.
+3. Frontier 清空後執行 Shared Understanding Gate，再 propose one of these next actions:
    - **Patch proposal only**: show exact sections to change, no file writes.
    - **Rewrite draft**: produce a revised `spec.md` in chat.
    - **Apply changes**: update the approved files only after explicit confirmation.

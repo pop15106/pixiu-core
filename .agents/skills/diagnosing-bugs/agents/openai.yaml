@@ -1,0 +1,6 @@
+interface:
+  display_name: "Diagnosing Bugs"
+  short_description: "Build a red loop, test hypotheses, and prove the root cause"
+  default_prompt: "Establish a red-capable reproduction, minimize it, test falsifiable hypotheses one variable at a time, add a regression test, then fix and re-verify the original symptom."
+policy:
+  allow_implicit_invocation: true
