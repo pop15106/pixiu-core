@@ -43,6 +43,7 @@ powershell -ExecutionPolicy Bypass -File "$hermes\scripts\hermes-submit-and-run.
 - 修改入口檔：`vault/governance/entry-files-alignment.md`
 - Recap／接續 Session：先讀 `vault/memory/SESSION-INDEX.md`
 - Capability 路由：`node scripts/router/resolve-capabilities.js "<需求>"`
+- Decision／Skill 治理：`vault/governance/source-of-truth-map.md`、`vault/governance/decision-ledger-standard.md`；Skill 依賴唯一來源為 `vault/capabilities/skill-dependency-manifest.json`
 
 ## 專案結構
 
