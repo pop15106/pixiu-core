@@ -1,0 +1,22 @@
+[
+  {
+    "name": "模糊計畫觸發 decision-grilling",
+    "input": { "ambiguousPlanning": true, "requiresDecision": true },
+    "expect": { "invokeDecisionGrilling": true, "askUser": true, "maxQuestions": 1 }
+  },
+  {
+    "name": "產品決策必須問使用者",
+    "input": { "requiresDecision": true, "resolver": "USER_DECISION" },
+    "expect": { "askUser": true }
+  },
+  {
+    "name": "explicit grill-me 進入訪談",
+    "input": { "explicitSkill": "grill-me", "requiresDecision": true },
+    "expect": { "invokeDecisionGrilling": true, "sideEffects": "none" }
+  },
+  {
+    "name": "batch 明示才可多題",
+    "input": { "requiresDecision": true, "batch": true },
+    "expect": { "maxQuestions": "Infinity" }
+  }
+]

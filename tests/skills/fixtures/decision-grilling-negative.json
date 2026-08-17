@@ -1,0 +1,22 @@
+[
+  {
+    "name": "明確低風險單一步驟不觸發訪談",
+    "input": { "simpleImplementation": true, "requiresDecision": false },
+    "expect": { "invokeDecisionGrilling": false, "askUser": false }
+  },
+  {
+    "name": "repo 可查 fact 不問使用者",
+    "input": { "factResolvable": true, "requiresDecision": false },
+    "expect": { "askUser": false, "resolveFactFirst": true }
+  },
+  {
+    "name": "既有來源已回答不重問",
+    "input": { "alreadyAnswered": true, "requiresDecision": true },
+    "expect": { "askUser": false }
+  },
+  {
+    "name": "無 blocker 不啟動 discovery",
+    "input": { "requiresDecision": false, "ambiguousPlanning": false },
+    "expect": { "invokeDecisionGrilling": false }
+  }
+]

@@ -5,7 +5,7 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { resolveCapabilities, safeResolveFromFile } = require('./resolve-capabilities');
+const { resolveCapabilities, safeResolveFromFile, expandSkillDependencies } = require('./resolve-capabilities');
 
 const manifest = {
   schemaVersion: 1,
@@ -124,6 +124,20 @@ function testDeduplicatesFiles() {
   assert.deepStrictEqual(result.filesToLoad, ['legacy.md', 'pclms.md']);
 }
 
+function testExpandsManagedSkillDependenciesBeforeWrapper() {
+  const files = ['skills/spec/SKILL.md', 'governance.md'];
+  const dependencyManifest = {
+    skills: {
+      spec: { requires: ['decision-grilling'] },
+      'decision-grilling': { requires: [] }
+    }
+  };
+  assert.deepStrictEqual(
+    expandSkillDependencies(files, dependencyManifest),
+    ['skills/decision-grilling/SKILL.md', 'skills/spec/SKILL.md', 'governance.md']
+  );
+}
+
 function testMissingManifestDegradesWithoutFullScan() {
   const missingPath = path.join(os.tmpdir(), `missing-manifest-${Date.now()}.json`);
   assert.strictEqual(fs.existsSync(missingPath), false);
@@ -145,6 +159,7 @@ for (const test of [
   testManifestCapabilityLimitNeverExceedsHardCap,
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
+  testExpandsManagedSkillDependenciesBeforeWrapper,
   testMissingManifestDegradesWithoutFullScan
 ]) {
   test();

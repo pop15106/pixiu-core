@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Decision 可追到 spec",
+    "input": { "traceLinks": { "spec": ["specs/active/01-demo/spec.md"], "acceptanceCriteria": ["AC-1"], "tickets": ["T-1"], "tests": ["tests/demo.test.js"], "adrs": [] } },
+    "expect": { "traceCoverage": true }
+  },
+  {
+    "name": "缺 AC 追蹤視為不完整",
+    "input": { "traceLinks": { "spec": ["spec.md"], "acceptanceCriteria": [], "tickets": ["T-1"], "tests": ["test.js"], "adrs": [] } },
+    "expect": { "traceCoverage": false }
+  },
+  {
+    "name": "缺 ticket 追蹤視為不完整",
+    "input": { "traceLinks": { "spec": ["spec.md"], "acceptanceCriteria": ["AC-1"], "tickets": [], "tests": ["test.js"], "adrs": [] } },
+    "expect": { "traceCoverage": false }
+  },
+  {
+    "name": "缺 test 追蹤視為不完整",
+    "input": { "traceLinks": { "spec": ["spec.md"], "acceptanceCriteria": ["AC-1"], "tickets": ["T-1"], "tests": [], "adrs": [] } },
+    "expect": { "traceCoverage": false }
+  }
+]

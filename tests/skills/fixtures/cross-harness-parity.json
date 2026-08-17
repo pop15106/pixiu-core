@@ -1,0 +1,22 @@
+[
+  {
+    "name": "user wrapper Claude 禁止 implicit",
+    "input": { "invocation": "user", "claudeDisableModelInvocation": true, "codexAllowImplicitInvocation": false },
+    "expect": { "harnessParity": true }
+  },
+  {
+    "name": "model primitive 兩入口允許 model invocation",
+    "input": { "invocation": "model", "claudeDisableModelInvocation": false, "codexAllowImplicitInvocation": true },
+    "expect": { "harnessParity": true }
+  },
+  {
+    "name": "user wrapper Codex implicit 為 mismatch",
+    "input": { "invocation": "user", "claudeDisableModelInvocation": true, "codexAllowImplicitInvocation": true },
+    "expect": { "harnessParity": false }
+  },
+  {
+    "name": "model primitive Claude disable 為 mismatch",
+    "input": { "invocation": "model", "claudeDisableModelInvocation": true, "codexAllowImplicitInvocation": true },
+    "expect": { "harnessParity": false }
+  }
+]

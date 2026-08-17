@@ -39,6 +39,42 @@ function collectFiles(capabilities) {
   return files;
 }
 
+function skillNameFromPath(file) {
+  const normalized = String(file || '').replace(/\\/g, '/');
+  const match = normalized.match(/^skills\/([^/]+)\/SKILL\.md$/);
+  return match ? match[1] : null;
+}
+
+function expandSkillDependencies(files, dependencyManifest) {
+  if (!dependencyManifest?.skills) return [...files];
+
+  const result = [];
+  const seenFiles = new Set();
+  const visitingSkills = new Set();
+
+  function addFile(file) {
+    const skillName = skillNameFromPath(file);
+    if (skillName && dependencyManifest.skills[skillName]) {
+      if (visitingSkills.has(skillName)) {
+        throw new Error(`Skill dependency cycle detected while routing: ${skillName}`);
+      }
+      visitingSkills.add(skillName);
+      for (const dependency of dependencyManifest.skills[skillName].requires || []) {
+        addFile(`skills/${dependency}/SKILL.md`);
+      }
+      visitingSkills.delete(skillName);
+    }
+
+    if (!seenFiles.has(file)) {
+      seenFiles.add(file);
+      result.push(file);
+    }
+  }
+
+  for (const file of files) addFile(file);
+  return result;
+}
+
 function isValidCapabilityLimit(value) {
   return Number.isInteger(value) && value >= 0;
 }
@@ -72,9 +108,14 @@ function resolveCapabilities(request, manifest, options = {}) {
 
   const selected = ranked.map(item => item.capability);
 
+  const filesToLoad = expandSkillDependencies(
+    collectFiles(selected),
+    options.skillDependencyManifest
+  );
+
   return {
     capabilities: selected.map(capability => capability.id),
-    filesToLoad: collectFiles(selected),
+    filesToLoad,
     reasons: ranked.map(item => ({
       capability: item.capability.id,
       matchedKeywords: item.matches
@@ -111,8 +152,16 @@ if (require.main === module) {
   const manifestPath = path.resolve(
     process.argv[3] || path.join(__dirname, '..', '..', 'vault', 'capabilities', 'capability-manifest.json')
   );
+  const dependencyManifestPath = path.join(path.dirname(manifestPath), 'skill-dependency-manifest.json');
+  let skillDependencyManifest;
+  try {
+    if (fs.existsSync(dependencyManifestPath)) skillDependencyManifest = loadManifest(dependencyManifestPath);
+  } catch (error) {
+    process.stderr.write(`Skill Dependency Manifest 無法解析：${error.message}\n`);
+    process.exit(2);
+  }
 
-  const result = safeResolveFromFile(request, manifestPath);
+  const result = safeResolveFromFile(request, manifestPath, { skillDependencyManifest });
   process.stdout.write(JSON.stringify(result, null, 2) + '\n');
   if (result.degraded) process.exitCode = 2;
 }
@@ -121,6 +170,8 @@ module.exports = {
   normalizeText,
   scoreCapability,
   collectFiles,
+  skillNameFromPath,
+  expandSkillDependencies,
   resolveCapabilities,
   loadManifest,
   safeResolveFromFile

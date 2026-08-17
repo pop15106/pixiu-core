@@ -1,0 +1,22 @@
+[
+  {
+    "name": "未核准不得寫正式來源",
+    "input": { "requiresDecision": true, "approved": false },
+    "expect": { "mayWriteFormalSource": false }
+  },
+  {
+    "name": "未授權不得派 agent",
+    "input": { "requiresDecision": true, "agentApproved": false },
+    "expect": { "maySpawnAgent": false }
+  },
+  {
+    "name": "shared understanding 未確認不得 implementation",
+    "input": { "requiresDecision": true, "sharedUnderstanding": false },
+    "expect": { "mayImplement": false }
+  },
+  {
+    "name": "grill-me 保持零副作用",
+    "input": { "explicitSkill": "grill-me", "approved": true, "sharedUnderstanding": true },
+    "expect": { "sideEffects": "none", "mayWriteFormalSource": false, "mayImplement": false }
+  }
+]
