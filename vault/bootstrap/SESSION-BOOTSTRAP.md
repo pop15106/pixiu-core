@@ -38,6 +38,9 @@ priority: highest
 - 派工與模型：`vault/governance/model-dispatch-rules.md`
 - 完成、詢問、升級與驗收判斷：`vault/governance/judgment-rubrics.md`
 - 修改入口檔：`vault/governance/entry-files-alignment.md`
+- 決策釐清／Frontier／Shared Understanding：`vault/governance/decision-ledger-standard.md`
+- 唯一正式來源與 Shadow State：`vault/governance/source-of-truth-map.md`
+- Phase Boundary：`vault/governance/phase-boundary-policy.md`
 - Recap：`vault/sop/recap-standard.md`
 
 ## 降級規則

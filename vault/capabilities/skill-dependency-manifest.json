@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "managedScope": "Only skills listed here are subject to strict dependency and cross-harness parity checks.",
+  "skills": {
+    "decision-grilling": {
+      "invocation": "model",
+      "requires": [],
+      "optional": ["domain-modeling", "to-questionnaire"],
+      "sideEffects": "none",
+      "references": ["vault/governance/decision-ledger-standard.md", "vault/schemas/decision-ledger.schema.json"]
+    },
+    "grill-me": {
+      "invocation": "user",
+      "requires": ["decision-grilling"],
+      "optional": [],
+      "sideEffects": "none"
+    },
+    "grill-with-docs": {
+      "invocation": "user",
+      "requires": ["decision-grilling", "domain-modeling"],
+      "optional": ["to-questionnaire"],
+      "sideEffects": "proposal-only"
+    },
+    "domain-modeling": {
+      "invocation": "model",
+      "requires": [],
+      "optional": [],
+      "sideEffects": "proposal-only",
+      "references": ["vault/governance/source-of-truth-map.md"]
+    },
+    "to-questionnaire": {
+      "invocation": "user",
+      "requires": [],
+      "optional": [],
+      "sideEffects": "none"
+    },
+    "wait-what": {
+      "invocation": "user",
+      "requires": [],
+      "optional": [],
+      "sideEffects": "none"
+    },
+    "diagnosing-bugs": {
+      "invocation": "model",
+      "requires": [],
+      "optional": ["legacy-java-flow-tracing"],
+      "sideEffects": "approval-required"
+    },
+    "legacy-java-flow-tracing": {
+      "invocation": "model",
+      "requires": [],
+      "optional": ["diagnosing-bugs"],
+      "sideEffects": "none"
+    },
+    "prd-breakdown": {
+      "invocation": "user",
+      "requires": ["decision-grilling"],
+      "optional": [],
+      "sideEffects": "approval-required"
+    },
+    "spec-improve": {
+      "invocation": "user",
+      "requires": ["decision-grilling"],
+      "optional": ["domain-modeling", "to-questionnaire"],
+      "sideEffects": "proposal-only"
+    },
+    "spec": {
+      "invocation": "user",
+      "requires": ["decision-grilling"],
+      "optional": ["domain-modeling", "to-questionnaire", "prd-breakdown"],
+      "sideEffects": "approval-required"
+    },
+    "prd-create": {
+      "invocation": "user",
+      "requires": ["decision-grilling"],
+      "optional": ["prd-breakdown", "to-questionnaire"],
+      "sideEffects": "approval-required"
+    },
+    "goal-engineer": {
+      "invocation": "user",
+      "requires": ["decision-grilling"],
+      "optional": ["to-questionnaire"],
+      "sideEffects": "approval-required"
+    },
+    "pixiu-session-recap": {
+      "invocation": "model",
+      "requires": [],
+      "optional": ["decision-grilling"],
+      "sideEffects": "approval-required",
+      "references": ["vault/governance/source-of-truth-map.md", "vault/governance/phase-boundary-policy.md", "vault/sop/recap-standard.md"]
+    }
+  }
+}

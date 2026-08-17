@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "topic": "example-feature",
+  "updatedAt": "2026-08-14T00:00:00.000Z",
+  "decisions": [
+    {
+      "id": "D-001",
+      "title": "決定第一版是否支援多租戶",
+      "type": "USER_DECISION",
+      "status": "OPEN",
+      "priority": "P0",
+      "question": "第一版是否支援多租戶？",
+      "recommendation": "第一版維持單租戶，先降低權限與資料隔離風險。",
+      "prerequisites": [],
+      "blockedByFacts": [],
+      "resolution": null,
+      "rationale": null,
+      "evidence": [],
+      "sourcePaths": [],
+      "downstream": ["D-002"],
+      "traceLinks": {
+        "spec": [],
+        "acceptanceCriteria": [],
+        "tickets": [],
+        "tests": [],
+        "adrs": []
+      },
+      "approval": {
+        "required": true,
+        "approvedByUser": false
+      },
+      "createdAt": "2026-08-14T00:00:00.000Z",
+      "resolvedAt": null,
+      "reopenedAt": null,
+      "reopenReason": null,
+      "history": []
+    }
+  ]
+}

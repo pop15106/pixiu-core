@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixiucore.local/schemas/decision-ledger.schema.json",
+  "title": "PixiuCore Decision Ledger",
+  "type": "object",
+  "required": ["schemaVersion", "topic", "decisions"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "topic": { "type": "string", "minLength": 1 },
+    "updatedAt": { "type": ["string", "null"], "format": "date-time" },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id", "title", "type", "status", "priority", "question",
+          "prerequisites", "blockedByFacts", "evidence", "sourcePaths",
+          "downstream", "traceLinks", "approval", "createdAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^D-[0-9]{3,}$" },
+          "title": { "type": "string", "minLength": 1 },
+          "type": {
+            "enum": ["FACT", "USER_DECISION", "EXPERIENTIAL", "EXTERNAL_EXPERT", "MANUAL_ACTION"]
+          },
+          "status": {
+            "enum": ["OPEN", "BLOCKED_BY_FACT", "READY_TO_ASK", "RESOLVED", "REOPENED", "DEFERRED", "OUT_OF_SCOPE", "INVALIDATED"]
+          },
+          "priority": { "enum": ["P0", "P1", "P2"] },
+          "question": { "type": "string", "minLength": 1 },
+          "recommendation": { "type": ["string", "null"] },
+          "prerequisites": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "blockedByFacts": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "resolution": {},
+          "rationale": { "type": ["string", "null"] },
+          "evidence": { "type": "array" },
+          "sourcePaths": { "type": "array", "items": { "type": "string" } },
+          "downstream": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "traceLinks": {
+            "type": "object",
+            "required": ["spec", "acceptanceCriteria", "tickets", "tests", "adrs"],
+            "properties": {
+              "spec": { "type": "array", "items": { "type": "string" } },
+              "acceptanceCriteria": { "type": "array", "items": { "type": "string" } },
+              "tickets": { "type": "array", "items": { "type": "string" } },
+              "tests": { "type": "array", "items": { "type": "string" } },
+              "adrs": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          },
+          "approval": {
+            "type": "object",
+            "required": ["required", "approvedByUser"],
+            "properties": {
+              "required": { "type": "boolean" },
+              "approvedByUser": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "resolvedAt": { "type": ["string", "null"], "format": "date-time" },
+          "reopenedAt": { "type": ["string", "null"], "format": "date-time" },
+          "reopenReason": { "type": ["string", "null"] },
+          "history": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
