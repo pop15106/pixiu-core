@@ -1,18 +1,29 @@
 # DevSpace One-Click for Windows
 
-這個資料夾是純 DevSpace + Microsoft Dev Tunnel 的可攜安裝器，不包含 Orchestrator，也不會使用 OpenAI API key。
+這個資料夾是純 DevSpace + Microsoft Dev Tunnel 的可攜安裝器，不包含 Orchestrator，也不會使用 OpenAI API key。AI 工作執行一律交給已完成訂閱登入的本機 CLI，不直接呼叫 AI provider API。
 
 ## 最簡單的使用方式
 
-1. 把整個資料夾解壓縮到新電腦。
-2. 雙擊 `01-INSTALL-AND-START.cmd`。
-3. 輸入要授權的專案資料夾。多個資料夾用分號分隔。
+1. 把整個 `DevSpace-OneClick` 資料夾解壓縮到新電腦。
+2. 雙擊 `00-SETUP-OR-UPDATE.cmd`。
+3. 第一次使用時輸入要授權的專案資料夾。多個資料夾用分號分隔。
 4. 瀏覽器開啟時，登入 Microsoft Dev Tunnel。可以使用和其他電腦相同的 Microsoft 帳號。
 5. 等畫面顯示 `READY FOR CHATGPT WEB`。
 6. 複製畫面上的 MCP URL，在 ChatGPT 開發者模式建立自訂 App，驗證方式選 OAuth。
 7. OAuth 核准頁出現時，輸入畫面上的 Owner password。
 
-也可以把一個專案資料夾直接拖到 `01-INSTALL-AND-START.cmd` 上。
+之後拿到新版 portable 套件時，覆蓋／解壓到新的資料夾後再次執行 `00-SETUP-OR-UPDATE.cmd` 即可。它會辨識既有 OneClick 設定，保留這台電腦的 tunnel、Owner password、allowedRoots、workflow ledger 與其他本機 state，只更新 DevSpace 套件、Windows patch、workflow module、Agent profiles 與啟動設定。
+
+也可以把一個專案資料夾直接拖到 `00-SETUP-OR-UPDATE.cmd` 上。第一次安裝會用該資料夾作為 allowed root；既有安裝則會把它加入 allowedRoots 後再更新。
+
+不熟 DevSpace 的使用者只需要先記住四個檔案：
+
+- `START-CONNECTION.cmd`：啟動連線。
+- `DISCONNECT.cmd`：中斷連線，但保留所有本機設定與 workflow state。
+- `FORCE-RECONNECT.cmd`：ChatGPT 連不上或工具異常時，安全停止、重新啟動並驗證。
+- `QA-CHECK.cmd`：不知道問題在哪裡時先執行，畫面會顯示建議的 QA 排查順序。
+
+最短說明請看 `QUICK-GUIDE.txt`；完整異常處理流程請看 `QA-TROUBLESHOOTING.txt`。
 
 ## 每台電腦如何避免衝突
 
@@ -27,10 +38,17 @@
 
 ## 日常操作
 
-- 安裝並首次啟動：`01-INSTALL-AND-START.cmd`
+- 第一次安裝或日後更新（建議入口）：`00-SETUP-OR-UPDATE.cmd`
+- 友善啟動入口：`START-CONNECTION.cmd`
+- 友善中斷入口：`DISCONNECT.cmd`
+- 友善強制重連入口：`FORCE-RECONNECT.cmd`
+- QA 快速檢查：`QA-CHECK.cmd`
+- 最短使用說明：`QUICK-GUIDE.txt`
+- QA 異常處理手冊：`QA-TROUBLESHOOTING.txt`
+- 僅執行舊式首次安裝流程：`01-INSTALL-AND-START.cmd`
 - 新增可存取資料夾：`02-ADD-FOLDER.cmd`
-- 啟動後端：`03-START.cmd`
-- 停止後端：`04-STOP.cmd`
+- 啟動後端（原始入口）：`03-START.cmd`
+- 停止後端（原始入口）：`04-STOP.cmd`
 - 查看 URL、port、tunnel ID、allowedRoots：`05-STATUS.cmd`
 - 把 Owner password 複製到剪貼簿：`06-COPY-PASSWORD.cmd`
 - 查看全部或指定 Subagent 狀態：`07-SUBAGENT-STATUS.cmd [Agent ID]`
@@ -87,14 +105,14 @@ Windows Task 名稱固定為 `Pixiu DevSpace Watchdog`。它使用目前使用�
 - Watchdog 目錄與檔案 ACL 只允許目前使用者與 `SYSTEM`。
 - Bot Token 不會出現在 repository、Task Scheduler arguments、state 或 log。
 - 日誌為 UTF-8 JSON Lines，單檔 1 MiB 後輪替，最多保留 5 份。
-- 通知只在首次異常、錯誤分類改變與恢復時傳送；相同異常不重複通知。
-- `notify-connector-failure` 是固定入口，不接受任意錯誤文字、URL 或命令列參數，4 小時內會去重。
+- 通知只在首次異常、錯誤分類改變與恢復時傳送；相同異常不重複通知。對具備有效 OneClick 設定的可復原異常，Watchdog 會先以非互動模式執行固定的 `15-FORCE-RECONNECT.cmd`，重讀設定並驗證本機／公開 `/healthz` 與公開 `/mcp` OAuth Bearer challenge；驗證成功才推播「已自動重連並驗證」，驗證仍失敗才推播異常。
+- `notify-connector-failure` 是固定入口，不接受任意錯誤文字、URL 或命令列參數，4 小時內會去重；它使用與一般可復原異常相同的 Force Reconnect 與驗證流程。
 
 ### OAuth 與 Connector 邊界
 
 Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也不保存 ChatGPT token。OneClick 既有的 `DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT=1` 只代表 DevSpace 伺服器端可核准可識別的 ChatGPT 流程，不是密碼或登入自動化。
 
-本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`；重新登入必須由使用者在 UI 人工完成。
+本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`。該入口會先執行 `15-FORCE-RECONNECT.cmd`，確認 local／public health 與 MCP OAuth challenge 都正常後才推播「已自動重連並驗證」；若任一步仍失敗，則推播「自動重連失敗」與固定錯誤分類。公開 `/mcp` challenge 只能證明 MCP／OAuth 入口有正常回覆，特定 ChatGPT 帳號的 OAuth token 是否有效仍以 heartbeat 後續成功取得 `workspaceId` 為唯一端對端證據；需要重新登入時仍由使用者在 UI 人工完成。
 
 ### 錯誤分類
 
@@ -109,14 +127,36 @@ Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也�
 | `OneClickStopRefused` | runtime 程序身分驗證不符 | 不強制停止；先人工檢查 |
 | `TunnelProcessMismatch` | 殘留程序重新驗證失敗 | 不停止該程序；先人工檢查 |
 | `OneClickStartFailed` | OneClick 啟動失敗 | 查看 OneClick log |
-| `PostRecoveryHealthFailed` | 復原後 health 仍未通過 | 不進行第二次復原 |
-| `ConnectorFailure` | DevSpace Secure／OAuth 端對端失敗 | 人工重新連線與 OAuth |
+| `PostRecoveryHealthFailed` | 復原後 health 仍未通過 | 不宣告恢復；通知驗證失敗 |
+| `ForceReconnectFailed` | `15-FORCE-RECONNECT.cmd` 執行失敗 | 不宣告恢復；通知自動重連失敗 |
+| `PostRecoveryConnectorResponseFailed` | 重連後 `/mcp` 未回預期 OAuth Bearer challenge | 不宣告恢復；等待後續 heartbeat／人工檢查 |
+| `ConnectorFailure` | DevSpace Secure／OAuth 端對端失敗 | 先執行固定 Force Reconnect 與回覆驗證，再依結果通知 |
 | `MutexBusy` | 另一個 Watchdog 正在執行 | 本次直接略過 |
 | `RunTimedOut` | 復原超過 8 分鐘 | 停止後續副作用 |
 
 ### 移除
 
 雙擊 `13-REMOVE-WATCHDOG.cmd`，輸入 `REMOVE` 後，只會移除固定 task `Pixiu DevSpace Watchdog` 與 `%LOCALAPPDATA%\DevSpaceOneClick\watchdog`。它不會停止 DevSpace、不會刪除 OneClick settings、Owner password、allowed roots 或其他 Dev Tunnel。
+
+## 跨 Session／跨專案 workflow
+
+Portable 套件已內建 `DevSpace.WorkflowStore.mjs`，安裝或更新時會自動部署，不需要另外複製。ChatGPT App Refresh actions 後會提供 `workflow_create`、`workflow_list`、`workflow_update`、`workflow_run`、`workflow_sync`。
+
+純跨 Session／跨專案接力只使用 create/list/update，不會啟動模型。使用者可以直接用自然語意，例如「下一個 session 繼續」、「另一個對話接手」、「交給另一個專案處理」；不需要記 workflow 或 handoff 工具名稱。`workflow_run` 另有 `userAuthorizedModelRun=true` 的硬性閘門，只有使用者在目前對話明確要求使用 Agent／model 時才可執行。
+
+完整使用方式見 `WORKFLOW.zh-TW.md`。
+
+## 建立可分發 ZIP
+
+在 PixiuCore 原始碼 repo 內雙擊 `BUILD-PORTABLE-ZIP.cmd`，或執行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-portable-package.ps1
+```
+
+預設輸出到 `scripts/devspace-portable/dist/DevSpace-OneClick-YYYYMMDD-<commit>.zip`。Builder 使用明確 allowlist，只打包 OneClick 腳本、workflow module、Agent profiles、說明文件與完整性驗證器；不打包 `%USERPROFILE%\.devspace`、`%LOCALAPPDATA%\DevSpaceOneClick`、Owner password、Microsoft／ChatGPT token、tunnel ID、allowedRoots、workflow ledger 或 log。
+
+ZIP 內含 `PORTABLE-MANIFEST.json`。`00-SETUP-OR-UPDATE.cmd` 在發佈包中會先驗證檔案 SHA-256 與檔案集合，再進行安裝／更新；若 payload 被修改或多出未納管檔案會 fail closed。
 
 ## Subagent delegation
 

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
+    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -38,6 +38,9 @@ $LogRoot = Join-Path $StateRoot 'logs'
 $ShimRoot = Join-Path $StateRoot 'bin'
 $AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
 $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
+$WorkflowModuleSource = Join-Path $PSScriptRoot 'DevSpace.WorkflowStore.mjs'
+$WorkflowModulePath = Join-Path $ShimRoot 'DevSpace.WorkflowStore.mjs'
+$WorkflowStateRoot = Join-Path $StateRoot 'workflow'
 
 function Write-Info {
     param([Parameter(Mandatory = $true)][string]$Message)
@@ -514,6 +517,7 @@ function Set-DevSpaceEnvironment {
         [Parameter(Mandatory = $true)]$Spec,
         [Parameter(Mandatory = $true)][string]$BashPath,
         [Parameter(Mandatory = $true)][string]$NodePath,
+        [Parameter(Mandatory = $true)][string]$DevSpaceCli,
         [Parameter(Mandatory = $true)][string]$ShimDirectory
     )
 
@@ -534,6 +538,9 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_WIDGETS', 'off', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '1', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_AGENT_DIR', (Join-Path $ConfigRoot 'agents'), 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_MODULE', $WorkflowModulePath, 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_STATE_DIR', $WorkflowStateRoot, 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_CLI', $DevSpaceCli, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
 }
 
@@ -552,21 +559,34 @@ function Start-Stack {
     $patchCount = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
+    $workflowInstall = Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot
+    $runtimeComponentsChanged = $patchCount -gt 0 -or $workflowInstall.Changed
     if ($patchCount -gt 0) {
         Write-Info "Applied $patchCount DevSpace 1.0.4 Windows subagent compatibility fixes."
     }
 
+    $stoppedForRuntimeUpdate = $false
     if (Test-LocalHealth -Port $spec.Port) {
         if ($runtime) {
             $devSpaceOwned = Test-RecordedProcess -ProcessId ([int]$runtime.devSpacePid) -StartedAtUtc ([string]$runtime.devSpaceStartedAtUtc) -ProcessName 'node' -Port $spec.Port
             $tunnelOwned = Test-RecordedProcess -ProcessId ([int]$runtime.devTunnelPid) -StartedAtUtc ([string]$runtime.devTunnelStartedAtUtc) -ProcessName 'devtunnel'
             if ($devSpaceOwned -and $tunnelOwned) {
-                Write-Info 'DevSpace is already running.'
-                Show-Status
-                return
+                if ($runtimeComponentsChanged) {
+                    Write-Info 'Updated DevSpace runtime components; restarting the owned stack.'
+                    Stop-Stack
+                    $runtime = $null
+                    $stoppedForRuntimeUpdate = $true
+                }
+                else {
+                    Write-Info 'DevSpace is already running.'
+                    Show-Status
+                    return
+                }
             }
         }
-        throw "Port $($spec.Port) is already serving DevSpace outside this launcher."
+        if (-not $stoppedForRuntimeUpdate) {
+            throw "Port $($spec.Port) is already serving DevSpace outside this launcher."
+        }
     }
 
     $listener = Get-ListenerProcessId -Port $spec.Port
@@ -579,7 +599,7 @@ function Start-Stack {
 
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     [void](Get-TunnelSettings -DevTunnel $tools.DevTunnel)
-    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node -ShimDirectory $ShimRoot
+    Set-DevSpaceEnvironment -Spec $spec -BashPath $tools.Bash -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -ShimDirectory $ShimRoot
 
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $devSpaceOut = Join-Path $LogRoot "devspace-$stamp.out.log"
@@ -763,6 +783,28 @@ function Invoke-Doctor {
     Write-Host $output
 }
 
+function Write-ReadyForChatGpt {
+    param(
+        [Parameter(Mandatory = $true)]$Spec,
+        [Parameter(Mandatory = $true)][string]$OwnerToken,
+        [Parameter(Mandatory = $true)][string]$Mode
+    )
+
+    $mcpUrl = "$($Spec.PublicBaseUrl)/mcp"
+    if (Get-Command Set-Clipboard -ErrorAction SilentlyContinue) {
+        Set-Clipboard -Value $mcpUrl
+        Write-Info 'The public MCP URL was copied to the clipboard.'
+    }
+
+    Write-Host ''
+    Write-Host 'READY FOR CHATGPT WEB' -ForegroundColor Green
+    Write-Host "Mode: $Mode" -ForegroundColor DarkGray
+    Write-Host "MCP URL: $mcpUrl" -ForegroundColor Cyan
+    Write-Host "Owner password: $OwnerToken" -ForegroundColor Yellow
+    Write-Host 'Cross-session and cross-project workflow tools are included.' -ForegroundColor Green
+    Write-Host 'Keep the Owner password private. Use 06-COPY-PASSWORD.cmd when needed again.'
+}
+
 function Install-OneClick {
     Ensure-Directory -Directory $ConfigRoot
     Ensure-Directory -Directory $StateRoot
@@ -772,6 +814,7 @@ function Install-OneClick {
     [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
+    [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     $roots = Get-InstallRoots
     $settings = Get-TunnelSettings -DevTunnel $tools.DevTunnel -Create
@@ -780,21 +823,62 @@ function Install-OneClick {
 
     Invoke-Doctor -Tools $tools
     Start-Stack
+    $spec = Get-ValidatedSpec
+    Write-ReadyForChatGpt -Spec $spec -OwnerToken $ownerToken -Mode 'installed'
+}
 
-    $mcpUrl = "$($settings.publicBaseUrl)/mcp"
-    if (Get-Command Set-Clipboard -ErrorAction SilentlyContinue) {
-        Set-Clipboard -Value $mcpUrl
-        Write-Info 'The public MCP URL was copied to the clipboard.'
+function Update-OneClick {
+    Ensure-Directory -Directory $ConfigRoot
+    Ensure-Directory -Directory $StateRoot
+    Ensure-Directory -Directory $LogRoot
+
+    $spec = Get-ValidatedSpec
+    $inputPaths = @(Split-RootInput -InputText $Path)
+    if ($inputPaths.Count -gt 0) {
+        $roots = @(Merge-AllowedRoots -ExistingRoots $spec.Roots -NewRoots $inputPaths -UserProfile $env:USERPROFILE)
+        if ($roots.Count -gt $spec.Roots.Count) {
+            Save-DevSpaceConfig -Roots $roots -Settings $spec.Settings
+            Write-Info 'Allowed roots updated before package refresh.'
+            $spec = Get-ValidatedSpec
+        }
     }
 
-    Write-Host ''
-    Write-Host 'READY FOR CHATGPT WEB' -ForegroundColor Green
-    Write-Host "MCP URL: $mcpUrl" -ForegroundColor Cyan
-    Write-Host "Owner password: $ownerToken" -ForegroundColor Yellow
-    Write-Host 'Keep the Owner password private. Use 06-COPY-PASSWORD.cmd when needed again.'
+    $runtime = Read-JsonFile -FilePath $RuntimePath
+    if ((Test-LocalHealth -Port $spec.Port) -and -not $runtime) {
+        throw 'DevSpace is running without a recorded OneClick runtime. Run 09-REPAIR-STATE.cmd before updating.'
+    }
+    if ($runtime) {
+        Write-Info 'Stopping the recorded stack before refreshing dependencies and patches...'
+        Stop-Stack
+    }
+
+    $tools = Install-Dependencies -DevSpacePackage $DevSpacePackage
+    Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
+    Start-Stack
+    Invoke-Doctor -Tools $tools
+
+    $updatedSpec = Get-ValidatedSpec
+    Write-ReadyForChatGpt -Spec $updatedSpec -OwnerToken $updatedSpec.OwnerToken -Mode 'updated'
+}
+
+function Setup-OrUpdate {
+    $setupFiles = @($ConfigPath, $AuthPath, $SettingsPath)
+    $existingCount = @($setupFiles | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }).Count
+    if ($existingCount -eq 0) {
+        Write-Info 'No existing OneClick setup was found. Running first-time installation.'
+        Install-OneClick
+        return
+    }
+    if ($existingCount -ne $setupFiles.Count) {
+        throw 'A partial OneClick setup was detected. Repair or remove the incomplete local state before using automatic update.'
+    }
+
+    Write-Info 'Existing OneClick setup detected. Preserving local identity and updating the portable runtime.'
+    Update-OneClick
 }
 
 switch ($Action) {
+    'setup-or-update' { Setup-OrUpdate }
     'install' { Install-OneClick }
     'start' { Start-Stack }
     'stop' { Stop-Stack }

@@ -297,6 +297,8 @@ HTTP: {
     $launcherSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'devspace-oneclick.ps1') -Raw
     Assert-Equal ($launcherSource.Contains("'restore-subagent-patch'") -and $launcherSource.Contains('Restore-DevSpaceSubagentWindowsPatch')) $true 'exposes the verified patch restore action'
     Assert-Equal ($launcherSource.Contains("'repair-state'") -and $launcherSource.Contains('Repair-OneClickState')) $true 'exposes explicit live-state reconciliation without restart'
+    Assert-Equal ($launcherSource.Contains('Install-DevSpaceWorkflowModule') -and $launcherSource.Contains('DEVSPACE_WORKFLOW_MODULE') -and $launcherSource.Contains('DEVSPACE_WORKFLOW_STATE_DIR')) $true 'wires the durable workflow module into OneClick startup'
+    Assert-Equal $launcherSource.Contains('Updated DevSpace runtime components; restarting the owned stack.') $true 'restarts an owned stack after a workflow runtime update'
     $repairStateCommand = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '09-REPAIR-STATE.cmd') -Raw
     Assert-Equal $repairStateCommand.Contains('devspace-oneclick.ps1" repair-state') $true 'ships a dedicated no-restart state repair command'
 
@@ -374,6 +376,7 @@ HTTP: {
     [System.IO.File]::WriteAllText($fakeCli, $cliSource, [System.Text.UTF8Encoding]::new($false))
 
     $serverSource = @(
+        'import { formatLocalAgentProviderAvailabilitySummary, getLocalAgentProviderAvailabilitySnapshot, } from "./local-agent-availability.js";'
         'function serverInstructions(config) {'
         '    return `Use DevSpace as a local coding workspace. Prefer ${toolNames.edit} for targeted modifications, then continue.`;'
         '}'
@@ -434,7 +437,7 @@ HTTP: {
     ) -join [Environment]::NewLine
     [System.IO.File]::WriteAllText($skillRunner, $skillRunnerSource, [System.Text.UTF8Encoding]::new($false))
 
-    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 14 'applies all DevSpace 1.0.4 Windows patches'
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 17 'applies all DevSpace 1.0.4 Windows patches'
     $patchedRuntime = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
     $patchedProfiles = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-profiles.js'))
     $patchedSdk = [System.IO.File]::ReadAllText((Join-Path $fakeSdkDist 'index.js'))
@@ -453,6 +456,11 @@ HTTP: {
     Assert-Equal $patchedCli.Contains('const isShortAgentCommand') $true 'forces short Agent commands to exit'
     Assert-Equal $patchedServer.Contains('Use exec_command for npm, builds, tests, and DevSpace Agent status commands') $true 'guides ChatGPT Web to use process sessions for long commands'
     Assert-Equal $patchedServer.Contains('if (config.toolMode === "codex")') $false 'registers process-session tools outside Codex mode'
+    Assert-Equal $patchedServer.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE') $true 'loads the durable workflow module from the managed path'
+    Assert-Equal $patchedServer.Contains('registerDevSpaceWorkflowTools') $true 'registers cross-session workflow tools for ChatGPT Web'
+    Assert-Equal $patchedServer.Contains('Use workflow_create, workflow_list, and workflow_update for durable cross-session coordination') $true 'guides ChatGPT Web to workflow coordination tools'
+    Assert-Equal $patchedServer.Contains('Treat clear natural-language continuation intent') $true 'auto-routes clear cross-session intent without tool-name vocabulary'
+    Assert-Equal $patchedServer.Contains('Never call workflow_run because of continuation intent alone') $true 'keeps workflow_run behind separate explicit user model authorization'
     Assert-Equal $patchedSkills.Contains('projectSkillMirrorSha256') $true 'uses SHA-256-aware project skill mirror detection'
 
     $skillFixture = Join-Path $testRoot 'skill-discovery'
@@ -611,6 +619,29 @@ HTTP: {
     Assert-Equal ($explorerProfile.Contains('writeMode: read_only') -and $explorerProfile.Contains('timeoutSeconds: 720')) $true 'bounds Explorer execution'
     Assert-Equal ($workerProfile.Contains('writeMode: allowed') -and $workerProfile.Contains('timeoutSeconds: 1800')) $true 'allows bounded Worker edits'
     Assert-Equal ($qaProfile.Contains('writeMode: read_only') -and $qaProfile.Contains('timeoutSeconds: 1200')) $true 'keeps QA read-only'
+
+    $workflowSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.WorkflowStore.mjs'
+    $workflowBin = Join-Path $testRoot 'workflow-bin'
+    $firstWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
+    Assert-Equal $firstWorkflowInstall.Changed $true 'installs the durable workflow module'
+    Assert-Equal ([System.IO.File]::ReadAllText($firstWorkflowInstall.Path)) ([System.IO.File]::ReadAllText($workflowSource)) 'preserves workflow module content'
+    $secondWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
+    Assert-Equal $secondWorkflowInstall.Changed $false 'workflow module install is idempotent'
+    [System.IO.File]::AppendAllText($firstWorkflowInstall.Path, '// simulated drift', [System.Text.UTF8Encoding]::new($false))
+    $repairedWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
+    Assert-Equal $repairedWorkflowInstall.Changed $true 'repairs a drifted managed workflow module'
+    Assert-Equal (Test-Path -LiteralPath "$($firstWorkflowInstall.Path).devspace-oneclick.bak") $true 'backs up a drifted workflow module before repair'
+    $workflowTestPath = Join-Path $PSScriptRoot 'workflow-store.test.mjs'
+    $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
+    Assert-Equal ($null -ne $nodeCommand) $true 'finds Node.js for workflow tests'
+    if ($nodeCommand) {
+        $workflowTestOutput = @(& $nodeCommand.Source --test $workflowTestPath 2>&1)
+        $workflowTestExitCode = $LASTEXITCODE
+        if ($workflowTestExitCode -ne 0) {
+            Write-Host ($workflowTestOutput -join [Environment]::NewLine)
+        }
+        Assert-Equal $workflowTestExitCode 0 'passes durable workflow state and MCP tests'
+    }
 
     $shimRoot = Join-Path $testRoot 'shim'
     $adminSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.AgentAdmin.mjs'

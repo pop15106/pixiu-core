@@ -10,6 +10,10 @@ fleet.json
 .agent/ecc-install-state.json
 scripts/hooks/debug-input.json
 .claude/settings.local.json
+/vault/context/hermes-host-home.txt
+
+# Windows 保留名稱的意外產物不納入版本控制
+/NUL
 
 # Hook debug payload 與 vault 備份可能包含敏感內容，不得提交
 vault_backup_*/
@@ -30,3 +34,6 @@ vault/identity/
 # 通用備份檔
 *.bak
 *.bak-*
+
+# DevSpace portable 發佈產物由 build-portable-package.ps1 產生，不納入版本控制
+/scripts/devspace-portable/dist/

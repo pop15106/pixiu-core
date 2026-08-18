@@ -1,0 +1,100 @@
+Pixiu DevSpace OneClick｜QA 異常處理步驟
+=====================================
+
+遇到問題時，請依照下面順序處理。不要一開始就刪設定或重裝。
+
+步驟 1｜先看狀態
+----------------
+雙擊：QA-CHECK.cmd
+
+重點看：
+- local health 是否為 ready
+- DevSpace PID 是否 verified
+- Dev Tunnel PID 是否 verified
+- public MCP URL 是否存在
+
+步驟 2｜服務沒有啟動
+--------------------
+如果 local health = down：
+雙擊：START-CONNECTION.cmd
+
+完成後再跑一次 QA-CHECK.cmd。
+
+步驟 3｜服務正常，但 ChatGPT 連不上
+----------------------------------
+雙擊：FORCE-RECONNECT.cmd
+
+它會：
+1. 安全停止目前 OneClick 管理的 DevSpace / Dev Tunnel
+2. 重新啟動
+3. 再次驗證狀態
+
+不會刪除：
+- Owner password
+- tunnel identity
+- allowed folders
+- workflow ledger / 跨 Session 狀態
+
+步驟 4｜PID stale / 本機狀態不一致
+---------------------------------
+如果 QA-CHECK 顯示 PID stale，或服務明明存在但 OneClick 認不到：
+雙擊：09-REPAIR-STATE.cmd
+
+這個動作只在安全驗證通過時修正 OneClick runtime state，不會任意接管其他程序。
+
+步驟 5｜ChatGPT App / OAuth 問題
+-------------------------------
+如果 DevSpace local/public 狀態都正常，但 ChatGPT 還是看不到工具、出現 Internal error、400、OAuth 問題：
+
+1. 到 ChatGPT 的 Apps / DevSpace App。
+2. Refresh / 重新整理 actions。
+3. 若仍失敗，重新連接該 App 的 OAuth。
+4. 如需 Owner password，可雙擊：06-COPY-PASSWORD.cmd
+
+注意：重新整理 ChatGPT App 不會刪除本機 workflow state。
+
+步驟 6｜Microsoft Dev Tunnel 已登出
+---------------------------------
+如果畫面顯示 Microsoft Dev Tunnel is not logged in：
+雙擊：00-SETUP-OR-UPDATE.cmd
+
+完成瀏覽器中的 Microsoft 登入後，腳本會繼續使用原本設定更新 / 啟動。
+
+步驟 7｜更新後工具 schema 還是舊的
+---------------------------------
+如果跨 Session 工具已更新，但 ChatGPT 還看到舊欄位：
+
+1. 先跑 FORCE-RECONNECT.cmd。
+2. 到 ChatGPT Apps 對 DevSpace App 執行 Refresh。
+3. 再重新開一個聊天檢查工具 schema。
+
+步驟 8｜跨 Session 找不到工作
+------------------------------
+先確認：
+- 兩個 Session 使用的是正確 workspace / repo
+- same_project 是同一 repo
+- cross_project 的兩個 repo 都已被 DevSpace allowedRoots 授權
+- 前一個 Session 已完成 handoff，而不是只有一般 recap
+
+純 workflow 接力不需要 model，也不應該呼叫 workflow_run。
+
+步驟 9｜仍然異常
+----------------
+可依序查看：
+- 05-STATUS.cmd
+- 11-WATCHDOG-STATUS.cmd（如果有安裝 Watchdog）
+- %LOCALAPPDATA%\DevSpaceOneClick\logs\
+- %LOCALAPPDATA%\DevSpaceOneClick\watchdog\watchdog.log
+
+若要回報問題，建議提供：
+- QA-CHECK.cmd 的畫面結果
+- local health / PID 狀態
+- 錯誤分類或錯誤訊息
+- 是否已跑 FORCE-RECONNECT.cmd
+- ChatGPT App 是否已 Refresh
+
+不要提供：
+- Owner password
+- Microsoft token
+- ChatGPT OAuth token
+- Telegram Bot Token
