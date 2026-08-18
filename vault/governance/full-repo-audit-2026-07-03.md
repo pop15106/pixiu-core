@@ -40,7 +40,7 @@ summary: 母體全 repo 審查（skills／agents／hooks／workflows／設定／
 ### 3.3 hook-state 827MB 產生者**不在 repo 內**【掃描回報＋部分實測】
 
 - C 路窮盡搜索 `hook-state／thread-watcher／transcripts／SessionEnd` 等 pattern，repo 內唯一命中是 `.obsidian/workspace.json`（僅引用路徑字串）。repo 內三個 vault 寫入者（`session-end.js`、`pixiu-auto-recap.js`、`pixiu-guardrails.js`）目的地都不是 `hook-state/`。
-- 檔案格式與 `C:\Users\7010\.codex\sessions\` 的 Codex CLI 原生 session 格式吻合——產生者推測是**使用者層的 Codex 設定或外掛 watcher**。
+- 檔案格式與 `%USERPROFILE%\.codex\sessions\` 的 Codex CLI 原生 session 格式吻合——產生者推測是**使用者層的 Codex 設定或外掛 watcher**。
 - 下一步（你本機執行）：`Get-ChildItem $env:USERPROFILE\.codex; Get-Content $env:USERPROFILE\.codex\config.toml`，把輸出貼給任一 session 定位設定，再決定改輸出路徑或停用。
 
 ### 3.4 隱私殘留：`scripts/hooks/debug-input.json`【已實測，今日仍在更新】

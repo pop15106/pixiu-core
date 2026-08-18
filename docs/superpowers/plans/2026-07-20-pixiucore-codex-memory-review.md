@@ -207,7 +207,7 @@ Call the Codex automation tool in update mode with ID `pixiucore`, preserving th
 
 ```text
 name = PixiuCore 每日記憶審查
-prompt = 照 C:\Users\7010\Desktop\gravityTest\pixiu-core\scripts\scheduled\codex-daily-memory-review-prompt.md 的指示執行 Codex 每日記憶審查。
+prompt = 照 %PIXIU_CORE%\scripts\scheduled\codex-daily-memory-review-prompt.md 的指示執行 Codex 每日記憶審查。
 
 先完整讀取該檔並嚴格遵守。需要使用者判斷的項目必須保留原狀，列在任務結果最上方的「需要你看」；讀不到契約檔時直接回報失敗並停止，不得即興發揮。
 ```
@@ -232,7 +232,7 @@ schedule = daily 23:55 Asia/Taipei
 model = gpt-5.5
 reasoning effort = xhigh
 execution environment = local
-project/cwd = C:\Users\7010\Desktop\gravityTest\pixiu-core
+project/cwd = %PIXIU_CORE%
 prompt references scripts\scheduled\codex-daily-memory-review-prompt.md
 prompt does not reference codex-daily-digest-prompt.md
 ```

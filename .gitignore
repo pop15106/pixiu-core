@@ -1,8 +1,28 @@
-/vault/memory/*
-!/vault/memory/memory-summary.md
-!/vault/memory/SESSION-INDEX.md
-!/vault/memory/agent-learning/
-!/vault/memory/agent-learning/**
+# 私人記憶與 AI 會話資料只保留在本機，不納入版本控制
+/vault/memory/
+
+# 工作專案分析屬私人脈絡，避免公開公司／客戶／系統資訊
+/vault/projects/
+/vault/context/pclms-*
+/vault/context/pepis-*
+/vault/context/pisso-*
+/vault/context/tech-stack.md
+
+# AI runtime 紀錄、掃描報告與對話衍生資料
+/.agent/logs/
+/.agent/reports/
+**/transcripts/
+**/conversations/
+**/chat-history/
+**/session-history/
+**/*-transcript.*
+**/*-conversation.*
+
+# 根目錄臨時 Windows 操作腳本不屬核心；scripts/ 下正式工具維持追蹤
+/*.cmd
+
+# 本機產生的研究／輸出 artifacts 不納入版本控制
+/artifacts/
 
 # 本機產生的私人設定與安裝狀態，不納入版本控制
 .github/copilot-instructions.md
