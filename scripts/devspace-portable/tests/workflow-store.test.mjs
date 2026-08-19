@@ -3,12 +3,24 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   createWorkflowController,
   registerDevSpaceWorkflowTools,
   resolveLocalAgentPolicy,
 } from "../DevSpace.WorkflowStore.mjs";
+import {
+  createWorkflowController as createStandaloneWorkflowController,
+  projectRefFromPath,
+} from "../../../external/session-workflow/packages/session-workflow/core/index.mjs";
+import { createStandaloneProjectResolver } from "../../../external/session-workflow/packages/session-workflow/adapters/standalone-project-resolver.mjs";
+
+function workflowFixturePath(name) {
+  return fileURLToPath(
+    new URL(`../../../specs/active/02-standalone-session-workflow/fixtures/${name}`, import.meta.url),
+  );
+}
 
 async function createFixture(options = {}) {
   const stateDirectory = await mkdtemp(join(tmpdir(), "devspace-workflow-test-"));
@@ -69,6 +81,173 @@ function baseCreate(overrides = {}) {
     ...overrides,
   };
 }
+
+test("standalone core exposes coordination only and has no DevSpace runtime boundary", async () => {
+  const stateDirectory = await mkdtemp(join(tmpdir(), "standalone-core-boundary-"));
+  try {
+    const controller = createStandaloneWorkflowController({ stateDirectory });
+    assert.equal(controller.runTask, undefined);
+    assert.equal(controller.syncTask, undefined);
+    assert.equal(controller.agentAdapter, undefined);
+
+    const source = await readFile(
+      fileURLToPath(new URL("../../../external/session-workflow/packages/session-workflow/core/index.mjs", import.meta.url)),
+      "utf8",
+    );
+    assert.doesNotMatch(source, /DEVSPACE_WORKFLOW_STATE_DIR/);
+    assert.doesNotMatch(source, /DevSpace local Agent|DevSpace Agent adapter/);
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
+test("standalone core creates and lists tasks without DevSpace runtime", async () => {
+  const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-core-test-"));
+  try {
+    const controller = createStandaloneWorkflowController({ stateDirectory });
+    const created = await controller.createTask(baseCreate({ requireReview: false }));
+    const listed = await controller.listTasks({
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-b",
+    });
+    assert.equal(listed.length, 1);
+    assert.equal(listed[0].taskId, created.taskId);
+    assert.equal(listed[0].revision, 1);
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
+test("standalone project resolver derives stable isolated project refs", () => {
+  const resolver = createStandaloneProjectResolver({ namespace: "friend-web" });
+  const alphaFirst = resolver.resolveProjectKey("alpha");
+  const alphaSecond = resolver.resolveProjectKey("alpha");
+  const beta = resolver.resolveProjectKey("beta");
+  assert.equal(alphaFirst.projectRef, alphaSecond.projectRef);
+  assert.notEqual(alphaFirst.projectRef, beta.projectRef);
+  assert.match(alphaFirst.projectRef, /^friend-web:[a-f0-9]{64}$/);
+});
+
+test("schema v2 project refs isolate same-project and cross-project visibility", async () => {
+  const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-v2-test-"));
+  try {
+    const controller = createStandaloneWorkflowController({ stateDirectory });
+    const created = await controller.createTask({
+      ...baseCreate({
+        workspaceRoot: undefined,
+        relatedWorkspaceRoots: undefined,
+        requireReview: false,
+      }),
+      projectRef: "project:alpha",
+      relatedProjectRefs: ["project:beta"],
+      scope: "cross_project",
+      idempotencyKey: "create-v2-project-001",
+    });
+    assert.equal(created.schemaVersion, 2);
+    assert.deepEqual(created.projectRefs, ["project:alpha", "project:beta"]);
+    assert.equal("projectRoots" in created, false);
+
+    const visibleFromBeta = await controller.listTasks({
+      projectRef: "project:beta",
+      sessionRef: "session-b",
+    });
+    assert.equal(visibleFromBeta.length, 1);
+
+    const hiddenFromGamma = await controller.listTasks({
+      projectRef: "project:gamma",
+      sessionRef: "session-c",
+    });
+    assert.equal(hiddenFromGamma.length, 0);
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
+test("v1 ledger can migrate to v2 on project-ref mutation without rewriting old hashes", async () => {
+  const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-v1-v2-test-"));
+  try {
+    const source = await readFile(
+      workflowFixturePath("v1-valid.jsonl"),
+      "utf8",
+    );
+    await writeFile(join(stateDirectory, "workflow-events.jsonl"), source, "utf8");
+    const originalLines = source.trim().split(/\r?\n/);
+    const originalLast = JSON.parse(originalLines.at(-1));
+    const controller = createStandaloneWorkflowController({ stateDirectory });
+    const projectRef = projectRefFromPath("C:\\Fixture\\Project");
+    const migrated = await controller.updateTask({
+      projectRef,
+      sessionRef: "fixture-session-b",
+      actor: "fixture-b",
+      taskId: "tsk_fixture000001",
+      action: "acknowledge",
+      expectedRevision: 3,
+      idempotencyKey: "fixture-ack-v2-0001",
+    });
+    assert.equal(migrated.schemaVersion, 2);
+    assert.deepEqual(migrated.projectRefs, [projectRef]);
+    assert.equal("projectRoots" in migrated, false);
+    assert.equal(migrated.revision, 4);
+
+    const migratedLedger = await readFile(join(stateDirectory, "workflow-events.jsonl"), "utf8");
+    const migratedLines = migratedLedger.trim().split(/\r?\n/);
+    assert.equal(migratedLines.length, 4);
+    assert.equal(migratedLines[0], originalLines[0]);
+    assert.equal(migratedLines[1], originalLines[1]);
+    assert.equal(migratedLines[2], originalLines[2]);
+    const v2Event = JSON.parse(migratedLines[3]);
+    assert.equal(v2Event.schemaVersion, 2);
+    assert.equal(v2Event.previousHash, originalLast.hash);
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
+test("static v2 fixture replays with project-ref visibility", async () => {
+  const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-v2-fixture-test-"));
+  try {
+    const source = await readFile(
+      workflowFixturePath("v2-valid.jsonl"),
+      "utf8",
+    );
+    await writeFile(join(stateDirectory, "workflow-events.jsonl"), source, "utf8");
+    const controller = createStandaloneWorkflowController({ stateDirectory });
+    const listed = await controller.listTasks({
+      projectRef: "project:beta",
+      sessionRef: "v2-session-b",
+    });
+    assert.equal(listed.length, 1);
+    assert.equal(listed[0].schemaVersion, 2);
+    assert.equal(listed[0].revision, 2);
+    assert.equal(listed[0].status, "in_progress");
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
+test("static v1-to-v2 fixture preserves the original chain and replays the migrated task", async () => {
+  const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-v1-v2-fixture-test-"));
+  try {
+    const source = await readFile(
+      workflowFixturePath("v1-to-v2-valid.jsonl"),
+      "utf8",
+    );
+    await writeFile(join(stateDirectory, "workflow-events.jsonl"), source, "utf8");
+    const fixtureProjectRef = JSON.parse(source.trim().split(/\r?\n/).at(-1)).task.projectRefs[0];
+    const controller = createStandaloneWorkflowController({ stateDirectory });
+    const task = await controller.getTask({
+      taskId: "tsk_fixture000001",
+      projectRef: fixtureProjectRef,
+      sessionRef: "fixture-session-b",
+    });
+    assert.equal(task.schemaVersion, 2);
+    assert.equal(task.revision, 4);
+    assert.equal(task.status, "in_progress");
+    assert.equal(task.currentOwner, "fixture-b");
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
 
 test("create is idempotent and replay produces the same task", async () => {
   const fixture = await createFixture();
@@ -748,6 +927,12 @@ test("MCP registration exposes five workflow tools and functional create/list ha
     });
     const created = JSON.parse(createdResponse.structuredContent.result);
     assert.equal(created.scope, "cross_project");
+    assert.equal(created.schemaVersion, 2);
+    assert.deepEqual(created.projectRefs, [
+      projectRefFromPath("C:\\Projects\\alpha"),
+      projectRefFromPath("C:\\Projects\\beta"),
+    ]);
+    assert.equal("projectRoots" in created, false);
     assert.equal(created.executionPolicy.model, undefined);
     assert.equal(created.executionPolicy.reasoningEffort, undefined);
     const listedResponse = await registered.get("workflow_list").handler({

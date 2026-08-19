@@ -615,7 +615,9 @@ function Install-DevSpaceWorkflowModule {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string]$SourceFile,
-        [Parameter(Mandatory = $true)][string]$BinDirectory
+        [Parameter(Mandatory = $true)][string]$BinDirectory,
+        [string]$CoreSourceFile,
+        [string]$ProjectResolverSourceFile
     )
 
     if (-not (Test-Path -LiteralPath $SourceFile -PathType Leaf)) {
@@ -624,27 +626,59 @@ function Install-DevSpaceWorkflowModule {
     if (-not (Test-Path -LiteralPath $BinDirectory)) {
         New-Item -ItemType Directory -Path $BinDirectory -Force | Out-Null
     }
-    $target = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
-    $sourceHash = Get-DevSpacePatchFileSha256 -FilePath $SourceFile
-    if (Test-Path -LiteralPath $target -PathType Leaf) {
-        $targetHash = Get-DevSpacePatchFileSha256 -FilePath $target
-        if ([string]::Equals($sourceHash, $targetHash, [System.StringComparison]::OrdinalIgnoreCase)) {
-            return [pscustomobject]@{ Path = $target; Changed = $false }
+
+    $entries = @(
+        [pscustomobject]@{ Source = $SourceFile; Target = (Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs') }
+    )
+    if ($CoreSourceFile) {
+        if (-not (Test-Path -LiteralPath $CoreSourceFile -PathType Leaf)) {
+            throw "Session Workflow core source is missing: $CoreSourceFile"
         }
-        Copy-Item -LiteralPath $target -Destination "$target.devspace-oneclick.bak" -Force
+        $entries += [pscustomobject]@{ Source = $CoreSourceFile; Target = (Join-Path $BinDirectory 'SessionWorkflow.Core.mjs') }
+    }
+    if ($ProjectResolverSourceFile) {
+        if (-not (Test-Path -LiteralPath $ProjectResolverSourceFile -PathType Leaf)) {
+            throw "Session Workflow DevSpace project resolver source is missing: $ProjectResolverSourceFile"
+        }
+        $entries += [pscustomobject]@{ Source = $ProjectResolverSourceFile; Target = (Join-Path $BinDirectory 'SessionWorkflow.DevSpaceProjectResolver.mjs') }
     }
 
-    $temporary = "$target.$([guid]::NewGuid().ToString('N')).tmp"
-    try {
-        Copy-Item -LiteralPath $SourceFile -Destination $temporary -Force
-        Move-Item -LiteralPath $temporary -Destination $target -Force
-    }
-    finally {
-        if (Test-Path -LiteralPath $temporary) {
-            Remove-Item -LiteralPath $temporary -Force
+    $changed = $false
+    foreach ($entry in $entries) {
+        $sourceHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Source
+        $needsCopy = $true
+        if (Test-Path -LiteralPath $entry.Target -PathType Leaf) {
+            $targetHash = Get-DevSpacePatchFileSha256 -FilePath $entry.Target
+            if ([string]::Equals($sourceHash, $targetHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $needsCopy = $false
+            }
+            else {
+                Copy-Item -LiteralPath $entry.Target -Destination "$($entry.Target).devspace-oneclick.bak" -Force
+            }
+        }
+        if (-not $needsCopy) {
+            continue
+        }
+
+        $temporary = "$($entry.Target).$([guid]::NewGuid().ToString('N')).tmp"
+        try {
+            Copy-Item -LiteralPath $entry.Source -Destination $temporary -Force
+            Move-Item -LiteralPath $temporary -Destination $entry.Target -Force
+            $changed = $true
+        }
+        finally {
+            if (Test-Path -LiteralPath $temporary) {
+                Remove-Item -LiteralPath $temporary -Force
+            }
         }
     }
-    return [pscustomobject]@{ Path = $target; Changed = $true }
+
+    return [pscustomobject]@{
+        Path = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
+        CorePath = if ($CoreSourceFile) { Join-Path $BinDirectory 'SessionWorkflow.Core.mjs' } else { $null }
+        ProjectResolverPath = if ($ProjectResolverSourceFile) { Join-Path $BinDirectory 'SessionWorkflow.DevSpaceProjectResolver.mjs' } else { $null }
+        Changed = $changed
+    }
 }
 
 function ConvertTo-DevSpaceBashPath {

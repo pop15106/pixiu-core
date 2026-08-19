@@ -37,3 +37,6 @@ vault/identity/
 
 # DevSpace portable 發佈產物由 build-portable-package.ps1 產生，不納入版本控制
 /scripts/devspace-portable/dist/
+
+# Session Workflow portable 發佈產物由 build-portable.ps1 產生，不納入版本控制
+/artifacts/session-workflow-portable/

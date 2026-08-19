@@ -2,3 +2,6 @@
 	path = skills/cybersecurity-library
 	url = https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
 	shallow = true
+[submodule "external/session-workflow"]
+	path = external/session-workflow
+	url = https://github.com/pop15106/session-workflow.git

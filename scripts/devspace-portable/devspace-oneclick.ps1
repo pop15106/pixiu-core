@@ -39,7 +39,11 @@ $ShimRoot = Join-Path $StateRoot 'bin'
 $AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
 $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
 $WorkflowModuleSource = Join-Path $PSScriptRoot 'DevSpace.WorkflowStore.mjs'
+$WorkflowCoreSource = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\external\session-workflow\packages\session-workflow\core\index.mjs'))
+$WorkflowProjectResolverSource = Join-Path $PSScriptRoot 'DevSpace.ProjectResolver.mjs'
 $WorkflowModulePath = Join-Path $ShimRoot 'DevSpace.WorkflowStore.mjs'
+$WorkflowCorePath = Join-Path $ShimRoot 'SessionWorkflow.Core.mjs'
+$WorkflowProjectResolverPath = Join-Path $ShimRoot 'SessionWorkflow.DevSpaceProjectResolver.mjs'
 $WorkflowStateRoot = Join-Path $StateRoot 'workflow'
 
 function Write-Info {
@@ -539,6 +543,8 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '1', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_AGENT_DIR', (Join-Path $ConfigRoot 'agents'), 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_MODULE', $WorkflowModulePath, 'Process')
+    [Environment]::SetEnvironmentVariable('SESSION_WORKFLOW_CORE_MODULE', $WorkflowCorePath, 'Process')
+    [Environment]::SetEnvironmentVariable('SESSION_WORKFLOW_DEVSPACE_PROJECT_RESOLVER_MODULE', $WorkflowProjectResolverPath, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_STATE_DIR', $WorkflowStateRoot, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_CLI', $DevSpaceCli, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
@@ -559,7 +565,7 @@ function Start-Stack {
     $patchCount = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
-    $workflowInstall = Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot
+    $workflowInstall = Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -CoreSourceFile $WorkflowCoreSource -ProjectResolverSourceFile $WorkflowProjectResolverSource -BinDirectory $ShimRoot
     $runtimeComponentsChanged = $patchCount -gt 0 -or $workflowInstall.Changed
     if ($patchCount -gt 0) {
         Write-Info "Applied $patchCount DevSpace 1.0.4 Windows subagent compatibility fixes."
@@ -814,7 +820,7 @@ function Install-OneClick {
     [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
-    [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot)
+    [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -CoreSourceFile $WorkflowCoreSource -ProjectResolverSourceFile $WorkflowProjectResolverSource -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     $roots = Get-InstallRoots
     $settings = Get-TunnelSettings -DevTunnel $tools.DevTunnel -Create

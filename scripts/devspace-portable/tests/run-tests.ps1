@@ -621,20 +621,37 @@ HTTP: {
     Assert-Equal ($qaProfile.Contains('writeMode: read_only') -and $qaProfile.Contains('timeoutSeconds: 1200')) $true 'keeps QA read-only'
 
     $workflowSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.WorkflowStore.mjs'
+    $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    $workflowCoreSource = Join-Path $repoRoot 'external\session-workflow\packages\session-workflow\core\index.mjs'
+    $workflowProjectResolverSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.ProjectResolver.mjs'
     $workflowBin = Join-Path $testRoot 'workflow-bin'
-    $firstWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
+    $firstWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -CoreSourceFile $workflowCoreSource -ProjectResolverSourceFile $workflowProjectResolverSource -BinDirectory $workflowBin
     Assert-Equal $firstWorkflowInstall.Changed $true 'installs the durable workflow module'
     Assert-Equal ([System.IO.File]::ReadAllText($firstWorkflowInstall.Path)) ([System.IO.File]::ReadAllText($workflowSource)) 'preserves workflow module content'
-    $secondWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
+    Assert-Equal ([System.IO.File]::ReadAllText($firstWorkflowInstall.CorePath)) ([System.IO.File]::ReadAllText($workflowCoreSource)) 'installs the standalone workflow core dependency'
+    Assert-Equal ([System.IO.File]::ReadAllText($firstWorkflowInstall.ProjectResolverPath)) ([System.IO.File]::ReadAllText($workflowProjectResolverSource)) 'installs the DevSpace project resolver dependency'
+    $secondWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -CoreSourceFile $workflowCoreSource -ProjectResolverSourceFile $workflowProjectResolverSource -BinDirectory $workflowBin
     Assert-Equal $secondWorkflowInstall.Changed $false 'workflow module install is idempotent'
     [System.IO.File]::AppendAllText($firstWorkflowInstall.Path, '// simulated drift', [System.Text.UTF8Encoding]::new($false))
-    $repairedWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
+    $repairedWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -CoreSourceFile $workflowCoreSource -ProjectResolverSourceFile $workflowProjectResolverSource -BinDirectory $workflowBin
     Assert-Equal $repairedWorkflowInstall.Changed $true 'repairs a drifted managed workflow module'
     Assert-Equal (Test-Path -LiteralPath "$($firstWorkflowInstall.Path).devspace-oneclick.bak") $true 'backs up a drifted workflow module before repair'
     $workflowTestPath = Join-Path $PSScriptRoot 'workflow-store.test.mjs'
     $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
     Assert-Equal ($null -ne $nodeCommand) $true 'finds Node.js for workflow tests'
     if ($nodeCommand) {
+        $previousCoreModule = $env:SESSION_WORKFLOW_CORE_MODULE
+        $previousResolverModule = $env:SESSION_WORKFLOW_DEVSPACE_PROJECT_RESOLVER_MODULE
+        try {
+            $env:SESSION_WORKFLOW_CORE_MODULE = $firstWorkflowInstall.CorePath
+            $env:SESSION_WORKFLOW_DEVSPACE_PROJECT_RESOLVER_MODULE = $firstWorkflowInstall.ProjectResolverPath
+            $managedImportOutput = @(& $nodeCommand.Source --input-type=module -e "import { pathToFileURL } from 'node:url'; await import(pathToFileURL(process.argv[1]).href);" $firstWorkflowInstall.Path 2>&1)
+            Assert-Equal $LASTEXITCODE 0 'loads the managed workflow module with installed standalone dependencies'
+        }
+        finally {
+            $env:SESSION_WORKFLOW_CORE_MODULE = $previousCoreModule
+            $env:SESSION_WORKFLOW_DEVSPACE_PROJECT_RESOLVER_MODULE = $previousResolverModule
+        }
         $workflowTestOutput = @(& $nodeCommand.Source --test $workflowTestPath 2>&1)
         $workflowTestExitCode = $LASTEXITCODE
         if ($workflowTestExitCode -ne 0) {
