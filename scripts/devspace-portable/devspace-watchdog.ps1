@@ -20,6 +20,7 @@ function Get-WatchdogPaths {
         ConfigPath = Join-Path $StateRoot 'config.json'
         StatePath = Join-Path $StateRoot 'state.json'
         LogPath = Join-Path $StateRoot 'watchdog.log'
+        SuspendPath = Join-Path $StateRoot 'suspended.flag'
         MaintenancePath = Join-Path (Split-Path -Parent $StateRoot) 'maintenance.lock'
     }
 }
@@ -1305,6 +1306,15 @@ function Invoke-WatchdogRun {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][hashtable]$Dependencies)
 
+    if ($Dependencies.ContainsKey('IsSuspended') -and (& $Dependencies.IsSuspended)) {
+        return [pscustomobject]@{
+            Status = 'skipped'
+            ErrorCategory = $null
+            RecoveryAttempted = $false
+            RecoverySucceeded = $false
+        }
+    }
+
     if ($Dependencies.ContainsKey('IsMaintenanceActive') -and (& $Dependencies.IsMaintenanceActive)) {
         return [pscustomobject]@{
             Status = 'skipped'
@@ -1619,6 +1629,9 @@ function New-WatchdogDependencies {
     return @{
         Paths = $watchdogPaths
         SettingsPath = $settingsPath
+        IsSuspended = {
+            return Test-Path -LiteralPath ([string]$watchdogPaths.SuspendPath) -PathType Leaf
+        }.GetNewClosure()
         IsMaintenanceActive = {
             return Test-WatchdogMaintenanceLock -FilePath ([string]$watchdogPaths.MaintenancePath)
         }.GetNewClosure()
@@ -1946,6 +1959,12 @@ function Get-WatchdogStatus {
         else {
             ''
         }
+        Suspended = if ($Dependencies.ContainsKey('IsSuspended')) {
+            [bool](& $Dependencies.IsSuspended)
+        }
+        else {
+            $false
+        }
     }
 }
 
@@ -2116,6 +2135,9 @@ function New-WatchdogLifecycleDependencies {
 
     return @{
         Paths = $paths
+        IsSuspended = {
+            return Test-Path -LiteralPath ([string]$paths.SuspendPath) -PathType Leaf
+        }.GetNewClosure()
         ScriptPath = $scriptPath
         UserId = $userId
         MachineName = $MachineName
@@ -2236,7 +2258,8 @@ function Invoke-WatchdogConnectorFailure {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][hashtable]$Dependencies)
 
-    if ($Dependencies.ContainsKey('IsMaintenanceActive') -and (& $Dependencies.IsMaintenanceActive)) {
+    if (($Dependencies.ContainsKey('IsSuspended') -and (& $Dependencies.IsSuspended)) -or
+        ($Dependencies.ContainsKey('IsMaintenanceActive') -and (& $Dependencies.IsMaintenanceActive))) {
         return [pscustomobject]@{
             Delivered = $false
             Deduplicated = $true
@@ -2377,6 +2400,7 @@ function Invoke-WatchdogMain {
                 Write-Host "最近狀態：$($status.Status)"
                 Write-Host "最近檢查：$($status.LastCheckAtUtc)"
                 Write-Host "錯誤分類：$($status.LastErrorCategory)"
+                Write-Host "自動復原暫停：$($status.Suspended)"
                 Write-Host "公開 origin：$($status.PublicBaseUrl)"
                 return $status
             }.GetNewClosure()

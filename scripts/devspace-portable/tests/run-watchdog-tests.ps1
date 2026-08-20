@@ -78,6 +78,7 @@ try {
     Assert-Equal $paths.ConfigPath (Join-Path $testRoot 'config.json') 'derives the Watchdog config path'
     Assert-Equal $paths.StatePath (Join-Path $testRoot 'state.json') 'derives the Watchdog state path'
     Assert-Equal $paths.LogPath (Join-Path $testRoot 'watchdog.log') 'derives the Watchdog log path'
+    Assert-Equal $paths.SuspendPath (Join-Path $testRoot 'suspended.flag') 'derives the Watchdog suspension marker path'
 
     $maintenanceTestPath = Join-Path $testRoot 'maintenance.lock'
     Assert-Equal (Test-WatchdogMaintenanceLock -FilePath $maintenanceTestPath) $false 'treats a missing maintenance lock as inactive'
@@ -1131,6 +1132,19 @@ try {
             'notify:Recovery'
         ) 'confirms the anomaly twice before fixed reconnect and recovery notification'
 
+        $suspendedEvents = [System.Collections.Generic.List[string]]::new()
+        $suspendedResult = Invoke-WatchdogRun -Dependencies @{
+            IsSuspended = {
+                [void]$suspendedEvents.Add('suspended:check')
+                return $true
+            }
+            IsMaintenanceActive = { [void]$suspendedEvents.Add('unexpected:maintenance'); return $false }
+            AcquireMutex = { [void]$suspendedEvents.Add('unexpected:mutex') }
+        }
+        Assert-Equal $suspendedResult.Status 'skipped' 'skips scheduled recovery after an intentional disconnect'
+        Assert-Equal $suspendedResult.ErrorCategory $null 'does not report intentional disconnect as a service failure'
+        Assert-Equal @($suspendedEvents) @('suspended:check') 'does not probe or acquire the Watchdog mutex while intentionally disconnected'
+
         $maintenanceEvents = [System.Collections.Generic.List[string]]::new()
         $maintenanceResult = Invoke-WatchdogRun -Dependencies @{
             IsMaintenanceActive = {
@@ -1541,6 +1555,7 @@ try {
         Assert-Equal @($declinedEvents) @('cleanup:declined') 'does not normalize or register after cleanup refusal'
 
         $status = Get-WatchdogStatus -Dependencies @{
+            IsSuspended = { return $true }
             GetTask = {
                 [pscustomobject]@{
                     TaskName = 'Pixiu DevSpace Watchdog'
@@ -1558,6 +1573,7 @@ try {
         }
         Assert-Equal $status.TaskName 'Pixiu DevSpace Watchdog' 'returns the fixed task in Watchdog status'
         Assert-Equal $status.Status 'healthy' 'returns the last safe Watchdog state'
+        Assert-Equal $status.Suspended $true 'reports an intentional Watchdog suspension'
         Assert-Equal (($status | ConvertTo-Json -Compress).Contains('telegramBotTokenDpapi')) $false 'never exposes Telegram config in status'
 
         $removeEvents = [System.Collections.Generic.List[string]]::new()

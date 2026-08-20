@@ -12,9 +12,11 @@ Pixiu DevSpace OneClick｜快速使用說明
 ---------------------
 1. START-CONNECTION.cmd
    啟動 DevSpace 連線。
+   如果先前用 DISCONNECT.cmd 主動斷線，成功啟動後會重新啟用 Watchdog。
 
 2. DISCONNECT.cmd
-   中斷 DevSpace 連線。
+   主動中斷 DevSpace 連線。
+   如果已安裝 Watchdog，會同時暫停自動復原，避免兩分鐘後被自動啟動回來。
    不會刪除設定、tunnel、Owner password 或 workflow 狀態。
 
 3. FORCE-RECONNECT.cmd
@@ -40,6 +42,12 @@ ChatGPT 第一次設定
 -----------------
 安裝完成後，畫面會顯示 MCP URL 與 Owner password。
 在 ChatGPT 建立 DevSpace App，使用該 MCP URL，驗證方式選 OAuth。
+
+Watchdog 自癒（選配）
+--------------------
+執行 10-INSTALL-WATCHDOG.cmd 後，會建立每 2 分鐘一次的隱藏健康檢查。
+第一次失敗會等 5 秒再確認，連續失敗才自動重連。
+目前 Watchdog 安裝需要你自己的 Telegram Bot Token 與 Chat ID。
 
 遇到異常
 --------

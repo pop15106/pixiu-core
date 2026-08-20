@@ -64,6 +64,7 @@ $payloadFiles = @(
     'DevSpace.OneClick.Platform.psm1',
     'DevSpace.OneClick.Subagents.psm1',
     'DevSpace.WorkflowStore.mjs',
+    'DevSpace.ProjectResolver.mjs',
     'devspace-oneclick.ps1',
     'devspace-watchdog.ps1',
     'verify-portable-package.ps1',
@@ -96,6 +97,12 @@ try {
         }
         Copy-Item -LiteralPath $source -Destination (Join-Path $packageRoot $relativePath) -Force
     }
+
+    $workflowCoreSource = Join-Path $repoRoot 'external\session-workflow\packages\session-workflow\core\index.mjs'
+    if (-not (Test-Path -LiteralPath $workflowCoreSource -PathType Leaf)) {
+        throw "Portable workflow core source is missing: $workflowCoreSource"
+    }
+    Copy-Item -LiteralPath $workflowCoreSource -Destination (Join-Path $packageRoot 'SessionWorkflow.Core.mjs') -Force
 
     $agentTarget = Join-Path $packageRoot 'agents'
     Ensure-Directory -Directory $agentTarget

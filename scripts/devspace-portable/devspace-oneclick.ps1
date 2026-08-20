@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'force-reconnect', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
+    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'disconnect', 'force-reconnect', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -40,12 +40,21 @@ $ShimRoot = Join-Path $StateRoot 'bin'
 $AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
 $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
 $WorkflowModuleSource = Join-Path $PSScriptRoot 'DevSpace.WorkflowStore.mjs'
-$WorkflowCoreSource = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\external\session-workflow\packages\session-workflow\core\index.mjs'))
+$PackagedWorkflowCoreSource = Join-Path $PSScriptRoot 'SessionWorkflow.Core.mjs'
+$RepositoryWorkflowCoreSource = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\external\session-workflow\packages\session-workflow\core\index.mjs'))
+$WorkflowCoreSource = if (Test-Path -LiteralPath $PackagedWorkflowCoreSource -PathType Leaf) {
+    $PackagedWorkflowCoreSource
+}
+else {
+    $RepositoryWorkflowCoreSource
+}
 $WorkflowProjectResolverSource = Join-Path $PSScriptRoot 'DevSpace.ProjectResolver.mjs'
 $WorkflowModulePath = Join-Path $ShimRoot 'DevSpace.WorkflowStore.mjs'
 $WorkflowCorePath = Join-Path $ShimRoot 'SessionWorkflow.Core.mjs'
 $WorkflowProjectResolverPath = Join-Path $ShimRoot 'SessionWorkflow.DevSpaceProjectResolver.mjs'
 $WorkflowStateRoot = Join-Path $StateRoot 'workflow'
+$WatchdogStateRoot = Join-Path $StateRoot 'watchdog'
+$WatchdogSuspendPath = Join-Path $WatchdogStateRoot 'suspended.flag'
 
 function Write-Info {
     param([Parameter(Mandatory = $true)][string]$Message)
@@ -608,6 +617,60 @@ function Exit-OneClickMaintenance {
     }
 }
 
+function Set-WatchdogSuspended {
+    Ensure-Directory -Directory $WatchdogStateRoot
+    [System.IO.File]::WriteAllText(
+        $WatchdogSuspendPath,
+        [DateTime]::UtcNow.ToString('o'),
+        [System.Text.UTF8Encoding]::new($false)
+    )
+
+    try {
+        Import-Module ScheduledTasks -ErrorAction Stop
+        $task = Get-ScheduledTask -TaskName 'Pixiu DevSpace Watchdog' -ErrorAction SilentlyContinue
+        if ($task) {
+            Disable-ScheduledTask -TaskName 'Pixiu DevSpace Watchdog' -ErrorAction Stop | Out-Null
+            Stop-ScheduledTask -TaskName 'Pixiu DevSpace Watchdog' -ErrorAction SilentlyContinue
+        }
+    }
+    catch {
+        Remove-Item -LiteralPath $WatchdogSuspendPath -Force -ErrorAction SilentlyContinue
+        throw 'Unable to suspend the DevSpace Watchdog safely.'
+    }
+}
+
+function Resume-WatchdogAfterStart {
+    Remove-Item -LiteralPath $WatchdogSuspendPath -Force -ErrorAction SilentlyContinue
+    try {
+        Import-Module ScheduledTasks -ErrorAction Stop
+        $task = Get-ScheduledTask -TaskName 'Pixiu DevSpace Watchdog' -ErrorAction SilentlyContinue
+        if ($task -and [string]$task.State -eq 'Disabled') {
+            Enable-ScheduledTask -TaskName 'Pixiu DevSpace Watchdog' -ErrorAction Stop | Out-Null
+        }
+    }
+    catch {
+        Write-Warning 'DevSpace is running, but the Watchdog could not be resumed. Run 11-WATCHDOG-STATUS.cmd.'
+    }
+}
+
+function Disconnect-Stack {
+    Set-WatchdogSuspended
+    try {
+        Stop-Stack
+    }
+    catch {
+        Remove-Item -LiteralPath $WatchdogSuspendPath -Force -ErrorAction SilentlyContinue
+        try {
+            Import-Module ScheduledTasks -ErrorAction SilentlyContinue
+            Enable-ScheduledTask -TaskName 'Pixiu DevSpace Watchdog' -ErrorAction SilentlyContinue | Out-Null
+        }
+        catch {
+        }
+        throw
+    }
+    Write-Info 'DevSpace is intentionally disconnected. Watchdog auto-recovery is suspended until the next successful start.'
+}
+
 function Invoke-ForceReconnect {
     Enter-OneClickMaintenance
     try {
@@ -655,6 +718,7 @@ function Start-Stack {
                 }
                 else {
                     Write-Info 'DevSpace is already running.'
+                    Resume-WatchdogAfterStart
                     Show-Status
                     return
                 }
@@ -717,6 +781,7 @@ function Start-Stack {
             publicBaseUrl = $spec.PublicBaseUrl
         }
         Write-JsonFile -FilePath $RuntimePath -Value $runtimeState
+        Resume-WatchdogAfterStart
         Write-Info 'Backend started. This window may be closed.'
         Show-Status
     }
@@ -959,6 +1024,7 @@ switch ($Action) {
     'install' { Install-OneClick }
     'start' { Start-Stack }
     'stop' { Stop-Stack }
+    'disconnect' { Disconnect-Stack }
     'force-reconnect' { Invoke-ForceReconnect }
     'status' { Show-Status }
     'add-root' { Add-Root }

@@ -39,6 +39,8 @@ try {
     Assert-True (Test-Path -LiteralPath $launcher -PathType Leaf) 'ships the setup-or-update launcher'
     Assert-True ((Test-Path -LiteralPath $startConnection -PathType Leaf) -and (Test-Path -LiteralPath $disconnect -PathType Leaf) -and (Test-Path -LiteralPath $forceReconnect -PathType Leaf)) 'ships friendly start, disconnect, and force-reconnect launchers'
     Assert-True ((Test-Path -LiteralPath $qaCheck -PathType Leaf) -and (Test-Path -LiteralPath $quickGuide -PathType Leaf) -and (Test-Path -LiteralPath $qaGuide -PathType Leaf)) 'ships QA check and beginner troubleshooting guides'
+    $disconnectText = [System.IO.File]::ReadAllText($disconnect)
+    Assert-True ($disconnectText.Contains('devspace-oneclick.ps1') -and $disconnectText.Contains('disconnect')) 'friendly disconnect suspends Watchdog auto-recovery instead of triggering an automatic restart'
     $forceReconnectText = [System.IO.File]::ReadAllText($forceReconnect)
     Assert-True $forceReconnectText.Contains('15-FORCE-RECONNECT.cmd') 'friendly force-reconnect delegates to the verified reconnect flow'
     $qaCheckText = [System.IO.File]::ReadAllText($qaCheck)
@@ -52,6 +54,7 @@ try {
 
     $oneClickText = [System.IO.File]::ReadAllText($oneClick)
     Assert-True $oneClickText.Contains("'setup-or-update'") 'OneClick exposes the unified setup/update action'
+    Assert-True ($oneClickText.Contains("'disconnect'") -and $oneClickText.Contains('Set-WatchdogSuspended') -and $oneClickText.Contains('Resume-WatchdogAfterStart')) 'OneClick coordinates intentional disconnect and Watchdog resume'
     Assert-True $oneClickText.Contains('Preserving local identity and updating the portable runtime.') 'update path preserves existing local identity'
     Assert-True $oneClickText.Contains('A partial OneClick setup was detected.') 'partial local setup fails closed'
     Assert-True $oneClickText.Contains('Cross-session and cross-project workflow tools are included.') 'ready output confirms cross-session payload inclusion'
@@ -71,6 +74,8 @@ try {
         $manifestPath = Join-Path $packageRoot 'PORTABLE-MANIFEST.json'
         Assert-True (Test-Path -LiteralPath $manifestPath -PathType Leaf) 'release ZIP contains the integrity manifest'
         Assert-True (Test-Path -LiteralPath (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') -PathType Leaf) 'release ZIP contains the cross-session workflow module'
+        Assert-True (Test-Path -LiteralPath (Join-Path $packageRoot 'SessionWorkflow.Core.mjs') -PathType Leaf) 'release ZIP contains the standalone workflow core'
+        Assert-True (Test-Path -LiteralPath (Join-Path $packageRoot 'DevSpace.ProjectResolver.mjs') -PathType Leaf) 'release ZIP contains the standalone project resolver'
         Assert-True (Test-Path -LiteralPath (Join-Path $packageRoot 'WORKFLOW.zh-TW.md') -PathType Leaf) 'release ZIP contains cross-session usage documentation'
         Assert-True ((Test-Path -LiteralPath (Join-Path $packageRoot 'START-CONNECTION.cmd') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'DISCONNECT.cmd') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'FORCE-RECONNECT.cmd') -PathType Leaf)) 'release ZIP contains friendly connection controls'
         Assert-True ((Test-Path -LiteralPath (Join-Path $packageRoot 'QA-CHECK.cmd') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'QUICK-GUIDE.txt') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $packageRoot 'QA-TROUBLESHOOTING.txt') -PathType Leaf)) 'release ZIP contains QA guidance'
@@ -79,11 +84,22 @@ try {
         Assert-True ($manifest.includesCrossSessionWorkflow -eq $true) 'manifest explicitly declares cross-session workflow support'
         $manifestPaths = @($manifest.files | ForEach-Object { [string]$_.path })
         Assert-True ($manifestPaths -contains 'DevSpace.WorkflowStore.mjs') 'manifest hashes the workflow module'
+        Assert-True ($manifestPaths -contains 'SessionWorkflow.Core.mjs') 'manifest hashes the standalone workflow core'
+        Assert-True ($manifestPaths -contains 'DevSpace.ProjectResolver.mjs') 'manifest hashes the standalone project resolver'
         Assert-True (-not ($manifestPaths -match '(^|/)(auth|config|settings|runtime)\.json$')) 'manifest excludes local identity and runtime state files'
         Assert-True (-not ($manifestPaths -match '^tests/')) 'release ZIP excludes repository test fixtures'
 
         & powershell -NoProfile -ExecutionPolicy Bypass -File $verifier -PackageRoot $packageRoot | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'extracted release passes SHA-256 verification'
+
+        Import-Module (Join-Path $packageRoot 'DevSpace.OneClick.Subagents.psm1') -Force
+        $workflowInstallRoot = Join-Path $testRoot 'standalone-workflow-install'
+        $workflowInstall = Install-DevSpaceWorkflowModule `
+            -SourceFile (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') `
+            -CoreSourceFile (Join-Path $packageRoot 'SessionWorkflow.Core.mjs') `
+            -ProjectResolverSourceFile (Join-Path $packageRoot 'DevSpace.ProjectResolver.mjs') `
+            -BinDirectory $workflowInstallRoot
+        Assert-True ((Test-Path -LiteralPath $workflowInstall.Path -PathType Leaf) -and (Test-Path -LiteralPath $workflowInstall.CorePath -PathType Leaf) -and (Test-Path -LiteralPath $workflowInstall.ProjectResolverPath -PathType Leaf)) 'extracted release installs workflow dependencies without PixiuCore source tree'
 
         Add-Content -LiteralPath (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') -Value '// tamper-test'
         $previousErrorActionPreference = $ErrorActionPreference

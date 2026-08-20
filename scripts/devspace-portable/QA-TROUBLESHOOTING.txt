@@ -18,6 +18,7 @@ Pixiu DevSpace OneClick｜QA 異常處理步驟
 如果 local health = down：
 雙擊：START-CONNECTION.cmd
 
+如果先前用 DISCONNECT.cmd 主動斷線，成功啟動後會重新啟用 Watchdog。
 完成後再跑一次 QA-CHECK.cmd。
 
 步驟 3｜服務正常，但 ChatGPT 連不上
@@ -34,6 +35,9 @@ Pixiu DevSpace OneClick｜QA 異常處理步驟
 - tunnel identity
 - allowed folders
 - workflow ledger / 跨 Session 狀態
+
+注意：如果你是要「故意關閉 DevSpace」，請用 DISCONNECT.cmd，不要用 04-STOP.cmd。
+DISCONNECT.cmd 會同步暫停 Watchdog 自動復原，直到 START-CONNECTION.cmd 成功啟動。
 
 步驟 4｜PID stale / 本機狀態不一致
 ---------------------------------
