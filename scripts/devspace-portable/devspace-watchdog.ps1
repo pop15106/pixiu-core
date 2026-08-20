@@ -20,6 +20,28 @@ function Get-WatchdogPaths {
         ConfigPath = Join-Path $StateRoot 'config.json'
         StatePath = Join-Path $StateRoot 'state.json'
         LogPath = Join-Path $StateRoot 'watchdog.log'
+        MaintenancePath = Join-Path (Split-Path -Parent $StateRoot) 'maintenance.lock'
+    }
+}
+
+function Test-WatchdogMaintenanceLock {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [datetime]$NowUtc = [DateTime]::UtcNow,
+        [ValidateRange(1, 60)][int]$MaxAgeMinutes = 10
+    )
+
+    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+        return $false
+    }
+    try {
+        $item = Get-Item -LiteralPath $FilePath -ErrorAction Stop
+        $ageMinutes = ($NowUtc.ToUniversalTime() - $item.LastWriteTimeUtc).TotalMinutes
+        return $ageMinutes -le $MaxAgeMinutes
+    }
+    catch {
+        return $true
     }
 }
 
@@ -951,6 +973,30 @@ function Invoke-WatchdogConnectorRecovery {
         -Record $State `
         -Name 'publicBaseUrl' `
         -DefaultValue '')
+    if ($Dependencies.ContainsKey('DevTunnelLoginReady')) {
+        $devTunnelLoggedIn = $false
+        try {
+            $devTunnelLoggedIn = & $Dependencies.DevTunnelLoginReady
+        }
+        catch {
+            $devTunnelLoggedIn = $false
+        }
+        if (-not $devTunnelLoggedIn) {
+            return [pscustomobject]@{
+                Status = 'unhealthy'
+                ErrorCategory = 'DevTunnelNotLoggedIn'
+                LocalStatus = 'unknown'
+                PublicStatus = 'unknown'
+                ConnectorStatus = 'down'
+                LocalStatusCode = $null
+                PublicStatusCode = $null
+                PublicBaseUrl = $fallbackOrigin
+                RecoveryAttempted = $false
+                RecoverySucceeded = $false
+            }
+        }
+    }
+
     try {
         & $Dependencies.ForceReconnect
     }
@@ -1259,6 +1305,15 @@ function Invoke-WatchdogRun {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][hashtable]$Dependencies)
 
+    if ($Dependencies.ContainsKey('IsMaintenanceActive') -and (& $Dependencies.IsMaintenanceActive)) {
+        return [pscustomobject]@{
+            Status = 'skipped'
+            ErrorCategory = $null
+            RecoveryAttempted = $false
+            RecoverySucceeded = $false
+        }
+    }
+
     $mutex = & $Dependencies.AcquireMutex
     if (-not $mutex.Acquired) {
         return [pscustomobject]@{
@@ -1295,9 +1350,24 @@ function Invoke-WatchdogRun {
 
         if ([string]$result.Status -eq 'unhealthy' -and
             [string]$result.ErrorCategory -notin @('SettingsMissing', 'SettingsInvalid')) {
-            $result = & $Dependencies.RecoverConnector ([pscustomobject]@{
-                publicBaseUrl = [string]$result.PublicBaseUrl
-            })
+            if ($Dependencies.ContainsKey('PauseBeforeRetry')) {
+                & $Dependencies.PauseBeforeRetry
+            }
+            try {
+                $retryResult = & $Dependencies.Probe $settings
+                if ([string]$retryResult.Status -eq 'healthy') {
+                    $result = $retryResult
+                }
+            }
+            catch {
+                # 保留第一次異常結果，交由受控復原流程處理。
+            }
+
+            if ([string]$result.Status -eq 'unhealthy') {
+                $result = & $Dependencies.RecoverConnector ([pscustomobject]@{
+                    publicBaseUrl = [string]$result.PublicBaseUrl
+                })
+            }
         }
 
         $previousState = & $Dependencies.ReadState
@@ -1424,6 +1494,13 @@ function New-WatchdogDependencies {
     $oneClickPath = Join-Path $PSScriptRoot 'devspace-oneclick.ps1'
     $forceReconnectPath = Join-Path $PSScriptRoot '15-FORCE-RECONNECT.cmd'
     $tools = Get-InstalledTools
+    $invokeNativeJson = {
+        param($Executable, $Arguments)
+        return ConvertFrom-NativeJson `
+            -Executable $Executable `
+            -Arguments $Arguments `
+            -Operation 'Watchdog Dev Tunnel login check'
+    }
 
     $invokeHttp = {
         param($Url, $TimeoutSeconds)
@@ -1521,11 +1598,17 @@ function New-WatchdogDependencies {
             InvokeForceReconnect = $invokeForceReconnect
         }
     }.GetNewClosure()
+    $devTunnelLoginReady = {
+        return Test-WatchdogDevTunnelLogin `
+            -DevTunnel ([string]$tools.DevTunnel) `
+            -InvokeNativeJson $invokeNativeJson
+    }.GetNewClosure()
     $recoverConnector = {
         param($State)
         return Invoke-WatchdogConnectorRecovery `
             -State $State `
             -Dependencies @{
+                DevTunnelLoginReady = $devTunnelLoginReady
                 ForceReconnect = $forceReconnect
                 ReadSettings = $readSettings
                 Probe = $probe
@@ -1536,22 +1619,21 @@ function New-WatchdogDependencies {
     return @{
         Paths = $watchdogPaths
         SettingsPath = $settingsPath
+        IsMaintenanceActive = {
+            return Test-WatchdogMaintenanceLock -FilePath ([string]$watchdogPaths.MaintenancePath)
+        }.GetNewClosure()
         OneClickPath = $oneClickPath
         ForceReconnectPath = $forceReconnectPath
         DevTunnelPath = [string]$tools.DevTunnel
         AcquireMutex = { Enter-WatchdogMutex }
         GetNow = { [DateTime]::UtcNow }
+        PauseBeforeRetry = { Start-Sleep -Seconds 5 }
         ReadSettings = $readSettings
         Probe = $probe
         InvokeHttp = $invokeHttp
         GetTunnelDocument = $getTunnelDocument
-        InvokeNativeJson = {
-            param($Executable, $Arguments)
-            return ConvertFrom-NativeJson `
-                -Executable $Executable `
-                -Arguments $Arguments `
-                -Operation 'Watchdog Dev Tunnel login check'
-        }
+        InvokeNativeJson = $invokeNativeJson
+        DevTunnelLoginReady = $devTunnelLoginReady
         InvokeOneClick = {
             param($OneClickScript, $OneClickAction, $Environment)
             $previousMode = $env:DEVSPACE_ONECLICK_NONINTERACTIVE
@@ -1652,12 +1734,12 @@ function New-WatchdogTaskSpec {
     return [pscustomobject]@{
         TaskName = 'Pixiu DevSpace Watchdog'
         Execute = 'powershell.exe'
-        Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" run"
+        Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ScriptPath`" run"
         ScriptPath = $ScriptPath
         UserId = $UserId
         StartAt = $StartAt
         AtLogOn = $true
-        RepetitionInterval = [TimeSpan]::FromHours(4)
+        RepetitionInterval = [TimeSpan]::FromMinutes(2)
         MultipleInstances = 'IgnoreNew'
         StartWhenAvailable = $true
         ExecutionTimeLimit = [TimeSpan]::FromMinutes(10)
@@ -1729,7 +1811,7 @@ function Assert-WatchdogTaskMatchesSpec {
         ([string]$Task.Execute -eq [string]$TaskSpec.Execute),
         ([string]$Task.Arguments -eq [string]$TaskSpec.Arguments),
         ($Task.AtLogOn -eq $true),
-        ([double]$Task.RepetitionIntervalHours -eq 4),
+        ([double]$Task.RepetitionIntervalMinutes -eq 2),
         ([string]$Task.MultipleInstances -eq 'IgnoreNew'),
         ($Task.StartWhenAvailable -eq $true),
         ([double]$Task.ExecutionTimeLimitMinutes -eq 10),
@@ -1943,11 +2025,11 @@ function Get-WatchdogScheduledTaskSnapshot {
     $hasLogonTrigger = @($triggers | Where-Object {
         $_.CimClass.CimClassName -eq 'MSFT_TaskLogonTrigger'
     }).Count -gt 0
-    $repeatHours = if ($repeatTrigger.Count -gt 0) {
-        (ConvertFrom-WatchdogTaskDuration -Value $repeatTrigger[0].Repetition.Interval).TotalHours
+    $repeatDuration = if ($repeatTrigger.Count -gt 0) {
+        ConvertFrom-WatchdogTaskDuration -Value $repeatTrigger[0].Repetition.Interval
     }
     else {
-        0
+        [TimeSpan]::Zero
     }
     $executionMinutes = (
         ConvertFrom-WatchdogTaskDuration -Value $task.Settings.ExecutionTimeLimit
@@ -1974,7 +2056,8 @@ function Get-WatchdogScheduledTaskSnapshot {
         Execute = [string]$action.Execute
         Arguments = [string]$action.Arguments
         AtLogOn = $hasLogonTrigger
-        RepetitionIntervalHours = [double]$repeatHours
+        RepetitionIntervalHours = [double]$repeatDuration.TotalHours
+        RepetitionIntervalMinutes = [double]$repeatDuration.TotalMinutes
         MultipleInstances = [string]$task.Settings.MultipleInstances
         StartWhenAvailable = [bool]$task.Settings.StartWhenAvailable
         ExecutionTimeLimitMinutes = [double]$executionMinutes
@@ -2152,6 +2235,15 @@ function New-WatchdogLifecycleDependencies {
 function Invoke-WatchdogConnectorFailure {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][hashtable]$Dependencies)
+
+    if ($Dependencies.ContainsKey('IsMaintenanceActive') -and (& $Dependencies.IsMaintenanceActive)) {
+        return [pscustomobject]@{
+            Delivered = $false
+            Deduplicated = $true
+            ErrorCategory = $null
+            StatusCode = $null
+        }
+    }
 
     $mutex = & $Dependencies.AcquireMutex
     if (-not $mutex.Acquired) {

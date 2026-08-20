@@ -54,14 +54,14 @@
 - 查看全部或指定 Subagent 狀態：`07-SUBAGENT-STATUS.cmd [Agent ID]`
 - 停止卡住的 Subagent：`08-STOP-SUBAGENT.cmd [Agent ID]`
 - 服務仍正常但 OneClick 狀態失聯時安全接管：`09-REPAIR-STATE.cmd`
-- 安裝每 4 小時健康檢查：`10-INSTALL-WATCHDOG.cmd`
+- 安裝每 2 分鐘健康檢查：`10-INSTALL-WATCHDOG.cmd`
 - 查看 Watchdog 排程與最近結果：`11-WATCHDOG-STATUS.cmd`
 - 立即執行一次健康檢查：`12-RUN-WATCHDOG-NOW.cmd`
 - 移除 Watchdog 排程與本機設定：`13-REMOVE-WATCHDOG.cmd`
 
 ## Windows Watchdog
 
-Watchdog 是獨立於 DevSpace MCP 的本機保護層。它會在目前使用者登入 Windows 時執行，之後每 4 小時檢查：
+Watchdog 是獨立於 DevSpace MCP 的本機保護層。它會在目前使用者登入 Windows 時執行，之後每 2 分鐘檢查：
 
 1. `http://127.0.0.1:<OneClick port>/healthz`
 2. 最新 `settings.json` 對應的公開 Dev Tunnel `/healthz`
@@ -76,11 +76,11 @@ Watchdog 是獨立於 DevSpace MCP 的本機保護層。它會在目前使用者
 4. 若同一個設定 tunnel ID 有重複 host，安裝器會列出精確 PID 與命令列；只有輸入 `YES` 才會受控停止 OneClick、整理精確匹配程序並重新啟動。
 5. 安裝完成後執行 `11-WATCHDOG-STATUS.cmd` 確認 task 與最近狀態。
 
-Windows Task 名稱固定為 `Pixiu DevSpace Watchdog`。它使用目前使用者的 Interactive Token 與最低權限執行，登入觸發加每 4 小時觸發，`MultipleInstances=IgnoreNew`、`StartWhenAvailable=true`，單次執行上限 10 分鐘。腳本本身另有 mutex 與 8 分鐘復原上限。
+Windows Task 名稱固定為 `Pixiu DevSpace Watchdog`。它使用目前使用者的 Interactive Token 與最低權限執行，登入觸發加每 2 分鐘觸發，並以 `-WindowStyle Hidden` 靜默執行；`MultipleInstances=IgnoreNew`、`StartWhenAvailable=true`，單次執行上限 10 分鐘。腳本本身另有 mutex、8 分鐘復原上限，以及 OneClick maintenance lock；受控 Force Reconnect 期間會略過巡檢，10 分鐘以上的 stale lock 不會阻擋後續監控。
 
 ### 自癒範圍
 
-本機或公開 health 任一失敗時，Watchdog 最多復原一次：
+本機或公開 health 任一失敗時，Watchdog 先等待 5 秒並重查一次；只有第二次仍失敗才進入復原，避免單次網路抖動造成不必要重啟。`15-FORCE-RECONNECT.cmd` 會透過 OneClick `force-reconnect` 在整個 stop/start 期間建立 maintenance lock，避免 2 分鐘排程把正常重啟誤判為故障。復原流程最多執行一次：
 
 1. 只執行 `devtunnel user show -j` 檢查登入。
 2. 未登入時停止並通知，不執行 `user login`，也不開啟瀏覽器。
@@ -110,9 +110,11 @@ Windows Task 名稱固定為 `Pixiu DevSpace Watchdog`。它使用目前使用�
 
 ### OAuth 與 Connector 邊界
 
-Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也不保存 ChatGPT token。OneClick 既有的 `DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT=1` 只代表 DevSpace 伺服器端可核准可識別的 ChatGPT 流程，不是密碼或登入自動化。
+Watchdog 不會代填 Owner password、Microsoft 登入或 ChatGPT OAuth，也不保存 ChatGPT token。OneClick 啟動時會把 OAuth scope 設為 `devspace,offline_access`，保留 1 小時 access token，並把之後新發或輪替的 refresh token TTL 設為 180 天；啟動完成前會驗證公開 OAuth metadata 同時宣告 `authorization_code`、`refresh_token`、`devspace` 與 `offline_access`。正常 refresh rotation 可持續更新 token，不需要人工重輸 Owner password。
 
-本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`。該入口會先執行 `15-FORCE-RECONNECT.cmd`，確認 local／public health 與 MCP OAuth challenge 都正常後才推播「已自動重連並驗證」；若任一步仍失敗，則推播「自動重連失敗」與固定錯誤分類。公開 `/mcp` challenge 只能證明 MCP／OAuth 入口有正常回覆，特定 ChatGPT 帳號的 OAuth token 是否有效仍以 heartbeat 後續成功取得 `workspaceId` 為唯一端對端證據；需要重新登入時仍由使用者在 UI 人工完成。
+`DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT=1` 只代表 DevSpace 伺服器端可核准可識別的 ChatGPT 流程，不是密碼或登入自動化。若 Microsoft Dev Tunnel 登入本身失效，Watchdog 只分類成 `DevTunnelNotLoggedIn` 並通知，不會開瀏覽器或嘗試互動登入；若 refresh token 被撤銷、真正過期，或 ChatGPT 端授權狀態失效，仍需使用者在 UI 重新授權。
+
+本機與公開 health 正常但 DevSpace Secure 仍回傳 `400`、`-32603`、`Internal error` 或沒有 `workspaceId` 時，屬於 Connector／OAuth 端對端異常。Codex 每 4 小時 heartbeat 只可對指定專案執行唯讀 `open_workspace(mode=checkout)`，失敗重試一次後呼叫固定 `notify-connector-failure`。該入口會先確認 Dev Tunnel 仍登入，再執行 `15-FORCE-RECONNECT.cmd`，確認 local／public health 與 MCP OAuth challenge 都正常後才推播「已自動重連並驗證」；若任一步仍失敗，則推播「自動重連失敗」與固定錯誤分類。公開 `/mcp` challenge 只能證明 MCP／OAuth 入口有正常回覆，特定 ChatGPT 帳號的 OAuth token 是否有效仍以 heartbeat 後續成功取得 `workspaceId` 為唯一端對端證據。
 
 ### 錯誤分類
 

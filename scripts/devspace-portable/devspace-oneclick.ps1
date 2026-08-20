@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
+    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'force-reconnect', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -35,6 +35,7 @@ $AuthPath = Join-Path $ConfigRoot 'auth.json'
 $SettingsPath = Join-Path $StateRoot 'settings.json'
 $RuntimePath = Join-Path $StateRoot 'runtime.json'
 $LogRoot = Join-Path $StateRoot 'logs'
+$MaintenancePath = Join-Path $StateRoot 'maintenance.lock'
 $ShimRoot = Join-Path $StateRoot 'bin'
 $AgentAdminScript = Join-Path $PSScriptRoot 'DevSpace.AgentAdmin.mjs'
 $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
@@ -493,6 +494,38 @@ function Repair-OneClickState {
     Show-Status
 }
 
+function Test-DevSpaceOAuthContinuity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$PublicBaseUrl)
+
+    try {
+        $metadata = Invoke-RestMethod `
+            -UseBasicParsing `
+            -Uri "$PublicBaseUrl/.well-known/oauth-authorization-server" `
+            -TimeoutSec 10
+        $grantTypes = [string[]]@($metadata.grant_types_supported)
+        $scopes = [string[]]@($metadata.scopes_supported)
+        return (
+            $grantTypes -contains 'authorization_code' -and
+            $grantTypes -contains 'refresh_token' -and
+            $scopes -contains 'devspace' -and
+            $scopes -contains 'offline_access'
+        )
+    }
+    catch {
+        return $false
+    }
+}
+
+function Assert-DevSpaceOAuthContinuity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$PublicBaseUrl)
+
+    if (-not (Test-DevSpaceOAuthContinuity -PublicBaseUrl $PublicBaseUrl)) {
+        throw 'DevSpace OAuth continuity check failed: refresh_token/offline_access metadata is not ready.'
+    }
+}
+
 function Show-Status {
     $spec = Get-ValidatedSpec
     $runtime = Read-JsonFile -FilePath $RuntimePath
@@ -501,6 +534,13 @@ function Show-Status {
     Write-Info "local health: $(if ($health) { 'ready' } else { 'down' })"
     Write-Info "local MCP: http://127.0.0.1:$($spec.Port)/mcp"
     Write-Info "public MCP: $($spec.PublicBaseUrl)/mcp"
+    $oauthContinuity = if ($health) {
+        Test-DevSpaceOAuthContinuity -PublicBaseUrl $spec.PublicBaseUrl
+    }
+    else {
+        $false
+    }
+    Write-Info "OAuth refresh continuity: $(if ($oauthContinuity) { 'ready' } else { 'down' })"
     Write-Info "tunnel ID: $($spec.TunnelId)"
     Write-Info "machine: $env:COMPUTERNAME"
     Write-Info 'allowed roots:'
@@ -548,6 +588,36 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_STATE_DIR', $WorkflowStateRoot, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_CLI', $DevSpaceCli, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_SCOPES', 'devspace,offline_access', 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_ACCESS_TOKEN_TTL_SECONDS', '3600', 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_REFRESH_TOKEN_TTL_SECONDS', '15552000', 'Process')
+}
+
+function Enter-OneClickMaintenance {
+    Ensure-Directory -Directory $StateRoot
+    [System.IO.File]::WriteAllText(
+        $MaintenancePath,
+        [DateTime]::UtcNow.ToString('o'),
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
+function Exit-OneClickMaintenance {
+    if (Test-Path -LiteralPath $MaintenancePath) {
+        Remove-Item -LiteralPath $MaintenancePath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Invoke-ForceReconnect {
+    Enter-OneClickMaintenance
+    try {
+        Write-Info 'Force reconnect maintenance window started.'
+        Stop-Stack
+        Start-Stack
+    }
+    finally {
+        Exit-OneClickMaintenance
+    }
 }
 
 function Restore-SubagentPatch {
@@ -631,6 +701,7 @@ function Start-Stack {
             throw "Dev Tunnel exited during startup. Review $devTunnelErr"
         }
         Wait-Health -Url "$($spec.PublicBaseUrl)/healthz" -TimeoutSeconds 60
+        Assert-DevSpaceOAuthContinuity -PublicBaseUrl $spec.PublicBaseUrl
 
         $runtimeState = [ordered]@{
             schemaVersion = 1
@@ -888,6 +959,7 @@ switch ($Action) {
     'install' { Install-OneClick }
     'start' { Start-Stack }
     'stop' { Stop-Stack }
+    'force-reconnect' { Invoke-ForceReconnect }
     'status' { Show-Status }
     'add-root' { Add-Root }
     'copy-password' { Copy-OwnerPassword }

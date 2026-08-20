@@ -79,6 +79,13 @@ try {
     Assert-Equal $paths.StatePath (Join-Path $testRoot 'state.json') 'derives the Watchdog state path'
     Assert-Equal $paths.LogPath (Join-Path $testRoot 'watchdog.log') 'derives the Watchdog log path'
 
+    $maintenanceTestPath = Join-Path $testRoot 'maintenance.lock'
+    Assert-Equal (Test-WatchdogMaintenanceLock -FilePath $maintenanceTestPath) $false 'treats a missing maintenance lock as inactive'
+    [System.IO.File]::WriteAllText($maintenanceTestPath, [DateTime]::UtcNow.ToString('o'))
+    Assert-Equal (Test-WatchdogMaintenanceLock -FilePath $maintenanceTestPath -NowUtc ([DateTime]::UtcNow) -MaxAgeMinutes 10) $true 'treats a fresh maintenance lock as active'
+    (Get-Item -LiteralPath $maintenanceTestPath).LastWriteTimeUtc = [DateTime]::UtcNow.AddMinutes(-11)
+    Assert-Equal (Test-WatchdogMaintenanceLock -FilePath $maintenanceTestPath -NowUtc ([DateTime]::UtcNow) -MaxAgeMinutes 10) $false 'ignores a stale maintenance lock'
+
     $atomicPath = Join-Path $testRoot 'atomic.json'
     Write-WatchdogJsonAtomic -FilePath $atomicPath -Value ([ordered]@{ schemaVersion = 1; status = 'healthy' })
     $atomic = Read-WatchdogJson -FilePath $atomicPath
@@ -812,6 +819,25 @@ try {
         Assert-Equal $failedConnectorRecovery.ErrorCategory 'PostRecoveryConnectorResponseFailed' 'keeps Connector recovery unhealthy when MCP response verification fails'
         Assert-Equal $failedConnectorRecovery.RecoverySucceeded $false 'does not claim recovery before the response check passes'
 
+        $loggedOutConnectorEvents = [System.Collections.Generic.List[string]]::new()
+        $loggedOutConnectorRecovery = Invoke-WatchdogConnectorRecovery `
+            -State ([pscustomobject]@{
+                status = 'unhealthy'
+                publicBaseUrl = 'https://dxrpsqgc-7678.jpe1.devtunnels.ms'
+            }) `
+            -Dependencies @{
+                DevTunnelLoginReady = {
+                    [void]$loggedOutConnectorEvents.Add('login:check')
+                    return $false
+                }
+                ForceReconnect = {
+                    [void]$loggedOutConnectorEvents.Add('unexpected:force-reconnect')
+                }
+            }
+        Assert-Equal $loggedOutConnectorRecovery.ErrorCategory 'DevTunnelNotLoggedIn' 'classifies expired Dev Tunnel login before restart attempts'
+        Assert-Equal $loggedOutConnectorRecovery.RecoveryAttempted $false 'does not restart the stack when interactive Dev Tunnel login is required'
+        Assert-Equal @($loggedOutConnectorEvents) @('login:check') 'never opens or attempts an interactive login from Watchdog recovery'
+
         $initialFailure = [pscustomobject]@{
             Status = 'unhealthy'
             ErrorCategory = 'PublicHealthFailed'
@@ -1009,6 +1035,47 @@ try {
             'mutex:release'
         ) 'releases the mutex after a healthy run'
 
+        $transientEvents = [System.Collections.Generic.List[string]]::new()
+        $script:transientProbeCount = 0
+        $transientResult = Invoke-WatchdogRun -Dependencies @{
+            AcquireMutex = { [pscustomobject]@{ Acquired = $true; Release = { } } }
+            GetNow = { [datetime]'2026-07-29T00:00:00Z' }
+            ReadSettings = { [pscustomobject]$validSettings }
+            PauseBeforeRetry = { [void]$transientEvents.Add('pause') }
+            Probe = {
+                param($Settings)
+                $script:transientProbeCount++
+                [void]$transientEvents.Add("probe:$script:transientProbeCount")
+                if ($script:transientProbeCount -eq 1) {
+                    return [pscustomobject]@{
+                        Status = 'unhealthy'
+                        ErrorCategory = 'PublicHealthFailed'
+                        LocalStatus = 'ready'
+                        PublicStatus = 'down'
+                        PublicBaseUrl = [string]$Settings.publicBaseUrl
+                        RecoveryAttempted = $false
+                        RecoverySucceeded = $false
+                    }
+                }
+                return [pscustomobject]@{
+                    Status = 'healthy'
+                    ErrorCategory = $null
+                    LocalStatus = 'ready'
+                    PublicStatus = 'ready'
+                    PublicBaseUrl = [string]$Settings.publicBaseUrl
+                    RecoveryAttempted = $false
+                    RecoverySucceeded = $false
+                }
+            }
+            RecoverConnector = { throw 'transient recovery must not restart the stack' }
+            ReadState = { [pscustomobject]@{ status = 'healthy'; lastErrorCategory = $null } }
+            WriteState = { param($State) }
+            Notify = { throw 'transient recovery must not notify' }
+            WriteLog = { param($Event, $Data, $CorrelationId) }
+        }
+        Assert-Equal $transientResult.Status 'healthy' 'suppresses a one-off health failure after the confirmation probe succeeds'
+        Assert-Equal @($transientEvents) @('probe:1', 'pause', 'probe:2') 'waits once and confirms a transient failure before considering restart'
+
         $autoRecoveryEvents = [System.Collections.Generic.List[string]]::new()
         $autoRecoveryResult = Invoke-WatchdogRun -Dependencies @{
             AcquireMutex = {
@@ -1059,9 +1126,22 @@ try {
         Assert-Equal $autoRecoveryResult.Status 'healthy' 'returns healthy after the fixed Force Reconnect path recovers an anomaly'
         Assert-Equal @($autoRecoveryEvents) @(
             'probe:unhealthy',
+            'probe:unhealthy',
             'force-reconnect-and-verify',
             'notify:Recovery'
-        ) 'runs fixed reconnect and verification before notifying recovery from a Watchdog anomaly'
+        ) 'confirms the anomaly twice before fixed reconnect and recovery notification'
+
+        $maintenanceEvents = [System.Collections.Generic.List[string]]::new()
+        $maintenanceResult = Invoke-WatchdogRun -Dependencies @{
+            IsMaintenanceActive = {
+                [void]$maintenanceEvents.Add('maintenance:check')
+                return $true
+            }
+            AcquireMutex = { [void]$maintenanceEvents.Add('unexpected:mutex') }
+        }
+        Assert-Equal $maintenanceResult.Status 'skipped' 'skips scheduled recovery during a OneClick maintenance window'
+        Assert-Equal $maintenanceResult.ErrorCategory $null 'does not report maintenance as a service failure'
+        Assert-Equal @($maintenanceEvents) @('maintenance:check') 'does not acquire the Watchdog mutex while maintenance is active'
 
         $busyEvents = [System.Collections.Generic.List[string]]::new()
         $busyResult = Invoke-WatchdogRun -Dependencies @{
@@ -1158,7 +1238,8 @@ try {
             -UserId 'MACHINE\user' `
             -StartAt ([datetime]'2026-07-29T10:00:00')
         Assert-Equal $taskSpec.TaskName 'Pixiu DevSpace Watchdog' 'uses the fixed Watchdog task name'
-        Assert-Equal $taskSpec.RepetitionInterval.TotalHours 4 'runs the Watchdog every four hours'
+        Assert-Equal $taskSpec.RepetitionInterval.TotalMinutes 2 'runs the Watchdog every two minutes'
+        Assert-Equal $taskSpec.Arguments.Contains('-WindowStyle Hidden') $true 'runs the scheduled Watchdog without a visible PowerShell window'
         Assert-Equal $taskSpec.AtLogOn $true 'runs the Watchdog at current user logon'
         Assert-Equal $taskSpec.MultipleInstances 'IgnoreNew' 'ignores overlapping scheduled runs'
         Assert-Equal $taskSpec.RunLevel 'Limited' 'uses least-privilege task execution'
@@ -1220,7 +1301,8 @@ try {
                     Execute = $taskSpec.Execute
                     Arguments = $taskSpec.Arguments
                     AtLogOn = $true
-                    RepetitionIntervalHours = 4
+                    RepetitionIntervalHours = (2 / 60)
+                    RepetitionIntervalMinutes = 2
                     MultipleInstances = 'IgnoreNew'
                     StartWhenAvailable = $true
                     ExecutionTimeLimitMinutes = 10
@@ -1254,6 +1336,7 @@ try {
                         Arguments = $taskSpec.Arguments
                         AtLogOn = $true
                         RepetitionIntervalHours = 1
+                        RepetitionIntervalMinutes = 60
                         MultipleInstances = 'IgnoreNew'
                         StartWhenAvailable = $true
                         ExecutionTimeLimitMinutes = 10
@@ -1293,7 +1376,8 @@ try {
             Execute = $retrySpec.Execute
             Arguments = $retrySpec.Arguments
             AtLogOn = $true
-            RepetitionIntervalHours = 4
+            RepetitionIntervalHours = (2 / 60)
+            RepetitionIntervalMinutes = 2
             MultipleInstances = 'IgnoreNew'
             StartWhenAvailable = $true
             ExecutionTimeLimitMinutes = 10
