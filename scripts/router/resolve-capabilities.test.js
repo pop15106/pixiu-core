@@ -111,6 +111,30 @@ function testManifestCapabilityLimitNeverExceedsHardCap() {
   assert.deepStrictEqual(result.capabilities, ['security-review', 'legacy-java', 'research']);
 }
 
+function testHigherPriorityCapabilitySuppressesGenericMatch() {
+  const suppressionManifest = {
+    schemaVersion: 1,
+    capabilities: [
+      {
+        id: 'full-automatic-handoff',
+        keywords: ['完整自動模式'],
+        suppresses: ['runtime-control'],
+        load: { skills: ['full-auto.md'], contexts: [], governance: [] },
+        priority: 80
+      },
+      {
+        id: 'runtime-control',
+        keywords: ['自動模式'],
+        load: { skills: ['auto-mode.md'], contexts: [], governance: [] },
+        priority: 45
+      }
+    ]
+  };
+  const result = resolveCapabilities('完整自動模式', suppressionManifest);
+  assert.deepStrictEqual(result.capabilities, ['full-automatic-handoff']);
+  assert.deepStrictEqual(result.filesToLoad, ['full-auto.md']);
+}
+
 function testReturnsBootstrapOnlyWhenNoMatch() {
   const result = resolveCapabilities('今天天氣如何', manifest);
   assert.deepStrictEqual(result.capabilities, []);
@@ -143,6 +167,7 @@ for (const test of [
   testExplicitZeroCapabilityLimitSelectsNoCapabilities,
   testOptionsCapabilityLimitNeverExceedsHardCap,
   testManifestCapabilityLimitNeverExceedsHardCap,
+  testHigherPriorityCapabilitySuppressesGenericMatch,
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
   testMissingManifestDegradesWithoutFullScan

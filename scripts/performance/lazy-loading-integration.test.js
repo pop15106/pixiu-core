@@ -110,6 +110,10 @@ function testRecentWorkflowPhrasesRemainRoutable() {
     ['幫我收尾，跑驗證', 'code-review'],
     ['auto mode 自動放行', 'runtime-control'],
     ['focus mode 只看結果', 'runtime-control'],
+    ['繼續完整自動接力', 'full-automatic-handoff'],
+    ['啟用 FULL_AUTOMATIC_HANDOFF', 'full-automatic-handoff'],
+    ['恢復完整自動接力模式', 'full-automatic-handoff'],
+    ['繼續完整自動模式', 'full-automatic-handoff'],
     ['確認不會影響現行操作跟功能', 'architecture-analysis'],
     ['根據你對我的了解，整理我的偏好', 'identity-calibration'],
     ['幫我優化這段 system prompt', 'prompt-engineering']
@@ -124,6 +128,15 @@ function testRecentWorkflowPhrasesRemainRoutable() {
   }
 }
 
+function testFullAutomaticHandoffAliasSuppressesRuntimeControl() {
+  const manifest = loadManifest(path.join(core, 'vault', 'capabilities', 'capability-manifest.json'));
+  const result = resolveCapabilities('繼續完整自動模式', manifest);
+  assert.ok(result.capabilities.includes('full-automatic-handoff'));
+  assert.ok(!result.capabilities.includes('runtime-control'));
+  assert.ok(result.filesToLoad.includes('skills/full-automatic-handoff/SKILL.md'));
+  assert.ok(!result.filesToLoad.includes('skills/claude-code-auto-mode-policy/SKILL.md'));
+}
+
 function testManifestUsesCanonicalSkillSources() {
   const manifest = loadManifest(path.join(core, 'vault', 'capabilities', 'capability-manifest.json'));
   const skillPaths = manifest.capabilities.flatMap(capability => capability.load?.skills || []);
@@ -132,6 +145,7 @@ function testManifestUsesCanonicalSkillSources() {
   assert.ok(skillPaths.includes('skills/pixiu-session-recap/SKILL.md'));
   assert.ok(skillPaths.includes('skills/pixiu-verify-loop/SKILL.md'));
   assert.ok(skillPaths.includes('skills/claude-code-auto-mode-policy/SKILL.md'));
+  assert.ok(skillPaths.includes('skills/full-automatic-handoff/SKILL.md'));
 }
 
 for (const test of [
@@ -142,6 +156,7 @@ for (const test of [
   testManifestReferencesExistingFiles,
   testRepresentativeRoutes,
   testRecentWorkflowPhrasesRemainRoutable,
+  testFullAutomaticHandoffAliasSuppressesRuntimeControl,
   testManifestUsesCanonicalSkillSources
 ]) {
   test();

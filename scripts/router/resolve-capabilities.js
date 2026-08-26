@@ -51,7 +51,7 @@ function resolveCapabilities(request, manifest, options = {}) {
       : 3;
   const maxCapabilities = Math.min(requestedMaxCapabilities, 3);
 
-  const ranked = (manifest.capabilities || [])
+  const candidates = (manifest.capabilities || [])
     .map(capability => {
       const scored = scoreCapability(request, capability);
       return {
@@ -67,8 +67,19 @@ function resolveCapabilities(request, manifest, options = {}) {
       const scoreDiff = right.score - left.score;
       if (scoreDiff !== 0) return scoreDiff;
       return left.capability.id.localeCompare(right.capability.id);
-    })
-    .slice(0, maxCapabilities);
+    });
+
+  const ranked = [];
+  const suppressed = new Set();
+  for (const item of candidates) {
+    if (ranked.length >= maxCapabilities) break;
+    if (suppressed.has(item.capability.id)) continue;
+
+    ranked.push(item);
+    for (const suppressedCapability of item.capability.suppresses || []) {
+      suppressed.add(String(suppressedCapability));
+    }
+  }
 
   const selected = ranked.map(item => item.capability);
 

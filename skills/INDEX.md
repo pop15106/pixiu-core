@@ -3,11 +3,11 @@ disable-model-invocation: true
 name: skills-index
 description: "PixiuCore manual Skill routing index; use only when auditing or locating Skills by category."
 type: skills-index
-date: 2026-07-05
+date: 2026-08-26
 project: PIXIUCORE
 topic: skills-index
 status: active
-summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
+summary: skills/ 目錄手動索引：9 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
 ---
 
 # Skills 索引（單一真源）
@@ -17,11 +17,12 @@ summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考�
 > 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
 > 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 只作導覽與當期盤點，不作 runtime 路由。
 
-## 高優先路由層（8）
+## 高優先路由層（9）
 
 | Skill | 什麼情境用 |
 |---|---|
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
+| `full-automatic-handoff` | Pixiu 完整自動接力：Task Contract／handoff 驅動 self-healing 與 hard-blocker-only stop |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
 | `opus-behavior-core` | 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gem |
 | `pixiu-agent-router` | Route PixiuCore agent definitions into Codex workflows. Use when the user asks for Pixiu a |
