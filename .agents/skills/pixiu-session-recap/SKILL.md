@@ -2,7 +2,7 @@
 name: pixiu-session-recap
 description: Pixiu 版 Session Recap。整合 Claude Code 2.1.108+ 的 /recap 功能；當使用者輸入 recap/摘要/現在到哪了/下一步，或階段結束、session 恢復時，必須產出結構化摘要並立即把當前 recap 內容寫入 vault/memory/recaps，供下次 session 或 Codex 稽核使用。
 origin: Pixiu
-version: 0.3.8
+version: 0.4.0
 layer_binding: L3-流程 / L5-經驗 / L6-校準
 language: zh-TW
 ---
@@ -33,6 +33,35 @@ language: zh-TW
 - 不得把使用者主動觸發的 recap 視為「只輸出、不寫檔」的 Quick Recap。
 - 若目前工具環境無法直接寫入 `%PIXIU_CORE%`，必須立刻請求必要授權/升權；只有在授權被拒或工具失敗時，才可明確回報「尚未寫入」。
 - 寫入檔案內容必須以本次對話產出的當前 recap 為準，不另行縮減成短摘要。
+
+## 專案範圍進度查詢
+
+Recap 集中存放在 PixiuCore Vault，不代表查詢時可以混用不同專案。回答「進度／現在到哪／下一步」前，必須先解析唯一專案 context。
+
+### 已在專案 workspace 內
+
+- 目前 canonical workspace project 是未指定專案時的唯一查詢範圍。
+- 只讀取該專案 key／root 對應的 recap、handoff、current-progress、machine state 與 execution-affine workflow。
+- 不得因其他專案 recap 更新較新、全域 memory-summary 排在前面、或跨專案 task 可見，就改報其他專案進度。
+- 使用者明確問「Project A 進度」時，可以唯讀查 A；但若目前 execution binding 是 Project B，這次查詢不會把後續未指定專案的「繼續完整自動接力」切到 A。
+
+### 不在專案 workspace 內
+
+- 使用者必須在本次訊息明確提供專案名稱、alias 或路徑。
+- 先用 `project_resolve` 取得唯一 canonical root／project key，再查該專案。
+- 沒有明確專案時回 `PROJECT_CONTEXT_REQUIRED`；多個候選時回 `PROJECT_CONTEXT_AMBIGUOUS`。
+- 禁止以最近 recap、最近 task、最近 Git commit 或最近監控事件猜測。
+
+### Vault 檢索規則
+
+```text
+resolved project key/root
+→ filter recap frontmatter project/system/repo
+→ filter vault/memory/recaps/<專案>/...
+→ merge only the resolved project records
+```
+
+「跨專案集中保存」與「跨專案混合檢索」必須分離。Status Pulse、Recovery Supervisor、reviewer-watch、governance task 也不得被一般進度查詢當成產品專案進度。
 
 ---
 
@@ -117,6 +146,10 @@ language: zh-TW
 - 耗時：< 1 分鐘
 - 輸出：上述結構化格式
 - 必須立即寫入 Obsidian 相容的獨立檔案（見下方 Memory 寫入規範）
+- **正式執行入口固定為 `scripts/hooks/pixiu-manual-recap.js`**：整理完本次 recap 內容後，必須把 `relative_path` 與完整 `content` 交給該 helper 寫入；不得改成只在對話中輸出 recap。
+- `scripts/hooks/pixiu-manual-recap.js` 是唯一正式寫入鏈：先在零寫入狀態完成 recap schema、敏感資訊、summary 相容性與 observation metadata 預檢，再寫 recap 原件、同步 `vault/memory/memory-summary.md`，最後才呼叫 `scripts/hooks/pixiu-deterministic-capture.js` 產生 0-3 筆 observation；若任一步失敗，整條鏈 fail closed，不得留下錯誤 observation。
+- 正式 manual recap 原件不可靜默覆蓋：同路徑同內容視為冪等重跑；同路徑不同內容必須改用更精準的非時間短識別詞後重送。CLI 錯誤不得回顯 raw stdin、本機絕對路徑或內部檔名。
+- Phase 2 capture 只接受 strict `type: session-recap` + `recap_mode: manual` 與 canonical 專案／月份／檔名；`source_paths` 必填且不得為空，每個項目都必須是 PixiuCore 內既存且可讀的相對路徑，缺失或任一不合法就整批在 durable write 前拒絕。
 
 ### 模式 B｜Phase Recap
 
@@ -140,7 +173,7 @@ language: zh-TW
 |------|-------------|------------|
 | 觸發 | 手動 | 關鍵字 + 自動 |
 | 輸出 | 對話摘要 | 結構化 6 區塊 |
-| 寫檔 | 無 | `vault/memory/recap-*.md` |
+| 寫檔 | 無 | `vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md` |
 | 綁 Pixiu 七層 | 否 | 是（L3 + L5 + L6） |
 | 語言 | 英 | 繁中 |
 
@@ -195,7 +228,7 @@ status: done | follow-up | paused | verified-local | procedure-pending
 recap_mode: manual
 tags: [recap, session, project-key, topic-key]
 source_paths:
-  - %PROJECT_ROOT%/path/to/important/source
+  - vault/context/ai-mothership-loading-policy.md
 summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ---
 
@@ -238,7 +271,7 @@ summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 ```
 
 > ⚠️ **重要**：使用 Obsidian Frontmatter（`---` 包圍的 YAML），讓 Dataview 可以查詢。
-> Frontmatter 必須使用目前 vault 的英文欄位：`type/date/project/system/repo/topic/status/tags/summary`；若本次有重要檔案、資料源或程式入口，補 `source_paths`。
+> Frontmatter 必須使用目前 vault 的英文欄位：`type/date/project/system/repo/topic/status/recap_mode/tags/source_paths/summary`；`source_paths` 一律必填且不得為空，每個項目都必須是 PixiuCore 內既存、可讀的相對路徑。
 > 模板位於 `vault/templates/session-recap.md`，寫入時照此格式產生。
 
 ### Obsidian Properties 對齊規則
@@ -249,7 +282,7 @@ summary: 一句話摘要，說明本 recap 的核心結論或下一步。
 
 - `system` 必填，使用產品或系統 key，例如 `PCLMS`、`PTWCS`。
 - `repo` 填短 repo 名，例如 `PCLMS_BK_new`、`PTWCS`；不要填完整 Windows 路徑。
-- 完整檔案路徑只放在 `source_paths`，且 code tracing / bugfix recap 視為必填。
+- `source_paths` 一律必填且不得為空；只填 PixiuCore 內既存、可讀的相對路徑，不得填完整絕對路徑、環境變數占位符或不存在路徑。
 - `summary` 必填，用一句話寫核心結論或下一步，方便 Obsidian property table 直接掃讀。
 - `tags` 至少包含 `recap`、project/system key、主題 key；必要時補 repo key。
 - 寫完後用 `Get-Content -First 30` 或同等方式確認 frontmatter 欄位齊全，再回覆使用者。
@@ -315,8 +348,8 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 - [ ] **決策表是否列出棄選方案？**（只記選擇不夠，棄選原因同樣重要）
 - [ ] **下次要做的事是否具體到可直接執行？**（含指令、路徑、待確認事項）
 - [ ] Phase Recap 是否寫入 `vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md`，且母體治理類使用 `母體-內容`？
-- [ ] Frontmatter 是否包含 `type/date/project/system/repo/topic/status/tags/summary/recap_mode`？
-- [ ] 若是 repo tracing / code investigation，是否包含 `source_paths`，且 `repo` 是短 repo 名而不是完整路徑？
+- [ ] Frontmatter 是否包含 `type/date/project/system/repo/topic/status/recap_mode/tags/source_paths/summary`？
+- [ ] `source_paths` 是否非空，且所有項目都是 PixiuCore 內既存、可讀的相對路徑？`repo` 是否為短 repo 名而非完整路徑？
 - [ ] memory-summary.md 是否同步更新「進行中的工作」區塊？
 - [ ] 有沒有因為「已說過」就省略重要規劃細節？（不能省）
 
@@ -324,6 +357,8 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 
 ## 版本與來源
 
+- v0.4.0｜2026-08-27｜新增 Project-scoped progress lookup：目前 workspace 為預設範圍，專案外必須明確解析，唯讀查其他專案不改 execution binding，全域 Vault 不得混合最近 recap
+- v0.3.9｜2026-07-26｜明確化正式 manual recap 入口：使用者明示 recap 一律呼叫 `scripts/hooks/pixiu-manual-recap.js`，並固定採 recap → memory-summary → deterministic capture 的 fail-closed 順序
 - v0.3.8｜2026-06-08｜加入全自動 draft-auto recap lane，並以 `recap_mode` 區分半自動正式與全自動候選
 - v0.3.7｜2026-06-08｜recap 原件改為依專案與月份存放；第二大腦需匯出 `recap_project` / `recap_month`
 - v0.3.6｜2026-06-08｜檔名只保留日期；同日撞名時改用更精準內容或非時間性短識別詞

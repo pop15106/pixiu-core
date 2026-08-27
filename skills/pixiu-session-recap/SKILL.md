@@ -2,7 +2,7 @@
 name: pixiu-session-recap
 description: Pixiu 版 Session Recap。整合 Claude Code 2.1.108+ 的 /recap 功能；當使用者輸入 recap/摘要/現在到哪了/下一步，或階段結束、session 恢復時，必須產出結構化摘要並立即把當前 recap 內容寫入 vault/memory/recaps，供下次 session 或 Codex 稽核使用。
 origin: Pixiu
-version: 0.3.9
+version: 0.4.0
 layer_binding: L3-流程 / L5-經驗 / L6-校準
 language: zh-TW
 ---
@@ -33,6 +33,35 @@ language: zh-TW
 - 不得把使用者主動觸發的 recap 視為「只輸出、不寫檔」的 Quick Recap。
 - 若目前工具環境無法直接寫入 `%PIXIU_CORE%`，必須立刻請求必要授權/升權；只有在授權被拒或工具失敗時，才可明確回報「尚未寫入」。
 - 寫入檔案內容必須以本次對話產出的當前 recap 為準，不另行縮減成短摘要。
+
+## 專案範圍進度查詢
+
+Recap 集中存放在 PixiuCore Vault，不代表查詢時可以混用不同專案。回答「進度／現在到哪／下一步」前，必須先解析唯一專案 context。
+
+### 已在專案 workspace 內
+
+- 目前 canonical workspace project 是未指定專案時的唯一查詢範圍。
+- 只讀取該專案 key／root 對應的 recap、handoff、current-progress、machine state 與 execution-affine workflow。
+- 不得因其他專案 recap 更新較新、全域 memory-summary 排在前面、或跨專案 task 可見，就改報其他專案進度。
+- 使用者明確問「Project A 進度」時，可以唯讀查 A；但若目前 execution binding 是 Project B，這次查詢不會把後續未指定專案的「繼續完整自動接力」切到 A。
+
+### 不在專案 workspace 內
+
+- 使用者必須在本次訊息明確提供專案名稱、alias 或路徑。
+- 先用 `project_resolve` 取得唯一 canonical root／project key，再查該專案。
+- 沒有明確專案時回 `PROJECT_CONTEXT_REQUIRED`；多個候選時回 `PROJECT_CONTEXT_AMBIGUOUS`。
+- 禁止以最近 recap、最近 task、最近 Git commit 或最近監控事件猜測。
+
+### Vault 檢索規則
+
+```text
+resolved project key/root
+→ filter recap frontmatter project/system/repo
+→ filter vault/memory/recaps/<專案>/...
+→ merge only the resolved project records
+```
+
+「跨專案集中保存」與「跨專案混合檢索」必須分離。Status Pulse、Recovery Supervisor、reviewer-watch、governance task 也不得被一般進度查詢當成產品專案進度。
 
 ---
 
@@ -328,6 +357,7 @@ Recap 寫入後，`vault/🏠 Dashboard.md` 的 Dataview 查詢會自動抓到�
 
 ## 版本與來源
 
+- v0.4.0｜2026-08-27｜新增 Project-scoped progress lookup：目前 workspace 為預設範圍，專案外必須明確解析，唯讀查其他專案不改 execution binding，全域 Vault 不得混合最近 recap
 - v0.3.9｜2026-07-26｜明確化正式 manual recap 入口：使用者明示 recap 一律呼叫 `scripts/hooks/pixiu-manual-recap.js`，並固定採 recap → memory-summary → deterministic capture 的 fail-closed 順序
 - v0.3.8｜2026-06-08｜加入全自動 draft-auto recap lane，並以 `recap_mode` 區分半自動正式與全自動候選
 - v0.3.7｜2026-06-08｜recap 原件改為依專案與月份存放；第二大腦需匯出 `recap_project` / `recap_month`

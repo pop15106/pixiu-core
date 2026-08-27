@@ -11,6 +11,7 @@ const projectResolverModule = process.env.SESSION_WORKFLOW_DEVSPACE_PROJECT_RESO
   : await import(new URL("./DevSpace.ProjectResolver.mjs", import.meta.url).href);
 
 const {
+  assertTaskExecutionAccess,
   createWorkflowController: createCoreWorkflowController,
   fail,
   normalizePath,
@@ -18,6 +19,8 @@ const {
   projectRefFromPath,
   redactSensitiveCredentials,
   requiredString,
+  taskAllowsImplicitSelection,
+  taskExecutionProjectRef,
 } = coreModule;
 const { createDevSpaceProjectResolver } = projectResolverModule;
 
@@ -46,6 +49,13 @@ function validateRunId(value) {
   const runId = requiredString(value, "runId", 80);
   if (!RUN_ID_PATTERN.test(runId)) fail("Invalid workflow run ID.");
   return runId;
+}
+
+function validateStaleAfterSeconds(value) {
+  if (!Number.isInteger(value) || value < 60 || value > 86_400) {
+    fail("staleAfterSeconds must be an integer between 60 and 86400 seconds.");
+  }
+  return value;
 }
 
 function internalIdempotencyKey(baseKey, phase) {
@@ -245,6 +255,80 @@ function createDevSpaceExecutionController(coreController, agentAdapter) {
     ...coreController,
     agentAdapter,
 
+    async takeoverTask(input) {
+      const actor = requiredString(input.actor, "actor", 128);
+      const expectedOwner = requiredString(input.expectedOwner, "expected owner", 128);
+      if (actor === expectedOwner) fail("Recovery actor must differ from the stale owner.");
+      const staleAfterSeconds = validateStaleAfterSeconds(input.staleAfterSeconds);
+      if (input.ownerHeartbeatMissing !== true) {
+        fail("Stale-owner takeover requires confirmed missing owner heartbeat.");
+      }
+      if (input.noActiveRunnerObserved !== true) {
+        fail("Stale-owner takeover requires confirmation that no active task runner was observed.");
+      }
+      if (input.executionWatchMissingOrStaleObserved !== true) {
+        fail("Stale-owner takeover requires a missing or stale Execution Watch observation.");
+      }
+      const reason = requiredString(input.reason, "takeover reason", 4_000);
+      const requiredNextAction = requiredString(input.requiredNextAction, "required next action", 4_000);
+
+      return coreController.extensions.mutateTask(
+        { ...input, action: "stale_owner_takeover" },
+        (task, helpers) => {
+          if (!["in_progress", "changes_requested", "ready_to_complete"].includes(task.status)) {
+            fail("Only owner-held active work can be recovered by stale-owner takeover.");
+          }
+          if (!task.currentOwner) fail("Task has no current owner to recover.");
+          if (task.currentOwner !== expectedOwner) {
+            fail(`Expected owner mismatch: current owner is ${task.currentOwner}.`);
+          }
+          if (task.currentOwner === helpers.actor) {
+            fail("Recovery actor already owns this task.");
+          }
+
+          const previousUpdatedAtMs = Date.parse(task.updatedAt);
+          const takeoverAt = helpers.now();
+          const takeoverAtMs = Date.parse(takeoverAt);
+          if (!Number.isFinite(previousUpdatedAtMs) || !Number.isFinite(takeoverAtMs)) {
+            fail("Workflow task timestamps are invalid for stale-owner recovery.");
+          }
+          const staleAgeSeconds = Math.floor((takeoverAtMs - previousUpdatedAtMs) / 1_000);
+          if (staleAgeSeconds < staleAfterSeconds) {
+            fail(
+              `Task owner is not stale enough for takeover: observed ${staleAgeSeconds}s, required ${staleAfterSeconds}s.`,
+            );
+          }
+
+          const previousOwnerEpoch = Number.isInteger(task.ownerEpoch) && task.ownerEpoch >= 0
+            ? task.ownerEpoch
+            : 0;
+          const ownerEpoch = previousOwnerEpoch + 1;
+          const recovery = {
+            recoveryId: helpers.idFactory("rcv"),
+            type: "STALE_OWNER_TAKEOVER",
+            fromActor: expectedOwner,
+            toActor: helpers.actor,
+            previousRevision: task.revision,
+            previousOwnerEpoch,
+            ownerEpoch,
+            previousUpdatedAt: task.updatedAt,
+            staleAgeSeconds,
+            staleAfterSeconds,
+            ownerHeartbeatMissing: true,
+            noActiveRunnerObserved: true,
+            executionWatchMissingOrStaleObserved: true,
+            reason,
+            requiredNextAction,
+            createdAt: takeoverAt,
+          };
+          task.currentOwner = helpers.actor;
+          task.ownerEpoch = ownerEpoch;
+          task.recoveries = [...(Array.isArray(task.recoveries) ? task.recoveries : []), recovery];
+          return task;
+        },
+      );
+    },
+
     async runTask(input) {
       if (input.userAuthorizedModelRun !== true) {
         fail("workflow_run requires explicit user authorization to use an Agent/model in the current conversation.");
@@ -426,7 +510,10 @@ export function registerDevSpaceWorkflowTools({
     "DEVSPACE_WORKFLOW_STATE_DIR",
     1_024,
   );
-  const projectResolver = createDevSpaceProjectResolver(workspaces, { projectRefFromPath });
+  const projectResolver = createDevSpaceProjectResolver(workspaces, {
+    projectRefFromPath,
+    allowedRoots: Array.isArray(config.allowedRoots) ? config.allowedRoots : [],
+  });
   const controller = createWorkflowController({
     stateDirectory,
     agentAdapter: createDevSpaceAgentAdapter(),
@@ -438,6 +525,16 @@ export function registerDevSpaceWorkflowTools({
   const sessionField = z.string().min(1).max(256).describe("Caller-defined stable session or conversation key.");
   const actorField = z.string().min(1).max(128).describe("Stable actor name for this Web session or Agent.");
   const idempotencyField = z.string().min(8).max(128).describe("Unique retry key; reuse it only for the same operation.");
+  const projectAccessField = z.enum(["execution_only", "related_explicit"]).optional().describe(
+    "Defaults to execution_only. Use related_explicit only when the current user message explicitly names a cross-project task.",
+  );
+  const taskRoleField = z.enum([
+    "execution",
+    "reviewer_watch",
+    "status_pulse",
+    "recovery_supervisor",
+    "governance",
+  ]).optional();
   const policyFields = {
     model: z.string().min(1).max(80).optional().describe("Optional model override. Set it only when the user explicitly chooses a model."),
     reasoningEffort: z.enum(["none", "low", "medium", "high", "xhigh", "max"]).optional().describe("Optional reasoning override. Set it only when the user explicitly chooses a reasoning level."),
@@ -445,6 +542,19 @@ export function registerDevSpaceWorkflowTools({
     proMode: z.boolean().optional().describe("Request API reasoning.mode=pro for a capable future adapter."),
     unsupportedBehavior: z.enum(["block", "explicit_degrade"]).optional(),
   };
+
+  registerAppTool(server, "project_resolve", {
+    title: "Resolve project context",
+    description: "Resolve an explicitly named project when the user is outside a project workspace. Returns one canonical allowed project root and projectRef. Missing or ambiguous project names fail closed. A read-only lookup never changes the current session execution binding.",
+    inputSchema: {
+      query: z.string().min(1).max(512).describe(
+        "Explicit project name, alias, or absolute path from the current user message.",
+      ),
+    },
+    outputSchema,
+    ...modelOnlyMeta,
+    annotations: readOnly,
+  }, async (input) => toolResult(projectResolver.resolveProjectQuery(input.query)));
 
   registerAppTool(server, "workflow_create", {
     title: "Create workflow task",
@@ -458,6 +568,11 @@ export function registerDevSpaceWorkflowTools({
       objective: z.string().min(1).max(8_000),
       acceptanceCriteria: z.array(z.string().min(1).max(2_000)).min(1).max(50),
       requireReview: z.boolean().optional(),
+      taskRole: taskRoleField,
+      implicitSelectionAllowed: z.boolean().optional(),
+      executionWorkspaceId: z.string().min(1).optional().describe(
+        "Optional initial execution project. It must be the primary workspace or one of relatedWorkspaceIds.",
+      ),
       ...policyFields,
       idempotencyKey: idempotencyField,
     },
@@ -469,29 +584,53 @@ export function registerDevSpaceWorkflowTools({
     const relatedProjects = (input.relatedWorkspaceIds ?? []).map(
       (workspaceId) => projectResolver.resolveWorkspaceId(workspaceId),
     );
+    const executionProject = input.executionWorkspaceId
+      ? projectResolver.resolveWorkspaceId(input.executionWorkspaceId)
+      : workspace;
     return toolResult(await controller.createTask({
       ...input,
       projectRef: workspace.projectRef,
       relatedProjectRefs: relatedProjects.map((project) => project.projectRef),
+      executionProjectRef: executionProject.projectRef,
       policy: input,
     }));
   });
 
   registerAppTool(server, "workflow_list", {
     title: "List workflow tasks",
-    description: "List tasks visible to the current workspace/session, or get one task by ID. Use this first when a new chat/session says it should continue, resume, or take over work from another session or project. If exactly one pending handoff clearly matches, continue with acknowledge; ask only when multiple plausible tasks remain.",
+    description: "List tasks for the current workspace execution project, or get one task by ID. Generic progress and continuation use execution_only: tasks from another primary/execution project are not selected merely because they are newer or cross-project visible. Use related_explicit only when the current user message explicitly names that cross-project task.",
     inputSchema: {
       workspaceId: z.string().min(1),
       sessionRef: sessionField,
       taskId: z.string().min(1).max(80).optional(),
+      projectAccessMode: projectAccessField,
+      includeNonImplicit: z.boolean().optional().describe(
+        "Include Status Pulse, Recovery Supervisor, reviewer-watch, and governance tasks for explicit monitoring only.",
+      ),
     },
     outputSchema,
     ...modelOnlyMeta,
     annotations: readOnly,
   }, async (input) => {
     const workspace = projectResolver.resolveWorkspaceId(input.workspaceId);
-    const request = { ...input, projectRef: workspace.projectRef };
-    return toolResult(input.taskId ? await controller.getTask(request) : await controller.listTasks(request));
+    const projectAccessMode = input.projectAccessMode ?? "execution_only";
+    const request = {
+      projectRef: workspace.projectRef,
+      sessionRef: input.sessionRef,
+      ...(input.taskId ? { taskId: input.taskId } : {}),
+    };
+    if (input.taskId) {
+      const task = await controller.getTask(request);
+      return toolResult(assertTaskExecutionAccess(task, workspace.projectRef, projectAccessMode));
+    }
+    const visibleTasks = await controller.listTasks({ ...request, selectionMode: "visible" });
+    const tasks = visibleTasks.filter((task) => {
+      const projectAllowed = projectAccessMode === "related_explicit"
+        || taskExecutionProjectRef(task) === workspace.projectRef;
+      const roleAllowed = input.includeNonImplicit === true || taskAllowsImplicitSelection(task);
+      return projectAllowed && roleAllowed;
+    });
+    return toolResult(tasks);
   });
 
   registerAppTool(server, "workflow_update", {
@@ -510,6 +649,10 @@ export function registerDevSpaceWorkflowTools({
       deliverables: z.array(z.string().min(1).max(2_000)).max(50).optional(),
       openItems: z.array(z.string().min(1).max(2_000)).max(50).optional(),
       requiredNextAction: z.string().min(1).max(4_000).optional(),
+      targetWorkspaceId: z.string().min(1).optional().describe(
+        "For an explicit cross-project handoff, identifies the target execution project.",
+      ),
+      projectAccessMode: projectAccessField,
       reviewerActor: z.string().min(1).max(128).optional(),
       subjectRef: z.string().min(1).max(2_000).optional(),
       criteria: z.array(z.string().min(1).max(2_000)).max(50).optional(),
@@ -522,7 +665,47 @@ export function registerDevSpaceWorkflowTools({
     annotations: mutating,
   }, async (input) => {
     const workspace = projectResolver.resolveWorkspaceId(input.workspaceId);
-    return toolResult(await controller.updateTask({ ...input, projectRef: workspace.projectRef }));
+    const targetProject = input.targetWorkspaceId
+      ? projectResolver.resolveWorkspaceId(input.targetWorkspaceId)
+      : undefined;
+    const { targetWorkspaceId: _targetWorkspaceId, ...updateInput } = input;
+    return toolResult(await controller.updateTask({
+      ...updateInput,
+      projectRef: workspace.projectRef,
+      projectAccessMode: input.projectAccessMode ?? "execution_only",
+      targetExecutionProjectRef: targetProject?.projectRef,
+    }));
+  });
+
+  registerAppTool(server, "workflow_takeover", {
+    title: "Recover stale workflow owner",
+    description: "Recover a stale owner only after the user or Recovery Supervisor explicitly identifies this task and project. Project affinity remains enforced; takeover never makes a visibility-only cross-project task an implicit continuation target.",
+    inputSchema: {
+      workspaceId: z.string().min(1),
+      sessionRef: sessionField,
+      actor: actorField,
+      taskId: z.string().min(1).max(80),
+      expectedRevision: z.number().int().positive(),
+      expectedOwner: z.string().min(1).max(128),
+      staleAfterSeconds: z.number().int().min(60).max(86_400),
+      ownerHeartbeatMissing: z.boolean(),
+      noActiveRunnerObserved: z.boolean(),
+      executionWatchMissingOrStaleObserved: z.boolean(),
+      reason: z.string().min(1).max(4_000),
+      requiredNextAction: z.string().min(1).max(4_000),
+      idempotencyKey: idempotencyField,
+      projectAccessMode: projectAccessField,
+    },
+    outputSchema,
+    ...modelOnlyMeta,
+    annotations: mutating,
+  }, async (input) => {
+    const workspace = projectResolver.resolveWorkspaceId(input.workspaceId);
+    return toolResult(await controller.takeoverTask({
+      ...input,
+      projectRef: workspace.projectRef,
+      projectAccessMode: input.projectAccessMode ?? "execution_only",
+    }));
   });
 
   registerAppTool(server, "workflow_run", {
@@ -544,6 +727,7 @@ export function registerDevSpaceWorkflowTools({
       deepResearch: policyFields.deepResearch,
       proMode: policyFields.proMode,
       unsupportedBehavior: policyFields.unsupportedBehavior,
+      projectAccessMode: projectAccessField,
     },
     outputSchema,
     ...modelOnlyMeta,
@@ -558,6 +742,7 @@ export function registerDevSpaceWorkflowTools({
     return toolResult(await controller.runTask({
       ...input,
       projectRef: workspace.projectRef,
+      projectAccessMode: input.projectAccessMode ?? "execution_only",
       workspaceRoot: workspace.workspaceRoot,
       policyOverride,
     }));
@@ -574,6 +759,7 @@ export function registerDevSpaceWorkflowTools({
       runId: z.string().min(1).max(80),
       expectedRevision: z.number().int().positive(),
       idempotencyKey: idempotencyField,
+      projectAccessMode: projectAccessField,
     },
     outputSchema,
     ...modelOnlyMeta,
@@ -583,6 +769,7 @@ export function registerDevSpaceWorkflowTools({
     return toolResult(await controller.syncTask({
       ...input,
       projectRef: workspace.projectRef,
+      projectAccessMode: input.projectAccessMode ?? "execution_only",
       workspaceRoot: workspace.workspaceRoot,
     }));
   });

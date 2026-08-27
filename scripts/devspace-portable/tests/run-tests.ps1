@@ -458,7 +458,10 @@ HTTP: {
     Assert-Equal $patchedServer.Contains('if (config.toolMode === "codex")') $false 'registers process-session tools outside Codex mode'
     Assert-Equal $patchedServer.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE') $true 'loads the durable workflow module from the managed path'
     Assert-Equal $patchedServer.Contains('registerDevSpaceWorkflowTools') $true 'registers cross-session workflow tools for ChatGPT Web'
-    Assert-Equal $patchedServer.Contains('Use workflow_create, workflow_list, and workflow_update for durable cross-session coordination') $true 'guides ChatGPT Web to workflow coordination tools'
+    Assert-Equal $patchedServer.Contains('Use project_resolve, workflow_create, workflow_list, workflow_update, and workflow_takeover for durable project-scoped coordination') $true 'guides ChatGPT Web to project-scoped workflow coordination tools'
+    Assert-Equal $patchedServer.Contains('Project context is mandatory before progress lookup or continuation') $true 'binds generic progress and continuation to a canonical project context'
+    Assert-Equal $patchedServer.Contains('never select another project because its task is newer') $true 'prevents recent cross-project work from becoming an implicit continuation target'
+    Assert-Equal $patchedServer.Contains('A read-only lookup of another project never changes the current session execution binding') $true 'keeps read-only cross-project progress lookup from rebinding execution'
     Assert-Equal $patchedServer.Contains('Treat clear natural-language continuation intent') $true 'auto-routes clear cross-session intent without tool-name vocabulary'
     Assert-Equal $patchedServer.Contains('Never call workflow_run because of continuation intent alone') $true 'keeps workflow_run behind separate explicit user model authorization'
     Assert-Equal $patchedSkills.Contains('projectSkillMirrorSha256') $true 'uses SHA-256-aware project skill mirror detection'
@@ -647,17 +650,17 @@ HTTP: {
             $env:SESSION_WORKFLOW_DEVSPACE_PROJECT_RESOLVER_MODULE = $firstWorkflowInstall.ProjectResolverPath
             $managedImportOutput = @(& $nodeCommand.Source --input-type=module -e "import { pathToFileURL } from 'node:url'; await import(pathToFileURL(process.argv[1]).href);" $firstWorkflowInstall.Path 2>&1)
             Assert-Equal $LASTEXITCODE 0 'loads the managed workflow module with installed standalone dependencies'
+            $workflowTestOutput = @(& $nodeCommand.Source --test $workflowTestPath 2>&1)
+            $workflowTestExitCode = $LASTEXITCODE
+            if ($workflowTestExitCode -ne 0) {
+                Write-Host ($workflowTestOutput -join [Environment]::NewLine)
+            }
+            Assert-Equal $workflowTestExitCode 0 'passes durable workflow state and MCP tests against the newly installed modules'
         }
         finally {
             $env:SESSION_WORKFLOW_CORE_MODULE = $previousCoreModule
             $env:SESSION_WORKFLOW_DEVSPACE_PROJECT_RESOLVER_MODULE = $previousResolverModule
         }
-        $workflowTestOutput = @(& $nodeCommand.Source --test $workflowTestPath 2>&1)
-        $workflowTestExitCode = $LASTEXITCODE
-        if ($workflowTestExitCode -ne 0) {
-            Write-Host ($workflowTestOutput -join [Environment]::NewLine)
-        }
-        Assert-Equal $workflowTestExitCode 0 'passes durable workflow state and MCP tests'
     }
 
     $shimRoot = Join-Path $testRoot 'shim'

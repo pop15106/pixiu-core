@@ -22,11 +22,11 @@ summary: skills/ 目錄手動索引：9 個高優先路由能力＋81 個參考�
 | Skill | 什麼情境用 |
 |---|---|
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
-| `full-automatic-handoff` | Pixiu 完整自動接力：Task Contract／handoff 驅動 self-healing 與 hard-blocker-only stop |
+| `full-automatic-handoff` | Pixiu 完整自動接力：先鎖定 canonical project／executionProjectRef，再依 Task Contract／handoff self-healing，其他專案只可見不隱式接力 |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
 | `opus-behavior-core` | 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gem |
 | `pixiu-agent-router` | Route PixiuCore agent definitions into Codex workflows. Use when the user asks for Pixiu a |
-| `pixiu-session-recap` | Pixiu 版 Session Recap |
+| `pixiu-session-recap` | Pixiu 版 Project-scoped Session Recap；全域集中保存，但進度查詢只讀已解析專案 |
 | `pixiu-verify-loop` | Pixiu 版端對端自我驗證迴圈（仿 Boris /go） |
 | `second-brain-health-check` | Use when checking whether the second brain is usable, when query-second-brain-nvidia.ps1 f |
 | `verification-loop` | A comprehensive verification system for Claude Code sessions. |

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -10,6 +10,7 @@ import {
   registerDevSpaceWorkflowTools,
   resolveLocalAgentPolicy,
 } from "../DevSpace.WorkflowStore.mjs";
+import { createDevSpaceProjectResolver } from "../DevSpace.ProjectResolver.mjs";
 import {
   createWorkflowController as createStandaloneWorkflowController,
   projectRefFromPath,
@@ -25,6 +26,7 @@ function workflowFixturePath(name) {
 async function createFixture(options = {}) {
   const stateDirectory = await mkdtemp(join(tmpdir(), "devspace-workflow-test-"));
   let sequence = 0;
+  let currentTimeMs = Date.UTC(2026, 7, 12, 0, 0, 0);
   const adapterCalls = [];
   const controller = createWorkflowController({
     stateDirectory,
@@ -33,8 +35,8 @@ async function createFixture(options = {}) {
       return `${prefix}_${String(sequence).padStart(8, "0")}`;
     },
     now() {
-      sequence += 1;
-      return new Date(Date.UTC(2026, 7, 12, 0, 0, sequence)).toISOString();
+      currentTimeMs += 1_000;
+      return new Date(currentTimeMs).toISOString();
     },
     agentAdapter: {
       async start(input) {
@@ -54,6 +56,9 @@ async function createFixture(options = {}) {
     controller,
     stateDirectory,
     adapterCalls,
+    advanceTime(milliseconds) {
+      currentTimeMs += milliseconds;
+    },
     async cleanup() {
       await rm(stateDirectory, { recursive: true, force: true });
     },
@@ -128,7 +133,144 @@ test("standalone project resolver derives stable isolated project refs", () => {
   assert.match(alphaFirst.projectRef, /^friend-web:[a-f0-9]{64}$/);
 });
 
-test("schema v2 project refs isolate same-project and cross-project visibility", async () => {
+test("DevSpace project resolver binds nested workspaces to the nearest canonical project root", async () => {
+  const root = await mkdtemp(join(tmpdir(), "devspace-project-resolver-nested-"));
+  try {
+    const alpha = join(root, "alpha");
+    const nested = join(alpha, "modules", "runtime");
+    await mkdir(join(alpha, ".git"), { recursive: true });
+    await mkdir(nested, { recursive: true });
+    await writeFile(
+      join(alpha, ".pixiu-project.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        projectKey: "ALPHA",
+        name: "Alpha Project",
+        aliases: ["alpha-app"],
+      }),
+      "utf8",
+    );
+
+    const resolver = createDevSpaceProjectResolver({
+      getWorkspace(workspaceId) {
+        if (workspaceId === "ws-alpha-nested") return { root: nested };
+        throw new Error("Unknown workspace");
+      },
+    }, {
+      projectRefFromPath,
+      allowedRoots: [root],
+    });
+
+    const resolved = resolver.resolveWorkspaceId("ws-alpha-nested");
+    assert.equal(resolved.workspaceRoot, alpha);
+    assert.equal(resolved.projectRef, projectRefFromPath(alpha));
+    assert.equal(resolved.projectKey, "ALPHA");
+    assert.equal(resolved.resolution, "CURRENT_WORKSPACE_PROJECT");
+    assert.equal(resolved.executionBindingAuthoritative, true);
+    assert.equal(resolved.changesExecutionBinding, false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("DevSpace project resolver fails closed outside a project workspace", async () => {
+  const root = await mkdtemp(join(tmpdir(), "devspace-project-resolver-none-"));
+  try {
+    const resolver = createDevSpaceProjectResolver({
+      getWorkspace() {
+        return { root };
+      },
+    }, {
+      projectRefFromPath,
+      allowedRoots: [root],
+    });
+
+    assert.throws(
+      () => resolver.resolveWorkspaceId("ws-none"),
+      /PROJECT_CONTEXT_REQUIRED/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("explicit project query resolves one alias without changing execution binding", async () => {
+  const root = await mkdtemp(join(tmpdir(), "devspace-project-resolver-query-"));
+  try {
+    const alpha = join(root, "alpha");
+    await mkdir(join(alpha, ".git"), { recursive: true });
+    await writeFile(
+      join(alpha, ".pixiu-project.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        projectKey: "ALPHA",
+        name: "Alpha Project",
+        aliases: ["Need Alpha", "Alpha服務"],
+      }),
+      "utf8",
+    );
+
+    const resolver = createDevSpaceProjectResolver({
+      getWorkspace() {
+        throw new Error("No workspace required");
+      },
+    }, {
+      projectRefFromPath,
+      allowedRoots: [root],
+    });
+
+    const resolved = resolver.resolveProjectQuery("Need Alpha");
+    assert.equal(resolved.workspaceRoot, alpha);
+    assert.equal(resolved.projectKey, "ALPHA");
+    assert.equal(resolved.lookupMode, "READ_ONLY_PROJECT_LOOKUP");
+    assert.equal(resolved.changesExecutionBinding, false);
+    assert.equal(resolved.resolution, "EXPLICIT_PROJECT_QUERY");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("ambiguous project aliases fail closed instead of selecting the newest or first project", async () => {
+  const root = await mkdtemp(join(tmpdir(), "devspace-project-resolver-ambiguous-"));
+  try {
+    for (const name of ["alpha-one", "alpha-two"]) {
+      const project = join(root, name);
+      await mkdir(join(project, ".git"), { recursive: true });
+      await writeFile(
+        join(project, ".pixiu-project.json"),
+        JSON.stringify({
+          schemaVersion: 1,
+          projectKey: name.toUpperCase(),
+          name,
+          aliases: ["shared-alias"],
+        }),
+        "utf8",
+      );
+    }
+
+    const resolver = createDevSpaceProjectResolver({
+      getWorkspace() {
+        throw new Error("No workspace required");
+      },
+    }, {
+      projectRefFromPath,
+      allowedRoots: [root],
+    });
+
+    assert.throws(
+      () => resolver.resolveProjectQuery("shared-alias"),
+      /PROJECT_CONTEXT_AMBIGUOUS/,
+    );
+    assert.throws(
+      () => resolver.resolveProjectQuery("missing-project"),
+      /PROJECT_CONTEXT_REQUIRED/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("schema v3 separates cross-project visibility from execution affinity", async () => {
   const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-v2-test-"));
   try {
     const controller = createStandaloneWorkflowController({ stateDirectory });
@@ -143,8 +285,12 @@ test("schema v2 project refs isolate same-project and cross-project visibility",
       scope: "cross_project",
       idempotencyKey: "create-v2-project-001",
     });
-    assert.equal(created.schemaVersion, 2);
+    assert.equal(created.schemaVersion, 3);
     assert.deepEqual(created.projectRefs, ["project:alpha", "project:beta"]);
+    assert.equal(created.primaryProjectRef, "project:alpha");
+    assert.equal(created.executionProjectRef, "project:alpha");
+    assert.equal(created.taskRole, "execution");
+    assert.equal(created.implicitSelectionAllowed, true);
     assert.equal("projectRoots" in created, false);
 
     const visibleFromBeta = await controller.listTasks({
@@ -163,7 +309,7 @@ test("schema v2 project refs isolate same-project and cross-project visibility",
   }
 });
 
-test("v1 ledger can migrate to v2 on project-ref mutation without rewriting old hashes", async () => {
+test("v1 ledger can migrate to v3 on project-ref mutation without rewriting old hashes", async () => {
   const stateDirectory = await mkdtemp(join(tmpdir(), "session-workflow-v1-v2-test-"));
   try {
     const source = await readFile(
@@ -184,8 +330,12 @@ test("v1 ledger can migrate to v2 on project-ref mutation without rewriting old 
       expectedRevision: 3,
       idempotencyKey: "fixture-ack-v2-0001",
     });
-    assert.equal(migrated.schemaVersion, 2);
+    assert.equal(migrated.schemaVersion, 3);
     assert.deepEqual(migrated.projectRefs, [projectRef]);
+    assert.equal(migrated.primaryProjectRef, projectRef);
+    assert.equal(migrated.executionProjectRef, projectRef);
+    assert.equal(migrated.taskRole, "execution");
+    assert.equal(migrated.implicitSelectionAllowed, true);
     assert.equal("projectRoots" in migrated, false);
     assert.equal(migrated.revision, 4);
 
@@ -195,9 +345,9 @@ test("v1 ledger can migrate to v2 on project-ref mutation without rewriting old 
     assert.equal(migratedLines[0], originalLines[0]);
     assert.equal(migratedLines[1], originalLines[1]);
     assert.equal(migratedLines[2], originalLines[2]);
-    const v2Event = JSON.parse(migratedLines[3]);
-    assert.equal(v2Event.schemaVersion, 2);
-    assert.equal(v2Event.previousHash, originalLast.hash);
+    const v3Event = JSON.parse(migratedLines[3]);
+    assert.equal(v3Event.schemaVersion, 3);
+    assert.equal(v3Event.previousHash, originalLast.hash);
   } finally {
     await rm(stateDirectory, { recursive: true, force: true });
   }
@@ -329,6 +479,140 @@ test("compare-and-swap allows exactly one concurrent claim", async () => {
     assert.equal(attempts.filter((result) => result.status === "fulfilled").length, 1);
     assert.equal(attempts.filter((result) => result.status === "rejected").length, 1);
     assert.match(attempts.find((result) => result.status === "rejected").reason.message, /stale revision/i);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("stale owner takeover fences the old owner and preserves an audit trail", async () => {
+  const fixture = await createFixture();
+  try {
+    let task = await fixture.controller.createTask(baseCreate({ requireReview: false }));
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "takeover-claim-alice-001",
+    });
+    const claimedRevision = task.revision;
+    fixture.advanceTime(15 * 60 * 1_000);
+
+    task = await fixture.controller.takeoverTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "recovery-supervisor",
+      actor: "recovery-supervisor",
+      expectedRevision: claimedRevision,
+      expectedOwner: "alice",
+      staleAfterSeconds: 600,
+      ownerHeartbeatMissing: true,
+      noActiveRunnerObserved: true,
+      executionWatchMissingOrStaleObserved: true,
+      reason: "Owner heartbeat and execution transport are stale.",
+      requiredNextAction: "Resume from the persisted next_safe_action.",
+      idempotencyKey: "takeover-stale-alice-001",
+    });
+
+    assert.equal(task.currentOwner, "recovery-supervisor");
+    assert.equal(task.status, "in_progress");
+    assert.equal(task.ownerEpoch, 1);
+    assert.equal(task.recoveries.at(-1).type, "STALE_OWNER_TAKEOVER");
+    assert.equal(task.recoveries.at(-1).fromActor, "alice");
+    assert.equal(task.recoveries.at(-1).toActor, "recovery-supervisor");
+    assert.equal(task.recoveries.at(-1).previousRevision, claimedRevision);
+    assert.equal(task.recoveries.at(-1).requiredNextAction, "Resume from the persisted next_safe_action.");
+
+    await assert.rejects(
+      fixture.controller.updateTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "session-a",
+        actor: "alice",
+        action: "complete",
+        expectedRevision: task.revision,
+        idempotencyKey: "takeover-old-owner-complete-001",
+      }),
+      /current task owner/i,
+    );
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("stale owner takeover fails closed without stale and transport evidence", async () => {
+  const fixture = await createFixture();
+  try {
+    let task = await fixture.controller.createTask(baseCreate({ requireReview: false }));
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "takeover-guard-claim-001",
+    });
+
+    await assert.rejects(
+      fixture.controller.takeoverTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "recovery-supervisor",
+        actor: "recovery-supervisor",
+        expectedRevision: task.revision,
+        expectedOwner: "alice",
+        staleAfterSeconds: 600,
+        ownerHeartbeatMissing: true,
+        noActiveRunnerObserved: true,
+        executionWatchMissingOrStaleObserved: true,
+        reason: "Premature takeover attempt.",
+        requiredNextAction: "Do not run until owner is stale.",
+        idempotencyKey: "takeover-premature-001",
+      }),
+      /not stale enough/i,
+    );
+
+    fixture.advanceTime(15 * 60 * 1_000);
+    await assert.rejects(
+      fixture.controller.takeoverTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "recovery-supervisor",
+        actor: "recovery-supervisor",
+        expectedRevision: task.revision,
+        expectedOwner: "alice",
+        staleAfterSeconds: 600,
+        ownerHeartbeatMissing: false,
+        noActiveRunnerObserved: true,
+        executionWatchMissingOrStaleObserved: true,
+        reason: "Missing heartbeat proof.",
+        requiredNextAction: "Do not take over.",
+        idempotencyKey: "takeover-no-heartbeat-001",
+      }),
+      /heartbeat/i,
+    );
+
+    await assert.rejects(
+      fixture.controller.takeoverTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "recovery-supervisor",
+        actor: "recovery-supervisor",
+        expectedRevision: task.revision,
+        expectedOwner: "mallory",
+        staleAfterSeconds: 600,
+        ownerHeartbeatMissing: true,
+        noActiveRunnerObserved: true,
+        executionWatchMissingOrStaleObserved: true,
+        reason: "Owner mismatch.",
+        requiredNextAction: "Do not take over.",
+        idempotencyKey: "takeover-owner-mismatch-001",
+      }),
+      /expected owner/i,
+    );
   } finally {
     await fixture.cleanup();
   }
@@ -848,8 +1132,13 @@ test("ledger hash tampering fails closed", async () => {
   }
 });
 
-test("MCP registration exposes five workflow tools and functional create/list handlers", async () => {
+test("MCP registration exposes project-scoped workflow tools and prevents implicit cross-project continuation", async () => {
   const stateDirectory = await mkdtemp(join(tmpdir(), "devspace-workflow-mcp-"));
+  const projectsRoot = await mkdtemp(join(tmpdir(), "devspace-project-roots-"));
+  const alphaRoot = join(projectsRoot, "alpha");
+  const betaRoot = join(projectsRoot, "beta");
+  await mkdir(join(alphaRoot, ".git"), { recursive: true });
+  await mkdir(join(betaRoot, ".git"), { recursive: true });
   const previousStateDirectory = process.env.DEVSPACE_WORKFLOW_STATE_DIR;
   const previousCli = process.env.DEVSPACE_WORKFLOW_CLI;
   const chain = () => {
@@ -872,11 +1161,11 @@ test("MCP registration exposes five workflow tools and functional create/list ha
     process.env.DEVSPACE_WORKFLOW_CLI = process.execPath;
     registerDevSpaceWorkflowTools({
       server: {},
-      config: {},
+      config: { allowedRoots: [projectsRoot] },
       workspaces: {
         getWorkspace(workspaceId) {
-          if (workspaceId === "ws-alpha") return { root: "C:\\Projects\\alpha" };
-          if (workspaceId === "ws-beta") return { root: "C:\\Projects\\beta" };
+          if (workspaceId === "ws-alpha") return { root: alphaRoot };
+          if (workspaceId === "ws-beta") return { root: betaRoot };
           throw new Error("Unknown workspace");
         },
       },
@@ -886,9 +1175,11 @@ test("MCP registration exposes five workflow tools and functional create/list ha
       z,
     });
     assert.deepEqual([...registered.keys()], [
+      "project_resolve",
       "workflow_create",
       "workflow_list",
       "workflow_update",
+      "workflow_takeover",
       "workflow_run",
       "workflow_sync",
     ]);
@@ -899,21 +1190,32 @@ test("MCP registration exposes five workflow tools and functional create/list ha
       "userAuthorizedModelRun" in registered.get("workflow_run").descriptor.inputSchema,
       "workflow_run exposes an explicit user-authorization gate",
     );
+    assert.ok(
+      "projectAccessMode" in registered.get("workflow_list").descriptor.inputSchema,
+      "workflow_list exposes explicit project access mode",
+    );
     assert.match(
-      registered.get("workflow_create").descriptor.description,
-      /another chat, session, or project/i,
-      "workflow_create advertises natural-language cross-session intent",
+      registered.get("project_resolve").descriptor.description,
+      /ambiguous.*fail closed/i,
+      "project_resolve advertises fail-closed ambiguity handling",
     );
     assert.match(
       registered.get("workflow_list").descriptor.description,
-      /continue, resume, or take over/i,
-      "workflow_list advertises resume/take-over discovery",
+      /execution project/i,
+      "workflow_list documents execution-project affinity",
     );
     assert.match(
-      registered.get("workflow_update").descriptor.description,
-      /Natural-language continuation intent is enough/i,
-      "workflow_update does not require tool-name vocabulary",
+      registered.get("workflow_takeover").descriptor.description,
+      /project affinity/i,
+      "workflow_takeover preserves project affinity",
     );
+
+    const resolvedResponse = await registered.get("project_resolve").handler({ query: "alpha" });
+    const resolved = JSON.parse(resolvedResponse.structuredContent.result);
+    assert.equal(resolved.workspaceRoot, alphaRoot);
+    assert.equal(resolved.projectRef, projectRefFromPath(alphaRoot));
+    assert.equal(resolved.changesExecutionBinding, false);
+
     const createdResponse = await registered.get("workflow_create").handler({
       workspaceId: "ws-alpha",
       relatedWorkspaceIds: ["ws-beta"],
@@ -921,31 +1223,44 @@ test("MCP registration exposes five workflow tools and functional create/list ha
       actor: "planner-a",
       scope: "cross_project",
       objective: "Coordinate two projects",
-      acceptanceCriteria: ["Both roots can see the task"],
+      acceptanceCriteria: ["Visibility does not become implicit continuation"],
       requireReview: true,
       idempotencyKey: "mcp-create-001",
     });
     const created = JSON.parse(createdResponse.structuredContent.result);
     assert.equal(created.scope, "cross_project");
-    assert.equal(created.schemaVersion, 2);
+    assert.equal(created.schemaVersion, 3);
     assert.deepEqual(created.projectRefs, [
-      projectRefFromPath("C:\\Projects\\alpha"),
-      projectRefFromPath("C:\\Projects\\beta"),
+      projectRefFromPath(alphaRoot),
+      projectRefFromPath(betaRoot),
     ]);
+    assert.equal(created.primaryProjectRef, projectRefFromPath(alphaRoot));
+    assert.equal(created.executionProjectRef, projectRefFromPath(alphaRoot));
+    assert.equal(created.taskRole, "execution");
+    assert.equal(created.implicitSelectionAllowed, true);
     assert.equal("projectRoots" in created, false);
-    assert.equal(created.executionPolicy.model, undefined);
-    assert.equal(created.executionPolicy.reasoningEffort, undefined);
-    const listedResponse = await registered.get("workflow_list").handler({
+
+    const defaultBetaResponse = await registered.get("workflow_list").handler({
       workspaceId: "ws-beta",
       sessionRef: "session-web-b",
     });
-    const listed = JSON.parse(listedResponse.structuredContent.result);
-    assert.equal(listed[0].taskId, created.taskId);
+    const defaultBeta = JSON.parse(defaultBetaResponse.structuredContent.result);
+    assert.deepEqual(defaultBeta, []);
+
+    const explicitBetaResponse = await registered.get("workflow_list").handler({
+      workspaceId: "ws-beta",
+      sessionRef: "session-web-b",
+      projectAccessMode: "related_explicit",
+    });
+    const explicitBeta = JSON.parse(explicitBetaResponse.structuredContent.result);
+    assert.equal(explicitBeta[0].taskId, created.taskId);
+    assert.equal(explicitBeta[0].executionProjectRef, projectRefFromPath(alphaRoot));
   } finally {
     if (previousStateDirectory === undefined) delete process.env.DEVSPACE_WORKFLOW_STATE_DIR;
     else process.env.DEVSPACE_WORKFLOW_STATE_DIR = previousStateDirectory;
     if (previousCli === undefined) delete process.env.DEVSPACE_WORKFLOW_CLI;
     else process.env.DEVSPACE_WORKFLOW_CLI = previousCli;
     await rm(stateDirectory, { recursive: true, force: true });
+    await rm(projectsRoot, { recursive: true, force: true });
   }
 });

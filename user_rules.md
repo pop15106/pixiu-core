@@ -53,6 +53,7 @@ readAt: on-demand
   - **Hard blocker 定義**：只有不存在安全、已授權且可證明的下一步時才能標記 `HARD_BLOCKED`。Production DB/部署/cutover、release、Stage 10、第二 Provider、新 credentials/secrets、未授權外部網路或 destructive action、force push/reset、無法安全恢復的 authority conflict，仍維持人工 gate。
   - **母體與高風險邊界**：`%PIXIU_CORE%` 治理檔、依賴異動、DB schema、秘密資料等既有高風險項目，只有在使用者當前明確授權且 Task Contract 明列 owned paths/actions 時才可納入；否則仍是 hard blocker / scope decision。
   - **模式優先級**：`FULL_AUTOMATIC_HANDOFF` 是工作流治理模式，不等於 Claude Code Auto mode。兩者同時出現時，Auto mode policy 只管理 Claude UI 自動放行；接力的停止/恢復語義以本條與 machine-readable handoff contract 為準。
+  - **專案 Context／Scope 隔離 [HARD]**：一般「進度／目前進度／繼續完整自動接力」必須綁定目前 `open_workspace` 的 canonical project root 與 durable workflow `executionProjectRef`。`projectRefs` 只代表 visibility，不得因其他專案 task 更新較新、active、pending、cross-project visible、Status Pulse／Recovery Supervisor 最近更新或全域 recap 較新而切換。專案外只有使用者本次明確提供專案名稱、alias 或絕對路徑時才可用 `project_resolve`；查無或歧義時 fail closed。唯讀查看其他專案進度不得改變目前 execution binding；只有使用者明確切換 workspace，或目標專案 acknowledge 明確 cross-project handoff 時，才可更新 `executionProjectRef`。Mutation／run／sync／takeover／commit／push／promotion 前若 current project 與 `executionProjectRef` 不同，固定 `PROJECT_SCOPE_MISMATCH` 並 reconciliation。
 - **輸出上限處理 (Token Limit Handling)**：若偵測到特定模型輸出上限較低或內容過長，必須主動採取「分段說明」或「精簡字數」策略，確保核心邏輯不因截斷而遺失。
 - **框架變更回寫母體 (Mothership Sync) [HARD]**：觸發條件極大化。當任務涉及以下任一框架級或約束級改動時，**即使當前專案並無專屬的區域憲法**，AI 實作完成後也必須主動詢問使用者「是否將此變更同步回寫至母體 (`%PIXIU_CORE%`)？」：
   1. 修改或新增了 `.agent/` 目錄下的任何 Skills、Workflows 或知識庫文件。

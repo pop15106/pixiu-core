@@ -103,7 +103,7 @@
     },
     {
       "id": "full-automatic-handoff",
-      "summary": "完整自動接力：handoff / Task Contract 驅動的 self-healing、跨 Session 持續執行與 hard-blocker-only stop。",
+      "summary": "完整自動接力：先綁定 canonical project / executionProjectRef，再依 handoff / Task Contract self-healing、跨 Session 續跑；其他專案 task 只可見，不得被隱式接力。",
       "keywords": ["完整自動接力", "完整接力模式", "完整自動模式", "自動接力模式", "FULL_AUTOMATIC_HANDOFF", "full automatic handoff", "automatic handoff"],
       "priority": 80,
       "suppresses": ["runtime-control"],
@@ -115,7 +115,7 @@
     },
     {
       "id": "recap-memory",
-      "summary": "Session 摘要、舊決策與跨 Session 記憶。",
+      "summary": "Project-scoped Session 摘要、舊決策與跨 Session 記憶；全域 Vault 集中保存，但進度查詢只讀已解析專案。",
       "keywords": ["recap", "摘要", "現在到哪", "做到哪", "目前進度", "進度", "下一步", "之前", "上次", "前面", "剛剛", "對話", "紀錄", "記憶", "接續", "繼續", "昨天"],
       "priority": 40,
       "load": {

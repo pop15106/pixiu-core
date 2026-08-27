@@ -2,7 +2,7 @@
 name: full-automatic-handoff
 description: Pixiu 完整自動接力模式。當使用者要求「完整自動接力 / 繼續完整自動接力 / 恢復完整自動接力 / FULL_AUTOMATIC_HANDOFF」時載入，依 Task Contract、handoff、machine state 與 durable workflow 持續執行；recoverable RED 自動修復重驗，只有真正 hard blocker 或使用者 pause/cancel 才停。
 origin: Pixiu
-version: 1.0.0
+version: 1.3.0
 layer_binding: L0-授權 / L3-流程 / L6-驗證
 language: zh-TW
 ---
@@ -47,6 +47,96 @@ Session / Watch / Lease 中斷 → checkpoint → reconciliation → resume
 7. 從 Step Journal / handoff 的 `next_safe_action` 原位續跑，不重新從頭做已具有效 evidence 的步驟。
 
 如果 handoff 與 machine/workflow/remote authority 衝突，先 reconciliation；不得用猜測選一份覆蓋另一份。
+
+## Project Context Resolution／Project Scope Isolation
+
+完整自動接力與進度查詢都必須先解析唯一專案身分。`projectRefs` 只代表 task visibility；真正的執行綁定由 `executionProjectRef` 決定。
+
+### 已在專案 workspace 內
+
+目前 `open_workspace` 的 canonical project root 是本 Session 的預設 execution binding。
+
+使用者只說以下語句時：
+
+```text
+目前進度
+現在到哪了
+繼續完整自動接力
+恢復完整自動接力
+```
+
+固定行為：
+
+```text
+current canonical workspace project
+→ workflow_list(projectAccessMode="execution_only")
+→ 只接受 executionProjectRef=currentProjectRef
+→ 只接受 implicitSelectionAllowed=true 的 execution task
+```
+
+不得因其他專案的 task 更新較新、仍 active、有 pending handoff、屬 cross-project scope、最近被 Status Pulse／Recovery Supervisor 更新，或全域 recap 較新，就切換專案。
+
+使用者在 Project B workspace 內詢問「看 Project A 的進度」時，可唯讀解析並查看 A，但這不會改變 B 的 execution binding。下一句未指定專案的「繼續完整自動接力」仍接 Project B。
+
+只有以下任一明確成立時才可改綁：
+
+- 使用者明確說「切換到 Project A」並開啟 A 的 canonical workspace。
+- owner 建立含目標專案的 cross-project handoff，目標專案以 `related_explicit` acknowledge 後更新 `executionProjectRef`。
+
+### 不在專案 workspace 內
+
+使用者必須在本次訊息明確提供專案名稱、alias 或絕對路徑，例如「NeedToKnow 進度」。固定流程：
+
+```text
+project_resolve
+→ 唯一 canonical root / projectRef
+→ open_workspace
+→ 讀該專案 handoff / current-progress / machine state / workflow
+```
+
+沒有明確專案時回 `PROJECT_CONTEXT_REQUIRED`；多個候選同分時回 `PROJECT_CONTEXT_AMBIGUOUS`。不得用最近 task、最近 recap、最近 Git commit 或最近監控事件猜測。
+
+### Durable workflow 專案欄位
+
+```text
+primaryProjectRef   = 建立 task 的主要專案
+executionProjectRef = 目前真正允許續跑／writer authority 的專案
+projectRefs         = 可見範圍，不等於執行範圍
+taskRole            = execution | reviewer_watch | status_pulse | recovery_supervisor | governance
+```
+
+`reviewer_watch`、`status_pulse`、`recovery_supervisor`、`governance` 必須 `implicitSelectionAllowed=false`，不得被一般進度或接力語句選中。
+
+跨專案 task 只有在本次訊息明確指定該 task／project 時，才可使用：
+
+```text
+projectAccessMode="related_explicit"
+```
+
+一般「進度」與「繼續完整自動接力」不得自動使用此模式。
+
+### Mutation 前硬閘門
+
+Mutation、Agent run/sync、takeover、commit、push、promotion 前必須重新確認：
+
+```text
+resolved canonical root = current workspace root
+current projectRef = workflow executionProjectRef
+Task Contract allowedRepositories 包含目前專案
+handoff / machine state 屬於目前專案
+Git authorized ref 屬於目前專案
+```
+
+任一不符：
+
+```text
+PROJECT_SCOPE_MISMATCH
+→ 停止該 mutation
+→ 保留 checkpoint
+→ 重新解析專案並 reconciliation
+```
+
+不得用全域最近 task 或 visibility-only cross-project task 繞過。
 
 ## 唯一停止結果
 
@@ -130,6 +220,83 @@ Lease 到期只會暫停 writer authority，不等於工作被 block。
 - Task 已 `DONE`，或已確認 `HARD_BLOCKED / USER_PAUSED / USER_CANCELLED` 時，Execution Watch 可停止；Status Pulse 是否保留依專案監控需求決定。
 - Watch 單輪時間到但仍有安全下一步時，寫 `RECOVERY_PENDING + next_safe_action`，下一輪續跑，不把單輪結束當 terminal state。
 
+## Recovery Supervisor
+
+Recovery Supervisor 是完整自動接力的控制面救援層，不是第二個 product Executor。
+
+```text
+Executor / Execution Watch：做工作
+Status Pulse：看工作
+Recovery Supervisor：救工作機制
+```
+
+可恢復的控制面／transport failure 包含：
+
+- `EXECUTION_WATCH_MISSING`
+- `EXECUTION_STALLED`
+- `TRANSPORT_ERROR`
+- `SESSION_INTERRUPTED`
+- `LEASE_EXPIRED`
+- `LEDGER_STALE`
+- `RUNNER_INTERRUPTED`
+- `AUTHORITY_DRIFT`
+- `OWNER_STALE`
+
+Recovery Supervisor task 固定 `taskRole=recovery_supervisor`、`implicitSelectionAllowed=false`。它可跨專案監控，但不得成為任一專案一般「進度／繼續完整自動接力」的隱式候選。
+
+### Stale-owner takeover
+
+只有以下全部成立才可 `workflow_takeover`：
+
+```text
+status = in_progress / changes_requested / ready_to_complete
+currentOwner = expectedOwner
+workflow revision = expectedRevision
+owner stale >= 600 秒
+owner heartbeat missing = true
+active task runner observed = false
+Execution Watch missing/stale = true
+Task Contract 仍允許 next_safe_action
+project affinity 已明確解析
+```
+
+成功後：
+
+```text
+revision CAS + 1
+→ currentOwner = recovery actor
+→ ownerEpoch + 1
+→ append STALE_OWNER_TAKEOVER audit
+→ 舊 owner 由 owner mismatch + stale revision fencing
+→ reconciliation
+→ 從 persisted next_safe_action 繼續
+```
+
+不得用 takeover 繞過 project affinity、pending independent review、production/release/secret/destructive gate，也不得在有 active runner 或近期 heartbeat 時搶 owner。
+
+Supervisor 可調整 workflow、lease、execution schedule 等控制面狀態，但不得直接修改 product source/test；真正程式修復仍交給 executionProjectRef 對應專案的 Executor。
+
+救援順序固定為：
+
+```text
+checkpoint
+→ reconnect（需要時）
+→ project-scoped reconciliation
+→ 清理 task-owned residue（需要時）
+→ stale-owner takeover + ownerEpoch fencing（需要時）
+→ resume durable workflow / reacquire lease
+→ restore Execution Watch
+→ 從 next_safe_action 繼續
+```
+
+規則：
+
+- `retryUntilRecoveredOrHardBlocked=true`；不設固定 retry 次數。
+- 同一 failure fingerprint 反覆出現時不得 blind retry，必須改做 root-cause-aware recovery。
+- Supervisor 不碰 production、不 force push、不 destructive reset、不新增未授權 Agent/model。
+- DevSpace 暫時不可用時標 `TRANSPORT_RECOVERY_PENDING`；後續 Supervisor 繼續重試，不把 502／timeout 當 hard blocker。
+- 只有不存在安全、已授權且可證明的 recovery path 時才可 `HARD_BLOCKED`。
+
 ## Hard Blocker 判定
 
 只有「不存在安全、已授權且可證明的下一個動作」時，才可標 `HARD_BLOCKED`。
@@ -201,6 +368,20 @@ Recoverable RED 可以回報，但不得用回報取代後續修復。
 
 ## 版本
 
+- v1.3.0｜2026-08-27
+  - 新增 Project Context Resolution／Project Scope Isolation。
+  - 專案內的進度與隱式接力固定使用目前 canonical workspace 與 `executionProjectRef`。
+  - 專案外明確名稱改由 `project_resolve` 唯一解析；查無或歧義時 fail closed。
+  - `projectRefs` 只代表 visibility；跨專案唯讀查詢不會改變 execution binding。
+  - Status Pulse、Recovery Supervisor、reviewer-watch、governance task 固定不參與一般隱式接力。
+- v1.2.0｜2026-08-26
+  - 新增 DevSpace stale-owner takeover 正式恢復路徑。
+  - Takeover 綁 expectedRevision/expectedOwner、至少 600 秒 stale、missing heartbeat、無 active runner、Execution Watch missing/stale。
+  - 成功後 ownerEpoch 遞增並留下 audit；舊 owner由 revision + owner 雙重 fencing 阻擋。
+- v1.1.0｜2026-08-26
+  - 新增 Recovery Supervisor 第三層救援機制。
+  - Execution Watch／transport／session／lease／ledger／runner／authority failure 可跨 Session 自動 recovery。
+  - 固定 root-cause-aware retry，Supervisor 不直接修改 product source/test。
 - v1.0.0｜2026-08-26
   - 建立 PixiuCore 正式 Capability 入口。
   - 固定四種停止結果與 self-healing / checkpoint-resume 行為。
