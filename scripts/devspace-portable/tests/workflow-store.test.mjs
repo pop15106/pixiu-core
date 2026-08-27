@@ -1255,6 +1255,63 @@ test("MCP registration exposes project-scoped workflow tools and prevents implic
     const explicitBeta = JSON.parse(explicitBetaResponse.structuredContent.result);
     assert.equal(explicitBeta[0].taskId, created.taskId);
     assert.equal(explicitBeta[0].executionProjectRef, projectRefFromPath(alphaRoot));
+
+    await assert.rejects(
+      registered.get("workflow_update").handler({
+        workspaceId: "ws-beta",
+        sessionRef: "session-web-b",
+        actor: "planner-b",
+        taskId: created.taskId,
+        action: "claim",
+        expectedRevision: created.revision,
+        idempotencyKey: "mcp-related-explicit-cannot-mutate-001",
+        projectAccessMode: "related_explicit",
+      }),
+      /PROJECT_SCOPE_MISMATCH/,
+    );
+
+    const claimedResponse = await registered.get("workflow_update").handler({
+      workspaceId: "ws-alpha",
+      sessionRef: "session-web-a",
+      actor: "planner-a",
+      taskId: created.taskId,
+      action: "claim",
+      expectedRevision: created.revision,
+      idempotencyKey: "mcp-alpha-claim-001",
+    });
+    const claimed = JSON.parse(claimedResponse.structuredContent.result);
+
+    const handedOffResponse = await registered.get("workflow_update").handler({
+      workspaceId: "ws-alpha",
+      sessionRef: "session-web-a",
+      actor: "planner-a",
+      taskId: created.taskId,
+      action: "handoff",
+      expectedRevision: claimed.revision,
+      idempotencyKey: "mcp-alpha-handoff-beta-001",
+      toActor: "planner-b",
+      targetWorkspaceId: "ws-beta",
+      contextSnapshot: "Transfer execution to the explicitly targeted Beta workspace.",
+      deliverables: ["Project-scoped checkpoint"],
+      openItems: ["Continue from Beta"],
+      requiredNextAction: "Acknowledge from the Beta workspace.",
+    });
+    const handedOff = JSON.parse(handedOffResponse.structuredContent.result);
+    assert.equal(handedOff.executionProjectRef, projectRefFromPath(alphaRoot));
+
+    const acknowledgedResponse = await registered.get("workflow_update").handler({
+      workspaceId: "ws-beta",
+      sessionRef: "session-web-b",
+      actor: "planner-b",
+      taskId: created.taskId,
+      action: "acknowledge",
+      expectedRevision: handedOff.revision,
+      idempotencyKey: "mcp-beta-ack-explicit-handoff-001",
+      projectAccessMode: "related_explicit",
+    });
+    const acknowledged = JSON.parse(acknowledgedResponse.structuredContent.result);
+    assert.equal(acknowledged.executionProjectRef, projectRefFromPath(betaRoot));
+    assert.equal(acknowledged.currentOwner, "planner-b");
   } finally {
     if (previousStateDirectory === undefined) delete process.env.DEVSPACE_WORKFLOW_STATE_DIR;
     else process.env.DEVSPACE_WORKFLOW_STATE_DIR = previousStateDirectory;
