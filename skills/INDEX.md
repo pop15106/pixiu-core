@@ -22,7 +22,7 @@ summary: skills/ 目錄手動索引：9 個高優先路由能力＋81 個參考�
 | Skill | 什麼情境用 |
 |---|---|
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
-| `full-automatic-handoff` | Pixiu 完整自動接力：先鎖定 canonical project／executionProjectRef，再依 Task Contract／handoff self-healing，其他專案只可見不隱式接力 |
+| `full-automatic-handoff` | Pixiu 完整自動接力：鎖定 canonical project／executionProjectRef、Task Contract self-healing，並自動確保全域 Monitor/Recovery + 每 Task Execution Watch/Status Pulse |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
 | `opus-behavior-core` | 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gem |
 | `pixiu-agent-router` | Route PixiuCore agent definitions into Codex workflows. Use when the user asks for Pixiu a |

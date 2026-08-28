@@ -2,7 +2,7 @@
 name: full-automatic-handoff
 description: Pixiu 完整自動接力模式。當使用者要求「完整自動接力 / 繼續完整自動接力 / 恢復完整自動接力 / FULL_AUTOMATIC_HANDOFF」時載入，依 Task Contract、handoff、machine state 與 durable workflow 持續執行；recoverable RED 自動修復重驗，只有真正 hard blocker 或使用者 pause/cancel 才停。
 origin: Pixiu
-version: 1.3.0
+version: 1.4.0
 layer_binding: L0-授權 / L3-流程 / L6-驗證
 language: zh-TW
 ---
@@ -210,15 +210,79 @@ freeze candidate
 
 Lease 到期只會暫停 writer authority，不等於工作被 block。
 
-## 跨 Session Watch
+## 自動監控拓樸（v1.4.0）
 
-若平台支援排程／輪詢，且 Task Contract / 專案契約要求跨 Session 持續執行：
+只要平台支援排程／輪詢，`FULL_AUTOMATIC_HANDOFF` 啟用或恢復後就必須**自動確保監控拓樸**；不再要求每個專案另外記得建立 Watch／Pulse。
 
-- `Execution Watch` 負責 reconciliation、remediation、verification、Git/promotion 與下一步執行。
-- `Status Pulse` 只做唯讀狀態觀測，不取得 writer authority。
-- Task 仍為 `RUNNING / EXECUTOR_WORK / VERIFICATION_FAILED / RECOVERY_PENDING / CHANGES_REQUIRED` 且沒有 hard blocker、pause/cancel 時，Execution Watch 意外停用或遺失屬 **execution transport recovery**，不是任務完成；必須保存 checkpoint，並依既有排程授權恢復／重建執行 Watch。
-- Task 已 `DONE`，或已確認 `HARD_BLOCKED / USER_PAUSED / USER_CANCELLED` 時，Execution Watch 可停止；Status Pulse 是否保留依專案監控需求決定。
-- Watch 單輪時間到但仍有安全下一步時，寫 `RECOVERY_PENDING + next_safe_action`，下一輪續跑，不把單輪結束當 terminal state。
+標準拓樸固定為：
+
+```text
+Global Full-Auto Monitor          1 個，全域唯讀
+Global Recovery Supervisor       1 個，全域救援控制面
+Execution Watch                  每個 active execution task 恰好 1 個
+Status Pulse                     每個 active execution task 恰好 1 個，永遠唯讀
+```
+
+建立／恢復 Durable Task 後固定執行：
+
+```text
+Ensure Global Monitor
+→ Ensure Recovery Supervisor
+→ Ensure Task Execution Watch
+→ Ensure Task Status Pulse
+→ 綁定 taskId + executionProjectRef + taskRole
+→ 開始／恢復 execution
+```
+
+### Global Full-Auto Monitor
+
+- 每小時唯讀掃描目前授權範圍內的 FULL_AUTOMATIC_HANDOFF。
+- 逐專案使用 canonical root 與 `executionProjectRef`，禁止以全域最近更新 task 作 fallback。
+- 驗證每個 current active task 是否存在且只存在一個 Execution Watch 與一個 Status Pulse。
+- 檢查 owner/lease/runner/Watch/Pulse/Recovery/authority drift 與 `PROJECT_TASK_CONCURRENCY_CONFLICT`。
+- 不取得 writer lease、不修改 product source/test、不 commit/push、不 takeover；需要救援時交給 Recovery Supervisor。
+
+### 每 Task Execution Watch
+
+- 一個 exact durable `taskId` 對應恰好一個 Execution Watch。
+- 綁定 exact `executionProjectRef`；不能因 cross-project visibility 切換執行專案。
+- 負責 reconciliation、remediation、verification、Git/promotion 與 `next_safe_action`。
+- 平台最高頻率若為每小時，使用 hourly `condition_watch`；已有合法 active runner 時只接續／觀察，不重啟 duplicate runner。
+- Watch 單輪時間到但仍有安全下一步時，保存 `RECOVERY_PENDING + next_safe_action`，下一輪原位續跑。
+
+### 每 Task Status Pulse
+
+- 一個 exact durable `taskId` 對應恰好一個 Pulse。
+- 永遠 read-only：不 workflow mutation、不取得 writer lease、不改檔、不跑會變更狀態的測試、不 commit/push、不 takeover。
+- 每小時讀 `taskId / executionProjectRef / state / gate / subject / owner / runner / recovery / blocker / next_safe_action`。
+- 即使沒有 milestone，也要能明確辨識「仍正常執行／等待 runner／本輪無新變化」。
+- Pulse 不得因查詢其他專案而改變 Session execution binding。
+
+### Global Recovery Supervisor
+
+- 全域只保留一個；負責救援 Execution Watch／session／lease／transport／ledger／runner／authority。
+- 只能在 project-scoped reconciliation 後處理對應 task，不得成為第二個 product Executor。
+- 必須遵守 stale-owner takeover、ownerEpoch fencing 與所有 production/release/secret hard gate。
+
+### 去重與生命週期
+
+監控 identity 固定以 `taskId + role` 判斷；同一 task/role 已存在但停用時優先更新並重新啟用，不建立 duplicate。若發現多份重複排程，只保留 canonical 一份，其餘停用並由 Global Monitor 報告。
+
+```text
+ACTIVE / EXECUTOR_WORK / VERIFICATION_FAILED / RECOVERY_PENDING / CHANGES_REQUIRED
+→ Watch ON + Pulse ON
+
+HARD_BLOCKED
+→ Pulse ON；若 blocker 可安全唯讀重查，Watch 可保留 condition-watch，否則停止 mutation Watch
+
+USER_PAUSED
+→ Watch OFF + Pulse ON（只顯示 paused）
+
+DONE / USER_CANCELLED
+→ Watch OFF + Pulse OFF；歷史 workflow/evidence 保留
+```
+
+同一專案存在多個真正獨立 sibling task 時，只有在 task-specific actor、owned files、branch/worktree/namespace 已證明互相隔離時，才各自配置 Watch + Pulse；否則先標 `PROJECT_TASK_CONCURRENCY_CONFLICT`，不得自動合併或同時 mutation。
 
 ## Recovery Supervisor
 
@@ -368,6 +432,12 @@ Recoverable RED 可以回報，但不得用回報取代後續修復。
 
 ## 版本
 
+- v1.4.0｜2026-08-28
+  - FULL_AUTOMATIC_HANDOFF 啟用／恢復時自動確保完整監控拓樸。
+  - 全域固定一個 Full-Auto Monitor 與一個 Recovery Supervisor。
+  - 每個 current active execution task 固定一個 Execution Watch + 一個 read-only Status Pulse。
+  - 監控以 `taskId + role` 去重，禁止重複 Watch/Pulse；專案與 `executionProjectRef` 綁定不因 visibility 改變。
+  - 定義 ACTIVE／HARD_BLOCKED／USER_PAUSED／DONE／USER_CANCELLED 的 Watch/Pulse 生命週期。
 - v1.3.0｜2026-08-27
   - 新增 Project Context Resolution／Project Scope Isolation。
   - 專案內的進度與隱式接力固定使用目前 canonical workspace 與 `executionProjectRef`。
