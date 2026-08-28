@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "pixiu.safety-hardening-gates/v1",
+  "status": "passed",
+  "verifiedAt": "2026-08-28T19:39:38+08:00",
+  "verificationCommand": "node --test scripts/core-evolution/test/*.test.js",
+  "gates": [
+    {
+      "id": "A",
+      "name": "Resource Identity Gate",
+      "status": "passed",
+      "implementation": "scripts/core-evolution/resource-identity-gate.js",
+      "tests": [
+        "scripts/core-evolution/test/resource-identity-gate.test.js"
+      ],
+      "evidence": [
+        "docs/core-evolution-gates.md",
+        "docs/superpowers/plans/2026-07-21-core-evolution-gates.md"
+      ]
+    },
+    {
+      "id": "B",
+      "name": "MCP Compatibility Gateway",
+      "status": "passed",
+      "implementation": "scripts/core-evolution/mcp-compatibility-gateway.js",
+      "tests": [
+        "scripts/core-evolution/test/mcp-compatibility-gateway.test.js"
+      ],
+      "evidence": [
+        "docs/core-evolution-gates.md",
+        "docs/superpowers/plans/2026-07-21-core-evolution-gates.md"
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Pixiu Extension Package",
+      "status": "passed",
+      "implementation": "scripts/core-evolution/pixiu-extension-package.js",
+      "tests": [
+        "scripts/core-evolution/test/pixiu-extension-package.test.js",
+        "scripts/core-evolution/test/integration.test.js"
+      ],
+      "evidence": [
+        "docs/core-evolution-gates.md",
+        "docs/superpowers/plans/2026-07-21-core-evolution-gates.md"
+      ]
+    }
+  ]
+}

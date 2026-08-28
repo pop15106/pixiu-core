@@ -1,10 +1,12 @@
 # PixiuCore 核心演進閘門
 
-本模組依序提供三個安全邊界：
+本模組依序提供三個安全邊界，並固定對應 PixiuCore Safety Hardening Gate A～C：
 
-1. `Resource Identity Gate`：正規化資源身分、驗證來源與 SHA-256 完整性，阻止不存在、冒名或遭竄改的資源進入安裝與執行階段。
-2. `MCP Compatibility Gateway`：協商 MCP 版本，將外部 Tool 轉換成 Pixiu Canonical Tool；Release Candidate 必須透過明確 Feature Flag 啟用。
-3. `Pixiu Extension Package`：驗證 Extension Manifest、Host 與 MCP 相容性，計算四方權限交集並建立可重現 Lock Digest。
+1. `Gate A — Resource Identity Gate`：正規化資源身分、驗證來源與 SHA-256 完整性，阻止不存在、冒名或遭竄改的資源進入安裝與執行階段。
+2. `Gate B — MCP Compatibility Gateway`：協商 MCP 版本，將外部 Tool 轉換成 Pixiu Canonical Tool；Release Candidate 必須透過明確 Feature Flag 啟用。
+3. `Gate C — Pixiu Extension Package`：驗證 Extension Manifest、Host 與 MCP 相容性，計算四方權限交集並建立可重現 Lock Digest。
+
+Canonical machine-readable closure：`docs/architecture/pixiucore-safety-hardening-gates.v1.json`。該檔由 `scripts/core-evolution/safety-hardening-gate-closure.js` fail closed 驗證 Gate ID、名稱、implementation/test/evidence path 與 PASS 狀態，避免只靠文件名稱外推 closure。
 
 ## 位置
 

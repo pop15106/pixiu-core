@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "pixiu.cak-e-safety-prerequisite-evidence/v1",
+  "status": "passed",
+  "verifiedAt": "2026-08-28T19:39:38+08:00",
+  "taskId": "tsk_ac5021e42c5b",
+  "baseSha": "650b60ef3fa74bca9640e7041c2fde3728f21b94",
+  "branch": "codex/cak-e-safety-prerequisite-pixiucore-20260828",
+  "safetyHardeningClosure": "docs/architecture/pixiucore-safety-hardening-gates.v1.json",
+  "externalIntakeClosure": "docs/architecture/pixiucore-external-intake-safety.v1.json",
+  "verification": {
+    "coreEvolution": "21/21 PASS",
+    "externalIntake": "17/17 PASS",
+    "workflowLabAffected": "52/52 PASS",
+    "syntaxCheck": "PASS",
+    "gitDiffCheck": "PASS"
+  },
+  "review": {
+    "mode": "same_session_read_only",
+    "independence": "NOT_INDEPENDENT",
+    "p0": 0,
+    "p1": 0,
+    "p2": 0,
+    "p3": 0
+  },
+  "remediatedFindings": [
+    "P1: Capability Grant audit verifier 現在先獨立驗證 supplied grant digest/structure，避免只驗 audit 自身綁定。",
+    "P2: External Intake 時間欄位只接受含 timezone 的 canonical date-time，避免 Date.parse 接受模糊格式。",
+    "P2: Safety Hardening 與 External Intake closure evaluator 改為 exact implementation/test/schema/evidence mapping，避免存在但錯指的路徑被接受。"
+  ],
+  "activeUserDataUsed": false,
+  "externalSessionWorkflowModified": false,
+  "agentOrModelUsed": false,
+  "nextAction": "以本 evidence 所在 exact pushed PixiuCore SHA 建立 AI Workflow CAK-E0 revalidation；四項 prerequisite 全 PASS 後才可 cak_04_allowed=true。"
+}

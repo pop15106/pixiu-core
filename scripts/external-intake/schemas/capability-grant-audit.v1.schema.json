@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pixiu.capability-grant-audit/v1",
+  "title": "Pixiu Capability Grant Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "eventType",
+    "occurredAt",
+    "grantId",
+    "grantVersion",
+    "grantDigest",
+    "principalRef",
+    "scope",
+    "capabilities",
+    "auditDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "pixiu.capability-grant-audit/v1" },
+    "eventId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "eventType": { "const": "CAPABILITY_GRANT_ISSUED" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "grantId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "grantVersion": { "type": "integer", "minimum": 1 },
+    "grantDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "principalRef": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "projectId", "repositoryId", "intents"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "projectId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "repositoryId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "intents": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+    },
+    "auditDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}

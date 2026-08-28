@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pixiu.external-task-envelope/v1",
+  "title": "Pixiu External Task Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "source",
+    "externalEventId",
+    "principalRef",
+    "projectId",
+    "repositoryId",
+    "intent",
+    "requestedCapabilities",
+    "contentHash",
+    "observedAt",
+    "expiresAt",
+    "capabilityGrantRef",
+    "auditRef",
+    "envelopeDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "pixiu.external-task-envelope/v1" },
+    "source": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "externalEventId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "principalRef": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "projectId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "repositoryId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "intent": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "requestedCapabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+    },
+    "contentHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "capabilityGrantRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grantId", "version", "digest"],
+      "properties": {
+        "grantId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "version": { "type": "integer", "minimum": 1 },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "auditRef": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "envelopeDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}

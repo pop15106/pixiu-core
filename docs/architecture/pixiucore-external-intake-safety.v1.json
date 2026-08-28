@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "pixiu.external-intake-safety/v1",
+  "status": "passed",
+  "verifiedAt": "2026-08-28T19:39:38+08:00",
+  "verificationCommand": "node --test scripts/external-intake/test/*.test.js",
+  "externalTaskEnvelope": {
+    "status": "passed",
+    "schema": "scripts/external-intake/schemas/external-task-envelope.v1.schema.json",
+    "implementation": "scripts/external-intake/external-task-envelope.js",
+    "tests": [
+      "scripts/external-intake/test/external-task-envelope.test.js",
+      "scripts/external-intake/test/schema-contract.test.js"
+    ],
+    "forbiddenFields": [
+      "rawCommand",
+      "localPath",
+      "providerCredential",
+      "approval",
+      "skipSandbox"
+    ]
+  },
+  "capabilityGrantAndAudit": {
+    "status": "passed",
+    "schemas": [
+      "scripts/external-intake/schemas/capability-grant.v1.schema.json",
+      "scripts/external-intake/schemas/capability-grant-audit.v1.schema.json"
+    ],
+    "implementation": "scripts/external-intake/capability-grant.js",
+    "tests": [
+      "scripts/external-intake/test/capability-grant.test.js",
+      "scripts/external-intake/test/schema-contract.test.js"
+    ],
+    "bindings": [
+      "principalRef",
+      "grantId",
+      "version",
+      "digest",
+      "scope",
+      "capabilities",
+      "auditDigest"
+    ]
+  }
+}
