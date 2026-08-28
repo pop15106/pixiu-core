@@ -1,7 +1,7 @@
 ---
 type: memory
 readAt: on-demand
-lastUpdated: 2026-07-30
+lastUpdated: 2026-08-28
 tags: [memory, pixiucore]
 ---
 
@@ -24,6 +24,14 @@ tags: [memory, pixiucore]
 
 | 日期 | 狀態 | 主題 | 摘要 | 連結 |
 |---|---|---|---|---|
+| 2026-08-28 | 追蹤中 | 三個公開 Repo 與產品 UI 交接 | 已核對三個公開專案，確認整體產品 UI 由 ai-knowledge-workflow 承接，並把互動流程、稽核介面及驗收條件寫入 handoff。 | [[vault/memory/recaps/AI_WORKFLOW/2026-08/2026-08-28-AI_WORKFLOW-三repo與產品UI交接.md\|recap]] |
+| 2026-08-25 | 追蹤中 | Need-to-Know AI Stage 9 Key Lifecycle Authority Closure | Stage 9 exact 0529363 code-security review 已 APPROVED，f1343dd 已同步並推送狀態文件；operational/release gate 仍維持 NOT_READY。 | [[vault/memory/recaps/NEED_TO_KNOW_AI/2026-08/2026-08-25-NEED_TO_KNOW_AI-stage9-key-lifecycle-authority-closure.md\|recap]] |
+| 2026-08-25 | 已驗證 | Need-to-Know AI Stage 9 第16代進度盤點 | Stage 9 最新遠端為第16代 remediation 51457f4；關鍵 PostgreSQL 整合測試 15/15 PASS，但完整驗證、fresh review 與 production operational gate 尚未完成。 | [[vault/memory/recaps/NEED_TO_KNOW_AI/2026-08/2026-08-25-NEED_TO_KNOW_AI-stage9-generation16-progress-check.md\|recap]] |
+| 2026-08-25 | 追蹤中 | AI Workflow Stage 9 Generation 16 進度確認 | Stage 9 已進入 Generation 16 修復階段；P1 敏感狀態破壞權限與 P2 License 治理來源仍待關閉，v4 契約已 GREEN，但真實 Chaos harness 尚未完成。 | [[vault/memory/recaps/AI_WORKFLOW/2026-08/2026-08-25-AI_WORKFLOW-stage9-generation16-status.md\|recap]] |
+| 2026-08-25 | 追蹤中 | AI Workflow Stage 9 Generation 16 進度 | Stage 9 Generation 16 fresh review 為 CHANGES_REQUIRED；rev51 唯一 writer 正待修 sensitive-state authority 與 license-governance provenance。 | [[vault/memory/recaps/AI_WORKFLOW/2026-08/2026-08-25-AI_WORKFLOW-stage9-generation16-progress.md\|recap]] |
+| 2026-08-22 | 追蹤中 | AI Workflow Hermes Phase E 與 Runtime Stage 9 P1 checkpoint | Hermes Phase E 已完成推送；Runtime Stage 9 三個 P1 中 egress shutdown 已綠，ownership adoption 與 schema gate 正等待精確核准。 | [[vault/memory/recaps/AI_WORKFLOW/2026-08/2026-08-22-AI_WORKFLOW-hermes-runtime-stage9-p1-checkpoint.md\|recap]] |
+| 2026-08-19 | 追蹤中 | Session Recap?AI Workflow ?????? | CAK-01 ????Stage 9?CAK-C?CAK-B ??? CAK-02 ? CAK-10 ????????????????? | [[vault/memory/recaps/AI_WORKFLOW/2026-08/2026-08-19-AI_WORKFLOW-remaining-work-status.md\|recap]] |
+| 2026-08-19 | 已完成 | CAK-01 Product Shell 完整結案 | CAK-01 Product Shell 已完成實作、驗證、審查、提交、推送與 workflow closure；範圍內無遺留，CAK-02 仍受 CAK-B stable-read gate 阻擋。 | [[vault/memory/recaps/AI_WORKFLOW/2026-08/2026-08-19-AI_WORKFLOW-cak-01-product-shell-closure.md\|recap]] |
 | 2026-07-30 | 已完成 | Side Effect Receipt Gate 完成與推送 | Side Effect Receipt Runtime P0 Gate 已完成驗證與推送，遠端 main 基線為 a486ebe，下一步接續 Key Ring Rotation 或 Artifact Evidence。 | [[vault/memory/recaps/NEED_TO_KNOW_AI/2026-07/2026-07-30-NEED_TO_KNOW_AI-side-effect-receipt-gate.md\|recap]] |
 | 2026-07-28 | 部分完成 | PixiuCore AI 工作流 1 至 5 執行 | Workflow Lab 真實 Codex 角色鏈與 Agent Learning Phase 3–5 已完成；全域入口套用、受控重啟、Claude／Gemini Fresh Session 與 Git 交付仍受外部環境邊界阻擋。 | [[vault/memory/recaps/母體/2026-07/2026-07-28-母體-AI工作流1至5執行.md\|recap]] |
 | 2026-07-28 | 追蹤中 | PixiuCore AI 工作流未完成盤點 | 本機核心與測試全綠；待完成全域入口套用與提交、Workflow Lab 合併與 Live smoke、受控重啟 OAuth、Agent Learning 後續與第二大腦 live 驗證。 | [[vault/memory/recaps/母體/2026-07/2026-07-28-母體-AI工作流未完成盤點.md\|recap]] |
