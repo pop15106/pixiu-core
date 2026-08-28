@@ -67,7 +67,7 @@ test('CAK-E safety evidence bundle 綁定 closure、驗證與 NOT_INDEPENDENT re
   assert.equal(evidence.schemaVersion, 'pixiu.cak-e-safety-prerequisite-evidence/v1');
   assert.equal(evidence.status, 'passed');
   assert.equal(evidence.verification.coreEvolution, '21/21 PASS');
-  assert.equal(evidence.verification.externalIntake, '17/17 PASS');
+  assert.equal(evidence.verification.externalIntake, '18/18 PASS');
   assert.equal(evidence.verification.workflowLabAffected, '52/52 PASS');
   assert.deepEqual(evidence.review, {
     mode: 'same_session_read_only',

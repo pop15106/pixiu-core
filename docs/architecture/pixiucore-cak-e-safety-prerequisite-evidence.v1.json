@@ -9,7 +9,7 @@
   "externalIntakeClosure": "docs/architecture/pixiucore-external-intake-safety.v1.json",
   "verification": {
     "coreEvolution": "21/21 PASS",
-    "externalIntake": "17/17 PASS",
+    "externalIntake": "18/18 PASS",
     "workflowLabAffected": "52/52 PASS",
     "syntaxCheck": "PASS",
     "gitDiffCheck": "PASS"
