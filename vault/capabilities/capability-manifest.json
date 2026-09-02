@@ -70,13 +70,13 @@
     },
     {
       "id": "documentation",
-      "summary": "文件、說明、報告與長文產出。",
-      "keywords": ["文件", "報告", "說明書", "readme", "整理文件", "簡報內容"],
-      "priority": 10,
+      "summary": "以原始碼、設定、Schema、Runtime、實際畫面與可追溯需求為證據，產出操作手冊、受測文件、As-Is 功能規格、To-Be 需求/變更規格、模組解說、交接與其他系統文件。",
+      "keywords": ["文件", "報告", "說明書", "readme", "整理文件", "簡報內容", "操作手冊", "操作流程", "SOP", "受測", "受測文件", "複測", "測試文件", "測試規格", "功能規格", "系統規格", "需求規格", "變更規格", "需求文件", "變更文件", "既有系統", "現有系統", "系統模組", "模組解說", "模組說明", "系統解說", "功能說明", "程式流程", "交接文件", "API規格", "介接規格", "DB解說", "Schema解說", "UI還原", "畫面還原"],
+      "priority": 28,
       "load": {
-        "skills": [],
+        "skills": ["skills/system-documentation/SKILL.md"],
         "contexts": [],
-        "governance": []
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
       }
     },
     {
