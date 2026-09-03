@@ -21,7 +21,7 @@ summary: skills/ 目錄手動索引：10 個高優先路由能力＋81 個參考
 
 | Skill | 什麼情境用 |
 |---|---|
-| `change-review-evidence` | 併版／正式變更前建立 source-backed 覆核證據包：逐檔逐 Change Block diff 與修改原因、跨層與環境契約檢查、UI Before/After、驗證證據及 SA/PM 覆核紀錄。 |
+| `change-review-evidence` | 併版／正式變更前建立 source-backed 覆核證據包：逐檔逐 Change Block diff 與修改原因、跨層與環境契約檢查；指定範圍含 UI 時預設產 DOCX 並附 Before/After；另含驗證證據及 SA/PM 覆核紀錄。 |
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
 | `opus-behavior-core` | 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gem |

@@ -1,7 +1,7 @@
 ---
 name: change-review-evidence
-description: "Use before merge/release/change execution to build a source-backed change review package: exhaustive changed-file inventory, per-change-block diff and rationale, cross-layer/API/DB/Procedure/config dependency checks, conditional UI before/after evidence, verification evidence, and factual SA/PM review fields. Trigger for 變更內容整理、併版前覆核、改動範圍、變更 diff、SA/PM 覆核、change review。"
-version: 1.0.0
+description: "Use before merge/release/change execution to build a source-backed change review package: exhaustive changed-file inventory, per-change-block diff and rationale, cross-layer/API/DB/Procedure/config dependency checks, UI-scoped automatic DOCX with Before/After evidence, verification evidence, and factual SA/PM review fields. Trigger for 變更內容整理、併版前覆核、改動範圍、變更 diff、SA/PM 覆核、change review。"
+version: 1.1.0
 origin: Pixiu
 ---
 
@@ -11,7 +11,7 @@ origin: Pixiu
 
 本 Skill 的目的不是替任何人核准變更，而是產出一份**可追溯、可覆核、可保存責任邊界**的變更證據包，讓 SA、PM、開發、測試或變更執行人員看到同一份事實。
 
-需要正式 DOCX/PDF、忠實 UI 畫面、As-Is/To-Be 說明時，同時使用 `system-documentation`；Legacy Java / Procedure / SQL 流程追蹤可搭配 `legacy-java-flow-tracing`。
+只要使用者先指定的變更範圍包含可操作 UI／畫面，本 Skill **預設輸出正式 DOCX**，並同時使用 `system-documentation` 完成畫面證據、文件組裝與 Render QA；Legacy Java / Procedure / SQL 流程追蹤可搭配 `legacy-java-flow-tracing`。純後端／無畫面範圍預設可輸出 Markdown，使用者另指定 DOCX/PDF 時依指定格式交付。
 
 ## Core Contract
 
@@ -20,7 +20,7 @@ origin: Pixiu
 3. **Every change block has a reason**：每隻程式的每個改動範圍都要有說明。一個 Change Block 預設對應一個 contiguous diff hunk 或一個語意完整的 symbol-level 變更；同一 hunk 有多個目的時要拆開說明。
 4. **Diff is evidence, not explanation**：Diff 必須保留，但不能用 diff 本身代替修改原因、行為影響、相依性與風險說明。
 5. **Cross-layer contract must close**：Java / API / Batch / Config / SQL / Procedure / Table / Trigger / Message schema 等只要存在呼叫契約或部署相依，就要一起核對；不能因為某一層不在同一個 Git repo 就忽略。
-6. **UI evidence is conditional**：只有實際影響 UI 的變更才要求 Before/After；非 UI 變更明確標示 `N/A — 本變更不影響使用者畫面`，不製造假截圖。
+6. **UI scope defaults to DOCX + Before/After**：只要使用者指定的 review scope 包含 UI／操作畫面，不論本次 diff 是前端視覺變更或畫面背後的 Action／Service／資料處理變更，都預設產出正式 DOCX，並收錄對應 Before / After 畫面。若畫面視覺沒有差異，要明確標示「視覺無差異；本次變更位於後端行為／資料流程」，不得製造不存在的畫面差異。完全沒有 UI 的 scope 才標示 `N/A — 本變更範圍無使用者畫面`。
 7. **Approval is factual only**：SA/PM 尚未覆核就寫 `Pending`。只有存在實際覆核證據時才能記錄 `Approved` / `Reviewed`；不得代替任何人簽核、補姓名、補日期或推定同意。
 8. **Evidence gaps block claims**：缺 Base、缺 Target、漏 dependency、缺必要 UI/runtime 證據或 reviewer 尚未回覆時，文件可以完成草稿，但不能宣稱「已確認可併版」。
 
@@ -183,17 +183,23 @@ Authoritative changed-file count
 
 ---
 
-## Stage 4 — UI Before / After Evidence
+## Stage 4 — UI Scope / Before / After / DOCX Gate
 
-先判斷本次變更是否真的影響 UI。
+先判斷**使用者指定的 review scope 是否包含 UI／操作畫面**。此判斷決定預設交付格式：
 
-### UI-affecting change
+- Scope 含 UI／操作畫面 → `Default Output = DOCX`，必須走 `system-documentation` 的正式文件產出與 Render QA。
+- Scope 完全不含 UI → `Default Output = Markdown`；使用者另指定 DOCX/PDF 時依指定格式。
+- 使用者明確指定輸出格式時，明確指令優先於上述預設。
+
+### UI-scoped change
 
 每個受影響畫面至少記錄：
 
 | Screen ID | Screen / Route | Before Evidence | After Evidence | What Changed | Ref / Environment | Status |
 |---|---|---|---|---|---|---|
 | UI01 | `<screen>` | screenshot | screenshot | `<difference>` | `<base/target + env>` | Verified |
+
+只要 scope 含 UI，每個受影響功能畫面都要有 Before / After 證據。若本次程式變更不造成視覺差異，Before / After 仍保留並標記 `No Visual Difference — backend behavior/data flow changed`，讓 reviewer 能確認「畫面沒改，但背後邏輯有改」。
 
 Before / After 證據優先順序沿用 `system-documentation`：
 
@@ -204,13 +210,13 @@ Before / After 證據優先順序沿用 `system-documentation`：
 
 截圖要能追溯：至少知道是 Before 還是 After、對應版本／環境、畫面名稱；正式帳密、Token、個資要遮罩。
 
-### Non-UI change
+### Non-UI scope
 
-若檔案與流程確認不影響畫面，寫：
+只有當**整個使用者指定範圍都沒有操作畫面**時，才寫：
 
-`UI Evidence：N/A — 本變更不影響使用者畫面。`
+`UI Evidence：N/A — 本變更範圍無使用者畫面。`
 
-不要為了填欄位硬做 Before/After。
+此時預設不強制 DOCX，可用 Markdown 交付；不要為了填欄位硬做 Before/After。
 
 ---
 
@@ -299,6 +305,16 @@ Skill 可以判斷文件狀態，但**不能替組織做核准決策**：
 
 ## Standard Deliverable Structure
 
+### Default Output Policy
+
+| Scope | 預設輸出 | UI Evidence |
+|---|---|---|
+| 含 UI／操作畫面 | **DOCX** | Before + After 必備；視覺無差異也要保留並說明 |
+| 純後端／無畫面 | Markdown | `N/A` |
+| 使用者明確指定格式 | 依使用者指定 | 仍依 scope 保留必要 Evidence |
+
+DOCX 產出時必須沿用 `system-documentation` 的 production workflow：內容組裝後實際 Render，檢查圖片、表格、空白頁、中文字型與敏感資料；不能只產生檔案就宣告完成。
+
 正式變更覆核文件建議固定使用：
 
 ```text
@@ -367,6 +383,6 @@ UI：<Before+After / N/A / Pending>
 Verification：<PASS / Partial / Not Run>
 SA：<Pending / Reviewed / ...>
 PM：<Pending / Reviewed / ...>
-Output：<MD/DOCX/PDF/patch path>
+Output：<UI scope 預設 DOCX；Non-UI scope 預設 MD；或使用者指定格式>
 Open Items：<若無則寫無>
 ```
