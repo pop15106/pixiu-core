@@ -3,11 +3,11 @@ disable-model-invocation: true
 name: skills-index
 description: "PixiuCore manual Skill routing index; use only when auditing or locating Skills by category."
 type: skills-index
-date: 2026-07-05
+date: 2026-09-04
 project: PIXIUCORE
 topic: skills-index
 status: active
-summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
+summary: skills/ 目錄手動索引：10 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
 ---
 
 # Skills 索引（單一真源）
@@ -17,10 +17,11 @@ summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考�
 > 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
 > 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 只作導覽與當期盤點，不作 runtime 路由。
 
-## 高優先路由層（8）
+## 高優先路由層（10）
 
 | Skill | 什麼情境用 |
 |---|---|
+| `change-review-evidence` | 併版／正式變更前建立 source-backed 覆核證據包：逐檔逐 Change Block diff 與修改原因、跨層與環境契約檢查、UI Before/After、驗證證據及 SA/PM 覆核紀錄。 |
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
 | `opus-behavior-core` | 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gem |
@@ -28,6 +29,7 @@ summary: skills/ 目錄手動索引：8 個高優先路由能力＋81 個參考�
 | `pixiu-session-recap` | Pixiu 版 Session Recap |
 | `pixiu-verify-loop` | Pixiu 版端對端自我驗證迴圈（仿 Boris /go） |
 | `second-brain-health-check` | Use when checking whether the second brain is usable, when query-second-brain-nvidia.ps1 f |
+| `system-documentation` | 以原始碼、設定、Schema、Runtime、實際畫面與可追溯需求為證據，產出操作手冊、受測文件、As-Is 功能規格、To-Be 需求/變更規格、模組解說、交接文件，並支援忠實 UI 還原與 DOCX/PDF QA。 |
 | `verification-loop` | A comprehensive verification system for Claude Code sessions. |
 
 ## 參考層（81）

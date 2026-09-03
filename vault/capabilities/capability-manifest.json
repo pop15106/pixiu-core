@@ -69,14 +69,26 @@
       }
     },
     {
-      "id": "documentation",
-      "summary": "文件、說明、報告與長文產出。",
-      "keywords": ["文件", "報告", "說明書", "readme", "整理文件", "簡報內容"],
-      "priority": 10,
+      "id": "change-review",
+      "summary": "併版或正式變更前，逐檔逐改動整理 diff、修改原因、跨層相依與環境一致性、UI Before/After、驗證證據及 SA/PM 覆核紀錄。",
+      "keywords": ["變更內容整理", "整理變更內容", "此次變更", "此次改動", "改動程式範圍", "變更範圍整理", "併版前覆核", "併版覆核", "合併前覆核", "merge 前覆核", "merge前覆核", "變更覆核", "覆核文件", "變更 diff", "改動 diff", "SA覆核", "PM覆核", "SA/PM覆核", "SA PM覆核", "change review"],
+      "priority": 35,
+      "suppresses": ["documentation"],
       "load": {
-        "skills": [],
+        "skills": ["skills/change-review-evidence/SKILL.md", "skills/system-documentation/SKILL.md"],
         "contexts": [],
-        "governance": []
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
+      "id": "documentation",
+      "summary": "以原始碼、設定、Schema、Runtime、實際畫面與可追溯需求為證據，產出操作手冊、受測文件、As-Is 功能規格、To-Be 需求/變更規格、模組解說、交接與其他系統文件。",
+      "keywords": ["文件", "報告", "說明書", "readme", "整理文件", "簡報內容", "操作手冊", "操作流程", "SOP", "受測", "受測文件", "複測", "測試文件", "測試規格", "功能規格", "系統規格", "需求規格", "變更規格", "需求文件", "變更文件", "既有系統", "現有系統", "系統模組", "模組解說", "模組說明", "系統解說", "功能說明", "程式流程", "交接文件", "API規格", "介接規格", "DB解說", "Schema解說", "UI還原", "畫面還原"],
+      "priority": 28,
+      "load": {
+        "skills": ["skills/system-documentation/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
       }
     },
     {
