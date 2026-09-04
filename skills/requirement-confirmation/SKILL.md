@@ -1,7 +1,7 @@
 ---
 name: requirement-confirmation
-description: "Use when SA/PM gives an ambiguous verbal requirement and the user records their own natural-language understanding. Turn it into a reviewable requirement-confirmation package: separate interpretation from fact, trace existing code for modifications or propose evidence-backed new scope, list ambiguities and acceptance criteria, default to Markdown without UI or DOCX with UI, and provide factual SA/PM review fields. Trigger for 需求確認、需求釐清、口頭需求、我理解的需求、SA/PM需求覆核、需求確認文件。"
-version: 1.0.0
+description: "Use when SA/PM gives an ambiguous verbal requirement, adds a follow-up adjustment, or the user records their own natural-language understanding. Turn it into a versioned reviewable requirement-confirmation package: preserve original requirement snapshots and Requirement Deltas, separate interpretation from fact, trace existing code for modifications or propose evidence-backed new scope, list ambiguities and acceptance criteria, default to Markdown without UI or DOCX with UI, and provide factual SA/PM review fields. Trigger for 需求確認、需求釐清、口頭需求、我理解的需求、追加需求、追加調整、需求補充、需求變更、SA/PM需求覆核、需求確認文件。"
+version: 1.1.0
 origin: Pixiu
 ---
 
@@ -31,6 +31,8 @@ origin: Pixiu
 8. **UI scope defaults to DOCX**：整個需求範圍含 UI／操作畫面時預設輸出 DOCX；完全沒有 UI 時預設輸出 Markdown。使用者明確指定格式時，以使用者指定為優先。
 9. **Pre-development UI is not After runtime evidence**：開發前只能放 `As-Is 現況畫面` 與 `To-Be 預期調整／標註／需求示意`；不得把尚未實作的 To-Be 畫面稱為「改後實際畫面」。
 10. **Review is factual only**：SA／PM Reviewer、日期、結果、意見不得猜測。預設 `Pending`；文件內容變更後，既有 review 必須判斷是否 `Review Stale`。
+11. **Requirement history is append-only**：SA／PM 後續追加、修改或撤回需求時，不覆蓋原需求快照；以新的 Requirement Revision + Requirement Delta 保存「原本確認什麼、後來改了什麼」。
+12. **Delta review is impact-scoped**：追加需求必須重新計算 Program Scope、Cross-layer dependency、Acceptance Criteria、Test Scope 與 Risk。只讓受 Delta 影響的舊 review 失效；能以 Requirement ID / Review Scope 證明未受影響的覆核可保留。
 
 ---
 
@@ -66,6 +68,81 @@ Status：INTERPRETATION_DRAFT
 | UI | 是否有畫面／操作流程 |
 
 沒有講到的欄位寫 `Not specified`，不要自行補規則。
+
+### Requirement Revision Baseline
+
+每份需求確認文件都要有可追溯版本。第一版通常記為 `R1`（顯示名稱可用 `V1.0`）；後續追加／修改不得直接覆寫，而是建立新的 revision，例如 `R2 / V1.1`。
+
+至少保留：
+
+| 欄位 | 內容 |
+|---|---|
+| Requirement Revision | `R1 / V1.0`、`R2 / V1.1` 等 |
+| Previous Revision | 前一版；首版為 `N/A` |
+| Revision Reason | Initial / Added Requirement / Changed Requirement / Removed Requirement / Clarification |
+| Source | SA / PM / meeting / chat / oral discussion |
+| Captured At | 本版需求被記錄的時間 |
+| Review Baseline | 此 revision 要覆核的 Requirement IDs / Scope |
+
+版本號只是顯示；真正的追溯依據是 **Requirement ID + revision + 文件內容／來源 evidence**，不得只靠檔名判斷是否為同一版。
+
+---
+
+## Stage 0B — Requirement Delta（追加／變更需求）
+
+若使用者表示「剛剛又補充」「另外還要調整」「再追加一個」「前面那個要改成」等語意，先把它當成 **Requirement Delta**，不要重新生成一份看不出歷史的新需求。
+
+### 先固定上一版
+
+至少取得或重建：
+
+- Previous Requirement Revision。
+- 上一版 Requirement Summary / Requirement IDs。
+- 上一版 Confirmed / Pending review scope。
+- 上一版 Existing / Proposed Scope。
+- 上一版 Acceptance Criteria / Test Scope。
+
+找不到上一版證據時，仍可建立 Delta 草稿，但標 `Previous Baseline：Needs verification`，不得宣稱已精確比對。
+
+### Delta Classification
+
+每一項追加內容至少分類為：
+
+- `ADD`：新增原本沒有的 Requirement。
+- `CHANGE`：修改既有 Requirement 的條件、範圍、行為或驗收。
+- `REMOVE`：明確取消既有 Requirement。
+- `CLARIFY`：只釐清原意，且沒有改變預期行為／Scope；仍需記錄來源。
+
+### Requirement Delta Ledger
+
+| Delta ID | Type | Source / Raw Add-on | Previous Requirement | New Understanding | Requirement IDs | Scope Impact | Review Impact | Status |
+|---|---|---|---|---|---|---|---|---|
+| RD01 | ADD | `<PM 剛補充內容>` | N/A | `<使用者目前理解>` | RQ-03 | Report/Batch | PM+SA review required | Pending |
+
+追加需求不能只記「PM 又說要改 X」；必須明確回答：
+
+1. **原需求哪一條仍維持不變？**
+2. **本次新增／修改／刪除哪一條？**
+3. **是否改變原本 In Scope / Out of Scope / Pending Scope？**
+4. **是否新增 UI / Program / DB / Procedure / API / Config / Batch / Report 範圍？**
+5. **哪些 Acceptance Criteria 要新增或改寫？**
+6. **哪些 Test Scope / regression 要新增？**
+7. **哪些 SA／PM 舊覆核因受影響而變成 `Review Stale`？**
+
+### Delta Impact Matrix
+
+| Impact Type | Previous | Delta | New Baseline | Evidence | Status |
+|---|---|---|---|---|---|
+| Program Scope | `<before>` | `<added/changed>` | `<after>` | code trace | Confirmed / Proposed / Pending |
+| DB / Procedure | `<before>` | `<added/changed>` | `<after>` | schema/trace | Confirmed / Proposed / Pending |
+| UI | `<before>` | `<added/changed>` | `<after>` | UI trace | UI_SCOPED / NON_UI / Pending |
+| Acceptance Criteria | `<before>` | `<added/changed>` | `<after>` | requirement | Ready / Pending |
+| Test Scope | `<before>` | `<added/changed>` | `<after>` | impact trace | Ready / Pending |
+| Review | `<previous review>` | `<affected IDs>` | `<new review state>` | review mapping | Valid / Review Stale |
+
+**Review Stale 不等於否定舊 reviewer。** 它只表示 reviewer 當時確認的是舊 revision，而本次 Delta 已改變其覆核範圍。
+
+若 Delta 發生在開發中：先更新 Requirement Confirmation 到新 revision，標出受影響實作範圍並完成必要覆核，再以新 revision 作後續實作與 `change-review-evidence` 的需求基準。
 
 ---
 
@@ -348,6 +425,8 @@ Evidence <畫面 / DB / Log / API / File / Report>
 - SA 確認技術範圍不代表 PM 已確認業務規則，反之亦然。
 - reviewer 修正內容要回寫 Requirement Map / Scope / Open Questions，而不是只留在 comment。
 - 需求文字、Scope、Acceptance Criteria 或 Proposed Scope 有實質變更時，受影響的舊 review 標 `Review Stale`，重新覆核。
+- Requirement Delta 必須以 Requirement ID / Review Scope 對照哪些 review 受影響；不得因追加一個完全無關項目就把所有既有覆核一律作廢。
+- reviewer 對舊 revision 的原始覆核紀錄保留，只在新 revision 上標示 Valid / Review Stale，不覆寫歷史。
 
 ---
 
@@ -357,6 +436,9 @@ Evidence <畫面 / DB / Log / API / File / Report>
 
 ```text
 [ ] 使用者自然語言需求理解已保存
+[ ] Requirement Revision / Previous Revision 已記錄
+[ ] 若為追加／變更需求，Requirement Delta Ledger 已完成
+[ ] Delta 對 Program / DB / UI / Acceptance / Test / Review 的影響已重算
 [ ] Explicit / Interpretation / Derived / Unknown 已分開
 [ ] MODIFY_EXISTING 已完成 active-path trace（適用時）
 [ ] ADD_NEW 已建立 evidence-backed Proposed Scope（適用時）
@@ -388,20 +470,21 @@ Evidence <畫面 / DB / Log / API / File / Report>
 ### 無 UI：Markdown
 
 ```text
-1. 文件資訊 / Requirement ID / Source
-2. 使用者需求理解原稿
-3. Structured Requirement Summary
-4. Ambiguity / Assumption / Open Questions
-5. As-Is 現況（若為修改）
-6. Existing Code Trace / Proposed New Scope
-7. In Scope / Out of Scope / Pending Scope
-8. To-Be Requirement Map
-9. Program / DB / API / Config / Batch Impact
-10. Acceptance Criteria
-11. Suggested Test Scope
-12. Risk
-13. SA / PM Review Record
-14. Requirement Review Gate
+1. 文件資訊 / Requirement ID / Revision / Source
+2. Revision History / Requirement Delta（若有追加／變更）
+3. 使用者需求理解原稿
+4. Structured Requirement Summary
+5. Ambiguity / Assumption / Open Questions
+6. As-Is 現況（若為修改）
+7. Existing Code Trace / Proposed New Scope
+8. In Scope / Out of Scope / Pending Scope
+9. To-Be Requirement Map
+10. Program / DB / API / Config / Batch Impact
+11. Acceptance Criteria
+12. Suggested Test Scope
+13. Risk
+14. SA / PM Review Record
+15. Requirement Review Gate
 ```
 
 ### 有 UI：DOCX
@@ -425,7 +508,7 @@ DOCX 必須依 `system-documentation` 執行 Evidence / Fidelity / Render / Reda
 1. `CONFIRMED_REQUIREMENT` 文件成為開發需求基準。
 2. 開發實作時，Requirement ID / document version 應保留，避免 Scope 漂移。
 3. 開發完成後啟用 `change-review-evidence`：比較實際 Base / Target，確認「實際改動」是否符合這份已確認需求。
-4. 若實作中需求又改，先回 Requirement Confirmation 更新並重新覆核，再更新 Change Review。
+4. 若實作中需求又改，先建立下一個 Requirement Revision + Requirement Delta，重新計算受影響 Scope / Acceptance / Test / Review，完成必要覆核後，再更新 Change Review。
 
 需求確認文件回答：**「我們準備做什麼、為什麼、預計動哪裡？」**
 
@@ -445,6 +528,8 @@ DOCX 必須依 `system-documentation` 執行 Evidence / Fidelity / Render / Reda
 - UI 尚未開發就放一張 mockup 並叫「改後實際畫面」。
 - SA 只看技術、PM 只看業務，卻把其中一人的確認當成全部核准。
 - reviewer 確認後需求內容又改，仍沿用舊 Confirmed。
+- SA／PM 追加一句需求時直接改掉原文件，導致看不出上一版曾確認什麼。
+- 新增一個局部 Delta 就把所有無關 requirement 的 review 全部標 Stale，沒有做 impact mapping。
 - Acceptance Criteria 寫「功能正常」「符合需求」這種不可測敘述。
 
 ---
@@ -453,6 +538,8 @@ DOCX 必須依 `system-documentation` 執行 Evidence / Fidelity / Render / Reda
 
 ```text
 Requirement Confirmation：<INTERPRETATION_DRAFT / READY_FOR_REQUIREMENT_REVIEW / CHANGES_REQUIRED / CONFIRMED_REQUIREMENT / BLOCKED>
+Revision：<R1/V1.0 -> R2/V1.1；無 Delta 則 current revision>
+Requirement Delta：<None / ADD / CHANGE / REMOVE / CLARIFY；可複數>
 Type：<MODIFY_EXISTING / ADD_NEW / MIXED / UNKNOWN>
 UI：<UI_SCOPED / NON_UI / UI_UNKNOWN>
 Output：<DOCX if UI / MD if no UI / user-specified>

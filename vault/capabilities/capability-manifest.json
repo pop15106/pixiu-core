@@ -70,8 +70,8 @@
     },
     {
       "id": "requirement-confirmation",
-      "summary": "將 SA/PM 模糊口語需求與使用者自然語言理解整理成待確認需求；修改既有功能時追 active code path，新增功能時提出 evidence-backed proposed scope；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM 覆核。",
-      "keywords": ["需求確認", "確認需求", "需求釐清", "釐清需求", "口頭需求", "我理解的需求", "需求理解", "需求覆核", "需求確認文件", "需求確認書", "SA需求確認", "PM需求確認", "SA/PM需求覆核", "SA PM需求覆核", "需求範圍確認"],
+      "summary": "將 SA/PM 模糊口語需求、使用者自然語言理解與後續追加／變更整理成版本化待確認需求；保留 Requirement Delta、重算受影響程式／DB／驗收／測試／覆核；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM 覆核。",
+      "keywords": ["需求確認", "確認需求", "需求釐清", "釐清需求", "口頭需求", "我理解的需求", "需求理解", "需求覆核", "需求確認文件", "需求確認書", "SA需求確認", "PM需求確認", "SA/PM需求覆核", "SA PM需求覆核", "需求範圍確認", "追加需求", "需求追加", "追加調整", "需求補充", "補充需求", "需求變更", "中途追加", "剛剛又補充", "另外還要調整"],
       "priority": 40,
       "suppresses": ["change-review", "documentation"],
       "load": {
