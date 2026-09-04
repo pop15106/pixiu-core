@@ -69,9 +69,21 @@
       }
     },
     {
+      "id": "requirement-confirmation",
+      "summary": "將 SA/PM 模糊口語需求與使用者自然語言理解整理成待確認需求；修改既有功能時追 active code path，新增功能時提出 evidence-backed proposed scope；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM 覆核。",
+      "keywords": ["需求確認", "確認需求", "需求釐清", "釐清需求", "口頭需求", "我理解的需求", "需求理解", "需求覆核", "需求確認文件", "需求確認書", "SA需求確認", "PM需求確認", "SA/PM需求覆核", "SA PM需求覆核", "需求範圍確認"],
+      "priority": 40,
+      "suppresses": ["change-review", "documentation"],
+      "load": {
+        "skills": ["skills/requirement-confirmation/SKILL.md", "skills/system-documentation/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
       "id": "change-review",
       "summary": "併版或正式變更前，逐檔逐改動整理 diff、修改原因、跨層相依與環境一致性；指定範圍含 UI 時預設產 DOCX 並附 Before/After，另含驗證證據及 SA/PM 覆核紀錄。",
-      "keywords": ["變更內容整理", "整理變更內容", "此次變更", "此次改動", "改動程式範圍", "變更範圍整理", "併版前覆核", "併版覆核", "合併前覆核", "merge 前覆核", "merge前覆核", "變更覆核", "覆核文件", "變更 diff", "改動 diff", "SA覆核", "PM覆核", "SA/PM覆核", "SA PM覆核", "change review"],
+      "keywords": ["變更內容整理", "整理變更內容", "此次變更", "此次改動", "改動程式範圍", "變更範圍整理", "併版前覆核", "併版覆核", "合併前覆核", "merge 前覆核", "merge前覆核", "變更覆核", "變更覆核文件", "併版覆核文件", "變更 diff", "改動 diff", "變更SA覆核", "變更PM覆核", "變更SA/PM覆核", "併版SA覆核", "併版PM覆核", "change review"],
       "priority": 35,
       "suppresses": ["documentation"],
       "load": {
