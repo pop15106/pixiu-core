@@ -69,6 +69,18 @@
       }
     },
     {
+      "id": "repair-review",
+      "summary": "事故／異常／報修後、正式修正前，整理現象與證據、重現、Root Cause 狀態、active path / blast radius、Repair Scope、資料修復、環境一致性、測試與回復方案；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM/必要角色覆核。",
+      "keywords": ["報修覆核單", "報修覆核", "報修單", "事故修復覆核", "故障修復覆核", "修復方案覆核", "bug修復覆核", "bug 修復覆核", "異常修復覆核", "問題修復覆核", "事故覆核", "維修覆核單"],
+      "priority": 42,
+      "suppresses": ["requirement-confirmation", "change-review", "documentation"],
+      "load": {
+        "skills": ["skills/repair-review-sheet/SKILL.md", "skills/system-documentation/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
       "id": "requirement-confirmation",
       "summary": "將 SA/PM 模糊口語需求、使用者自然語言理解與後續追加／變更整理成版本化待確認需求；保留 Requirement Delta、重算受影響程式／DB／驗收／測試／覆核；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM 覆核。",
       "keywords": ["需求確認", "確認需求", "需求釐清", "釐清需求", "口頭需求", "我理解的需求", "需求理解", "需求覆核", "需求確認文件", "需求確認書", "SA需求確認", "PM需求確認", "SA/PM需求覆核", "SA PM需求覆核", "需求範圍確認", "追加需求", "需求追加", "追加調整", "需求補充", "補充需求", "需求變更", "中途追加", "剛剛又補充", "另外還要調整"],

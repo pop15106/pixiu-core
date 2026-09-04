@@ -7,7 +7,7 @@ date: 2026-09-04
 project: PIXIUCORE
 topic: skills-index
 status: active
-summary: skills/ 目錄手動索引：11 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
+summary: skills/ 目錄手動索引：12 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
 ---
 
 # Skills 索引（單一真源）
@@ -17,11 +17,12 @@ summary: skills/ 目錄手動索引：11 個高優先路由能力＋81 個參考
 > 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
 > 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 只作導覽與當期盤點，不作 runtime 路由。
 
-## 高優先路由層（11）
+## 高優先路由層（12）
 
 | Skill | 什麼情境用 |
 |---|---|
 | `change-review-evidence` | 併版／正式變更前建立 source-backed 覆核證據包：逐檔逐 Change Block diff 與修改原因、跨層與環境契約檢查；指定範圍含 UI 時預設產 DOCX 並附 Before/After；另含驗證證據及 SA/PM 覆核紀錄。 |
+| `repair-review-sheet` | 報修／事故／異常發生後、正式修正前建立覆核單：分離回報與事實、重現與根因證據、active path / blast radius、Repair Scope、資料修復、環境一致性、測試與回復方案；無 UI 預設 MD，有 UI 預設 DOCX。 |
 | `requirement-confirmation` | 將 SA/PM 模糊口語需求、使用者自然語言理解與後續追加／變更整理成版本化可覆核需求：保留 Requirement Delta，重算受影響程式／DB／驗收／測試／覆核；無 UI 預設 MD，有 UI 預設 DOCX。 |
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
