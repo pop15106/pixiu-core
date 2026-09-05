@@ -17,6 +17,11 @@ function hasCredentialContext(request) {
   return /\b(?:jwt|oauth|bearer|access\s+token|refresh\s+token)\b|憑證|金鑰|令牌|秘密|外洩|洩漏|密碼|權限|存取|安全|過期/i.test(request);
 }
 
+// 文件與程式混合修改共用相同判準，避免輕量文件分支排除必要實作。
+function hasImplementationContext(request) {
+  return /程式|功能|登入|邏輯|後端|前端|\b(?:java|javascript|typescript|python|api|sql|bug|code|application)\b/i.test(request);
+}
+
 function isReadmeOnlyEdit(request) {
   if (!/\breadme(?:\.md)?\b/i.test(request) ||
       !/錯字|錯別字|標點|typos?|spelling|punctuation/i.test(request)) return false;
@@ -25,7 +30,7 @@ function isReadmeOnlyEdit(request) {
     ''
   );
   // 同一句仍要求修改程式時，保留既有的實作與 TDD 路由。
-  return !/程式|功能|登入|邏輯|後端|前端|\b(?:java|javascript|typescript|python|api|sql|bug|code|application)\b/i.test(remainder);
+  return !hasImplementationContext(remainder);
 }
 
 function hasWorkflowControlMention(request, keywords) {
@@ -41,11 +46,14 @@ function hasWorkflowControlMention(request, keywords) {
     const askingHow = /如何|怎麼|是否|能否|能不能|可不可以|\bhow\s+to\b/i;
     if (onlyReview.test(outsideQuotes) || askingHow.test(outsideQuotes)) return false;
 
-    const informational = /審核|審查|盤點|檢查|解釋|說明|介紹|分析|確認|規則|是什麼|\b(?:review|audit|explain|describe)\b/i.test(outsideQuotes);
+    const informational = /審核|審查|盤點|檢查|解釋|說明|介紹|分析|確認|規則|是什麼|只讀|唯讀|\b(?:review|audit|explain|describe|read[ -]?only)\b/i.test(outsideQuotes);
     const control = /啟用|啟動|開啟|恢復|繼續|停止|暫停|取消|關閉|停用|\b(?:enable|start|activate|resume|stop|pause|cancel|disable)\b/i.test(outsideQuotes);
     // 控制包含暫停、停止與取消；取得規則不等於啟動新任務。
     const colloquialControl = /(?:^|請|幫我|直接|現在|立刻|立即|然後|接著|先|再)\s*(?:用|使用|採用|開|跑)/i.test(outsideQuotes);
-    return !informational || control || colloquialControl;
+    // 模式名稱僅在引文內時，須有引文外的明確控制詞；保留引用模式名稱的合法指令。
+    const unquotedMode = keywords.some(keyword => outsideQuotes.includes(normalizeText(keyword)));
+    return (unquotedMode || control || colloquialControl) &&
+      (!informational || control || colloquialControl);
   });
 }
 
@@ -78,7 +86,7 @@ function scoreCapability(request, capability) {
   if (capability.id === 'security-review' && usageOnly) matches = matches.filter(word => normalizeText(word) !== 'token');
 
   const documentOnly = /readme|文件|說明書|註解/.test(normalized) && /錯字|標點|排版|措辭|拼字/.test(normalized) &&
-    !/程式|功能|邏輯|\bjava\b|\bsql\b|\bapi\b|\bbug\b/.test(normalized);
+    !hasImplementationContext(normalized);
   if (capability.id === 'code-implementation' && (documentOnly || isReadmeOnlyEdit(normalized))) matches = [];
   return {
     score: matches.length,
