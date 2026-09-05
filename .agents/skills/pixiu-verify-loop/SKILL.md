@@ -1,8 +1,8 @@
 ---
 name: pixiu-verify-loop
-description: Pixiu 版端對端自我驗證迴圈（仿 Boris /go）。一般模式紅燈先回報並等待修復授權；FULL_AUTOMATIC_HANDOFF 模式則把 RED 視為 recoverable signal，自動修復、重驗並續跑，只有真正 hard blocker 才停。觸發詞：驗證、跑驗證、跑看看、收尾、收斂、產 PR、端對端測試。Slash 入口：/go（見 commands/go.md）。
+description: Pixiu 自我驗證：依本次授權分為唯讀審核、已授權修復與 FULL_AUTOMATIC_HANDOFF。適用於驗證、跑驗證、跑看看、收尾、收斂、產 PR、端對端測試；/go 由 commands/go.md 載入。
 origin: Pixiu
-version: 0.2.0
+version: 0.2.1
 layer_binding: L3-流程 / L4-技能 / L6-校準
 language: zh-TW
 ---
@@ -28,9 +28,18 @@ language: zh-TW
 
 ## 模式分流
 
-### 一般模式
+### 唯讀審核、已授權修復與完整自動接力
 
-維持原本 Pixiu 審批規則：RED 先輸出證據與修復方案，等待使用者明確授權後才改碼。
+| 模式 | 可執行範圍 | 發現失敗時 |
+|---|---|---|
+| 唯讀審核 | 讀檔、差異審查、無外部副作用的驗證；不自動寫檔、改碼、派工或產生 PR | 回報證據與修正建議 |
+| 已授權修復 | 使用者本次明確核准的檔案、修正與回歸測試 | 在核准範圍內最小修復並重驗；超出授權才詢問 |
+| 完整自動接力 | 依目前專案已核准的 Task Contract | 依下節恢復、重驗與停止規則處理 |
+
+只提到某模式、Router 命中、文章引用或歷史紀錄，不構成啟動或寫入授權。停止、暫停與取消要求依目前任務合約處理，不啟動新任務。既有授權範圍內不重複要求同意。本文「一般模式等待修復授權」僅指尚未取得修復授權的情境；已核准修復依上表執行。覆蓋率與驗證工具依專案現況、變更風險及驗收條件選擇，不因語言範例套用固定框架或額外安裝。
+
+- 使用者已說「直接修」時，同一項修復沿用這次授權；新依賴、DB 寫入、刪檔、部署與 Git push 仍各自核對授權。
+- 工具能力不足時，如實標示未套用或未執行。隔離副本通過測試只代表副本結果，正式環境狀態仍待驗證。
 
 ### `FULL_AUTOMATIC_HANDOFF`
 
@@ -56,7 +65,7 @@ RED
 
 ### 步驟 1｜端對端測試（E2E Verification）
 
-依**技術棧**自動選擇驗證路徑：
+先讀取專案既有測試與腳本，確認輸入、輸出及副作用，再依**技術棧**選擇驗證路徑。下表是候選方式，不是直接執行授權。優先採隔離測試與既有唯讀健康檢查；使用中的服務、通知、排程與資料庫保持原狀，除非本次明確授權該項操作：
 
 | 棧別 | 驗證工具 | 預設指令 |
 |------|---------|---------|
@@ -76,21 +85,20 @@ Criteria（由任務自動萃取，若無則問使用者）：
 - 回歸：既有測試 100% 綠燈
 ```
 
-**紅燈處理**：任一 criteria 失敗都必須先輸出「紅燈報告」，包含失敗項目、錯誤訊息、可證明的原因與修復路徑。一般模式停在人工修復授權；`FULL_AUTOMATIC_HANDOFF` 模式只要仍有安全、已授權且可證明的 remediation path，就立即進 self-healing，不得因 RED 或重試次數停止。
+**紅燈處理**：任一 criteria 失敗都必須先輸出「紅燈報告」，包含失敗項目、錯誤訊息、可證明的原因與修復路徑。唯讀審核回報問題；已授權修復在範圍內修正並重驗；`FULL_AUTOMATIC_HANDOFF` 模式只要仍有安全、已授權且可證明的 remediation path，就立即進 self-healing，不得因 RED 或重試次數停止。
 
 ---
 
-### 步驟 2｜`/simplify` 收斂
+### 步驟 2｜當前會話自我覆核
 
-步驟 1 全綠後才執行。一般情況可呼叫 Claude Code built-in `/simplify`：
-- 會啟動並行 review agents，各自看完整 diff
-- 自動修掉有效 issue、過濾 false positive
-- 輸出一份「改了什麼」摘要
+步驟 1 完成後，由當前會話重新讀取變更、檢查完整 diff、檢視錯誤及邊界案例，再重跑受影響測試。唯讀審核只回報發現，不進入自動修正或 PR 流程；已授權修復在允許範圍內修正後重驗。
 
-若 `FULL_AUTOMATIC_HANDOFF` 的 Task Contract 禁止 Agent/subagent/model reviewer，則不得因 `/simplify` 預設會開 Agent 而中止整個接力；改用當前 session 的最小化 diff review / equivalent gate，留下 `NOT_APPLICABLE` 或替代證據後繼續。
+只有使用者本次明確同意派遣 Agent、允許該次改碼，且宿主提供對應能力時，才使用 `/simplify`。其他情境以當前會話的 diff review / equivalent gate 完成，保留相同驗收條件。
+
+任何模式未取得 Agent/subagent/model reviewer 授權時，均由目前會話重新讀檔、檢查 diff 與重跑可重現測試；不得自行派工，也不得因沒有 Agent 而中止已授權修復或接力。記錄替代驗證證據。
 
 **Pixiu 補強**：
-- `/simplify` 結束後，寫一份「收斂差異報告」到 `vault/memory/simplify-<taskId>.md`
+- 報告交付到使用者指定位置；只有已授權保存報告時，才寫入 `vault/memory/simplify-<taskId>.md` 或專案既有報告目錄。
 - 若改動行數 > 原本 30%，退回手動審核（可能過度重構）
 
 ---
@@ -135,11 +143,11 @@ gh pr create 指令（請手動執行）：
 
 | 情境 | 處置 |
 |------|------|
-| 步驟 1 紅燈（一般模式） | 停、出紅燈報告、等待修復授權 |
+| 步驟 1 紅燈（一般模式） | 唯讀審核回報證據；已授權修復在範圍內修正並重驗 |
 | 步驟 1 紅燈（`FULL_AUTOMATIC_HANDOFF`） | 保存證據 → diagnose → remediate → retry；有安全下一步就不得停 |
 | 步驟 2 改動 > 30% | 一般模式退回手動審核；完整自動接力則先縮小變更或 rollback candidate，再以最小修復重跑 |
 | 步驟 3 無法產 diff（非 git repo） | 只輸出摘要，不建分支 |
-| 過程中觸發母體寫入 | 一般模式或未授權路徑：立即停、呼叫「絕對用戶審批閘門」；`FULL_AUTOMATIC_HANDOFF` 已由當前使用者明確授權且 Task Contract 明列該母體 owned path/action 時，依 contract 繼續，不重複停等 |
+| 過程中觸發母體寫入 | 核對本次母體路徑與操作授權，已授權項目可繼續；未授權路徑先停、呼叫「絕對用戶審批閘門」；`FULL_AUTOMATIC_HANDOFF` 已由當前使用者明確授權且 Task Contract 明列該母體 owned path/action 時，依 contract 繼續，不重複停等 |
 
 ---
 
@@ -153,8 +161,8 @@ gh pr create 指令（請手動執行）：
 
 ## 與 Pixiu 憲法銜接
 
-- **L0 絕對用戶審批閘門**：一般模式維持逐次審批；`FULL_AUTOMATIC_HANDOFF` 僅使用使用者已明確授權的 Task Contract 預授權範圍。
-- **禁止預先實作**：一般模式 RED 後先等授權；完整自動接力已授權的 recoverable failure 直接最小修復與重驗。
+- **L0 絕對用戶審批閘門**：一般模式依本次明確授權執行，超出範圍另行審批；`FULL_AUTOMATIC_HANDOFF` 僅使用使用者已明確授權的 Task Contract 預授權範圍。
+- **禁止預先實作**：唯讀審核 RED 後先等修復授權，已授權修復在範圍內繼續；完整自動接力已授權的 recoverable failure 直接最小修復與重驗。
 - **真正 hard blocker**：production/release/new secret/destructive external action/未授權 scope/無安全恢復路徑仍必停。
 - **最小改動原則**：`/simplify` 或 remediation 變更過大時先縮小 candidate，不把「過大」本身當一般停止理由。
 - **可見推理一律中文**：三步驟所有輸出皆繁中
@@ -163,7 +171,7 @@ gh pr create 指令（請手動執行）：
 
 ## 審計記錄
 
-每次完整跑完寫入 `vault/memory/verify-loop.log`：
+每次完整跑完交付以下審計資料；只有本次已授權落檔時才寫入 `vault/memory/verify-loop.log`，唯讀模式在回覆呈現：
 ```
 [時間]｜taskId｜技術棧｜步驟1結果｜步驟2改動行數｜PR狀態｜總耗時
 ```
@@ -171,6 +179,9 @@ gh pr create 指令（請手動執行）：
 ---
 
 ## 版本與來源
+- v0.2.1｜2026-09-05
+  - 一般模式分為唯讀審核與已授權修復；所有模式預設使用當前會話自我覆核。
+  - 分開標示隔離副本測試與使用中環境驗證；保留服務、通知、排程和資料庫邊界。
 - v0.2.0｜2026-08-26
   - 新增 `FULL_AUTOMATIC_HANDOFF` 模式分流：RED / `CHANGES_REQUIRED` / Phase 完成都不再是停止條件。
   - Session/lease 中斷改為 checkpoint + resume；只有 `DONE/HARD_BLOCKED/USER_PAUSED/USER_CANCELLED` 可停止。

@@ -27,10 +27,10 @@
     {
       "id": "code-review",
       "summary": "程式碼正確性、可維護性與回歸風險審查。",
-      "keywords": ["code review", "審查程式", "檢查程式", "review", "回歸風險", "收尾", "跑驗證", "驗證", "測試", "確認能交付", "/go"],
+      "keywords": ["code review", "審核", "審查", "審查程式", "檢查程式", "review", "盤點", "audit skills", "回歸風險", "收尾", "跑驗證", "驗證", "測試", "確認能交付", "/go"],
       "priority": 25,
       "load": {
-        "skills": ["skills/pixiu-verify-loop/SKILL.md", "skills/verification-loop/SKILL.md"],
+        "skills": ["skills/pixiu-verify-loop/SKILL.md"],
         "contexts": [],
         "governance": ["vault/governance/judgment-rubrics.md"]
       }
@@ -49,7 +49,7 @@
     {
       "id": "architecture-analysis",
       "summary": "架構、根因、影響範圍、效能與方案比較。",
-      "keywords": ["架構", "根因", "root cause", "影響", "影響範圍", "現行操作", "功能影響", "效能", "瓶頸", "方案比較", "風險評估"],
+      "keywords": ["架構", "根因", "root cause", "影響", "影響範圍", "現行操作", "功能影響", "效能", "瓶頸", "方案比較", "風險評估", "token 使用量", "token 用量", "token usage", "token 成本"],
       "priority": 25,
       "load": {
         "skills": [],
