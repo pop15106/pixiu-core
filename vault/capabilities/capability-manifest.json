@@ -69,6 +69,17 @@
       }
     },
     {
+      "id": "work-document-routing",
+      "summary": "從自然語言工作敘述判斷應留下哪一種可覆核文件；不要求固定口令，先保存原始交辦與 PG 理解，再按需求、報修／資料修復、變更／上版、操作文件或資安情境路由到對應 Skill，並維持 Draft -> Review -> Final 的歷程。",
+      "keywords": ["現在有個需求", "目前有個需求", "有個需求要", "pm剛交代", "pm 剛交代", "pm交代", "pm 交代", "pm說", "pm 說", "sa剛交代", "sa 剛交代", "sa交代", "sa 交代", "sa說", "sa 說", "客戶報修", "有個報修", "這張單有異常", "正式環境出問題", "這筆資料怪怪", "手動修資料", "人工修資料", "資料要救", "這次要上版", "準備上版", "等等要併版", "先不要上", "幫我整理操作手冊", "資安復掃", "復掃要送", "自保文件", "留文件", "留個文件", "留紀錄", "每個需求都要出文件", "每有個需求"],
+      "priority": 47,
+      "load": {
+        "skills": ["skills/work-document-router/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
       "id": "repair-review",
       "summary": "事故／異常／報修後、正式修正前，整理現象與證據、重現、Root Cause 狀態、active path / blast radius、Repair Scope、資料修復、環境一致性、測試與回復方案；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM/必要角色覆核。",
       "keywords": ["報修覆核單", "報修覆核", "報修單", "事故修復覆核", "故障修復覆核", "修復方案覆核", "bug修復覆核", "bug 修復覆核", "異常修復覆核", "問題修復覆核", "事故覆核", "維修覆核單"],

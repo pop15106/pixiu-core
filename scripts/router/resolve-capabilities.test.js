@@ -5,7 +5,7 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { resolveCapabilities, safeResolveFromFile } = require('./resolve-capabilities');
+const { resolveCapabilities, loadManifest, safeResolveFromFile } = require('./resolve-capabilities');
 
 const manifest = {
   schemaVersion: 1,
@@ -134,6 +134,32 @@ function testMissingManifestDegradesWithoutFullScan() {
   assert.match(result.error, /找不到 Capability Manifest/);
 }
 
+function testNaturalWorkDocumentPhrasesRouteToRouter() {
+  const actualManifest = loadManifest(
+    path.join(__dirname, '..', '..', 'vault', 'capabilities', 'capability-manifest.json')
+  );
+  const phrases = [
+    '現在有個需求，PM 說 L6 要再調整',
+    'SA 剛交代這個先不要上',
+    '客戶報修，這張單有異常',
+    '這筆資料怪怪的，我要手動修資料',
+    '這次要上版，幫我把文件留起來',
+    '這次資安復掃要送排除說明'
+  ];
+
+  for (const phrase of phrases) {
+    const result = resolveCapabilities(phrase, actualManifest);
+    assert.ok(
+      result.capabilities.includes('work-document-routing'),
+      `自然語句未命中 work-document-routing：${phrase}`
+    );
+    assert.ok(
+      result.filesToLoad.includes('skills/work-document-router/SKILL.md'),
+      `自然語句未載入 work-document-router：${phrase}`
+    );
+  }
+}
+
 for (const test of [
   testSelectsMatchingCapability,
   testLimitsNormalRequestToThreeCapabilities,
@@ -145,7 +171,8 @@ for (const test of [
   testManifestCapabilityLimitNeverExceedsHardCap,
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
-  testMissingManifestDegradesWithoutFullScan
+  testMissingManifestDegradesWithoutFullScan,
+  testNaturalWorkDocumentPhrasesRouteToRouter
 ]) {
   test();
   process.stdout.write(`ok ${test.name}\n`);
