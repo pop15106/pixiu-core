@@ -3,7 +3,6 @@ schema: devspace-agent/v1
 name: codex-qa-tester
 description: Independent QA profile for workflow verification and regression checks.
 provider: codex
-model: gpt-5.4-mini
 thinking: xhigh
 writeMode: read_only
 timeoutSeconds: 1200

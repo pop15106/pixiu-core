@@ -1,0 +1,66 @@
+TAP version 13
+# {"environment":"ISOLATED_WINDOWS_HTTP_MCP_LEGACY","packageRoot":"C:\\\\Users\\\\7010\\\\AppData\\\\Local\\\\nvm\\\\v22.22.0\\\\node_modules\\\\@waishnav\\\\devspace","devSpaceVersion":"1.0.8","sourceSha256":"354a12690b9f7a5da0abeac4d4c519751b16bc434156f1550b18f43fb0e597a9","tools":["workflow_create","workflow_list","workflow_run","workflow_sync","workflow_update"],"fullAutoPauseAvailable":false}
+# Subtest: 既有 WorkflowStore 的真實 Zod 與隔離 HTTP MCP 回歸
+    # Subtest: 真實工具註冊與 HTTP 協定交握
+    ok 1 - 真實工具註冊與 HTTP 協定交握
+      ---
+      duration_ms: 88.7541
+      type: 'test'
+      ...
+    # Subtest: 合法任務可透過真實結構建立
+    ok 2 - 合法任務可透過真實結構建立
+      ---
+      duration_ms: 82.1538
+      type: 'test'
+      ...
+    # Subtest: 不合法型別被真實 Zod 拒絕
+    ok 3 - 不合法型別被真實 Zod 拒絕
+      ---
+      duration_ms: 56.1098
+      type: 'test'
+      ...
+    # Subtest: 唯讀查詢不改帳本位元組
+    ok 4 - 唯讀查詢不改帳本位元組
+      ---
+      duration_ms: 31.1711
+      type: 'test'
+      ...
+    # Subtest: 目前原生結構明確沒有新版 pause，不冒充整合成功
+    ok 5 - 目前原生結構明確沒有新版 pause，不冒充整合成功
+      ---
+      duration_ms: 23.227
+      type: 'test'
+      ...
+    # Subtest: 舊流程 claim 可用並保留 revision 檢查
+    ok 6 - 舊流程 claim 可用並保留 revision 檢查
+      ---
+      duration_ms: 111.6719
+      type: 'test'
+      ...
+    # Subtest: 跨專案指定同一任務仍被拒絕
+    ok 7 - 跨專案指定同一任務仍被拒絕
+      ---
+      duration_ms: 32.0798
+      type: 'test'
+      ...
+    # Subtest: 未授權模型執行被拒絕且沒有啟動替身
+    ok 8 - 未授權模型執行被拒絕且沒有啟動替身
+      ---
+      duration_ms: 23.8538
+      type: 'test'
+      ...
+    1..8
+ok 1 - 既有 WorkflowStore 的真實 Zod 與隔離 HTTP MCP 回歸
+  ---
+  duration_ms: 5297.8667
+  type: 'test'
+  ...
+1..1
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5548.0713

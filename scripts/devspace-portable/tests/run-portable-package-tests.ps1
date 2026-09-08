@@ -85,7 +85,11 @@ try {
         & powershell -NoProfile -ExecutionPolicy Bypass -File $verifier -PackageRoot $packageRoot | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'extracted release passes SHA-256 verification'
 
-        Add-Content -LiteralPath (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') -Value '// tamper-test'
+        [System.IO.File]::AppendAllText(
+            (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs'),
+            "// tamper-test`n",
+            [System.Text.UTF8Encoding]::new($false)
+        )
         $previousErrorActionPreference = $ErrorActionPreference
         try {
             $ErrorActionPreference = 'Continue'
@@ -97,6 +101,10 @@ try {
         }
         Assert-True ($tamperExitCode -ne 0) 'workflow module tampering is rejected'
     }
+}
+catch {
+    Write-Host ('PRIMARY_TEST_ERROR: ' + $_.Exception.GetType().FullName + ': ' + $_.Exception.Message)
+    throw
 }
 finally {
     if (Test-Path -LiteralPath $testRoot) {

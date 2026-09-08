@@ -15,9 +15,10 @@ const distDirectory = dirname(resolve(rawCliPath));
 const packageMetadata = JSON.parse(
   readFileSync(join(distDirectory, "..", "package.json"), "utf8"),
 );
-if (packageMetadata.version !== "1.0.4") {
+const supportedDevSpaceVersions = new Set(["1.0.4", "1.0.8"]);
+if (!supportedDevSpaceVersions.has(packageMetadata.version)) {
   throw new Error(
-    "The DevSpace Agent controller supports DevSpace 1.0.4 only; found " +
+    "The DevSpace Agent controller supports DevSpace 1.0.4 or 1.0.8; found " +
       packageMetadata.version +
       ".",
   );

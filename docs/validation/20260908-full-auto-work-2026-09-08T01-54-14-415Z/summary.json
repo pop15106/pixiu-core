@@ -1,0 +1,279 @@
+{
+  "startedAt": "2026-09-08T01:54:14.426Z",
+  "completedAt": "2026-09-08T01:55:16.730Z",
+  "host": "TV7010NB",
+  "platform": "win32",
+  "node": "v22.22.0",
+  "sourceRoot": "C:\\Users\\7010\\Desktop\\gravityTest\\pixiu-core",
+  "evidenceDirectory": "C:\\Users\\7010\\Desktop\\gravityTest\\pixiu-core\\docs\\validation\\20260908-full-auto-work-2026-09-08T01-54-14-415Z",
+  "isolatedTempRoot": "C:\\Users\\7010\\AppData\\Local\\Temp\\pixiu-safe-validation-6O94LO",
+  "cleanupError": null,
+  "deploymentCompleted": false,
+  "modelTestsExecuted": false,
+  "tests": [
+    {
+      "name": "deployment-guard",
+      "command": [
+        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/devspace-portable/tests/run-workflow-deployment-guard-tests.ps1"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 3454,
+      "stdoutFile": "deployment-guard.stdout.log",
+      "stdoutSha256": "d0d1e8387b8007938f0213d259cae47a4a43924529ee9d369fed35235a4b13d7",
+      "stderrFile": "deployment-guard.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "Workflow deployment guard: 46 passed, 0 failed, 0 skipped"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "native-http-mcp",
+      "command": [
+        "C:\\nvm4w\\nodejs\\node.exe",
+        "--test",
+        "scripts/devspace-portable/tests/workflow-native-mcp.test.mjs"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 5837,
+      "stdoutFile": "native-http-mcp.stdout.log",
+      "stdoutSha256": "c170a482e6db07b8f034c25b58761cd3cef5e068771d390877cb68e83827c6cd",
+      "stderrFile": "native-http-mcp.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "# tests 9",
+        "# pass 9",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "workflow-store",
+      "command": [
+        "C:\\nvm4w\\nodejs\\node.exe",
+        "--test",
+        "scripts/devspace-portable/tests/workflow-store.test.mjs"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 2568,
+      "stdoutFile": "workflow-store.stdout.log",
+      "stdoutSha256": "a751c470a072df015925beecf07fa98f625adeddbc9250a255025819b0d36801",
+      "stderrFile": "workflow-store.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "# tests 15",
+        "# pass 15",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "router",
+      "command": [
+        "C:\\nvm4w\\nodejs\\node.exe",
+        "--test",
+        "scripts/router/resolve-capabilities.test.js"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 502,
+      "stdoutFile": "router.stdout.log",
+      "stdoutSha256": "7c94b412395b00580133aede845371839a7c9335025950a0d5c4029fb78452fe",
+      "stderrFile": "router.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "# tests 1",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "skill-metadata-tests",
+      "command": [
+        "C:\\nvm4w\\nodejs\\node.exe",
+        "--test",
+        "scripts/skills/validate-skill-metadata.test.js"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 654,
+      "stdoutFile": "skill-metadata-tests.stdout.log",
+      "stdoutSha256": "5b00b8d704978acdc8452b613afe2e95bd6c0d5a19906c2a9e4a5434d5d41de4",
+      "stderrFile": "skill-metadata-tests.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "# tests 1",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "skill-metadata-source",
+      "command": [
+        "C:\\nvm4w\\nodejs\\node.exe",
+        "scripts/skills/validate-skill-metadata.js",
+        "skills"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 395,
+      "stdoutFile": "skill-metadata-source.stdout.log",
+      "stdoutSha256": "710002fa5a692b8982ffbce965f4861b6a777ef07b51184b41cea97a0b944b28",
+      "stderrFile": "skill-metadata-source.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "已檢查 94 個 Skill：C:\\Users\\7010\\Desktop\\gravityTest\\pixiu-core\\skills",
+        "Skill metadata 驗證通過。"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "skill-metadata-published",
+      "command": [
+        "C:\\nvm4w\\nodejs\\node.exe",
+        "scripts/skills/validate-skill-metadata.js",
+        ".agents/skills"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 394,
+      "stdoutFile": "skill-metadata-published.stdout.log",
+      "stdoutSha256": "d4ea52c818de27d4ddc7597f4308af25e745c61c6377abf3b634668acf441fe0",
+      "stderrFile": "skill-metadata-published.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "已檢查 91 個 Skill：C:\\Users\\7010\\Desktop\\gravityTest\\pixiu-core\\.agents\\skills",
+        "Skill metadata 驗證通過。"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "oneclick",
+      "command": [
+        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/devspace-portable/tests/run-tests.ps1"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 13124,
+      "stdoutFile": "oneclick.stdout.log",
+      "stdoutSha256": "29c893157f02d7a3a10b28863d24f72c92f7ccb5a2910a90a4399130406bdfef",
+      "stderrFile": "oneclick.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "Tests: 109 passed, 0 failed"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "portable-package",
+      "command": [
+        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/devspace-portable/tests/run-portable-package-tests.ps1"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 21479,
+      "stdoutFile": "portable-package.stdout.log",
+      "stdoutSha256": "9ad15d2eeaa6b6ecc3dee511c861d421dce166ff984cc1ac7335b203afaa15f7",
+      "stderrFile": "portable-package.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "Tests: 25 passed, 0 failed"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "reconnect-wrapper",
+      "command": [
+        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/devspace-portable/tests/run-reconnect-cmd-tests.ps1"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 3548,
+      "stdoutFile": "reconnect-wrapper.stdout.log",
+      "stdoutSha256": "98e33183ed922a5aaf0db0f9da4e5cf848c1b07158cdf29899e83562f4fb50e4",
+      "stderrFile": "reconnect-wrapper.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "Tests: 14 passed, 0 failed"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "watchdog",
+      "command": [
+        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/devspace-portable/tests/run-watchdog-tests.ps1"
+      ],
+      "environment": "WINDOWS_NATIVE_PROCESS_ISOLATED_TESTS",
+      "exitCode": 0,
+      "signal": null,
+      "launchError": null,
+      "durationMs": 10021,
+      "stdoutFile": "watchdog.stdout.log",
+      "stdoutSha256": "8fd53a11f67acbcc229ee98f68c714ee0fbc53fc5b21aee6b8e118abdf3c4104",
+      "stderrFile": "watchdog.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaryLines": [
+        "Tests: 162 passed, 0 failed"
+      ],
+      "status": "PASS"
+    }
+  ]
+}

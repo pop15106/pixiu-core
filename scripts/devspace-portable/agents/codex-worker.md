@@ -3,7 +3,6 @@ schema: devspace-agent/v1
 name: codex-worker
 description: Implementation profile for focused coding tasks with clear acceptance criteria.
 provider: codex
-model: gpt-5.4
 thinking: xhigh
 writeMode: allowed
 timeoutSeconds: 1800

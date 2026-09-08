@@ -211,6 +211,144 @@ function Set-PatchedTextFile {
     return $true
 }
 
+function Install-DevSpace108RuntimePatch {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    $serverPath = Join-Path $PackageRoot 'dist\server.js'
+    $backupPath = "$serverPath.devspace-oneclick-1.0.8-original"
+    $manifestPath = Join-Path $PackageRoot '.devspace-oneclick-patch-1.0.8.json'
+    if (-not (Test-Path -LiteralPath $serverPath -PathType Leaf)) {
+        throw "DevSpace 1.0.8 server target is missing: $serverPath"
+    }
+
+    if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+        try {
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        }
+        catch {
+            throw "DevSpace 1.0.8 patch manifest is unreadable: $manifestPath"
+        }
+        if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.devSpaceVersion -ne '1.0.8') {
+            throw "DevSpace 1.0.8 patch manifest is unsupported: $manifestPath"
+        }
+        if (-not (Test-Path -LiteralPath $backupPath -PathType Leaf)) {
+            throw "DevSpace 1.0.8 patch backup is missing: $backupPath"
+        }
+        $backupHash = Get-DevSpacePatchFileSha256 -FilePath $backupPath
+        $targetHash = Get-DevSpacePatchFileSha256 -FilePath $serverPath
+        if (-not [string]::Equals($backupHash, [string]$manifest.backupSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'DevSpace 1.0.8 patch backup drift detected; refusing to continue.'
+        }
+        if ([string]::Equals($targetHash, [string]$manifest.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return 0
+        }
+        if (-not [string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Unknown DevSpace 1.0.8 server drift detected; refusing to patch.'
+        }
+    }
+    elseif (Test-Path -LiteralPath $backupPath -PathType Leaf) {
+        throw "DevSpace 1.0.8 patch backup exists without a manifest; refusing to patch: $backupPath"
+    }
+    else {
+        Copy-Item -LiteralPath $serverPath -Destination $backupPath -Force
+    }
+
+    $content = [System.IO.File]::ReadAllText($serverPath)
+    $changed = 0
+
+    if (-not $content.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE')) {
+        $urlPattern = 'import \{ fileURLToPath \} from "node:url";'
+        $urlRegex = [regex]::new($urlPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+        if (-not $urlRegex.IsMatch($content)) {
+            throw "DevSpace 1.0.8 URL import patch point not found in $serverPath"
+        }
+        $content = $urlRegex.Replace($content, 'import { fileURLToPath, pathToFileURL } from "node:url";', 1)
+
+        $catalogLine = 'import { buildLocalAgentCatalog, buildLocalAgentProviderStatuses, formatLocalAgentProviderStatusSummary, } from "./local-agent-catalog.js";'
+        if (-not $content.Contains($catalogLine)) {
+            throw "DevSpace 1.0.8 local-agent catalog import patch point not found in $serverPath"
+        }
+        $workflowLoader = @(
+            $catalogLine,
+            'const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE',
+            '    ? await import(pathToFileURL(process.env.DEVSPACE_WORKFLOW_MODULE).href)',
+            '    : undefined;'
+        ) -join [Environment]::NewLine
+        $content = $content.Replace($catalogLine, $workflowLoader)
+        $changed += 2
+    }
+
+    if (-not $content.Contains('DevSpace OneClick: expose durable cross-session handoff and review tools.')) {
+        $registrationPattern = '    if \(config\.toolMode === "codex"\) \{\r?\n        registerCodexProcessTools\(server, config, workspaces, processSessions\);\r?\n    \}'
+        $registrationRegex = [regex]::new($registrationPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+        if (-not $registrationRegex.IsMatch($content)) {
+            throw "DevSpace 1.0.8 process-session registration patch point not found in $serverPath"
+        }
+        $registrationReplacement = @(
+            '    // DevSpace OneClick: expose resumable process sessions to ChatGPT Web.',
+            '    registerCodexProcessTools(server, config, workspaces, processSessions);',
+            '    // DevSpace OneClick: expose durable cross-session handoff and review tools.',
+            '    devSpaceWorkflowModule?.registerDevSpaceWorkflowTools({',
+            '        server, config, workspaces, registerAppTool, z,',
+            '    });'
+        ) -join [Environment]::NewLine
+        $content = $registrationRegex.Replace($content, $registrationReplacement, 1)
+        $changed++
+    }
+
+    if ($changed -eq 0) {
+        return 0
+    }
+
+    [System.IO.File]::WriteAllText($serverPath, $content, [System.Text.UTF8Encoding]::new($false))
+    $manifest = [ordered]@{
+        schemaVersion = 1
+        devSpaceVersion = '1.0.8'
+        file = 'dist\server.js'
+        backupSha256 = Get-DevSpacePatchFileSha256 -FilePath $backupPath
+        patchedSha256 = Get-DevSpacePatchFileSha256 -FilePath $serverPath
+    }
+    [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+    return $changed
+}
+
+function Restore-DevSpace108RuntimePatch {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    $serverPath = Join-Path $PackageRoot 'dist\server.js'
+    $backupPath = "$serverPath.devspace-oneclick-1.0.8-original"
+    $manifestPath = Join-Path $PackageRoot '.devspace-oneclick-patch-1.0.8.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        if (-not (Test-Path -LiteralPath $backupPath -PathType Leaf)) {
+            return 0
+        }
+        throw 'DevSpace 1.0.8 patch backup exists without a manifest; refusing to restore.'
+    }
+    if (-not (Test-Path -LiteralPath $serverPath -PathType Leaf) -or -not (Test-Path -LiteralPath $backupPath -PathType Leaf)) {
+        throw 'DevSpace 1.0.8 patch target or backup is missing; refusing to restore.'
+    }
+
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.devSpaceVersion -ne '1.0.8') {
+        throw 'DevSpace 1.0.8 patch manifest is unsupported; refusing to restore.'
+    }
+    $backupHash = Get-DevSpacePatchFileSha256 -FilePath $backupPath
+    $targetHash = Get-DevSpacePatchFileSha256 -FilePath $serverPath
+    if (-not [string]::Equals($backupHash, [string]$manifest.backupSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw 'DevSpace 1.0.8 patch backup drift detected; refusing to restore.'
+    }
+    if ([string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return 0
+    }
+    if (-not [string]::Equals($targetHash, [string]$manifest.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Unknown DevSpace 1.0.8 server drift detected; refusing to restore.'
+    }
+    Copy-Item -LiteralPath $backupPath -Destination $serverPath -Force
+    return 1
+}
+
 function Install-DevSpaceSubagentWindowsPatch {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][string]$DevSpaceCli)
@@ -222,8 +360,12 @@ function Install-DevSpaceSubagentWindowsPatch {
     }
 
     $package = Get-Content -LiteralPath $packageJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ([string]$package.version -ne '1.0.4') {
-        throw "The bundled Windows subagent patch supports DevSpace 1.0.4 only; found $($package.version)."
+    $packageVersion = [string]$package.version
+    if ($packageVersion -eq '1.0.8') {
+        return Install-DevSpace108RuntimePatch -PackageRoot $packageRoot
+    }
+    if ($packageVersion -ne '1.0.4') {
+        throw "The bundled Windows subagent patch supports DevSpace 1.0.4 or 1.0.8 only; found $packageVersion."
     }
 
     $runtimePath = Join-Path $packageRoot 'dist\local-agent-runtime.js'
@@ -517,8 +659,12 @@ function Restore-DevSpaceSubagentWindowsPatch {
     }
 
     $package = Get-Content -LiteralPath $packageJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ([string]$package.version -ne '1.0.4') {
-        throw "The bundled Windows subagent restore supports DevSpace 1.0.4 only; found $($package.version)."
+    $packageVersion = [string]$package.version
+    if ($packageVersion -eq '1.0.8') {
+        return Restore-DevSpace108RuntimePatch -PackageRoot $packageRoot
+    }
+    if ($packageVersion -ne '1.0.4') {
+        throw "The bundled Windows subagent restore supports DevSpace 1.0.4 or 1.0.8 only; found $packageVersion."
     }
 
     $targets = @(Get-DevSpacePatchTargets -PackageRoot $packageRoot)
@@ -621,11 +767,64 @@ function Install-DevSpaceWorkflowModule {
     if (-not (Test-Path -LiteralPath $SourceFile -PathType Leaf)) {
         throw "DevSpace workflow module source is missing: $SourceFile"
     }
+
+    # 此入口仍是單檔部署器；先驗證來源與目的地，再建立目錄或備份。
+    function Assert-WorkflowDeploymentPlainPath {
+        param([string]$PathToCheck)
+        $current = [System.IO.Path]::GetFullPath($PathToCheck)
+        while (-not [string]::IsNullOrWhiteSpace($current)) {
+            if (Test-Path -LiteralPath $current) {
+                $item = Get-Item -LiteralPath $current -Force
+                if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                    throw "WORKFLOW_REPARSE_POINT_BLOCKED: $current"
+                }
+            }
+            $parent = [System.IO.Path]::GetDirectoryName($current)
+            if ($parent -eq $current) { break }
+            $current = $parent
+        }
+    }
+
+    $target = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
+    Assert-WorkflowDeploymentPlainPath -PathToCheck $SourceFile
+    Assert-WorkflowDeploymentPlainPath -PathToCheck $target
+    $sourceBytes = [System.IO.File]::ReadAllBytes($SourceFile)
+    $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $sourceHash = [System.BitConverter]::ToString($hashAlgorithm.ComputeHash($sourceBytes)).Replace('-', '').ToLowerInvariant()
+    }
+    finally {
+        $hashAlgorithm.Dispose()
+    }
+    $sourceContent = [System.Text.Encoding]::UTF8.GetString($sourceBytes)
+    $sourceDirectory = Split-Path -Parent ([System.IO.Path]::GetFullPath($SourceFile))
+    $localDependencies = @{}
+    $dependencyPatterns = @(
+        '(?ms)\b(?:from\s*|import\s*)["''](?<path>\.[^"''\r\n]+)["'']',
+        '(?ms)\bimport\s*\(\s*["''](?<path>\.[^"''\r\n]+)["'']',
+        '(?ms)\bnew\s+URL\s*\(\s*["''](?<path>\.[^"''\r\n]+)["'']\s*,\s*import\.meta\.url'
+    )
+    foreach ($pattern in $dependencyPatterns) {
+        foreach ($match in [regex]::Matches($sourceContent, $pattern)) {
+            $relativeDependency = $match.Groups['path'].Value
+            $dependencyPath = [System.IO.Path]::GetFullPath((Join-Path $sourceDirectory $relativeDependency))
+            $localDependencies[$relativeDependency] = $dependencyPath
+            if (-not (Test-Path -LiteralPath $dependencyPath -PathType Leaf)) {
+                throw "WORKFLOW_DEPENDENCY_MISSING: $relativeDependency; the installed workflow was not changed."
+            }
+            Assert-WorkflowDeploymentPlainPath -PathToCheck $dependencyPath
+        }
+    }
+    if ($sourceContent.Contains('SESSION_WORKFLOW_CORE_MODULE')) {
+        throw 'WORKFLOW_EXTERNAL_CORE_DEPLOYMENT_REQUIRED: validate the actual standalone core and its deployment layout before replacing the installed workflow.'
+    }
+    if ($localDependencies.Count -gt 0 -or $sourceContent -match 'DevSpace\.(FullAutoController|FullAutoPolicy|FullAutoRuntime|LaunchReceipts)') {
+        throw 'WORKFLOW_MULTI_FILE_DEPLOYMENT_REQUIRED: this installer cannot deploy a dependency bundle atomically; the installed workflow was not changed.'
+    }
+
     if (-not (Test-Path -LiteralPath $BinDirectory)) {
         New-Item -ItemType Directory -Path $BinDirectory -Force | Out-Null
     }
-    $target = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
-    $sourceHash = Get-DevSpacePatchFileSha256 -FilePath $SourceFile
     if (Test-Path -LiteralPath $target -PathType Leaf) {
         $targetHash = Get-DevSpacePatchFileSha256 -FilePath $target
         if ([string]::Equals($sourceHash, $targetHash, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -637,6 +836,11 @@ function Install-DevSpaceWorkflowModule {
     $temporary = "$target.$([guid]::NewGuid().ToString('N')).tmp"
     try {
         Copy-Item -LiteralPath $SourceFile -Destination $temporary -Force
+        # 複製的內容須與前檢讀取的位元組相同，避免來源在檢查後被替換。
+        $copiedHash = Get-DevSpacePatchFileSha256 -FilePath $temporary
+        if (-not [string]::Equals($sourceHash, $copiedHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'WORKFLOW_SOURCE_CHANGED_DURING_COPY: the installed workflow was not changed.'
+        }
         Move-Item -LiteralPath $temporary -Destination $target -Force
     }
     finally {
@@ -724,31 +928,27 @@ function Install-DevSpaceAgentCliShim {
     [System.IO.File]::WriteAllText($cmdPath, $cmdContent, [System.Text.UTF8Encoding]::new($false))
 
     $nodeDirectory = Split-Path -Parent $NodePath
-    $npmCmdPath = Join-Path $nodeDirectory 'npm.cmd'
-    $npxCmdPath = Join-Path $nodeDirectory 'npx.cmd'
-    foreach ($packageCommand in @($npmCmdPath, $npxCmdPath)) {
+    foreach ($packageCommand in @(
+        (Join-Path $nodeDirectory 'npm.cmd'),
+        (Join-Path $nodeDirectory 'npx.cmd')
+    )) {
         if (-not (Test-Path -LiteralPath $packageCommand -PathType Leaf)) {
             throw "Node package command is missing: $packageCommand"
         }
     }
 
-    $npmShellPath = Join-Path $BinDirectory 'npm'
-    $npmShellContent = '#!/usr/bin/env bash' + [Environment]::NewLine +
-        'exec "' + (ConvertTo-DevSpaceBashPath -FilePath $npmCmdPath) + '" "$@"' + [Environment]::NewLine
-    [System.IO.File]::WriteAllText($npmShellPath, $npmShellContent, [System.Text.UTF8Encoding]::new($false))
-
-    $npxShellPath = Join-Path $BinDirectory 'npx'
-    $npxShellContent = '#!/usr/bin/env bash' + [Environment]::NewLine +
-        'exec "' + (ConvertTo-DevSpaceBashPath -FilePath $npxCmdPath) + '" "$@"' + [Environment]::NewLine
-    [System.IO.File]::WriteAllText($npxShellPath, $npxShellContent, [System.Text.UTF8Encoding]::new($false))
+    foreach ($legacyPackageShim in @('npm', 'npx')) {
+        $legacyPath = Join-Path $BinDirectory $legacyPackageShim
+        if (Test-Path -LiteralPath $legacyPath -PathType Leaf) {
+            Remove-Item -LiteralPath $legacyPath -Force
+        }
+    }
 
     return [pscustomobject]@{
         BinDirectory = $BinDirectory
         ShellPath = $shellPath
         CmdPath = $cmdPath
         AdminPath = $stableAdmin
-        NpmShellPath = $npmShellPath
-        NpxShellPath = $npxShellPath
     }
 }
 

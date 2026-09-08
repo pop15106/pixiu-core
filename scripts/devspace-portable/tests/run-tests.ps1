@@ -293,11 +293,12 @@ HTTP: {
     Assert-Equal (Get-DevSpaceAgentRecordText -Record ([pscustomobject]@{ id = 'agt_1a2b3c4d' }) -PropertyName 'latestResponse') '' 'handles sparse Agent records'
     $agentAdminSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.AgentAdmin.mjs') -Raw
     Assert-Equal ($agentAdminSource.Contains('Previous status:') -and $agentAdminSource.Contains('Previous error:')) $true 'preserves prior Agent failure details when stopped'
-    Assert-Equal $agentAdminSource.Contains('supports DevSpace 1.0.4 only') $true 'version-locks the Agent controller'
+    Assert-Equal ($agentAdminSource.Contains('1.0.4') -and $agentAdminSource.Contains('1.0.8')) $true 'version-locks the Agent controller to supported DevSpace releases'
     $launcherSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'devspace-oneclick.ps1') -Raw
     Assert-Equal ($launcherSource.Contains("'restore-subagent-patch'") -and $launcherSource.Contains('Restore-DevSpaceSubagentWindowsPatch')) $true 'exposes the verified patch restore action'
     Assert-Equal ($launcherSource.Contains("'repair-state'") -and $launcherSource.Contains('Repair-OneClickState')) $true 'exposes explicit live-state reconciliation without restart'
     Assert-Equal ($launcherSource.Contains('Install-DevSpaceWorkflowModule') -and $launcherSource.Contains('DEVSPACE_WORKFLOW_MODULE') -and $launcherSource.Contains('DEVSPACE_WORKFLOW_STATE_DIR')) $true 'wires the durable workflow module into OneClick startup'
+    Assert-Equal ($launcherSource.Contains("@waishnav/devspace@1.0.8") -and $launcherSource.Contains("@openai/codex@0.153.4") -and $launcherSource.Contains('Ensure-CodexCli')) $true 'pins the tested DevSpace and Codex CLI compatibility baseline'
     Assert-Equal $launcherSource.Contains('Updated DevSpace runtime components; restarting the owned stack.') $true 'restarts an owned stack after a workflow runtime update'
     $repairStateCommand = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '09-REPAIR-STATE.cmd') -Raw
     Assert-Equal $repairStateCommand.Contains('devspace-oneclick.ps1" repair-state') $true 'ships a dedicated no-restart state repair command'
@@ -616,6 +617,7 @@ HTTP: {
     $workerProfile = Get-Content -LiteralPath (Join-Path $profileConfig 'agents\codex-worker.md') -Raw
     $qaProfile = Get-Content -LiteralPath (Join-Path $profileConfig 'agents\codex-qa-tester.md') -Raw
     Assert-Equal $explorerProfile.Contains('thinking: xhigh') $true 'installs xhigh thinking profiles'
+    Assert-Equal ($explorerProfile.Contains('model:') -or $workerProfile.Contains('model:') -or $qaProfile.Contains('model:')) $false 'does not hard-code stale Codex model ids'
     Assert-Equal ($explorerProfile.Contains('writeMode: read_only') -and $explorerProfile.Contains('timeoutSeconds: 720')) $true 'bounds Explorer execution'
     Assert-Equal ($workerProfile.Contains('writeMode: allowed') -and $workerProfile.Contains('timeoutSeconds: 1800')) $true 'allows bounded Worker edits'
     Assert-Equal ($qaProfile.Contains('writeMode: read_only') -and $qaProfile.Contains('timeoutSeconds: 1200')) $true 'keeps QA read-only'
@@ -644,6 +646,14 @@ HTTP: {
     }
 
     $shimRoot = Join-Path $testRoot 'shim'
+    New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
+    foreach ($legacyPackageShim in @('npm', 'npx')) {
+        [System.IO.File]::WriteAllText(
+            (Join-Path $shimRoot $legacyPackageShim),
+            '#!/usr/bin/env bash',
+            [System.Text.UTF8Encoding]::new($false)
+        )
+    }
     $adminSource = Join-Path (Split-Path -Parent $PSScriptRoot) 'DevSpace.AgentAdmin.mjs'
     $fakeNodeRoot = Join-Path $testRoot 'node-runtime'
     New-Item -ItemType Directory -Path $fakeNodeRoot -Force | Out-Null
@@ -654,14 +664,12 @@ HTTP: {
     $shim = Install-DevSpaceAgentCliShim -NodePath $fakeNode -DevSpaceCli $fakeCli -AdminScript $adminSource -BinDirectory $shimRoot
     $shellShim = Get-Content -LiteralPath $shim.ShellPath -Raw
     $cmdShim = Get-Content -LiteralPath $shim.CmdPath -Raw
-    $npmShellShim = Get-Content -LiteralPath $shim.NpmShellPath -Raw
-    $npxShellShim = Get-Content -LiteralPath $shim.NpxShellPath -Raw
     Assert-Equal ($shellShim.Contains('cli-list') -and $shellShim.Contains('cli-show')) $true 'installs fast Bash status routing'
     Assert-Equal ($cmdShim.Contains('cli-list') -and $cmdShim.Contains('cli-show')) $true 'installs fast CMD status routing'
     Assert-Equal (Test-Path -LiteralPath $shim.AdminPath) $true 'copies the lightweight Agent admin to a stable path'
     Assert-Equal ($agentAdminSource.Contains('action === "cli-list"') -and $agentAdminSource.Contains('action === "cli-show"')) $true 'supports CLI-compatible fast status output'
-    Assert-Equal $npmShellShim.Contains('/npm.cmd" "$@"') $true 'routes Git Bash npm through npm.cmd'
-    Assert-Equal $npxShellShim.Contains('/npx.cmd" "$@"') $true 'routes Git Bash npx through npx.cmd'
+    Assert-Equal (Test-Path -LiteralPath (Join-Path $shimRoot 'npm')) $false 'removes the legacy extensionless npm shim from the Windows process PATH directory'
+    Assert-Equal (Test-Path -LiteralPath (Join-Path $shimRoot 'npx')) $false 'removes the legacy extensionless npx shim from the Windows process PATH directory'
 }
 finally {
     $resolvedTestRoot = [System.IO.Path]::GetFullPath($testRoot)

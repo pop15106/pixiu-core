@@ -1,0 +1,26 @@
+[PASS] ships the setup-or-update launcher
+[PASS] ships friendly start, disconnect, and force-reconnect launchers
+[PASS] ships QA check and beginner troubleshooting guides
+[PASS] friendly force-reconnect delegates to the verified reconnect flow
+[PASS] QA check prints the bounded troubleshooting order
+[PASS] QA guide warns users not to disclose secrets
+[PASS] portable builder resolves its default output after PSScriptRoot is available
+[PASS] launcher verifies release packages and calls the unified setup/update action
+[PASS] OneClick exposes the unified setup/update action
+[PASS] update path preserves existing local identity
+[PASS] partial local setup fails closed
+[PASS] ready output confirms cross-session payload inclusion
+[PASS] portable builder completes successfully
+[PASS] portable builder creates a versioned ZIP
+[PASS] release ZIP contains the integrity manifest
+[PASS] release ZIP contains the cross-session workflow module
+[PASS] release ZIP contains cross-session usage documentation
+[PASS] release ZIP contains friendly connection controls
+[PASS] release ZIP contains QA guidance
+[PASS] manifest explicitly declares cross-session workflow support
+[PASS] manifest hashes the workflow module
+[PASS] manifest excludes local identity and runtime state files
+[PASS] release ZIP excludes repository test fixtures
+[PASS] extracted release passes SHA-256 verification
+[PASS] workflow module tampering is rejected
+Tests: 25 passed, 0 failed

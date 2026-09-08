@@ -1,0 +1,110 @@
+[PASS] accepts a specific project directory
+[PASS] rejects the whole user profile
+[PASS] rejects the whole Desktop
+[PASS] rejects the whole Downloads
+[PASS] rejects a drive root
+[PASS] deduplicates roots without widening access
+[PASS] avoids account and local port conflicts
+[PASS] preserves unrelated config fields
+[PASS] binds DevSpace to loopback
+[PASS] persists the selected port
+[PASS] does not mutate the input config
+[PASS] non-interactive login check refuses browser login
+[PASS] non-interactive login check never invokes user login
+[PASS] returns unique account-wide DevSpace ports on Windows PowerShell
+[PASS] derives an HTTPS origin without /mcp
+[PASS] unwraps the legacy tunnel response before reading ports
+[PASS] accepts the current tunnel response before reading ports
+[PASS] derives an HTTPS origin from current portForwardingUris
+[PASS] derives the public origin when current Dev Tunnel JSON omits portUri
+[PASS] extracts the raw service JSON from verbose CLI output
+[PASS] repeats the labels option for current Dev Tunnel CLI
+[PASS] rejects invalid Dev Tunnel labels
+[PASS] adopts the active Dev Tunnel host ID
+[PASS] adopts the live public origin from config
+[PASS] records the verified DevSpace listener PID
+[PASS] records the verified Dev Tunnel PID
+[PASS] preserves the DevSpace process identity timestamp
+[PASS] refuses to adopt an unrelated Node listener
+[PASS] refuses a public origin whose region differs from the hosted tunnel
+[PASS] refuses processes that do not share the same launcher parent
+[PASS] creates a machine-specific tunnel name
+[PASS] accepts a valid Agent ID
+[PASS] rejects an unsafe Agent ID
+[PASS] flattens multiline Agent output
+[PASS] truncates oversized Agent output
+[PASS] handles sparse Agent records
+[PASS] preserves prior Agent failure details when stopped
+[PASS] version-locks the Agent controller to supported DevSpace releases
+[PASS] exposes the verified patch restore action
+[PASS] exposes explicit live-state reconciliation without restart
+[PASS] wires the durable workflow module into OneClick startup
+[PASS] pins the tested DevSpace and Codex CLI compatibility baseline
+[PASS] restarts an owned stack after a workflow runtime update
+[PASS] ships a dedicated no-restart state repair command
+[PASS] applies all DevSpace 1.0.4 Windows patches
+[PASS] allows explicitly authorized non-Git workspaces
+[PASS] injects the Node and npm PATH into Codex
+[PASS] enforces bounded Agent execution
+[PASS] loads profile write modes
+[PASS] loads profile timeouts
+[PASS] hides the Codex child window
+[PASS] shortens Agent status polling
+[PASS] enforces read-only profiles
+[PASS] passes profile timeouts to the runtime
+[PASS] forces short Agent commands to exit
+[PASS] guides ChatGPT Web to use process sessions for long commands
+[PASS] registers process-session tools outside Codex mode
+[PASS] loads the durable workflow module from the managed path
+[PASS] registers cross-session workflow tools for ChatGPT Web
+[PASS] guides ChatGPT Web to workflow coordination tools
+[PASS] auto-routes clear cross-session intent without tool-name vocabulary
+[PASS] keeps workflow_run behind separate explicit user model authorization
+[PASS] uses SHA-256-aware project skill mirror detection
+[PASS] removes project root only when every Skill name and SHA-256 matches an earlier root
+[PASS] keeps project-local root first for partially overlapping Skills
+[PASS] keeps same-name project Skills whose SHA-256 differs
+[PASS] explicit config.skillPaths cannot re-add an exact project mirror
+[PASS] deduplicates case-only project root aliases
+[PASS] deduplicates junction aliases without losing project priority
+[PASS] ignores a configured file path without interrupting discovery
+[PASS] fails open when a project Skill cannot be read
+[PASS] fails open when a Skill disappears during discovery
+[PASS] suppresses the PixiuCore portable publishing layer when canonical names cover it
+[PASS] upgrades a verified v1 Skill mirror patch in place
+[PASS] v1 upgrade ignores non-Skill directories
+[PASS] v1 upgrade refreshes the verified patch manifest
+[PASS] Subagent patch is idempotent
+[PASS] upgrade refuses unknown target drift before writing
+[PASS] records original and patched hashes for safe restore
+[PASS] restore refuses an unknown same-version target update
+[PASS] target drift refusal writes no earlier file
+[PASS] restore refuses backup drift
+[PASS] backup drift refusal writes no earlier file
+[PASS] restore refuses an incomplete backup set
+[PASS] missing backup refusal writes no earlier file
+[PASS] restore refuses version drift
+[PASS] version drift refusal writes no file
+[PASS] restores all patched files from retained backups
+[PASS] restore is idempotent when files already match recorded backups
+[PASS] restore safely no-ops when no retained backups exist
+[PASS] installs the three managed Agent profiles
+[PASS] installs xhigh thinking profiles
+[PASS] does not hard-code stale Codex model ids
+[PASS] bounds Explorer execution
+[PASS] allows bounded Worker edits
+[PASS] keeps QA read-only
+[PASS] installs the durable workflow module
+[PASS] preserves workflow module content
+[PASS] workflow module install is idempotent
+[PASS] repairs a drifted managed workflow module
+[PASS] backs up a drifted workflow module before repair
+[PASS] finds Node.js for workflow tests
+[PASS] passes durable workflow state and MCP tests
+[PASS] installs fast Bash status routing
+[PASS] installs fast CMD status routing
+[PASS] copies the lightweight Agent admin to a stable path
+[PASS] supports CLI-compatible fast status output
+[PASS] removes the legacy extensionless npm shim from the Windows process PATH directory
+[PASS] removes the legacy extensionless npx shim from the Windows process PATH directory
+Tests: 109 passed, 0 failed

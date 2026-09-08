@@ -1,0 +1,15 @@
+[PASS] ships a safe reconnect CMD
+[PASS] ships a force reconnect CMD
+[PASS] safe reconnect starts missing components and verifies status
+[PASS] safe reconnect succeeds only after status succeeds
+[PASS] safe reconnect stops immediately when start fails
+[PASS] safe reconnect preserves the start failure code
+[PASS] safe reconnect always verifies a successful start
+[PASS] safe reconnect preserves the status failure code
+[PASS] force reconnect stops, starts, and verifies in order
+[PASS] force reconnect succeeds only after status succeeds
+[PASS] force reconnect does not start after an unsafe stop failure
+[PASS] force reconnect preserves the stop failure code
+[PASS] force reconnect stops immediately when restart fails
+[PASS] force reconnect preserves the restart failure code
+Tests: 14 passed, 0 failed

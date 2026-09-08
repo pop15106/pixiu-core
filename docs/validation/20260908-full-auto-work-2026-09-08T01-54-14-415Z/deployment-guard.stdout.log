@@ -1,0 +1,47 @@
+PASS legacy installation still works
+PASS legacy bytes are preserved
+PASS legacy installation remains idempotent
+PASS legacy rollback copy is retained
+PASS missing helper returns WORKFLOW_DEPENDENCY_MISSING
+PASS missing helper retains installed bytes
+PASS missing helper does not replace rollback evidence
+PASS missing helper leaves no temporary deployment file
+PASS side-effect import returns WORKFLOW_DEPENDENCY_MISSING
+PASS side-effect import retains installed bytes
+PASS side-effect import does not replace rollback evidence
+PASS side-effect import leaves no temporary deployment file
+PASS dynamic literal import returns WORKFLOW_DEPENDENCY_MISSING
+PASS dynamic literal import retains installed bytes
+PASS dynamic literal import does not replace rollback evidence
+PASS dynamic literal import leaves no temporary deployment file
+PASS local re-export returns WORKFLOW_DEPENDENCY_MISSING
+PASS local re-export retains installed bytes
+PASS local re-export does not replace rollback evidence
+PASS local re-export leaves no temporary deployment file
+PASS missing standalone core returns WORKFLOW_DEPENDENCY_MISSING
+PASS missing standalone core retains installed bytes
+PASS missing standalone core does not replace rollback evidence
+PASS missing standalone core leaves no temporary deployment file
+PASS complete local dependency with single-file installer returns WORKFLOW_MULTI_FILE_DEPLOYMENT_REQUIRED
+PASS complete local dependency with single-file installer retains installed bytes
+PASS complete local dependency with single-file installer does not replace rollback evidence
+PASS complete local dependency with single-file installer leaves no temporary deployment file
+PASS full-auto bundle is not partially copied returns WORKFLOW_MULTI_FILE_DEPLOYMENT_REQUIRED
+PASS full-auto bundle is not partially copied retains installed bytes
+PASS full-auto bundle is not partially copied does not replace rollback evidence
+PASS full-auto bundle is not partially copied leaves no temporary deployment file
+PASS external core deployment contract returns WORKFLOW_EXTERNAL_CORE_DEPLOYMENT_REQUIRED
+PASS external core deployment contract retains installed bytes
+PASS external core deployment contract does not replace rollback evidence
+PASS external core deployment contract leaves no temporary deployment file
+PASS new destination fails dependency preflight
+PASS failed preflight does not create a destination
+PASS linked source directory returns WORKFLOW_REPARSE_POINT_BLOCKED
+PASS linked source directory retains installed bytes
+PASS linked source directory does not replace rollback evidence
+PASS linked source directory leaves no temporary deployment file
+PASS linked target directory returns WORKFLOW_REPARSE_POINT_BLOCKED
+PASS linked target directory retains installed bytes
+PASS linked target directory does not replace rollback evidence
+PASS linked target directory leaves no temporary deployment file
+Workflow deployment guard: 46 passed, 0 failed, 0 skipped

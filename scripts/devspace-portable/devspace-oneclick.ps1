@@ -14,7 +14,8 @@ Import-Module (Join-Path $PSScriptRoot 'DevSpace.OneClick.Core.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'DevSpace.OneClick.Platform.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'DevSpace.OneClick.Subagents.psm1') -Force
 
-$DevSpacePackage = '@waishnav/devspace@1.0.4'
+$DevSpacePackage = '@waishnav/devspace@1.0.8'
+$CodexPackage = '@openai/codex@0.153.4'
 $ConfigRoot = if ($env:DEVSPACE_ONECLICK_CONFIG_DIR) {
     $env:DEVSPACE_ONECLICK_CONFIG_DIR
 }
@@ -237,6 +238,8 @@ function Save-DevSpaceConfig {
 
     $existingConfig = Read-JsonFile -FilePath $ConfigPath
     $config = Merge-DevSpaceConfig -ExistingConfig $existingConfig -AllowedRoots $Roots -Port ([int]$Settings.port) -PublicBaseUrl ([string]$Settings.publicBaseUrl)
+    $config | Add-Member -NotePropertyName 'subagents' -NotePropertyValue $true -Force
+    $config | Add-Member -NotePropertyName 'agentDir' -NotePropertyValue (Join-Path $ConfigRoot 'agents') -Force
     Backup-File -FilePath $ConfigPath
     Write-JsonFile -FilePath $ConfigPath -Value $config
 }
@@ -556,13 +559,14 @@ function Start-Stack {
     $spec = Get-ValidatedSpec
     $tools = Get-InstalledTools
     $runtime = Read-JsonFile -FilePath $RuntimePath
+    [void](Ensure-CodexCli -NpmPath $tools.Npm -CodexPackage $CodexPackage)
     $patchCount = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
     $workflowInstall = Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot
     $runtimeComponentsChanged = $patchCount -gt 0 -or $workflowInstall.Changed
     if ($patchCount -gt 0) {
-        Write-Info "Applied $patchCount DevSpace 1.0.4 Windows subagent compatibility fixes."
+        Write-Info "Applied $patchCount DevSpace $((Get-Content -LiteralPath (Join-Path (Split-Path -Parent (Split-Path -Parent $tools.DevSpaceCli)) 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version) compatibility fix(es)."
     }
 
     $stoppedForRuntimeUpdate = $false
@@ -727,7 +731,18 @@ function Copy-OwnerPassword {
 function Write-AgentRecord {
     param([Parameter(Mandatory = $true)]$Record)
 
-    Write-Host "$($Record.id) $($Record.status) $($Record.profileName) $($Record.provider) $($Record.model) thinking=$($Record.thinking)"
+    $parts = @([string]$Record.id, [string]$Record.status)
+    foreach ($propertyName in @('profileName', 'provider', 'model')) {
+        $value = Get-DevSpaceAgentRecordText -Record $Record -PropertyName $propertyName
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            $parts += $value
+        }
+    }
+    $thinking = Get-DevSpaceAgentRecordText -Record $Record -PropertyName 'thinking'
+    if (-not [string]::IsNullOrWhiteSpace($thinking)) {
+        $parts += "thinking=$thinking"
+    }
+    Write-Host ($parts -join ' ')
     Write-Host "  workspace: $($Record.workspaceRoot)"
     $response = Get-DevSpaceAgentRecordText -Record $Record -PropertyName 'latestResponse'
     if (-not [string]::IsNullOrWhiteSpace($response)) {
@@ -811,6 +826,7 @@ function Install-OneClick {
     Ensure-Directory -Directory $LogRoot
 
     $tools = Install-Dependencies -DevSpacePackage $DevSpacePackage
+    [void](Ensure-CodexCli -NpmPath $tools.Npm -CodexPackage $CodexPackage)
     [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
@@ -853,6 +869,11 @@ function Update-OneClick {
     }
 
     $tools = Install-Dependencies -DevSpacePackage $DevSpacePackage
+    [void](Ensure-CodexCli -NpmPath $tools.Npm -CodexPackage $CodexPackage)
+    [void](Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $tools.DevSpaceCli)
+    [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
+    [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
+    [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     Start-Stack
     Invoke-Doctor -Tools $tools

@@ -1,0 +1,27 @@
+TAP version 13
+# ok testSelectsMatchingCapability
+# ok testLimitsNormalRequestToThreeCapabilities
+# ok testUsesManifestCapabilityLimitWhenOptionsAreAbsent
+# ok testOptionsCapabilityLimitOverridesManifest
+# ok testInvalidManifestCapabilityLimitsFallBackToDefault
+# ok testExplicitZeroCapabilityLimitSelectsNoCapabilities
+# ok testOptionsCapabilityLimitNeverExceedsHardCap
+# ok testManifestCapabilityLimitNeverExceedsHardCap
+# ok testReturnsBootstrapOnlyWhenNoMatch
+# ok testDeduplicatesFiles
+# ok testMissingManifestDegradesWithoutFullScan
+# Subtest: scripts\\router\\resolve-capabilities.test.js
+ok 1 - scripts\\router\\resolve-capabilities.test.js
+  ---
+  duration_ms: 200.966
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 207.6291

@@ -146,6 +146,58 @@ function Resolve-DevSpaceCli {
     return $cli
 }
 
+function Ensure-CodexCli {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$NpmPath,
+        [Parameter(Mandatory = $true)][string]$CodexPackage
+    )
+
+    if ($CodexPackage -notmatch '^@openai/codex@(?<version>[^\s]+)$') {
+        throw "Unsupported Codex package spec: $CodexPackage"
+    }
+    $desiredVersion = $Matches['version']
+    $globalRoot = (& $NpmPath root -g).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($globalRoot)) {
+        throw 'Unable to resolve the global npm package directory for Codex.'
+    }
+
+    $packageJsonPath = Join-Path $globalRoot '@openai\codex\package.json'
+    $codexCommand = Join-Path (Split-Path -Parent $NpmPath) 'codex.cmd'
+    $currentVersion = $null
+    if (Test-Path -LiteralPath $packageJsonPath -PathType Leaf) {
+        try {
+            $currentVersion = [string]((Get-Content -LiteralPath $packageJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json).version)
+        }
+        catch {
+            $currentVersion = $null
+        }
+    }
+
+    $healthy = $false
+    if ($currentVersion -eq $desiredVersion -and (Test-Path -LiteralPath $codexCommand -PathType Leaf)) {
+        $versionOutput = (& $codexCommand --version 2>&1 | Out-String).Trim()
+        $healthy = $LASTEXITCODE -eq 0 -and $versionOutput -match [regex]::Escape($desiredVersion)
+    }
+    if ($healthy) {
+        return $false
+    }
+
+    Write-PlatformInfo "Installing tested Codex package $CodexPackage..."
+    & $NpmPath install -g $CodexPackage | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "npm could not install $CodexPackage."
+    }
+    if (-not (Test-Path -LiteralPath $codexCommand -PathType Leaf)) {
+        throw "Codex command is missing after installation: $codexCommand"
+    }
+    $verifiedOutput = (& $codexCommand --version 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $verifiedOutput -notmatch [regex]::Escape($desiredVersion)) {
+        throw "Codex version check failed after installation: $verifiedOutput"
+    }
+    return $true
+}
+
 function Install-Dependencies {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][string]$DevSpacePackage)
@@ -320,6 +372,7 @@ function Get-AccountDevSpacePorts {
     return [int[]]@($ports)
 }
 Export-ModuleMember -Function @(
+    'Ensure-CodexCli',
     'Install-Dependencies',
     'Get-InstalledTools',
     'ConvertFrom-NativeJson',

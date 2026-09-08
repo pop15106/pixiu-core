@@ -1,0 +1,163 @@
+[PASS] derives the Watchdog config path
+[PASS] derives the Watchdog state path
+[PASS] derives the Watchdog log path
+[PASS] writes and reads UTF-8 JSON atomically
+[PASS] preserves JSON values
+[PASS] removes the atomic temp file
+[PASS] accepts a bounded OneClick port
+[PASS] accepts a safe tunnel ID
+[PASS] rejects missing OneClick settings
+[PASS] rejects settings from another machine
+[PASS] rejects an out-of-range port
+[PASS] rejects unsafe public origin: http://dxrpsqgc-7678.jpe1.devtunnels.ms
+[PASS] rejects unsafe public origin: https://example.com
+[PASS] rejects unsafe public origin: https://dxrpsqgc-7678.jpe1.devtunnels.ms/mcp
+[PASS] rejects unsafe public origin: https://dxrpsqgc-7678.jpe1.devtunnels.ms/?query=1
+[PASS] rejects unsafe public origin: https://user@dxrpsqgc-7678.jpe1.devtunnels.ms
+[PASS] accepts the exact DevSpace health payload
+[PASS] healthy payload has no error category
+[PASS] rejects a health payload from another service
+[PASS] retains a safe health status code
+[PASS] maps an HTTP exception to unhealthy
+[PASS] does not expose raw HTTP exception detail
+[PASS] accepts the authoritative tunnel origin
+[PASS] rejects a stale public origin
+[PASS] accepts a logged-in Dev Tunnel session
+[PASS] checks login without invoking user login
+[PASS] refuses a logged-out Dev Tunnel session
+[PASS] fails closed when the login check errors
+[PASS] matches only the exact configured tunnel host
+[PASS] keeps the selected verified tunnel host
+[PASS] stops only a revalidated cleanup target
+[PASS] rejects a reused PID with a different start time
+[PASS] does not stop a reused PID
+[PASS] rejects command-line drift before stopping a process
+[PASS] does not stop a process after command-line drift
+[PASS] DPAPI ciphertext does not contain the plaintext token
+[PASS] round-trips the token with CurrentUser DPAPI
+[PASS] rejects invalid DPAPI ciphertext
+[PASS] disables inherited Watchdog ACL rules
+[PASS] allows only SYSTEM and the current Windows user
+[PASS] applies the restricted ACL to Watchdog files
+[PASS] applies Watchdog DACL without Set-Acl security privilege
+[PASS] does not write the Telegram token to the log
+[PASS] rejects non-whitelisted log fields
+[PASS] rejects untrusted text inside a whitelisted log field
+[PASS] rotates a one MiB Watchdog log
+[PASS] writes the new event after rotation
+[PASS] does not notify on initial healthy state
+[PASS] notifies a healthy to unhealthy transition
+[PASS] deduplicates the same unhealthy category
+[PASS] notifies when the unhealthy category changes
+[PASS] notifies an unhealthy to healthy transition
+[PASS] notifies after an anomaly is auto-recovered in the same run
+[PASS] notifies the first Connector failure
+[PASS] deduplicates Connector failure within four hours
+[PASS] allows Connector notification after four hours
+[PASS] ConnectorFailure does not accept arbitrary error text
+[PASS] delivers a fixed structured Telegram notification
+[PASS] decrypts the token only for the Telegram adapter
+[PASS] does not return the Telegram token
+[PASS] labels a verified Connector recovery explicitly
+[PASS] labels a failed Connector auto-recovery explicitly
+[PASS] rejects untrusted text inside a Telegram status field
+[PASS] sanitizes a Telegram delivery exception
+[PASS] does not return a token from a failed Telegram call
+[PASS] marks local and public health as healthy
+[PASS] probes local health before the authoritative public origin
+[PASS] classifies local health failure first
+[PASS] classifies public tunnel health failure
+[PASS] forces non-interactive OneClick execution
+[PASS] executes the fixed Force Reconnect command non-interactively without pause
+[PASS] accepts the expected public MCP OAuth challenge as a valid response
+[PASS] rejects an OAuth challenge whose resource metadata points at another origin
+[PASS] rejects a non-OAuth MCP response
+[PASS] marks Connector recovery healthy only after all post-checks pass
+[PASS] marks Connector response ready after the OAuth challenge check
+[PASS] marks the Force Reconnect recovery successful
+[PASS] runs Force Reconnect before health and MCP response verification
+[PASS] keeps Connector recovery unhealthy when MCP response verification fails
+[PASS] does not claim recovery before the response check passes
+[PASS] stops recovery when Dev Tunnel is logged out
+[PASS] does not start OneClick after a logged-out check
+[PASS] stops after OneClick refuses a verified stop
+[PASS] does not continue after OneClick stop refusal
+[PASS] returns healthy after one successful recovery
+[PASS] marks a successful recovery
+[PASS] performs one bounded recovery in safe order
+[PASS] does not attempt a second recovery after post-check failure
+[PASS] runs the post-recovery probe once
+[PASS] bounds recovery to eight minutes
+[PASS] does not perform side effects after timeout
+[PASS] returns healthy without recovery when probes pass
+[PASS] persists one healthy state snapshot
+[PASS] releases the mutex after a healthy run
+[PASS] returns healthy after the fixed Force Reconnect path recovers an anomaly
+[PASS] runs fixed reconnect and verification before notifying recovery from a Watchdog anomaly
+[PASS] exits when another Watchdog run owns the mutex
+[PASS] does not notify or probe after mutex contention
+[PASS] distinguishes missing settings from malformed settings
+[PASS] notifies the first missing-settings anomaly
+[PASS] keeps service failure classification when Telegram delivery fails
+[PASS] logs a sanitized Telegram failure without changing service state
+[PASS] uses the fixed Watchdog task name
+[PASS] runs the Watchdog every four hours
+[PASS] runs the Watchdog at current user logon
+[PASS] ignores overlapping scheduled runs
+[PASS] uses least-privilege task execution
+[PASS] uses the current interactive token
+[PASS] bounds Task Scheduler execution
+[PASS] retries a failed Watchdog task fifteen times
+[PASS] retries a failed Watchdog task every fifteen minutes
+[PASS] does not place Telegram data in task arguments
+[PASS] passes the retry count to Windows Task Scheduler
+[PASS] passes the retry interval to Windows Task Scheduler
+[PASS] accepts Task Scheduler local-account normalization
+[PASS] rejects a different Task Scheduler account
+[PASS] registers and verifies the exact task
+[PASS] rolls back a task whose read-back differs from the spec
+[PASS] removes only the mismatched fixed task
+[PASS] rejects a task whose retry count differs from the safe specification
+[PASS] rejects a task whose retry interval differs from the safe specification
+[PASS] installs only after secret read-back and confirmed host normalization
+[PASS] fails closed when the Watchdog ACL cannot be applied
+[PASS] does not register a task after ACL failure
+[PASS] fails closed when DPAPI config read-back fails
+[PASS] does not register a task after DPAPI read-back failure
+[PASS] does not install when duplicate-host cleanup is declined
+[PASS] does not normalize or register after cleanup refusal
+[PASS] returns the fixed task in Watchdog status
+[PASS] returns the last safe Watchdog state
+[PASS] never exposes Telegram config in status
+[PASS] cancels Watchdog removal without side effects
+[PASS] preserves task and settings after removal cancellation
+[PASS] confirms Watchdog removal
+[PASS] removes only the fixed task and Watchdog directory
+[PASS] install wrapper preserves the PowerShell exit code
+[PASS] install wrapper invokes the colocated Watchdog action
+[PASS] status wrapper preserves the PowerShell exit code
+[PASS] status wrapper invokes the colocated Watchdog action
+[PASS] run wrapper preserves the PowerShell exit code
+[PASS] run wrapper invokes the colocated Watchdog action
+[PASS] remove wrapper preserves the PowerShell exit code
+[PASS] remove wrapper invokes the colocated Watchdog action
+[PASS] sends a notification only after Connector auto-recovery completes
+[PASS] runs recovery before sending the successful notification
+[PASS] sends one Connector recovery notification
+[PASS] reports the verified Connector response as ready
+[PASS] reports successful Force Reconnect recovery
+[PASS] persists the Connector notification cooldown
+[PASS] deduplicates the fixed Connector command within four hours
+[PASS] does not reconnect or notify again inside the four-hour cooldown
+[PASS] notifies after an auto-recovery attempt still fails
+[PASS] keeps the final notification as ConnectorFailure when verification is still red
+[PASS] reports that Force Reconnect was attempted before the failure notification
+[PASS] reports the sanitized post-recovery failure category
+[PASS] sends a fixed Telegram test notification
+[PASS] does not accept arbitrary Telegram test text
+[PASS] dispatches only the six fixed Watchdog actions
+[PASS] returns success when the scheduled Watchdog is healthy
+[PASS] does not retry when another Watchdog instance owns the mutex
+[PASS] returns a retryable failure when Watchdog recovery fails
+[PASS] does not apply the scheduled-run failure code to status commands
+Tests: 162 passed, 0 failed
