@@ -69,6 +69,17 @@
       }
     },
     {
+      "id": "work-document-orchestration",
+      "summary": "以自然語言辨識需求、SA/PM 交辦、追加異動、報修、資料修復、事故、上版、操作手冊與資安排除；先建立可追溯 Work Record，再路由既有專門 Skill，維持 Draft -> In Progress -> Review -> Final 的證據鏈。",
+      "keywords": ["需求", "現在有個需求", "有個需求", "PM說", "PM 說", "PM剛", "PM 剛", "SA說", "SA 說", "SA剛", "SA 剛", "交代", "交辦", "追加調整", "追加需求", "需求變更", "報修", "客戶報修", "客戶反映", "客戶反應", "異常", "事故", "出事", "資料異常", "資料怪怪的", "手動修資料", "人工修資料", "人工 SQL", "人工SQL", "上版", "併版", "操作手冊", "資安排除", "弱點排除", "自保文件", "覆核單", "留個紀錄"],
+      "priority": 60,
+      "load": {
+        "skills": ["skills/work-document-orchestrator/SKILL.md"],
+        "contexts": [],
+        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+      }
+    },
+    {
       "id": "repair-review",
       "summary": "事故／異常／報修後、正式修正前，整理現象與證據、重現、Root Cause 狀態、active path / blast radius、Repair Scope、資料修復、環境一致性、測試與回復方案；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM/必要角色覆核。",
       "keywords": ["報修覆核單", "報修覆核", "報修單", "事故修復覆核", "故障修復覆核", "修復方案覆核", "bug修復覆核", "bug 修復覆核", "異常修復覆核", "問題修復覆核", "事故覆核", "維修覆核單"],
