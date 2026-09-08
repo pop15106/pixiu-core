@@ -129,6 +129,31 @@ Document Status：DRAFT
 13. **決策來源**：誰要求追加、暫停、不上版、改規則或接受風險。
 14. **覆核紀錄**：PG / SA / PM / QA / DBA / Ops / Security，依實際責任加入。
 15. **版本與日期**：文件 revision、需求 revision、程式 SHA / release version（適用時）。
+16. **Git 追溯資訊**：Repo、Branch、Remote、Commit SHA、Commit 訊息、Author、Committer、Push Actor、Push 時間與可追溯證據（適用時）。
+
+### Git Traceability Contract
+
+只要工作涉及 Git commit、merge、release 或 push，文件必須保存實際 Git 證據，不只寫「已推上去」。至少記錄：
+
+| 欄位 | 內容 |
+|---|---|
+| Repository | `<repo name / remote URL>` |
+| Branch | `<branch>` |
+| Commit SHA | `<full SHA 優先；短 SHA 可作顯示>` |
+| Commit Message | `<actual message>` |
+| Author | `<git author>` |
+| Committer | `<git committer>` |
+| Remote | `<origin / actual remote>` |
+| Push Actor | `<實際執行 push 的人／帳號；無證據則 Pending>` |
+| Pushed At | `<有可靠 evidence 才填>` |
+| Push Evidence | `<remote ref / GitHub event / audit / terminal output / CI log>` |
+
+規則：
+- **Author、Committer、Push Actor 是三個不同概念，不得互相代填。**
+- `git log` / commit object 可證明 Author、Committer、Commit SHA、Commit Message，但通常**不能單獨證明誰執行 push**。
+- Push Actor 只有在 GitHub/Git server event、audit log、CI/CD identity、登入帳號或其他可追溯執行證據支持時才能填；否則標 `Pending / Git object 無法單獨確認`。
+- 若由 AI／自動化工具代使用者執行 push，應記錄「實際使用的 Git 身分／遠端帳號」與執行來源，不把 AI 名稱冒充 Git server 的帳號。
+- 最終文件若宣稱「已推到遠端」，至少要核對 local HEAD 與目標 remote ref / branch 是否一致，或提供等價遠端證據。
 
 ---
 
@@ -202,6 +227,7 @@ Document Status：DRAFT
 工作完成且已有足夠驗證：
 - 記錄實際完成內容，不用原本「預計」內容取代。
 - 附最終驗證與版本。
+- 若有 Git 變更，附 Commit SHA、Commit 訊息、Author/Committer、Remote/Branch、Push Actor 與 Push Evidence。
 - Reviewer 結果只填實際取得的內容。
 - 未完成或未驗證事項仍保留，不因結案而隱藏。
 
@@ -329,6 +355,7 @@ PG Interpretation：<captured / pending>
 Scope：<ready / partial / pending>
 Evidence：<ready / partial / pending>
 Review：<PG/SA/PM/... statuses>
+Git：<N/A / commit SHA + branch + push actor/evidence>
 Output：<path / chat draft / pending>
 Next：<investigate / review / implement / verify / finalize>
 ```
