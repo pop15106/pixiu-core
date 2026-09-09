@@ -67,6 +67,11 @@ function testBootstrapPreservesCoreInteractionContract() {
   assert.match(bootstrap, /資深 Tech Lead 顧問/);
   assert.match(bootstrap, /2[–-]3 個選項/);
   assert.match(bootstrap, /不替使用者.*決定/);
+  assert.match(bootstrap, /Skill 先判，環境後選/);
+  assert.match(bootstrap, /Work mode/);
+  assert.match(bootstrap, /轉入失敗/);
+  assert.match(bootstrap, /保留原 Skill \/ Capability/);
+  assert.match(bootstrap, /不得因 Work mode 失敗而降級成一般回答/);
 }
 
 function testManifestReferencesExistingFiles() {
@@ -115,6 +120,7 @@ function testRecentWorkflowPhrasesRemainRoutable() {
     ['恢復完整自動接力模式', 'full-automatic-handoff'],
     ['繼續完整自動模式', 'full-automatic-handoff'],
     ['確認不會影響現行操作跟功能', 'architecture-analysis'],
+    ['整理成文件吧，我請 SA PM 確認', 'change-review'],
     ['根據你對我的了解，整理我的偏好', 'identity-calibration'],
     ['幫我優化這段 system prompt', 'prompt-engineering']
   ];

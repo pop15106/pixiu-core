@@ -72,6 +72,18 @@ AI 不得要求使用者一定說出精準 skill 名稱。觸發方式分三層�
 | legacy Java、Servlet、mapper、SQL flow | `skills/legacy-java-flow-tracing/SKILL.md` |
 | 第二大腦失敗、Qdrant、NVIDIA 查詢問題 | `skills/second-brain-health-check/SKILL.md` |
 
+## Skill 先判，環境後選（雙路徑）
+
+Skill / Capability 路由與執行環境選擇必須分開處理。Work mode 是優先執行環境之一，不是 Skill 生效的必要條件。
+
+1. 先依使用者語意完成 Skill / Capability 路由，並保留命中的路由結果。
+2. 再判斷執行環境；任務適合 Work mode 時可優先嘗試轉入 Work。
+3. 若 Work mode 不可用、轉入失敗，或使用者選擇留在目前對話，立即改走一般對話路徑，使用目前可用工具繼續執行原本命中的 Skill / Capability。
+4. Work mode 失敗不得觸發重新降級成一般回答，也不得丟失已命中的覆核、文件、驗證、程式追蹤等 Skill。
+5. 若一般對話確實缺少完成某一步所需的工具，只回報缺少的能力與未完成項目；其餘可安全完成的部分仍繼續執行。
+
+執行順序固定為：`使用者需求 → Skill / Capability Router → 執行環境選擇 → Work 或一般對話 → 同一 Skill 持續執行`。
+
 ## Skills / Workflows / Hooks 載入原則
 
 1. 不在 session start 載入全部 skills、workflows、hooks、agents。
