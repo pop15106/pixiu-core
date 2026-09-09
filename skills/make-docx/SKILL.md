@@ -55,9 +55,29 @@ Slash command（`/make-docx`），根據使用者提供的主題與大綱，以 
    python docs/gen_docx_<slug>.py
    ```
 
-4. **確認檔案**：`ls -lh docs/*.docx`
+4. **最低可交付驗證**
+   - 確認 DOCX 可正常開啟，且輸出檔大於 0 bytes。
+   - Host 有 Render 能力時，只做一次必要 Render QA：確認無截字、表格超出版面、真正空白頁、嚴重錯位、中文字型異常。
+   - 檢查使用者要求的內容、標題與章節完整。
+   - 頁數、最後一頁內容偏少、段距、spacing、cell margin 屬非阻塞美化。
 
-5. **告知使用者**：檔案路徑 + 提醒開啟後 Ctrl+A → F9 更新目錄
+5. **立即交付**
+   - 驗證通過後把狀態由 `VALIDATED` 轉為 `DELIVERED`，直接提供使用者可用下載入口或 Host 可開啟的 Artifact reference。
+   - 若還要 PDF 或其他格式，先交付已驗證 DOCX，再繼續處理其餘格式。
+
+6. **選擇性美化**
+   - 只有使用者要求調版、存在重大排版錯誤、閱讀明顯受影響或指定範本不符時進入 `POLISHING`。
+   - 每輪調整綁定明確問題，修正後只重驗受影響部分。
+
+7. **使用者可見進度**
+   - 多工具長流程至少在「初版產出」「最低 QA 結果」「交付」回報一次。
+   - 初版已可用但仍在美化時，明確說明文件本身已正常，剩餘工作只屬版面微調。
+
+### Document Lifecycle
+
+固定狀態：`DRAFT -> VALIDATED -> DELIVERED -> POLISHING（選擇性）`
+
+Artifact lifecycle：`working draft -> QA render -> final artifact`。QA Render 的 PDF/PNG 是工作產物，不重複建立成多個正式下載版本。
 
 ---
 

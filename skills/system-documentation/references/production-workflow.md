@@ -9,9 +9,9 @@
 1. 流程與規則有原始碼/設定/Schema/Runtime 證據。
 2. 功能截圖忠實呈現既有系統，不自行美化。
 3. 正式資料已遮罩或替換成虛構測試資料。
-4. DOCX 可編輯。
-5. PDF 可直接發布。
-6. 兩種格式都經實際 Render QA。
+4. 使用者要求的 DOCX 可編輯。
+5. 使用者要求的 PDF 可直接發布。
+6. 每個要求格式都完成最低可交付 QA；已驗證格式立即交付，不等待非必要美化。
 
 ---
 
@@ -27,6 +27,15 @@
 - 是否已有實際畫面可作 Fidelity reference。
 
 如果使用者已明確提供以上資訊，不重複詢問。
+
+### 0.1 Work mode 雙路徑
+
+先保留同一份 Skill / Capability，再選執行環境：
+
+- Work mode 成功轉入：在 Work mode 依本流程完成產出、驗證與交付。
+- Work mode 不可用、轉入失敗、被拒絕或使用者留在目前對話：立即以目前對話可用工具依本流程繼續，不重複要求切換。
+
+兩條路使用相同的 QA Gate、Artifact lifecycle 與交付規則。
 
 ---
 
@@ -285,110 +294,114 @@
 
 ---
 
-## Phase 7 — DOCX 第一次 Render QA
+## Phase 7 — DOCX 最低可交付 QA
 
-**不能只確認 DOCX 已生成。**
+文件狀態從 `DRAFT` 開始。DOCX 產出後做一次必要 Render QA，不以單純美觀問題延長交付。
 
-實際把 DOCX Render 成 PDF/PNG 頁面，再逐頁看。
+### 阻塞交付的重大問題
 
-檢查：
+- 文件無法正常開啟或 Render。
+- 文字、圖片或流程圖被截斷。
+- 表格超出版面或嚴重錯位。
+- 出現真正空白頁。
+- 中文字型異常或缺字，影響閱讀。
+- 使用者要求的內容、標題或章節缺漏。
+- 存在未處理的密碼、Token、個資或敏感資料。
 
-- 圖片是否太小。
-- 截圖字是否可讀。
-- 表格是否超出頁面。
-- heading 是否孤立在頁尾。
-- 注意框是否被拆成兩頁。
-- 是否出現一頁只剩 1~3 行文字。
-- 是否有不必要空白頁。
-- 流程圖是否被裁切。
-- 中文字型是否正常。
+若發現上述問題，修正後只重驗受影響部分。驗證通過後標記 `VALIDATED`。
 
-### 實際成功案例的修正方式
+### 不阻塞第一版交付的項目
 
-PMSW 案例中曾出現：
+- 2 頁或 3 頁的差異。
+- 最後一頁只有少量內容，但不是空白頁。
+- heading 位置、段距、cell margin 還能更漂亮。
+- 圖片大小仍可微調，但目前可閱讀。
+- 版面還能進一步壓縮。
 
-- 章節強制換頁造成整頁留白。
-- 黃色注意框被推到獨立頁。
-- 步驟編號跨章節延續。
+### 實際成功案例的必要修正方式
 
-修正策略：
+PMSW 案例中曾出現章節強制換頁造成整頁留白、注意框被推到獨立頁、步驟編號跨章節延續。對真正影響閱讀或內容正確性的問題，可採：
 
-- 移除非必要 `page_break`。
+- 移除造成空白頁的非必要 `page_break`。
 - 注意框 table row 設 `cantSplit`。
 - 每小節用明確數字文字重新從 1 編號，不依賴 Word 自動 List Number 延續狀態。
-- 保留合理留白，不為了塞滿頁面破壞閱讀性。
 
-Render 後再重新檢查。
-
----
-
-## Phase 8 — 產 PDF
-
-DOCX QA 通過後，再由**最終 DOCX**輸出 PDF。
-
-禁止：
-
-- 用舊版 DOCX 產 PDF。
-- DOCX 修過後忘記重產 PDF。
-- PDF 與 DOCX 使用不同內容來源。
+保留合理留白，不為了減頁數破壞閱讀性。
 
 ---
 
-## Phase 9 — PDF 獨立逐頁 QA
+## Phase 8 — 已驗證版本立即交付
 
-PDF 需要再 Render 成圖片，逐頁檢查。
+DOCX 進入 `VALIDATED` 後立即轉成 `DELIVERED`，提供可使用的下載入口。不要因頁數、spacing、cell margin 或其他非阻塞美化延後第一版。
 
-原因：DOCX Render 正常，不代表最終 PDF 一定正常。
+長流程在此至少回報：
 
-逐頁檢查：
+```text
+第一版文件已成功產出，內容完整，最低版面驗證已通過。
+文件已可使用；若後續仍有處理，只剩其他指定格式或選擇性版面微調。
+```
 
-- 頁數。
-- 空白頁。
-- 字型替換。
-- 中文缺字。
-- 圖片縮放。
-- 表格線。
-- page break。
-- 截圖清晰度。
-- 圖說與圖片是否分離。
-
-若任何一頁有問題：回 DOCX/產生腳本修正，再重走 Phase 7~9。
+如果使用者只要求 DOCX，主要交付到此完成。
 
 ---
 
-## Phase 10 — Redaction QA
+## Phase 9 — PDF 產出（使用者有要求時）
 
-最後檢查：
+只有使用者要求 PDF 時，才由最新已 `VALIDATED` 的 DOCX 輸出 PDF。
 
-- 密碼。
-- Token。
-- API Key。
-- 個資。
-- 真實供應商/客戶敏感資料。
-- 正式交易資料。
+確認：
 
-範例資料應清楚是虛構值。
+- PDF 來源是目前已驗證 DOCX。
+- DOCX 若因重大問題修正，PDF 隨最新版本重產。
+- PDF 與 DOCX 使用同一內容來源。
+
+已交付的 DOCX 不因 PDF 尚在轉檔而撤回或延後。
 
 ---
 
-## Phase 11 — Delivery
+## Phase 10 — PDF 最低可交付 QA 與交付
 
-交付時至少提供：
+PDF 做一次必要逐頁 QA：
 
-- DOCX。
-- PDF。
-- 文件模式。
-- UI 證據類型。
-- QA 狀態。
-- 未驗證項目。
+- 無空白頁。
+- 文字、圖片、表格沒有被切掉。
+- 中文沒有缺字或異常替換。
+- Screenshot 字仍可閱讀。
+- PDF 與最新 DOCX 內容一致。
+
+若有重大問題，修正並重驗受影響部分。通過後立即交付 PDF。頁數是否能再壓縮、最後一頁是否偏少，不影響 PDF 第一版交付。
+
+---
+
+## Phase 11 — 選擇性 POLISHING
+
+只有以下條件成立才進入 `POLISHING`：
+
+- 使用者要求調版。
+- 發現真正的重大排版錯誤。
+- 版面嚴重影響閱讀。
+- 格式與使用者指定範本不符。
+
+每一輪 Polish 都要綁定一個明確問題或使用者要求。修正後只重驗受影響格式。單純「3 頁可以壓成 2 頁」不是阻塞條件。
+
+同一文件的 Artifact lifecycle 固定為：
+
+`working draft -> QA render -> final artifact`
+
+QA 用 PDF/PNG 是工作產物，不建立成多個看似正式的下載版本。
+
+### Delivery 回報
+
+交付時提供使用者實際要求的格式、文件模式、UI 證據類型、QA 狀態、未驗證項目與可用下載入口。
 
 建議短格式：
 
 ```text
 文件模式：操作手冊
 UI：依 JSP/CSS/JS/原始圖片忠實還原
-輸出：DOCX + PDF
-QA：Evidence PASS / Fidelity PASS / DOCX Render PASS / PDF Render PASS / Redaction PASS
+狀態：DELIVERED
+輸出：DOCX（已提供下載入口）；PDF（若有要求則另行驗證後交付）
+QA：Evidence PASS / Fidelity PASS / DOCX Render PASS / Redaction PASS
 未驗證：無
 ```
 
@@ -402,7 +415,9 @@ QA：Evidence PASS / Fidelity PASS / DOCX Render PASS / PDF Render PASS / Redact
 - 只讀 JSP，不讀 CSS/JS/asset。
 - 把檔案存在誤判成現行功能已啟用。
 - 把程式碼還原畫面叫「實際系統截圖」。
-- 只產 DOCX/PDF，不 Render QA。
+- 只產 DOCX/PDF，不做最低可交付 Render QA。
+- 已達 `VALIDATED`，仍因頁數、最後一頁偏少、spacing 或 cell margin 延後交付。
+- 在 QA 過程反覆建立多個看似正式的 Artifact。
 - 為了減頁數把操作畫面縮到看不清楚。
 - 正式畫面直接帶真實密碼或敏感資料。
 
@@ -410,15 +425,17 @@ QA：Evidence PASS / Fidelity PASS / DOCX Render PASS / PDF Render PASS / Redact
 
 ## Definition of Done
 
-只有以下全部成立才算完成：
+只有以下適用項目全部成立才算完成：
 
 - [ ] Active path 已追。
-- [ ] UI source walk 已完成。
-- [ ] 截圖 Fidelity 已驗證。
+- [ ] UI source walk 已完成（文件需要 UI 時）。
+- [ ] 截圖 Fidelity 已驗證（文件需要 UI 時）。
 - [ ] 流程文字與狀態有 Evidence。
-- [ ] DOCX 已產出。
-- [ ] DOCX 已 Render 並逐頁 QA。
-- [ ] PDF 由最終 DOCX 產出。
-- [ ] PDF 已獨立 Render 並逐頁 QA。
+- [ ] 使用者要求的文件格式已產出。
+- [ ] 每個要求格式都完成最低可交付 QA。
+- [ ] 第一個 `VALIDATED` 的可用格式已立即 `DELIVERED`，沒有等待非必要美化。
+- [ ] 使用者要求 PDF 時，PDF 由最新已驗證 DOCX 產出並完成最低 QA。
 - [ ] 敏感資料已檢查。
 - [ ] 未驗證事項已揭露。
+
+`POLISHING` 是完成交付後的選擇性狀態，不是 Definition of Done 的必要條件。

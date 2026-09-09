@@ -68,9 +68,11 @@ function testBootstrapPreservesCoreInteractionContract() {
   assert.match(bootstrap, /2[–-]3 個選項/);
   assert.match(bootstrap, /不替使用者.*決定/);
   assert.match(bootstrap, /Skill 先判，環境後選/);
-  assert.match(bootstrap, /Work mode/);
-  assert.match(bootstrap, /轉入失敗/);
-  assert.match(bootstrap, /保留原 Skill \/ Capability/);
+  assert.match(bootstrap, /Work mode 適合時可優先嘗試/);
+  assert.match(bootstrap, /成功轉入.*沿用同一 Skill \/ Capability/);
+  assert.match(bootstrap, /不可用.*轉入失敗.*被拒絕/);
+  assert.match(bootstrap, /立即改用目前對話可用工具.*沿用同一 Skill \/ Capability/);
+  assert.match(bootstrap, /不再次要求切換/);
   assert.match(bootstrap, /不得因 Work mode 失敗而降級成一般回答/);
 }
 
