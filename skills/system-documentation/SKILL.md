@@ -15,7 +15,7 @@ origin: Pixiu
 2. **Fidelity over beautification**：描述既有系統時，可以改善「文件」排版，但不得重新設計「受描述系統」的 UI。
 3. **Evidence gaps stay gaps**：來源無法支持的欄位、流程、狀態、畫面或業務規則，明確標示「資料不足／待確認」，不得自行補完。
 4. **Project facts stay outside core**：通路代碼、特殊 URL、特定 Table、Portal 外框、公司內部流程等屬 Project Profile，不寫死在本 Skill。
-5. **Verification before delivery**：DOCX/PDF 或其他正式交付物完成後，必須做內容與版面 QA；未驗證部分需明確回報。
+5. **Validated before delivery**：DOCX/PDF 或其他正式交付物先做一次最低可交付 QA；通過後立即標記 `VALIDATED` 並交付。美觀最佳化屬交付後的 `POLISHING`，只有真正破版、指定格式不符或使用者要求調版時才阻塞該版本。
 
 詳細規則依需要讀取：
 
@@ -148,16 +148,41 @@ To-Be 規格必須把「現況事實」與「預期變更」分開標示；使�
 
 文件排版本身可以採一致的專業樣式；**被嵌入的系統截圖不能因文件風格而被重新設計。**
 
-## Stage 8 — QA Gate
+## Stage 8 — QA / Delivery Gate
 
-交付前至少完成：
+文件狀態固定為：
 
-1. **Evidence QA**：每個關鍵流程、狀態、欄位與畫面有來源。
-2. **Fidelity QA**：還原畫面沒有自行現代化或漏掉關鍵 CSS/asset。
-3. **Flow QA**：入口到結果可連續操作，退回/失敗分支沒有被省略。
-4. **Document QA**：標題、圖號、表格、頁碼、章節順序一致。
-5. **Render QA**：DOCX 實際 Render；PDF 逐頁檢查裁切、空白頁、字型、圖片、表格。
+`DRAFT -> VALIDATED -> DELIVERED -> POLISHING（選擇性）`
+
+### 最低可交付 QA
+
+正式交付前先完成一次必要驗證：
+
+1. **Evidence QA**：關鍵流程、狀態、欄位與畫面有來源；缺口已揭露。
+2. **Fidelity QA**：需要還原 UI 時，畫面與實際來源一致。
+3. **Flow QA**：入口到結果可連續閱讀，必要分支完整。
+4. **Document QA**：使用者要求的內容、標題與章節完整。
+5. **Render QA**：要求的格式可正常開啟或 Render，且沒有截字、表格超出版面、空白頁、嚴重錯位、中文字型異常等重大問題。
 6. **Redaction QA**：沒有正式密碼、Token、個資或敏感資料。
+
+上述條件通過後，文件立即由 `VALIDATED` 進入 `DELIVERED`，直接提供可用下載入口。若使用者要求多種格式，先交付第一個已 `VALIDATED` 的格式，再繼續處理其餘格式，不讓後續轉檔阻塞已可用成果。
+
+### 非阻塞美化
+
+以下項目不阻塞第一版交付：
+
+- 2 頁或 3 頁的差異。
+- 最後一頁內容較少，但不是空白頁。
+- cell margin、段距或 spacing 還可微調。
+- 版面還能再壓縮或更漂亮，但不影響閱讀。
+
+`POLISHING` 只有在使用者要求調版、存在重大排版錯誤、閱讀明顯受影響，或格式與指定範本不符時才執行。每一輪調整都要有明確問題或使用者要求；修正後只重驗受影響部分，避免開放式 `Render -> 微調 -> Render` 迴圈。
+
+### Artifact lifecycle 與進度回報
+
+同一份文件採：`working draft -> QA render -> final artifact`。QA 產生的 PDF/PNG 屬工作產物，不當成多個正式版本重複交付。
+
+長流程至少在「初版產出」「最低 QA 結果」「正式交付」三個節點提供使用者可見更新。初版已可用但仍在美化時，要明確說明文件本身已正常，剩餘工作只屬版面微調。
 
 詳細 checklist 見 `references/verification.md`。
 
@@ -201,7 +226,8 @@ To-Be 規格必須把「現況事實」與「預期變更」分開標示；使�
 文件模式：<operation-manual / test-spec / functional-spec / ...>
 Evidence：<主要來源>
 UI：<實際截圖 / runtime render / 程式碼還原 / 無>
-輸出：<DOCX/PDF/MD 路徑>
+輸出：<DOCX/PDF/MD 路徑或下載入口>
+狀態：<VALIDATED / DELIVERED / POLISHING>
 QA：<Evidence / Fidelity / Render / Redaction>
 未驗證：<若無則寫無>
 ```

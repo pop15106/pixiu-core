@@ -46,7 +46,7 @@
 - [ ] 實際 render 全頁。
 - [ ] 圖片沒有拉伸、裁切、模糊到無法閱讀。
 - [ ] 表格沒有超出頁面。
-- [ ] 沒有孤立一兩行造成不必要空白頁。
+- [ ] 沒有真正空白頁；最後一頁內容偏少但可正常閱讀時不視為阻塞缺陷。
 - [ ] 中文字型正常。
 - [ ] TOC / page number（若有）可使用。
 
@@ -72,17 +72,36 @@
 
 ## H. Delivery Gate
 
-只有以下條件成立才可說「完成」：
+文件狀態使用：`DRAFT -> VALIDATED -> DELIVERED -> POLISHING（選擇性）`。
 
-1. 使用者要求的文件格式已產出。
+以下條件成立後，該格式立即進入 `VALIDATED`，並直接交付：
+
+1. 使用者要求的該文件格式已產出。
 2. Evidence QA 沒有未揭露的重大缺口。
 3. 若需要 UI，Fidelity QA 通過。
-4. DOCX/PDF 已實際 Render 或 Host 明確無法 Render 且已回報。
-5. 已列出所有未驗證項目。
+4. 文件可正常開啟或 Render，且沒有截字、超出版面、真正空白頁、嚴重錯位或中文字型異常。
+5. 使用者要求的內容、標題與章節完整。
+6. Redaction QA 通過。
+7. 已列出所有未驗證項目。
+
+若 Host 明確無法 Render，要揭露限制；可完成的其他驗證仍照常執行。
+
+以下是非阻塞美化，不延後第一版 `DELIVERED`：
+
+- 2 頁或 3 頁的差異。
+- 最後一頁內容較少但不是空白頁。
+- 段距、spacing、cell margin 還可微調。
+- 版面還能更緊湊或更漂亮，但不影響閱讀。
+
+只有使用者要求調版、存在重大排版錯誤、閱讀明顯受影響或指定範本不符時，才進入 `POLISHING`。每次 Polish 綁定明確問題，修正後只重驗受影響部分。
+
+若成功建立 Artifact，最終回覆必須提供可使用的下載入口；若有多種指定格式，第一個 `VALIDATED` 的格式先交付，其餘格式完成後再補充。
 
 建議回報：
 
 ```text
-QA：Evidence PASS / Fidelity PASS / DOCX Render PASS / PDF Render PASS / Redaction PASS
+狀態：DELIVERED
+QA：Evidence PASS / Fidelity PASS / DOCX Render PASS / Redaction PASS
 未驗證：無
+下載：<可用下載入口>
 ```
