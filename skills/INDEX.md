@@ -7,7 +7,7 @@ date: 2026-09-08
 project: PIXIUCORE
 topic: skills-index
 status: active
-summary: skills/ 目錄手動索引：13 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
+summary: skills/ 目錄手動索引：14 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
 ---
 
 # Skills 索引（單一真源）
@@ -17,7 +17,7 @@ summary: skills/ 目錄手動索引：13 個高優先路由能力＋81 個參考
 > 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
 > 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 只作導覽與當期盤點，不作 runtime 路由。
 
-## 高優先路由層（13）
+## 高優先路由層（14）
 
 | Skill | 什麼情境用 |
 |---|---|
@@ -33,6 +33,7 @@ summary: skills/ 目錄手動索引：13 個高優先路由能力＋81 個參考
 | `pixiu-verify-loop` | Pixiu 版端對端自我驗證迴圈（仿 Boris /go） |
 | `second-brain-health-check` | Use when checking whether the second brain is usable, when query-second-brain-nvidia.ps1 f |
 | `system-documentation` | 以原始碼、設定、Schema、Runtime、實際畫面與可追溯需求為證據，產出操作手冊、受測文件、As-Is 功能規格、To-Be 需求/變更規格、模組解說、交接文件，並支援忠實 UI 還原與 DOCX/PDF QA。 |
+| `typesafe-ai` | TypeSafe System One／Jev 整合：將自然語言與應用狀態轉成 typed judgments 與 probabilities；用於 Choice／Noul／Score、語意路由、評分、驗證、confidence 與 LLM prompt-and-parse 的結構化決策替代。 |
 | `verification-loop` | A comprehensive verification system for Claude Code sessions. |
 
 ## 參考層（81）
