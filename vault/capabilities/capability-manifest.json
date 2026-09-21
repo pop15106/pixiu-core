@@ -182,6 +182,17 @@
       }
     },
     {
+      "id": "typesafe-ai",
+      "summary": "TypeSafe System One／Jev 的 typed judgment、Choice／Noul／Score、語意路由、評分、驗證與 confidence 設計。",
+      "keywords": ["typesafe", "type safe", "jev", "system one", "system-one", "choice", "noul", "typesafe score", "typed judgment", "decision primitive", "structured decision", "結構化判斷", "語意判斷", "決策原語", "信心分數"],
+      "priority": 48,
+      "load": {
+        "skills": ["skills/typesafe-ai/SKILL.md"],
+        "contexts": [],
+        "governance": []
+      }
+    },
+    {
       "id": "second-brain",
       "summary": "第二大腦、Qdrant、n8n 與 Embedding 健檢。",
       "keywords": ["第二大腦", "qdrant", "n8n", "embedding", "nvidia", "記憶庫"],
