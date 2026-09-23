@@ -76,7 +76,21 @@ Git、Release、Deploy 類工作完成時，最終回報至少包含：
 
 只有 commit、tag、release、assets／delivery 等本次實際要求的必要項目都完成驗證後，才可宣稱整體工作完成。
 
-## 6. 權限與安全邊界
+## 6. Critical Relay 整合
+
+當 Capability Router 同時命中 `critical-reasoning` 與 `execution-progress` 時，完整自動接力必須把 Critical Relay completion gate 納入完成判斷：
+
+1. 先執行原任務的搜尋、分析、實作或驗證。
+2. 對核心 claims 執行 CHALLENGE，明確提出可推翻它的條件。
+3. 主動執行 COUNTERSEARCH／反例測試，保存 counterEvidence。
+4. 重新判斷 claims；有新反證時進入 REASSESS／REPAIR，不因固定輪數停止。
+5. VERIFY 通過後仍要執行 RECHALLENGE。
+6. 只有 `scripts/critical-relay/critical-relay.js` 的 completion gate 沒有 blocker，才可進入 READY_TO_HANDOFF 或回報 🟢 全部完成。
+7. 跨 Session／模型交棒時，保留 canonical Critical Relay state；可放入既有 workflow `contextSnapshot`，不得只交接最終結論而遺失反證與未知項。
+
+Critical Relay 只增加懷疑、反證與完成閘門；它不新增任何 Agent、寫入、push、Release、Deploy 或 Production 權限。
+
+## 7. 權限與安全邊界
 
 本政策不得被解讀為任何額外授權。以下規則維持原狀：
 
