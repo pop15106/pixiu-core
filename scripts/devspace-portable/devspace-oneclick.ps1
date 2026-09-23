@@ -572,7 +572,7 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_ALLOWED_ROOTS', ($Spec.Roots -join ','), 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_PUBLIC_BASE_URL', $Spec.PublicBaseUrl, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_TOOL_MODE', 'full', 'Process')
-    [Environment]::SetEnvironmentVariable('DEVSPACE_WIDGETS', 'off', 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_WIDGETS', $(if ($Spec.SameChatReviewerEnabled) { 'on' } else { 'off' }), 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_SUBAGENTS', '1', 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_AGENT_DIR', (Join-Path $ConfigRoot 'agents'), 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_MODULE', $WorkflowModulePath, 'Process')
