@@ -1,0 +1,55 @@
+name: Same-Chat Reviewer Runtime
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'scripts/chat-reviewer/**'
+      - 'scripts/devspace-portable/**'
+      - 'docs/architecture/same-chat-reviewer.md'
+      - 'docs/validation/20260923-same-chat-reviewer-runtime-cr-state.json'
+      - '.github/workflows/same-chat-reviewer-runtime.yml'
+  pull_request:
+    paths:
+      - 'scripts/chat-reviewer/**'
+      - 'scripts/devspace-portable/**'
+      - 'docs/architecture/same-chat-reviewer.md'
+      - 'docs/validation/20260923-same-chat-reviewer-runtime-cr-state.json'
+      - '.github/workflows/same-chat-reviewer-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  windows-runtime:
+    name: Windows OneClick runtime integration
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Same-Chat protocol tests
+        run: node --test scripts/chat-reviewer/same-chat-reviewer.test.js
+
+      - name: Run Same-Chat MCP registration tests
+        run: node --test scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs
+
+      - name: Run OneClick runtime integration tests
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/devspace-portable/tests/run-same-chat-reviewer-runtime-tests.ps1
+
+      - name: Build and verify portable package
+        shell: powershell
+        run: |
+          $output = Join-Path $env:RUNNER_TEMP 'pixiu-portable'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/devspace-portable/build-portable-package.ps1 -OutputDirectory $output
+          if ($LASTEXITCODE -ne 0) { throw 'Portable package build failed.' }
+          $zip = Get-ChildItem -LiteralPath $output -Filter 'DevSpace-OneClick-*.zip' -File | Select-Object -First 1
+          if (-not $zip) { throw 'Portable ZIP was not created.' }
+          Write-Host "Portable ZIP verified: $($zip.FullName)"
