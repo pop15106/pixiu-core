@@ -2,7 +2,7 @@
 name: critical-relay
 description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay。
 origin: Pixiu
-version: 0.1.0
+version: 0.1.1
 language: zh-TW
 ---
 
@@ -15,6 +15,14 @@ Critical Relay 是 PixiuCore 的批判推理接力層。它不取代 Deep Resear
 > 先做，再懷疑；主動嘗試推翻，推不翻才往下一棒接力。
 
 每個重要結論先拆成可驗證主張，再蒐集支持證據與反證。不能只找支持原本想法的資料。
+
+## 啟動方式
+
+Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動接力上：
+
+- 單獨模式：`開 Critical Relay`、`用對抗搜尋模式`、`懷疑每個論點並找反證`。
+- 疊加模式：`對抗搜尋，開完整自動接力`。Router 會同時載入 `critical-reasoning` 與 `execution-progress`。
+- 單獨模式只增加懷疑、反證、交叉驗證與 completion gate；不會自動啟用 Git／Release／Deploy 或 Agent 權限。
 
 ## 標準流程
 
@@ -34,6 +42,7 @@ Critical Relay 是 PixiuCore 的批判推理接力層。它不取代 Deep Resear
 ## 搜尋規則
 
 - 每個重要 claim 至少要有可追溯 evidence。
+- 每個準備標成 `supported` 的 claim 至少要有一個 `challengeRef`，且 challenge 要反向指回該 claim、記錄 `method` 與 `result`，最後狀態為 `resolved`。
 - 主動使用與原假設相反的搜尋詞，例如 failure、criticism、limitation、counterexample、replication、rebuttal。
 - 重要資料優先級：官方／原始資料／論文原文 > 高品質二手分析 > 社群討論。
 - 單一來源只能形成暫定 evidence；核心結論要做交叉驗證。
@@ -72,6 +81,7 @@ handoff 可把 `buildHandoffSnapshot(state)` 的結果放進既有 workflow 的 
 
 - claim 仍是 open / contested。
 - supported claim 沒有 evidenceRefs。
+- supported claim 沒有 challengeRefs，或 challenge 不存在、未反向指向 claim、未 resolved、缺少 method／result。
 - claim 有 counterEvidence，但尚未標示 addressed。
 - high / critical assumption 未驗證或未界定。
 - high / critical challenge 或 unknown 尚未 resolved。
