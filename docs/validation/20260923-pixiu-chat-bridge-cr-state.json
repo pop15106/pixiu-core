@@ -122,37 +122,65 @@
     {
       "id": "counter-old-ci-failure",
       "source": "https://github.com/pop15106/pixiu-core/actions/runs/35834864462",
-      "summary": "修正前 workflow 因字面 \\\\n 無法解析，run completed/failure 且沒有 jobs。"
+      "summary": "修正前 workflow 因字面 \\\\n 無法解析，run completed/failure 且沒有 jobs。",
+      "claimRefs": [
+        "claim-ci-repaired"
+      ],
+      "status": "addressed"
     },
     {
       "id": "counter-native-boolean",
       "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
-      "summary": "Audit 曾證明 caller 可用 nativeAttested 布林值造成假 native 成功；回歸測試已要求 nativeVerified 固定 false。"
+      "summary": "Audit 曾證明 caller 可用 nativeAttested 布林值造成假 native 成功；回歸測試已要求 nativeVerified 固定 false。",
+      "claimRefs": [
+        "claim-fail-closed"
+      ],
+      "status": "addressed"
     },
     {
       "id": "counter-hanging-read",
       "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
-      "summary": "Audit 曾證明 read() 永不回覆會無限等待；回歸測試要求 TTL 內結束並寫 FAILED。"
+      "summary": "Audit 曾證明 read() 永不回覆會無限等待；回歸測試要求 TTL 內結束並寫 FAILED。",
+      "claimRefs": [
+        "claim-lifecycle-hardened"
+      ],
+      "status": "addressed"
     },
     {
       "id": "counter-hanging-cancel",
       "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
-      "summary": "RECHALLENGE 發現 cancel() 本身可永不回覆；第二輪修正加入 cancel 上限。"
+      "summary": "RECHALLENGE 發現 cancel() 本身可永不回覆；第二輪修正加入 cancel 上限。",
+      "claimRefs": [
+        "claim-lifecycle-hardened"
+      ],
+      "status": "addressed"
     },
     {
       "id": "counter-evidence-coercion",
       "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
-      "summary": "Audit 曾證明缺欄位或字串 true 被誤轉安全值；回歸測試要求嚴格 boolean。"
+      "summary": "Audit 曾證明缺欄位或字串 true 被誤轉安全值；回歸測試要求嚴格 boolean。",
+      "claimRefs": [
+        "claim-evidence-log-hardened"
+      ],
+      "status": "addressed"
     },
     {
       "id": "counter-ledger-secret",
       "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
-      "summary": "Audit 與 RECHALLENGE 均測試允許欄位或 adapter error 夾帶 canary secret；現在要求遮罩或拒絕保存。"
+      "summary": "Audit 與 RECHALLENGE 均測試允許欄位或 adapter error 夾帶 canary secret；現在要求遮罩或拒絕保存。",
+      "claimRefs": [
+        "claim-evidence-log-hardened"
+      ],
+      "status": "addressed"
     },
     {
       "id": "counter-app-server-is-codex-thread",
       "url": "https://developers.openai.com/zh-Hant/blog/codex-as-a-platform",
-      "summary": "app-server 的公開協定描述 Codex agent thread/turn，不等於既有 ChatGPT Chat conversation。"
+      "summary": "app-server 的公開協定描述 Codex agent thread/turn，不等於既有 ChatGPT Chat conversation。",
+      "claimRefs": [
+        "claim-native-boundary"
+      ],
+      "status": "addressed"
     }
   ],
   "challenges": [
@@ -261,5 +289,16 @@
       "description": "既有 ChatGPT Chat 的官方 native programmatic transport 尚未從公開文件確認；功能刻意維持未實作與 fail-closed。"
     }
   ],
-  "nextAction": "維持 native fail-closed；若 OpenAI 公開可控制既有 ChatGPT Chat 的正式 transport，再新增受信任 adapter 與真實 E2E。"
+  "nextAction": "維持 native fail-closed；若 OpenAI 公開可控制既有 ChatGPT Chat 的正式 transport，再新增受信任 adapter 與真實 E2E。",
+  "phaseHistory": [
+    "UNDERSTAND",
+    "HYPOTHESIZE",
+    "EXECUTE",
+    "CHALLENGE",
+    "COUNTERSEARCH",
+    "REASSESS",
+    "REPAIR",
+    "VERIFY",
+    "RECHALLENGE"
+  ]
 }
