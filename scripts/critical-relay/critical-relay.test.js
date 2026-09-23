@@ -64,6 +64,22 @@ function testUnaddressedCounterEvidenceBlocksCompletion() {
   assert.ok(result.blockingReasons.some(reason => reason.includes('未處理 counterEvidence')));
 }
 
+function testDanglingEvidenceReferenceBlocksCompletion() {
+  const state = completedState();
+  state.claims[0].evidenceRefs = ['evidence-999'];
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('引用不存在的 evidence')));
+}
+
+function testCompletionRequiresRechallengePhase() {
+  const state = completedState();
+  state.phase = 'VERIFY';
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('尚未進入 RECHALLENGE')));
+}
+
 function testRequiredVerificationBlocksCompletion() {
   const state = completedState();
   state.tests[0].status = 'failed';
@@ -82,6 +98,8 @@ function testResolvedRelayCanComplete() {
 function testHandoffSnapshotKeepsCriticalState() {
   const snapshot = buildHandoffSnapshot(completedState());
   for (const key of [
+    'mode',
+    'status',
     'claims',
     'assumptions',
     'evidence',
@@ -102,6 +120,8 @@ for (const test of [
   testCreatesCanonicalState,
   testOpenClaimBlocksCompletion,
   testUnaddressedCounterEvidenceBlocksCompletion,
+  testDanglingEvidenceReferenceBlocksCompletion,
+  testCompletionRequiresRechallengePhase,
   testRequiredVerificationBlocksCompletion,
   testResolvedRelayCanComplete,
   testHandoffSnapshotKeepsCriticalState
