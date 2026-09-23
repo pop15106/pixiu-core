@@ -22,12 +22,20 @@ function completedState() {
     statement: '測試主張',
     status: 'supported',
     evidenceRefs: ['evidence-1'],
+    challengeRefs: ['challenge-1'],
     counterEvidenceRefs: ['counter-1'],
     counterEvidenceStatus: 'addressed'
   });
   state.evidence.push({ id: 'evidence-1', source: 'primary-source', supports: ['claim-1'] });
   state.counterEvidence.push({ id: 'counter-1', source: 'contrary-source', challenges: ['claim-1'] });
-  state.challenges.push({ id: 'challenge-1', severity: 'high', status: 'resolved' });
+  state.challenges.push({
+    id: 'challenge-1',
+    claimRefs: ['claim-1'],
+    severity: 'high',
+    status: 'resolved',
+    method: 'countersearch',
+    result: '已搜尋反方來源並完成比較'
+  });
   state.unknowns.push({ id: 'unknown-1', severity: 'high', status: 'resolved' });
   state.tests.push({ id: 'test-1', name: '反例測試', required: true, status: 'passed' });
   state.completionCriteria[0].satisfied = true;
@@ -80,6 +88,30 @@ function testCompletionRequiresRechallengePhase() {
   assert.ok(result.blockingReasons.some(reason => reason.includes('尚未進入 RECHALLENGE')));
 }
 
+function testSupportedClaimWithoutChallengeBlocksCompletion() {
+  const state = completedState();
+  state.claims[0].challengeRefs = [];
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('沒有 challengeRefs')));
+}
+
+function testDanglingChallengeReferenceBlocksCompletion() {
+  const state = completedState();
+  state.claims[0].challengeRefs = ['challenge-999'];
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('引用不存在的 challenge')));
+}
+
+function testChallengeWithoutMethodBlocksCompletion() {
+  const state = completedState();
+  state.challenges[0].method = '';
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('challenge 缺少 method')));
+}
+
 function testRequiredVerificationBlocksCompletion() {
   const state = completedState();
   state.tests[0].status = 'failed';
@@ -122,6 +154,9 @@ for (const test of [
   testUnaddressedCounterEvidenceBlocksCompletion,
   testDanglingEvidenceReferenceBlocksCompletion,
   testCompletionRequiresRechallengePhase,
+  testSupportedClaimWithoutChallengeBlocksCompletion,
+  testDanglingChallengeReferenceBlocksCompletion,
+  testChallengeWithoutMethodBlocksCompletion,
   testRequiredVerificationBlocksCompletion,
   testResolvedRelayCanComplete,
   testHandoffSnapshotKeepsCriticalState
