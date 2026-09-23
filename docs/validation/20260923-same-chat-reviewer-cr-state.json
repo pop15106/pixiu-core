@@ -1,0 +1,346 @@
+{
+  "schemaVersion": "pixiu.critical-relay.v1",
+  "objective": "建立 Same-Chat Reviewer advisory protocol 與 MCP registration layer，作為 Critical Relay 額外 challenger；不修改既有完整自動接力主幹、不弱化 independent review，並對真實 ChatGPT host auto-continue 能力保持 fail-closed。",
+  "mode": "CR 完整自動接力",
+  "phase": "RECHALLENGE",
+  "phaseHistory": [
+    "UNDERSTAND",
+    "HYPOTHESIZE",
+    "EXECUTE",
+    "CHALLENGE",
+    "COUNTERSEARCH",
+    "REASSESS",
+    "REPAIR",
+    "VERIFY",
+    "RECHALLENGE"
+  ],
+  "iteration": 2,
+  "status": "active",
+  "claims": [
+    {
+      "id": "claim-advisory-boundary",
+      "statement": "Same-Chat Reviewer 被限制為 advisory challenger，不能滿足 DevSpace required independent review，也不能直接完成 CR。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-reviewer-core",
+        "evidence-reviewer-tools",
+        "evidence-devspace-independent-review"
+      ],
+      "counterEvidenceRefs": [
+        "counter-same-actor-review"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-advisory-boundary"
+      ]
+    },
+    {
+      "id": "claim-correlation-lifecycle",
+      "statement": "Same-Chat review 綁定 reviewId/taskId/revision/snapshotHash，具 expiry、replay、single-submit 與 single-consume 防護。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-reviewer-core",
+        "evidence-actions-run-7"
+      ],
+      "counterEvidenceRefs": [
+        "counter-stale-result",
+        "counter-replay-result"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-correlation-lifecycle"
+      ]
+    },
+    {
+      "id": "claim-cr-proposal-safe",
+      "statement": "Reviewer finding 只會轉成 open challenge/counterEvidence，no_additional_findings 也不產生 approval 或 completion effect。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-reviewer-core",
+        "evidence-actions-run-7"
+      ],
+      "counterEvidenceRefs": [
+        "counter-reviewer-self-approval"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-cr-proposal-safe"
+      ]
+    },
+    {
+      "id": "claim-registration-isolated",
+      "statement": "Same-Chat MCP registration layer 目前保持獨立，未修改 DevSpace 現有 workflow tool catalog，也未放寬 reviewer 不同於 producer 的既有規則。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-reviewer-tools",
+        "evidence-devspace-independent-review",
+        "evidence-actions-run-7"
+      ],
+      "counterEvidenceRefs": [
+        "counter-tool-catalog-collision"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-registration-isolated"
+      ]
+    },
+    {
+      "id": "claim-host-boundary",
+      "statement": "OpenAI 官方公開介面可提供 follow-up message 與 tool call 基礎能力，但目前 repo 尚未驗證真實 ChatGPT host 的 reviewer result auto-return 與 original task auto-resume，因此 hostE2EVerified/autoContinueVerified 必須維持 false。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-openai-ui-message",
+        "evidence-openai-reference",
+        "evidence-reviewer-tools"
+      ],
+      "counterEvidenceRefs": [
+        "counter-ui-message-not-result",
+        "counter-tool-output-not-model-answer",
+        "counter-no-host-e2e"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-host-boundary"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "assumption-host-auto-resume",
+      "statement": "不假設 ChatGPT host 在 reviewer turn submit 完成後會自動喚醒原任務；未取得真實 runtime receipt 前一律視為未驗證。",
+      "severity": "high",
+      "status": "bounded"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence-reviewer-core",
+      "source": "repo:scripts/chat-reviewer/same-chat-reviewer.js",
+      "summary": "Same-Chat request/result schema、固定 revision/hash、durable lifecycle、CR proposal 與 fail-closed capability model。"
+    },
+    {
+      "id": "evidence-reviewer-tools",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.mjs",
+      "summary": "獨立 request/submit/status/consume/capabilities MCP registration layer；未掛入 DevSpace 正式 catalog。"
+    },
+    {
+      "id": "evidence-devspace-independent-review",
+      "source": "repo:scripts/devspace-portable/DevSpace.WorkflowStore.mjs",
+      "summary": "既有 independent review 明確要求 reviewerActor 不得等於 producer；Same-Chat 不應修改此規則。"
+    },
+    {
+      "id": "evidence-actions-run-7",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35842862002",
+      "summary": "Same-Chat Reviewer Run 7 completed/success；protocol 與 MCP registration tests 均成功。"
+    },
+    {
+      "id": "evidence-openai-ui-message",
+      "url": "https://developers.openai.com/plugins/build/chatgpt-ui",
+      "summary": "OpenAI 官方建議新 UI 使用 MCP Apps ui/message；ChatGPT 相容別名為 window.openai.sendFollowUpMessage。"
+    },
+    {
+      "id": "evidence-openai-reference",
+      "url": "https://developers.openai.com/plugins/reference",
+      "summary": "官方 reference 說明 sendFollowUpMessage、callTool 與 toolOutput；toolOutput 是 structuredContent。"
+    }
+  ],
+  "counterEvidence": [
+    {
+      "id": "counter-same-actor-review",
+      "source": "repo:scripts/devspace-portable/DevSpace.WorkflowStore.mjs",
+      "claimRefs": [
+        "claim-advisory-boundary"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "若把 Same-Chat 當 independent review，會與既有 reviewerActor != producer 安全規則衝突。"
+    },
+    {
+      "id": "counter-stale-result",
+      "source": "repo:scripts/chat-reviewer/same-chat-reviewer.test.js",
+      "claimRefs": [
+        "claim-correlation-lifecycle"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "revision 或 snapshotHash 不一致的舊 reviewer result 必須被拒絕。"
+    },
+    {
+      "id": "counter-replay-result",
+      "source": "repo:scripts/chat-reviewer/same-chat-reviewer.test.js",
+      "claimRefs": [
+        "claim-correlation-lifecycle"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "同一 reviewId/result 若可重複 submit/consume，會重複餵入 CR；已用 replay gate 阻擋。"
+    },
+    {
+      "id": "counter-reviewer-self-approval",
+      "source": "repo:scripts/chat-reviewer/same-chat-reviewer.test.js",
+      "claimRefs": [
+        "claim-cr-proposal-safe"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "若 Reviewer 的 no finding/approved 語意能直接完成 CR，會繞過既有 completion gate；目前 completionEffect 固定 none。"
+    },
+    {
+      "id": "counter-tool-catalog-collision",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs",
+      "claimRefs": [
+        "claim-registration-isolated"
+      ],
+      "severity": "medium",
+      "status": "addressed",
+      "summary": "直接修改現有 workflow tool catalog 會增加回歸面；目前使用獨立 registration layer 並測試未出現 workflow_update。"
+    },
+    {
+      "id": "counter-ui-message-not-result",
+      "url": "https://developers.openai.com/plugins/build/chatgpt-ui",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "ui/message 能傳 follow-up message，不代表 reviewer turn 的最終模型結果已被程式化回填。"
+    },
+    {
+      "id": "counter-tool-output-not-model-answer",
+      "url": "https://developers.openai.com/plugins/reference",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "window.openai.toolOutput 是工具 structuredContent，不是最新模型回答，不能拿來冒充 reviewer result read-back。"
+    },
+    {
+      "id": "counter-no-host-e2e",
+      "source": "repo:docs/architecture/same-chat-reviewer.md",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "目前尚未在真實 ChatGPT App runtime 驗證 ui/message → reviewer turn → submit → original task auto-resume。"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "challenge-advisory-boundary",
+      "claimRefs": [
+        "claim-advisory-boundary"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "對照現有 DevSpace independent review 狀態機與 Same-Chat tool/result 語意。",
+      "result": "Same-Chat 明確標記 independentReview=false、canSatisfyRequiredReview=false，未修改 reviewerActor != producer 規則。"
+    },
+    {
+      "id": "challenge-correlation-lifecycle",
+      "claimRefs": [
+        "claim-correlation-lifecycle"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "測試 stale revision/hash、過期 request、重複 reserve/submit/consume 與 result 時窗。",
+      "result": "不匹配與 replay 均 fail closed，review lifecycle 維持 pending → result_received → consumed。"
+    },
+    {
+      "id": "challenge-cr-proposal-safe",
+      "claimRefs": [
+        "claim-cr-proposal-safe"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "測試 concerns_found 與 no_additional_findings 兩種 reviewer 結果。",
+      "result": "finding 只產生 open challenge/counterEvidence；no finding 不產生 completion effect。"
+    },
+    {
+      "id": "challenge-registration-isolated",
+      "claimRefs": [
+        "claim-registration-isolated"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "以隔離 fake MCP registration 測試工具名稱與完整 request→submit→status→consume 流程。",
+      "result": "只註冊 5 個 same_chat_review_* 工具，不修改 workflow_update；Run 7 全數通過。"
+    },
+    {
+      "id": "challenge-host-boundary",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "反向核對 OpenAI ui/message、sendFollowUpMessage、tools/call 與 toolOutput 官方定義，刻意尋找是否足以證明 auto-return/auto-resume。",
+      "result": "官方可證明 follow-up dispatch 與 tool call 基礎能力，但不足以證明完整 host E2E；因此維持 hostE2EVerified=false、autoContinueVerified=false。"
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "unknown-host-auto-resume",
+      "question": "真實 ChatGPT App runtime 在 reviewer turn 呼叫 same_chat_review_submit 後，能否不靠人工訊息自動讓原任務重新取得 result 並續跑？",
+      "severity": "high",
+      "status": "resolved",
+      "resolution": "本輪已決定 fail-closed：目前不宣告可行，能力值固定 false；未來必須以真實 host runtime receipt 重新開 CR 驗證。"
+    }
+  ],
+  "tests": [
+    {
+      "id": "test-same-chat-run-7",
+      "name": "Same-Chat Reviewer GitHub Actions Run 7",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35842862002"
+    }
+  ],
+  "completionCriteria": [
+    {
+      "id": "criterion-protocol",
+      "criterion": "Same-Chat request/result correlation、expiry、replay、single consume 與 CR proposal 行為有自動回歸測試。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-reviewer-core",
+        "test-same-chat-run-7"
+      ]
+    },
+    {
+      "id": "criterion-independent-review",
+      "criterion": "Same-Chat Reviewer 不弱化既有 independent review；不能滿足 requireReview。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-devspace-independent-review",
+        "evidence-reviewer-tools"
+      ]
+    },
+    {
+      "id": "criterion-registration",
+      "criterion": "MCP registration layer 可隔離註冊 request/submit/status/consume/capabilities 並完成 synthetic protocol 閉環。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-reviewer-tools",
+        "test-same-chat-run-7"
+      ]
+    },
+    {
+      "id": "criterion-host-boundary",
+      "criterion": "沒有真實 ChatGPT host E2E 前，不宣告 auto-return 或 auto-continue 已驗證。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-openai-ui-message",
+        "evidence-openai-reference"
+      ]
+    }
+  ],
+  "remainingRisks": [
+    {
+      "id": "risk-host-e2e-unverified",
+      "severity": "high",
+      "status": "accepted",
+      "description": "真實 ChatGPT App runtime 的 ui/message → reviewer turn → submit → original task auto-resume 尚未 E2E；目前 capability 固定 fail-closed。"
+    }
+  ],
+  "nextAction": "把本 CR state 掛進 Same-Chat Reviewer workflow completion gate；通過後將本輪 protocol/MCP registration 工作標為 COMPLETE。真實 host adapter 留待下一個實機 E2E 階段。"
+}
