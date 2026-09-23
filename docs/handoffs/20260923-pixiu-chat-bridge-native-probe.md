@@ -274,3 +274,34 @@ NATIVE_VERIFIED   = true
 - 原因：目前官方公開介面不足以建立可驗證的 existing-Chat native transport。
 
 後續只有在 OpenAI 公開可用的正式 transport 後，才新增 native adapter 與真實 E2E。
+
+
+# CR 最終完成驗證
+
+Canonical state 已於 2026-09-23 升級為：
+
+```text
+phase  = COMPLETE
+status = completed
+```
+
+最終 state self-check：
+
+- Commit：`c63235870592bc1b926455b0c5bf3428fc31d691`
+- GitHub Actions Run：`35838925634`（Run 40）
+- Protocol / regression tests：success
+- Synthetic probe：success
+- Critical Relay completion gate：success
+- Run conclusion：success
+
+因此本輪 **Pixiu Chat Bridge CR hardening 任務**可視為完成。
+
+此完成狀態不改變 Native 功能邊界：
+
+```text
+protocolVerified = 可驗證
+nativeVerified   = false
+Native E2E       = 未完成
+```
+
+Native E2E 仍等待官方可驗證的 existing-Chat programmatic transport。
