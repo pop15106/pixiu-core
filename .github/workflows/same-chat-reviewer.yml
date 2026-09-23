@@ -1,0 +1,35 @@
+name: Same-Chat Reviewer
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'scripts/chat-reviewer/**'
+      - 'docs/architecture/same-chat-reviewer.md'
+      - 'docs/validation/20260923-same-chat-reviewer-cr-state.json'
+      - '.github/workflows/same-chat-reviewer.yml'
+  pull_request:
+    paths:
+      - 'scripts/chat-reviewer/**'
+      - 'docs/architecture/same-chat-reviewer.md'
+      - 'docs/validation/20260923-same-chat-reviewer-cr-state.json'
+      - '.github/workflows/same-chat-reviewer.yml'
+  workflow_dispatch:
+
+jobs:
+  protocol:
+    name: Same-Chat Reviewer protocol gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Same-Chat Reviewer tests
+        run: node --test scripts/chat-reviewer/same-chat-reviewer.test.js
