@@ -523,6 +523,16 @@ function Install-DevSpaceSubagentWindowsPatch {
         $changed++
     }
 
+    $sameChatLoaderReplacement = @(
+        'const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";'
+        'const sameChatReviewerModule = sameChatReviewerEnabled && process.env.DEVSPACE_SAME_CHAT_REVIEWER_MODULE'
+        '    ? await import(pathToFileURL(process.env.DEVSPACE_SAME_CHAT_REVIEWER_MODULE).href)'
+        '    : undefined;'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";' -Pattern 'const devSpaceWorkflowModule = process\.env\.DEVSPACE_WORKFLOW_MODULE\r?\n\s*\? await import\(pathToFileURL\(process\.env\.DEVSPACE_WORKFLOW_MODULE\)\.href\)\r?\n\s*: undefined;' -Replacement ('$0' + [Environment]::NewLine + $sameChatLoaderReplacement) -Description 'Same-Chat Reviewer conditional module loading') {
+        $changed++
+    }
+
     $workflowRegistrationReplacement = @(
         '    // DevSpace OneClick: expose resumable process sessions to ChatGPT Web.'
         '    registerCodexProcessTools(server, config, workspaces, processSessions);'
@@ -532,6 +542,20 @@ function Install-DevSpaceSubagentWindowsPatch {
         '    });'
     ) -join [Environment]::NewLine
     if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'DevSpace OneClick: expose durable cross-session handoff and review tools.' -Pattern '\s*\/\/ DevSpace OneClick: expose resumable process sessions to ChatGPT Web\.\r?\n\s*registerCodexProcessTools\(server, config, workspaces, processSessions\);' -Replacement ([Environment]::NewLine + $workflowRegistrationReplacement) -Description 'ChatGPT Web workflow tools') {
+        $changed++
+    }
+
+    $sameChatRegistrationReplacement = @(
+        '    // Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.'
+        '    if (sameChatReviewerModule) {'
+        '        const sameChatReviewerStateDirectory = process.env.DEVSPACE_SAME_CHAT_REVIEWER_STATE_DIR;'
+        '        if (!sameChatReviewerStateDirectory) throw new Error("DEVSPACE_SAME_CHAT_REVIEWER_STATE_DIR is required when Same-Chat Reviewer is enabled.");'
+        '        sameChatReviewerModule.registerSameChatReviewerTools({'
+        '            server, registerAppTool, z, stateDirectory: sameChatReviewerStateDirectory,'
+        '        });'
+        '    }'
+    ) -join [Environment]::NewLine
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.' -Pattern '(\s*\/\/ DevSpace OneClick: expose durable cross-session handoff and review tools\.\r?\n\s*devSpaceWorkflowModule\?\.registerDevSpaceWorkflowTools\(\{\r?\n\s*server, config, workspaces, registerAppTool, z,\r?\n\s*\}\);)' -Replacement ('$1' + [Environment]::NewLine + $sameChatRegistrationReplacement) -Description 'Same-Chat Reviewer conditional registration') {
         $changed++
     }
 
@@ -849,6 +873,117 @@ function Install-DevSpaceWorkflowModule {
         }
     }
     return [pscustomobject]@{ Path = $target; Changed = $true }
+}
+
+function Install-DevSpaceSameChatReviewerBundle {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ToolsSourceFile,
+        [Parameter(Mandatory = $true)][string]$CoreSourceFile,
+        [Parameter(Mandatory = $true)][string]$BinDirectory
+    )
+
+    foreach ($source in @($ToolsSourceFile, $CoreSourceFile)) {
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+            throw "SAME_CHAT_REVIEWER_SOURCE_MISSING: $source"
+        }
+    }
+
+    $targetDirectory = Join-Path $BinDirectory 'same-chat-reviewer'
+    $toolsTarget = Join-Path $targetDirectory 'SameChat.ReviewerTools.mjs'
+    $coreTarget = Join-Path $targetDirectory 'same-chat-reviewer.js'
+    $stageDirectory = Join-Path $BinDirectory ("same-chat-reviewer.stage." + [guid]::NewGuid().ToString('N'))
+    $backupDirectory = Join-Path $BinDirectory ("same-chat-reviewer.backup." + [guid]::NewGuid().ToString('N'))
+
+    $toolsSourceText = [System.IO.File]::ReadAllText($ToolsSourceFile)
+    if ($toolsSourceText -notmatch 'from\s+["'']\.\/same-chat-reviewer\.js["'']') {
+        throw 'SAME_CHAT_REVIEWER_DEPENDENCY_INVALID: SameChat.ReviewerTools.mjs must import ./same-chat-reviewer.js.'
+    }
+
+    $sourceHashes = @{
+        'SameChat.ReviewerTools.mjs' = Get-DevSpacePatchFileSha256 -FilePath $ToolsSourceFile
+        'same-chat-reviewer.js' = Get-DevSpacePatchFileSha256 -FilePath $CoreSourceFile
+    }
+
+    if (
+        (Test-Path -LiteralPath $toolsTarget -PathType Leaf) -and
+        (Test-Path -LiteralPath $coreTarget -PathType Leaf) -and
+        [string]::Equals((Get-DevSpacePatchFileSha256 -FilePath $toolsTarget), $sourceHashes['SameChat.ReviewerTools.mjs'], [System.StringComparison]::OrdinalIgnoreCase) -and
+        [string]::Equals((Get-DevSpacePatchFileSha256 -FilePath $coreTarget), $sourceHashes['same-chat-reviewer.js'], [System.StringComparison]::OrdinalIgnoreCase)
+    ) {
+        return [pscustomobject]@{
+            Path = $toolsTarget
+            CorePath = $coreTarget
+            Changed = $false
+        }
+    }
+
+    if (-not (Test-Path -LiteralPath $BinDirectory)) {
+        New-Item -ItemType Directory -Path $BinDirectory -Force | Out-Null
+    }
+
+    try {
+        New-Item -ItemType Directory -Path $stageDirectory -Force | Out-Null
+        Copy-Item -LiteralPath $ToolsSourceFile -Destination (Join-Path $stageDirectory 'SameChat.ReviewerTools.mjs') -Force
+        Copy-Item -LiteralPath $CoreSourceFile -Destination (Join-Path $stageDirectory 'same-chat-reviewer.js') -Force
+
+        foreach ($name in @('SameChat.ReviewerTools.mjs', 'same-chat-reviewer.js')) {
+            $stagePath = Join-Path $stageDirectory $name
+            $stageHash = Get-DevSpacePatchFileSha256 -FilePath $stagePath
+            if (-not [string]::Equals($stageHash, $sourceHashes[$name], [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "SAME_CHAT_REVIEWER_SOURCE_CHANGED_DURING_COPY: $name"
+            }
+        }
+
+        $hadExisting = Test-Path -LiteralPath $targetDirectory
+        if ($hadExisting) {
+            Move-Item -LiteralPath $targetDirectory -Destination $backupDirectory -Force
+        }
+
+        try {
+            Move-Item -LiteralPath $stageDirectory -Destination $targetDirectory -Force
+        }
+        catch {
+            if ($hadExisting -and (Test-Path -LiteralPath $backupDirectory) -and -not (Test-Path -LiteralPath $targetDirectory)) {
+                Move-Item -LiteralPath $backupDirectory -Destination $targetDirectory -Force
+            }
+            throw
+        }
+
+        if (Test-Path -LiteralPath $backupDirectory) {
+            Remove-Item -LiteralPath $backupDirectory -Recurse -Force
+        }
+    }
+    finally {
+        if (Test-Path -LiteralPath $stageDirectory) {
+            Remove-Item -LiteralPath $stageDirectory -Recurse -Force
+        }
+        if ((Test-Path -LiteralPath $backupDirectory) -and -not (Test-Path -LiteralPath $targetDirectory)) {
+            Move-Item -LiteralPath $backupDirectory -Destination $targetDirectory -Force
+        }
+        elseif (Test-Path -LiteralPath $backupDirectory) {
+            Remove-Item -LiteralPath $backupDirectory -Recurse -Force
+        }
+    }
+
+    foreach ($pair in @(
+        @{ Path = $toolsTarget; Hash = $sourceHashes['SameChat.ReviewerTools.mjs'] },
+        @{ Path = $coreTarget; Hash = $sourceHashes['same-chat-reviewer.js'] }
+    )) {
+        if (-not (Test-Path -LiteralPath $pair.Path -PathType Leaf)) {
+            throw "SAME_CHAT_REVIEWER_DEPLOYMENT_INCOMPLETE: $($pair.Path)"
+        }
+        $actualHash = Get-DevSpacePatchFileSha256 -FilePath $pair.Path
+        if (-not [string]::Equals($actualHash, $pair.Hash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "SAME_CHAT_REVIEWER_DEPLOYMENT_HASH_MISMATCH: $($pair.Path)"
+        }
+    }
+
+    return [pscustomobject]@{
+        Path = $toolsTarget
+        CorePath = $coreTarget
+        Changed = $true
+    }
 }
 
 function ConvertTo-DevSpaceBashPath {
