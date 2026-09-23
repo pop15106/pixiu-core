@@ -1213,6 +1213,7 @@ Export-ModuleMember -Function @(
     'Restore-DevSpaceSubagentWindowsPatch',
     'Install-DevSpaceAgentProfiles',
     'Install-DevSpaceWorkflowModule',
+    'Install-DevSpaceSameChatReviewerBundle',
     'Install-DevSpaceAgentCliShim',
     'Get-DevSpaceAgentStatus',
     'Stop-DevSpaceAgent'
