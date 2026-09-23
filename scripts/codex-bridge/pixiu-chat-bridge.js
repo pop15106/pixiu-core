@@ -14,7 +14,8 @@ const MAX_PROBE_ID_LENGTH = 128;
 const MAX_NONCE_LENGTH = 128;
 const MAX_MESSAGE_LENGTH = 2048;
 const MAX_LEDGER_REASON_LENGTH = 512;
-const TERMINAL_EVENTS = new Set(['FAILED', 'PROTOCOL_VERIFIED', 'NATIVE_VERIFIED']);
+const MAX_EVIDENCE_VALUE_LENGTH = 64;
+const CANCEL_TIMEOUT_MS = 250;
 const KNOWN_TRANSPORTS = new Map([
   ['synthetic', new Set(['synthetic'])],
   ['chatgpt-desktop-native', new Set(['chatgpt-session'])]
@@ -90,11 +91,15 @@ function validateProbeRequest(request) {
     errors.push('request.probeId 缺失');
   } else if (request.probeId.length > MAX_PROBE_ID_LENGTH) {
     errors.push(`request.probeId 超過 ${MAX_PROBE_ID_LENGTH} 字元`);
+  } else if (!/^[A-Za-z0-9._:-]+$/.test(request.probeId)) {
+    errors.push('request.probeId 含不允許字元');
   }
   if (typeof request.nonce !== 'string' || !request.nonce.trim()) {
     errors.push('request.nonce 缺失');
   } else if (request.nonce.length > MAX_NONCE_LENGTH) {
     errors.push(`request.nonce 超過 ${MAX_NONCE_LENGTH} 字元`);
+  } else if (!/^[A-Za-z0-9._:-]+$/.test(request.nonce)) {
+    errors.push('request.nonce 含不允許字元');
   }
   if (typeof request.message !== 'string') {
     errors.push('request.message 必須是字串');
@@ -177,12 +182,20 @@ function validateProbeResponse(request, response, options = {}) {
   if (response.nonce !== request?.nonce) reasons.push('nonce 不一致');
   if (response.received !== true) reasons.push('received 必須為 true');
 
-  if (response.respondedAt !== undefined && !Number.isFinite(Date.parse(response.respondedAt || ''))) {
+  const respondedAtMs = response.respondedAt === undefined ? NaN : Date.parse(response.respondedAt || '');
+  if (response.respondedAt !== undefined && !Number.isFinite(respondedAtMs)) {
     reasons.push('response.respondedAt 無效');
   }
 
   const checkedAtMs = nowMs(options.now);
+  const createdAtMs = Date.parse(request?.createdAt || '');
   const expiresAtMs = Date.parse(request?.expiresAt || '');
+  if (Number.isFinite(respondedAtMs) && Number.isFinite(createdAtMs) && respondedAtMs < createdAtMs) {
+    reasons.push('response.respondedAt 早於 request.createdAt');
+  }
+  if (Number.isFinite(respondedAtMs) && Number.isFinite(expiresAtMs) && respondedAtMs >= expiresAtMs) {
+    reasons.push('response.respondedAt 超過 probe 有效期限');
+  }
   if (Number.isFinite(expiresAtMs) && checkedAtMs >= expiresAtMs) {
     reasons.push('response 已超過 probe 有效期限');
   }
@@ -213,9 +226,21 @@ function normalizeEvidence(evidence) {
     ? evidence.sessionFingerprint
     : '';
 
+  const transport = typeof evidence.transport === 'string' &&
+    evidence.transport.length <= MAX_EVIDENCE_VALUE_LENGTH &&
+    KNOWN_TRANSPORTS.has(evidence.transport)
+    ? evidence.transport
+    : null;
+  const authMode = transport &&
+    typeof evidence.authMode === 'string' &&
+    evidence.authMode.length <= MAX_EVIDENCE_VALUE_LENGTH &&
+    KNOWN_TRANSPORTS.get(transport).has(evidence.authMode)
+    ? evidence.authMode
+    : null;
+
   return {
-    transport: typeof evidence.transport === 'string' ? evidence.transport : null,
-    authMode: typeof evidence.authMode === 'string' ? evidence.authMode : null,
+    transport,
+    authMode,
     apiKeyUsed: typeof evidence.apiKeyUsed === 'boolean' ? evidence.apiKeyUsed : null,
     manualCopy: typeof evidence.manualCopy === 'boolean' ? evidence.manualCopy : null,
     readBack: typeof evidence.readBack === 'boolean' ? evidence.readBack : null,
@@ -231,12 +256,16 @@ function validateEvidence(evidence) {
 
   if (typeof evidence.transport !== 'string' || !evidence.transport.trim()) {
     reasons.push('evidence.transport 必須是非空字串');
+  } else if (evidence.transport.length > MAX_EVIDENCE_VALUE_LENGTH) {
+    reasons.push(`evidence.transport 超過 ${MAX_EVIDENCE_VALUE_LENGTH} 字元`);
   } else if (!KNOWN_TRANSPORTS.has(evidence.transport)) {
     reasons.push(`未知 transport：${evidence.transport}`);
   }
 
   if (typeof evidence.authMode !== 'string' || !evidence.authMode.trim()) {
     reasons.push('evidence.authMode 必須是非空字串');
+  } else if (evidence.authMode.length > MAX_EVIDENCE_VALUE_LENGTH) {
+    reasons.push(`evidence.authMode 超過 ${MAX_EVIDENCE_VALUE_LENGTH} 字元`);
   } else if (
     typeof evidence.transport === 'string' &&
     KNOWN_TRANSPORTS.has(evidence.transport) &&
@@ -264,8 +293,8 @@ function validateEvidence(evidence) {
   return reasons;
 }
 
-function verifyProbe(request, response, evidence, options = {}) {
-  const reasons = validateProbeResponse(request, response, options);
+function verifyProbeAt(request, response, evidence, checkedAtMs) {
+  const reasons = validateProbeResponse(request, response, { now: checkedAtMs });
   reasons.push(...validateEvidence(evidence));
   const safeEvidence = normalizeEvidence(evidence);
 
@@ -288,7 +317,7 @@ function verifyProbe(request, response, evidence, options = {}) {
   return {
     schema: VERIFICATION_SCHEMA,
     probeId: request?.probeId || response?.probeId || '',
-    checkedAt: iso(options.now),
+    checkedAt: iso(checkedAtMs),
     result: protocolVerified ? 'PASS' : 'FAIL',
     protocolVerified,
     nativeVerified,
@@ -296,6 +325,10 @@ function verifyProbe(request, response, evidence, options = {}) {
     reasons: [...new Set(reasons)],
     nativeReasons
   };
+}
+
+function verifyProbe(request, response, evidence) {
+  return verifyProbeAt(request, response, evidence, Date.now());
 }
 
 function defaultLedgerPath(corePath) {
@@ -366,8 +399,16 @@ function finalizeProbeState(statePath, status, details = {}) {
   });
 }
 
+function redactSensitiveText(value) {
+  return String(value || '')
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]')
+    .replace(/(authorization|api[-_]?key|token|cookie|secret|password)\s*[:=]\s*[^\s,;]+/gi, '$1=[REDACTED]');
+}
+
 function sanitizeReason(value) {
-  return String(value || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_LEDGER_REASON_LENGTH);
+  return redactSensitiveText(value)
+    .replace(/[\r\n]+/g, ' ')
+    .slice(0, MAX_LEDGER_REASON_LENGTH);
 }
 
 function appendLedgerEvent(ledgerPath, event) {
@@ -398,10 +439,18 @@ function appendLedgerEvent(ledgerPath, event) {
 
 async function cancelTransport(transport, probe, reason) {
   if (!transport || typeof transport.cancel !== 'function') return;
+  let timer;
   try {
-    await transport.cancel(probe.probeId, probe, reason);
+    await Promise.race([
+      Promise.resolve().then(() => transport.cancel(probe.probeId, probe, reason)),
+      new Promise(resolve => {
+        timer = setTimeout(resolve, CANCEL_TIMEOUT_MS);
+      })
+    ]);
   } catch {
     // 取消是 best-effort；原始錯誤才是主要結果。
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -501,7 +550,7 @@ async function runProbe({ transport, request, evidence, ledgerPath } = {}) {
       : evidence;
 
     phase = 'VERIFY';
-    const verification = verifyProbe(probe, response, resolvedEvidence, { now: Date.now() });
+    const verification = verifyProbe(probe, response, resolvedEvidence);
     const eventType = verification.result === 'PASS' ? 'PROTOCOL_VERIFIED' : 'FAILED';
     appendLedgerEvent(targetLedger, {
       type: eventType,
@@ -560,6 +609,7 @@ module.exports = {
   fingerprintSession,
   normalizeEvidence,
   probeStatePath,
+  redactSensitiveText,
   reserveProbe,
   runProbe,
   validateEvidence,
