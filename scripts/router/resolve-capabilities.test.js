@@ -24,7 +24,9 @@ const manifest = {
     },
     {
       id: 'critical-reasoning',
-      keywords: ['對抗搜尋', '反證', '懷疑每個論點', 'critical relay', 'cr 完整自動接力'],
+      keywords: ['對抗搜尋', '反證', '懷疑每個論點', 'critical relay'],
+      aliases: ['cr 完整自動接力'],
+      requiredWhenMatched: true,
       load: { skills: ['critical-relay.md'], contexts: [], governance: [] },
       priority: 47
     },
@@ -37,6 +39,7 @@ const manifest = {
     {
       id: 'execution-progress',
       keywords: ['完整自動接力', '自動接力', 'github actions', '輪詢', 'test 等待'],
+      requiredWhenMatched: true,
       load: { skills: [], contexts: [], governance: ['long-running-progress-policy.md'] },
       priority: 46
     },
@@ -174,6 +177,41 @@ function testCrFullAutoShortcutLoadsBothLayers() {
   assert.ok(result.filesToLoad.includes('long-running-progress-policy.md'));
 }
 
+function testCrShortcutNormalizesWhitespace() {
+  for (const request of [
+    'CR  完整自動接力',
+    'CR\n完整自動接力',
+    'CR　完整自動接力'
+  ]) {
+    const result = resolveCapabilities(request, manifest);
+    assert.ok(result.capabilities.includes('critical-reasoning'), request);
+    assert.ok(result.capabilities.includes('execution-progress'), request);
+  }
+}
+
+function testCrShortcutUsesAsciiBoundary() {
+  const result = resolveCapabilities('SCR 完整自動接力', manifest);
+  assert.strictEqual(result.capabilities.includes('critical-reasoning'), false);
+  assert.ok(result.capabilities.includes('execution-progress'));
+}
+
+function testNegatedCrShortcutDoesNotActivateModes() {
+  const result = resolveCapabilities('先不要 CR 完整自動接力，先討論', manifest);
+  assert.strictEqual(result.capabilities.includes('critical-reasoning'), false);
+  assert.strictEqual(result.capabilities.includes('execution-progress'), false);
+}
+
+function testRequiredModesSurviveCapabilityPressure() {
+  const result = resolveCapabilities(
+    'CR 完整自動接力，DevSpace 斷線了，切 Git，處理資安漏洞',
+    manifest
+  );
+  assert.deepStrictEqual(
+    result.capabilities,
+    ['critical-reasoning', 'execution-progress', 'git-fallback']
+  );
+}
+
 function testRoutesFullAutoRelayToExecutionProgress() {
   const result = resolveCapabilities('完整自動接力', manifest);
   assert.ok(result.capabilities.includes('execution-progress'));
@@ -206,6 +244,10 @@ for (const test of [
   testRoutesAdversarialSearchToCriticalRelay,
   testCombinesCriticalRelayWithFullAuto,
   testCrFullAutoShortcutLoadsBothLayers,
+  testCrShortcutNormalizesWhitespace,
+  testCrShortcutUsesAsciiBoundary,
+  testNegatedCrShortcutDoesNotActivateModes,
+  testRequiredModesSurviveCapabilityPressure,
   testRoutesFullAutoRelayToExecutionProgress,
   testRoutesGitFallbackAndLoadsBootstrap,
   testPlainUnitTestDoesNotTriggerExecutionProgress
