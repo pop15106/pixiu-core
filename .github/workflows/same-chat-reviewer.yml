@@ -36,3 +36,6 @@ jobs:
 
       - name: Run Same-Chat Reviewer MCP registration tests
         run: node --test scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs
+
+      - name: Run Critical Relay completion gate
+        run: node scripts/critical-relay/critical-relay.js check docs/validation/20260923-same-chat-reviewer-cr-state.json
