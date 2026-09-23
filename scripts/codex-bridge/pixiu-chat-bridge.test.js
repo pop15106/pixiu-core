@@ -21,7 +21,7 @@ const {
 } = require('./pixiu-chat-bridge');
 const { exitCodeForSynthetic } = require('./pixiu-chat-probe');
 
-const BASE_TIME = Date.parse('2026-09-23T07:30:00.000Z');
+const BASE_TIME = Date.now();
 const VALID_FINGERPRINT = `sha256:${'a'.repeat(64)}`;
 
 function nativeEvidence(overrides = {}) {
@@ -115,9 +115,10 @@ test('nonce 不一致時拒絕回覆', () => {
 });
 
 test('超時回覆不得通過 verify', () => {
-  const request = createProbeRequest({ now: BASE_TIME, ttlMs: 1000 });
-  const response = createProbeResponse(request, { now: BASE_TIME + 500 });
-  const result = verifyProbe(request, response, nativeEvidence(), { now: BASE_TIME + 1000 });
+  const now = Date.now();
+  const request = createProbeRequest({ now: now - 2000, ttlMs: 1000 });
+  const response = createProbeResponse(request, { now: now - 1500 });
+  const result = verifyProbe(request, response, nativeEvidence());
   assert.equal(result.result, 'FAIL');
   assert.match(result.reasons.join('\n'), /超過 probe 有效期限/);
 });
@@ -343,14 +344,91 @@ test('未知 CLI 指令回傳 exit code 2', () => {
 
 test('live verify CLI 不接受輸入 now 回溯過期資料', () => {
   const cli = path.join(__dirname, 'pixiu-chat-probe.js');
-  const request = createProbeRequest({ now: BASE_TIME, ttlMs: 1000 });
+  const now = Date.now();
+  const request = createProbeRequest({ now: now - 5000, ttlMs: 1000 });
   const input = JSON.stringify({
     request,
-    response: createProbeResponse(request, { now: BASE_TIME + 100 }),
+    response: createProbeResponse(request, { now: now - 4500 }),
     evidence: syntheticEvidence(),
-    now: BASE_TIME + 200
+    now: now - 4500
   });
   const result = spawnSync(process.execPath, [cli, 'verify'], { input, encoding: 'utf8' });
   assert.equal(result.status, 1);
   assert.match(result.stdout, /超過 probe 有效期限/);
+});
+
+test('library verify 不接受 caller 傳入 now 回溯時間', () => {
+  const now = Date.now();
+  const request = createProbeRequest({ now: now - 5000, ttlMs: 1000 });
+  const response = createProbeResponse(request, { now: now - 4500 });
+  const result = verifyProbe(request, response, syntheticEvidence(), { now: now - 4500 });
+  assert.equal(result.result, 'FAIL');
+  assert.match(result.reasons.join('\n'), /超過 probe 有效期限/);
+});
+
+test('respondedAt 不得早於建立時間或晚於有效期限', () => {
+  const now = Date.now();
+  const request = createProbeRequest({ now, ttlMs: 5000 });
+  const early = createProbeResponse(request, { now: now - 1 });
+  const late = createProbeResponse(request, { now: now + 5000 });
+  assert.match(verifyProbe(request, early, nativeEvidence()).reasons.join('\n'), /早於 request.createdAt/);
+  assert.match(verifyProbe(request, late, nativeEvidence()).reasons.join('\n'), /respondedAt 超過 probe 有效期限/);
+});
+
+test('cancel 永不回覆也不能讓 timeout 卡死', async () => {
+  const ledgerPath = tempLedger();
+  const request = createProbeRequest({ now: Date.now(), ttlMs: 60 });
+  const started = Date.now();
+  await assert.rejects(
+    runProbe({
+      request,
+      ledgerPath,
+      transport: {
+        async send() {},
+        async read() { return new Promise(() => {}); },
+        async cancel() { return new Promise(() => {}); }
+      },
+      evidence: syntheticEvidence()
+    }),
+    error => error instanceof ProbeError && error.code === 'READ_TIMEOUT'
+  );
+  assert.ok(Date.now() - started < 500);
+});
+
+test('adapter 錯誤訊息內的 token 不得寫入 ledger', async () => {
+  const ledgerPath = tempLedger();
+  const request = createProbeRequest({ now: Date.now(), ttlMs: 2000 });
+  const marker = 'CANARY_SECRET_123';
+  await assert.rejects(
+    runProbe({
+      request,
+      ledgerPath,
+      transport: {
+        async send() { throw new Error(`authorization=Bearer ${marker} token=${marker}`); },
+        async read() { return null; }
+      },
+      evidence: syntheticEvidence()
+    })
+  );
+  const ledger = fs.readFileSync(ledgerPath, 'utf8');
+  assert.equal(ledger.includes(marker), false);
+  assert.match(ledger, /REDACTED/);
+});
+
+test('過長 transport 值不得進入 ledger evidence', async () => {
+  const ledgerPath = tempLedger();
+  const request = createProbeRequest({ now: Date.now(), ttlMs: 2000 });
+  const marker = `CANARY_${'x'.repeat(100)}`;
+  const result = await runProbe({
+    request,
+    ledgerPath,
+    transport: {
+      async send() {},
+      async read() { return createProbeResponse(request); }
+    },
+    evidence: syntheticEvidence({ transport: marker })
+  });
+  assert.equal(result.verification.result, 'FAIL');
+  const ledger = fs.readFileSync(ledgerPath, 'utf8');
+  assert.equal(ledger.includes(marker), false);
 });
