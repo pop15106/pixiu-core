@@ -4,6 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import criticalRelayModule from "../../critical-relay/critical-relay.js";
+
+const { createCriticalRelay, recordCriticalRelayPhase } = criticalRelayModule;
+
 import {
   createWorkflowController,
   registerDevSpaceWorkflowTools,
@@ -46,6 +50,53 @@ async function createFixture(options = {}) {
       await rm(stateDirectory, { recursive: true, force: true });
     },
   };
+}
+
+function completedCriticalRelayState() {
+  const state = createCriticalRelay({
+    objective: "Validate workflow completion with adversarial evidence",
+    completionCriteria: ["The workflow gate has traceable evidence and passing tests"],
+  });
+  recordCriticalRelayPhase(state, "VERIFY");
+  recordCriticalRelayPhase(state, "RECHALLENGE");
+  state.claims.push({
+    id: "claim-workflow",
+    statement: "The workflow is ready to complete",
+    status: "supported",
+    evidenceRefs: ["evidence-workflow"],
+    challengeRefs: ["challenge-workflow"],
+    counterEvidenceRefs: ["counter-workflow"],
+    counterEvidenceStatus: "addressed",
+  });
+  state.evidence.push({
+    id: "evidence-workflow",
+    provenance: "repo:scripts/devspace-portable/tests/workflow-store.test.mjs",
+  });
+  state.counterEvidence.push({
+    id: "counter-workflow",
+    provenance: "repo:scripts/devspace-portable/DevSpace.WorkflowStore.mjs",
+    claimRefs: ["claim-workflow"],
+    severity: "high",
+    status: "addressed",
+  });
+  state.challenges.push({
+    id: "challenge-workflow",
+    claimRefs: ["claim-workflow"],
+    severity: "high",
+    status: "resolved",
+    method: "counterexample-test",
+    result: "Completion was challenged with an incomplete CR state and then re-tested.",
+  });
+  state.tests.push({
+    id: "test-workflow",
+    name: "workflow completion gate",
+    required: true,
+    status: "passed",
+  });
+  state.completionCriteria[0].satisfied = true;
+  state.completionCriteria[0].evidenceRefs = ["evidence-workflow", "test-workflow"];
+  state.nextAction = "Complete the workflow task";
+  return state;
 }
 
 function baseCreate(overrides = {}) {
@@ -344,6 +395,102 @@ test("independent review is fixed to a revision and gates completion", async () 
       idempotencyKey: "complete-after-review-001",
     });
     assert.equal(task.status, "completed");
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("CR-enabled workflow completion re-evaluates the latest Critical Relay state", async () => {
+  const fixture = await createFixture();
+  try {
+    const incomplete = createCriticalRelay({
+      objective: "Block incomplete workflow completion",
+      completionCriteria: ["Completion gate passes"],
+    });
+    let task = await fixture.controller.createTask(
+      baseCreate({
+        requireReview: false,
+        criticalRelayRequired: true,
+        criticalRelay: incomplete,
+        idempotencyKey: "cr-gate-create-001",
+      }),
+    );
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "cr-gate-claim-001",
+    });
+
+    await assert.rejects(
+      fixture.controller.updateTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "session-a",
+        actor: "alice",
+        action: "complete",
+        expectedRevision: task.revision,
+        idempotencyKey: "cr-gate-blocked-complete-001",
+      }),
+      /Critical Relay completion gate blocked/i,
+    );
+
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "complete",
+      expectedRevision: task.revision,
+      idempotencyKey: "cr-gate-complete-001",
+      criticalRelay: completedCriticalRelayState(),
+    });
+    assert.equal(task.status, "completed");
+    assert.equal(task.criticalRelay.phase, "RECHALLENGE");
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test("CR-enabled handoff requires structured Critical Relay state", async () => {
+  const fixture = await createFixture();
+  try {
+    let task = await fixture.controller.createTask(
+      baseCreate({
+        requireReview: false,
+        criticalRelayRequired: true,
+        idempotencyKey: "cr-handoff-create-001",
+      }),
+    );
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "cr-handoff-claim-001",
+    });
+    await assert.rejects(
+      fixture.controller.updateTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "session-a",
+        actor: "alice",
+        action: "handoff",
+        expectedRevision: task.revision,
+        idempotencyKey: "cr-handoff-missing-state-001",
+        toActor: "bob",
+        contextSnapshot: "CR handoff without state",
+        deliverables: ["state"],
+        openItems: ["attach Critical Relay state"],
+        requiredNextAction: "Attach state and retry",
+      }),
+      /Critical Relay state is required before handoff/i,
+    );
   } finally {
     await fixture.cleanup();
   }
@@ -686,6 +833,7 @@ test("MCP registration exposes five workflow tools and functional create/list ha
     number: chain,
     enum: chain,
     array: chain,
+    unknown: chain,
   };
   const registered = new Map();
   try {
