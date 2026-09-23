@@ -8,6 +8,10 @@ on:
       - "scripts/critical-relay/**"
       - "skills/critical-relay/**"
       - "scripts/router/**"
+      - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
+      - "scripts/devspace-portable/tests/workflow-store.test.mjs"
+      - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
+      - "scripts/devspace-portable/tests/workflow-store.test.mjs"
       - "scripts/performance/lazy-loading-integration.test.js"
       - "vault/capabilities/capability-manifest.json"
       - "vault/governance/long-running-progress-policy.md"
@@ -42,3 +46,6 @@ jobs:
 
       - name: Critical Relay integration
         run: node scripts/critical-relay/critical-relay.integration.test.js
+
+      - name: Workflow completion integration
+        run: node --test scripts/devspace-portable/tests/workflow-store.test.mjs
