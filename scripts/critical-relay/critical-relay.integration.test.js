@@ -31,6 +31,32 @@ function testCrFullAutoShortcutUsesRealManifest() {
   assert.ok(result.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
 }
 
+function testCrShortcutRealManifestBoundaries() {
+  for (const request of ['CR  完整自動接力', 'CR\n完整自動接力', 'CR　完整自動接力']) {
+    const result = resolveCapabilities(request, manifest);
+    assert.ok(result.capabilities.includes('critical-reasoning'), request);
+    assert.ok(result.capabilities.includes('execution-progress'), request);
+  }
+
+  const falsePositive = resolveCapabilities('SCR 完整自動接力', manifest);
+  assert.strictEqual(falsePositive.capabilities.includes('critical-reasoning'), false);
+  assert.ok(falsePositive.capabilities.includes('execution-progress'));
+
+  const negated = resolveCapabilities('不要 CR 完整自動接力，先討論', manifest);
+  assert.strictEqual(negated.capabilities.includes('critical-reasoning'), false);
+  assert.strictEqual(negated.capabilities.includes('execution-progress'), false);
+}
+
+function testCrModesStayLoadedUnderCapabilityPressure() {
+  const result = resolveCapabilities(
+    'CR 完整自動接力，DevSpace 斷線了，切 Git，處理資安漏洞',
+    manifest
+  );
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.capabilities.includes('git-fallback'));
+}
+
 function testCriticalRelayFilesExistInCleanCheckout() {
   for (const relativePath of [
     'skills/critical-relay/SKILL.md',
@@ -49,6 +75,8 @@ for (const test of [
   testAdversarialSearchLoadsCriticalRelay,
   testFullAutoLoadsBothLayers,
   testCrFullAutoShortcutUsesRealManifest,
+  testCrShortcutRealManifestBoundaries,
+  testCrModesStayLoadedUnderCapabilityPressure,
   testCriticalRelayFilesExistInCleanCheckout
 ]) {
   test();
