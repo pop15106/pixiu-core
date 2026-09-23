@@ -23,6 +23,14 @@ function testFullAutoLoadsBothLayers() {
   assert.ok(result.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
 }
 
+function testCrFullAutoShortcutUsesRealManifest() {
+  const result = resolveCapabilities('CR 完整自動接力', manifest);
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.filesToLoad.includes('skills/critical-relay/SKILL.md'));
+  assert.ok(result.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
+}
+
 function testCriticalRelayFilesExistInCleanCheckout() {
   for (const relativePath of [
     'skills/critical-relay/SKILL.md',
@@ -40,6 +48,7 @@ function testCriticalRelayFilesExistInCleanCheckout() {
 for (const test of [
   testAdversarialSearchLoadsCriticalRelay,
   testFullAutoLoadsBothLayers,
+  testCrFullAutoShortcutUsesRealManifest,
   testCriticalRelayFilesExistInCleanCheckout
 ]) {
   test();
