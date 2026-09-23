@@ -1,0 +1,265 @@
+{
+  "schemaVersion": "pixiu.critical-relay.v1",
+  "objective": "依 Pixiu Chat Bridge 檢查報告修正假成功、CI、evidence、timeout、終態、重放、時間、輸入與 log 缺口，並界定原生 Chat transport 的官方能力邊界。",
+  "mode": "CR 完整自動接力",
+  "phase": "RECHALLENGE",
+  "iteration": 2,
+  "status": "active",
+  "claims": [
+    {
+      "id": "claim-ci-repaired",
+      "statement": "Pixiu Chat Bridge workflow 已從無法解析改為可執行，且真實 GitHub Actions job 成功。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-actions-run-35"
+      ],
+      "counterEvidenceRefs": [
+        "counter-old-ci-failure"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-ci"
+      ]
+    },
+    {
+      "id": "claim-fail-closed",
+      "statement": "未有正式 native adapter 前，mock、手填 evidence 或 nativeAttested 旗標不能把 nativeVerified 變成 true。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-bridge-code",
+        "evidence-actions-run-35"
+      ],
+      "counterEvidenceRefs": [
+        "counter-native-boolean"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-native-fake-success"
+      ]
+    },
+    {
+      "id": "claim-lifecycle-hardened",
+      "statement": "Probe 已具送出前過期檢查、共享 deadline、FAILED 終態、cancel 上限與 replay 防護。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-bridge-code",
+        "evidence-actions-run-35"
+      ],
+      "counterEvidenceRefs": [
+        "counter-hanging-read",
+        "counter-hanging-cancel"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-lifecycle"
+      ]
+    },
+    {
+      "id": "claim-evidence-log-hardened",
+      "statement": "Evidence 使用嚴格型別與已知 transport/authMode，無效 fingerprint、過長值與錯誤訊息中的秘密標記不會原樣寫入 ledger。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-bridge-code",
+        "evidence-actions-run-35"
+      ],
+      "counterEvidenceRefs": [
+        "counter-evidence-coercion",
+        "counter-ledger-secret"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-evidence-log"
+      ]
+    },
+    {
+      "id": "claim-native-boundary",
+      "statement": "官方公開能力目前足以程式化控制 Codex thread/turn，但不足以證明可指定既有 ChatGPT Chat 並自動送訊息與讀回；因此本專案不宣告 native bridge 完成。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-openai-app-server",
+        "evidence-openai-history"
+      ],
+      "counterEvidenceRefs": [
+        "counter-app-server-is-codex-thread"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-native-capability"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "assumption-no-undocumented-ipc",
+      "statement": "在沒有官方公開且可驗證的既有 ChatGPT Chat transport 前，不採用未公開 IPC、內部 API 或 UI 自動化冒充 native bridge。",
+      "severity": "high",
+      "status": "bounded"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence-actions-run-35",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35837910802",
+      "summary": "Run 35 completed/success；Synthetic round-trip gate 的測試與 synthetic probe 步驟均成功。"
+    },
+    {
+      "id": "evidence-bridge-code",
+      "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.js",
+      "summary": "包含嚴格 evidence、deadline、FAILED 終態、replay state、秘密遮罩，以及 native fail-closed。"
+    },
+    {
+      "id": "evidence-openai-app-server",
+      "url": "https://developers.openai.com/zh-Hant/blog/codex-as-a-platform",
+      "summary": "官方描述 app-server 用於建立 Codex thread、啟動 turn、接收事件與核准。"
+    },
+    {
+      "id": "evidence-openai-history",
+      "url": "https://help.openai.com/en/articles/20001275/",
+      "summary": "官方說明 Codex 是獨立 view，歷史與 ChatGPT history 分開；Codex 內可開 Quick Chat。"
+    }
+  ],
+  "counterEvidence": [
+    {
+      "id": "counter-old-ci-failure",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35834864462",
+      "summary": "修正前 workflow 因字面 \\\\n 無法解析，run completed/failure 且沒有 jobs。"
+    },
+    {
+      "id": "counter-native-boolean",
+      "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
+      "summary": "Audit 曾證明 caller 可用 nativeAttested 布林值造成假 native 成功；回歸測試已要求 nativeVerified 固定 false。"
+    },
+    {
+      "id": "counter-hanging-read",
+      "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
+      "summary": "Audit 曾證明 read() 永不回覆會無限等待；回歸測試要求 TTL 內結束並寫 FAILED。"
+    },
+    {
+      "id": "counter-hanging-cancel",
+      "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
+      "summary": "RECHALLENGE 發現 cancel() 本身可永不回覆；第二輪修正加入 cancel 上限。"
+    },
+    {
+      "id": "counter-evidence-coercion",
+      "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
+      "summary": "Audit 曾證明缺欄位或字串 true 被誤轉安全值；回歸測試要求嚴格 boolean。"
+    },
+    {
+      "id": "counter-ledger-secret",
+      "source": "https://github.com/pop15106/pixiu-core/blob/master/scripts/codex-bridge/pixiu-chat-bridge.test.js",
+      "summary": "Audit 與 RECHALLENGE 均測試允許欄位或 adapter error 夾帶 canary secret；現在要求遮罩或拒絕保存。"
+    },
+    {
+      "id": "counter-app-server-is-codex-thread",
+      "url": "https://developers.openai.com/zh-Hant/blog/codex-as-a-platform",
+      "summary": "app-server 的公開協定描述 Codex agent thread/turn，不等於既有 ChatGPT Chat conversation。"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "challenge-ci",
+      "claimRefs": [
+        "claim-ci-repaired"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "對照舊失敗 run 與新 run，並檢查新 run 的實際 jobs/steps。",
+      "result": "Run 35837910802 completed/success，測試與 synthetic probe step 均 success。"
+    },
+    {
+      "id": "challenge-native-fake-success",
+      "claimRefs": [
+        "claim-fail-closed"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "用虛構 transport/evidence 與 legacy nativeAttested 旗標嘗試造成假 native 成功。",
+      "result": "nativeVerified 維持 false；只有 protocolVerified 可成立。"
+    },
+    {
+      "id": "challenge-lifecycle",
+      "claimRefs": [
+        "claim-lifecycle-hardened"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "測試 pre-send expired、永不回覆 read、send/read throw、replay 與永不回覆 cancel。",
+      "result": "均在明確期限內結束，FAILED 終態可追蹤，重複 probeId 不會二次 send。"
+    },
+    {
+      "id": "challenge-evidence-log",
+      "claimRefs": [
+        "claim-evidence-log-hardened"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "輸入缺失/錯型 evidence、過長 transport、raw fingerprint 與 adapter error canary secret。",
+      "result": "錯型 evidence fail closed；原始秘密標記不寫入 ledger。"
+    },
+    {
+      "id": "challenge-native-capability",
+      "claimRefs": [
+        "claim-native-boundary"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "反向搜尋 OpenAI 官方 Codex app-server 與新版桌面 App 文件，找是否存在既有 ChatGPT Chat 的可程式化 send/read 介面。",
+      "result": "找到的是 Codex thread/turn 控制與分離的 Chat/Codex history；未找到可驗證的既有 ChatGPT Chat transport，因此維持 native 未完成。"
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "unknown-existing-chat-native-transport",
+      "question": "Codex App 是否有官方、穩定、可程式化控制指定既有 ChatGPT Chat 的 native send/read transport？",
+      "severity": "high",
+      "status": "resolved",
+      "resolution": "截至 2026-09-23 的官方公開文件未提供可驗證介面；本輪結論是不得宣告存在，待官方公開能力後重新驗證。"
+    }
+  ],
+  "tests": [
+    {
+      "id": "test-actions-run-35",
+      "name": "Pixiu Chat Bridge GitHub Actions run 35",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35837910802"
+    }
+  ],
+  "completionCriteria": [
+    {
+      "id": "criterion-ci",
+      "criterion": "workflow 使用真正換行並由 GitHub Actions 實際執行成功。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "test-actions-run-35"
+      ]
+    },
+    {
+      "id": "criterion-audit-gaps",
+      "criterion": "Audit 第一、二批的假成功、證據型別、timeout、終態、replay、時間、輸入與 log 缺口都有回歸防護。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-bridge-code",
+        "test-actions-run-35"
+      ]
+    },
+    {
+      "id": "criterion-native-boundary",
+      "criterion": "真實 native transport 未驗收前不得標示 nativeVerified=true，且官方能力邊界已記錄。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-openai-app-server",
+        "evidence-openai-history"
+      ]
+    }
+  ],
+  "remainingRisks": [
+    {
+      "id": "risk-native-transport-not-available",
+      "severity": "high",
+      "status": "accepted",
+      "description": "既有 ChatGPT Chat 的官方 native programmatic transport 尚未從公開文件確認；功能刻意維持未實作與 fail-closed。"
+    }
+  ],
+  "nextAction": "維持 native fail-closed；若 OpenAI 公開可控制既有 ChatGPT Chat 的正式 transport，再新增受信任 adapter 與真實 E2E。"
+}
