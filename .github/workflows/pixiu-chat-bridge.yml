@@ -1,1 +1,54 @@
-name: Pixiu Chat Bridge\n\non:\n  push:\n    branches:\n      - master\n    paths:\n      - 'scripts/codex-bridge/pixiu-chat-bridge.js'\n      - 'scripts/codex-bridge/pixiu-chat-bridge.test.js'\n      - 'scripts/codex-bridge/pixiu-chat-probe.js'\n      - 'scripts/codex-bridge/README.md'\n      - '.github/workflows/pixiu-chat-bridge.yml'\n  pull_request:\n    paths:\n      - 'scripts/codex-bridge/pixiu-chat-bridge.js'\n      - 'scripts/codex-bridge/pixiu-chat-bridge.test.js'\n      - 'scripts/codex-bridge/pixiu-chat-probe.js'\n      - 'scripts/codex-bridge/README.md'\n      - '.github/workflows/pixiu-chat-bridge.yml'\n  workflow_dispatch:\n\njobs:\n  synthetic-probe:\n    name: Synthetic round-trip gate\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n\n      - name: Run protocol tests\n        run: node --test scripts/codex-bridge/pixiu-chat-bridge.test.js\n\n      - name: Run synthetic probe\n        run: node scripts/codex-bridge/pixiu-chat-probe.js synthetic --ledger "${{ runner.temp }}/pixiu-chat-bridge-ledger.jsonl"\n
+name: Pixiu Chat Bridge
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'scripts/codex-bridge/pixiu-chat-bridge.js'
+      - 'scripts/codex-bridge/pixiu-chat-bridge.test.js'
+      - 'scripts/codex-bridge/pixiu-chat-probe.js'
+      - 'scripts/codex-bridge/README.md'
+      - 'docs/handoffs/20260923-pixiu-chat-bridge-native-probe.md'
+      - '.github/workflows/pixiu-chat-bridge.yml'
+  pull_request:
+    paths:
+      - 'scripts/codex-bridge/pixiu-chat-bridge.js'
+      - 'scripts/codex-bridge/pixiu-chat-bridge.test.js'
+      - 'scripts/codex-bridge/pixiu-chat-probe.js'
+      - 'scripts/codex-bridge/README.md'
+      - 'docs/handoffs/20260923-pixiu-chat-bridge-native-probe.md'
+      - '.github/workflows/pixiu-chat-bridge.yml'
+  workflow_dispatch:
+
+jobs:
+  synthetic-probe:
+    name: Synthetic round-trip gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run protocol and regression tests
+        run: node --test scripts/codex-bridge/pixiu-chat-bridge.test.js
+
+      - name: Run synthetic probe
+        shell: bash
+        run: |
+          RESULT_FILE="${RUNNER_TEMP}/pixiu-chat-bridge-result.json"
+          LEDGER_FILE="${RUNNER_TEMP}/pixiu-chat-bridge-ledger.jsonl"
+          node scripts/codex-bridge/pixiu-chat-probe.js synthetic --ledger "${LEDGER_FILE}" > "${RESULT_FILE}"
+          cat "${RESULT_FILE}"
+          node -e '
+            const fs = require("fs");
+            const result = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            if (result.verification?.result !== "PASS") process.exit(1);
+            if (result.verification?.protocolVerified !== true) process.exit(1);
+            if (result.verification?.nativeVerified !== false) process.exit(1);
+          ' "${RESULT_FILE}"
