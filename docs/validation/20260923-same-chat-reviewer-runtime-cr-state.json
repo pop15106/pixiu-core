@@ -2,7 +2,7 @@
   "schemaVersion": "pixiu.critical-relay.v1",
   "objective": "將 Same-Chat Reviewer 以預設關閉的 feature flag 接入 DevSpace OneClick Runtime，完成 MCP Apps Widget、DevSpace 1.0.8 安全升級、Windows runtime 與 portable delivery 驗證，同時對真實 ChatGPT Host E2E / auto-continue 保持 fail-closed。",
   "mode": "CR 完整自動接力",
-  "phase": "RECHALLENGE",
+  "phase": "COMPLETE",
   "phaseHistory": [
     "UNDERSTAND",
     "HYPOTHESIZE",
@@ -12,10 +12,11 @@
     "REASSESS",
     "REPAIR",
     "VERIFY",
-    "RECHALLENGE"
+    "RECHALLENGE",
+    "COMPLETE"
   ],
-  "iteration": 2,
-  "status": "active",
+  "iteration": 3,
+  "status": "completed",
   "claims": [
     {
       "id": "claim-feature-flag-isolated",
@@ -42,7 +43,8 @@
       "evidenceRefs": [
         "evidence-runtime-patch",
         "evidence-runtime-test",
-        "evidence-runtime-run"
+        "evidence-runtime-run",
+        "evidence-runtime-run-14"
       ],
       "counterEvidenceRefs": [
         "counter-108-early-return"
@@ -60,7 +62,8 @@
         "evidence-reviewer-tools",
         "evidence-widget-test",
         "evidence-widget-run",
-        "evidence-openai-ui"
+        "evidence-openai-ui",
+        "evidence-runtime-run-14"
       ],
       "counterEvidenceRefs": [
         "counter-widget-double-dispatch",
@@ -196,6 +199,11 @@
       "id": "evidence-openai-reference",
       "url": "https://developers.openai.com/plugins/reference",
       "summary": "官方 reference 定義 sendFollowUpMessage、callTool 與 toolOutput；toolOutput 是工具 structuredContent。"
+    },
+    {
+      "id": "evidence-runtime-run-14",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35847135387",
+      "summary": "Run 14 completed/success；Protocol、MCP Apps Widget、OneClick runtime integration、portable build/verify 與 Runtime Critical Relay completion gate 全數成功。"
     }
   ],
   "counterEvidence": [
@@ -375,6 +383,13 @@
       "required": true,
       "status": "passed",
       "source": "https://github.com/pop15106/pixiu-core/actions/runs/35846331834"
+    },
+    {
+      "id": "test-runtime-run-14",
+      "name": "Same-Chat Reviewer Runtime GitHub Actions Run 14（含 Runtime CR gate）",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35847135387"
     }
   ],
   "completionCriteria": [
@@ -426,6 +441,14 @@
         "evidence-openai-ui",
         "evidence-openai-reference"
       ]
+    },
+    {
+      "id": "criterion-runtime-cr-self-gate",
+      "criterion": "最新版 Runtime / Widget / Portable state 已在 Windows workflow 內由 Critical Relay completion gate 驗證成功。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "test-runtime-run-14"
+      ]
     }
   ],
   "remainingRisks": [
@@ -436,5 +459,5 @@
       "description": "真實 ChatGPT Host 的 ui/message 接受行為、Reviewer Turn tool calls 與無人介入 auto-resume 尚未驗收；本輪刻意不宣告完成。"
     }
   ],
-  "nextAction": "將本 state 掛入 Windows Runtime workflow completion gate；通過後完成 Git-side Runtime/Widget/Portable 階段。下一階段在實機 OneClick + Tunnel + ChatGPT App Refresh 後執行 Host E2E。"
+  "nextAction": "本輪 Git-side Runtime / Widget / Portable 階段已完成；下一階段在實機執行 00-SETUP-OR-UPDATE、啟用 16-ENABLE-SAME-CHAT-REVIEWER、確認 Tunnel READY 並 Refresh ChatGPT DevSpace App actions 後，執行真實 Host E2E。hostE2EVerified / autoContinueVerified 在 receipt 通過前維持 false。"
 }
