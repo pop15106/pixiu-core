@@ -40,5 +40,5 @@ jobs:
       - name: Capability Router
         run: node scripts/router/resolve-capabilities.test.js
 
-      - name: Lazy loading integration
-        run: node scripts/performance/lazy-loading-integration.test.js
+      - name: Critical Relay integration
+        run: node scripts/critical-relay/critical-relay.integration.test.js
