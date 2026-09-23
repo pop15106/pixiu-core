@@ -175,7 +175,7 @@ try {
             'DEVSPACE_SAME_CHAT_REVIEWER_ENABLED',
             'DEVSPACE_SAME_CHAT_REVIEWER_MODULE',
             'DEVSPACE_SAME_CHAT_REVIEWER_STATE_DIR',
-            "SetEnvironmentVariable('DEVSPACE_WIDGETS', $(if ($Spec.SameChatReviewerEnabled) { 'on' } else { 'off' }), 'Process')",
+            'SetEnvironmentVariable(''DEVSPACE_WIDGETS'', $(if ($Spec.SameChatReviewerEnabled) { ''on'' } else { ''off'' }), ''Process'')',
             'enable-same-chat-reviewer',
             'disable-same-chat-reviewer',
             'sameChatReviewerEnabled'
