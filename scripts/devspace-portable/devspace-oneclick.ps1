@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch')]
+    [ValidateSet('setup-or-update', 'install', 'start', 'stop', 'status', 'add-root', 'copy-password', 'agent-status', 'agent-stop', 'repair-state', 'restore-subagent-patch', 'enable-same-chat-reviewer', 'disable-same-chat-reviewer')]
     [string]$Action = 'status',
 
     [Parameter(Position = 1)]
@@ -42,6 +42,23 @@ $AgentProfilesSource = Join-Path $PSScriptRoot 'agents'
 $WorkflowModuleSource = Join-Path $PSScriptRoot 'DevSpace.WorkflowStore.mjs'
 $WorkflowModulePath = Join-Path $ShimRoot 'DevSpace.WorkflowStore.mjs'
 $WorkflowStateRoot = Join-Path $StateRoot 'workflow'
+$SameChatReviewerPackagedToolsSource = Join-Path $PSScriptRoot 'SameChat.ReviewerTools.mjs'
+$SameChatReviewerPackagedCoreSource = Join-Path $PSScriptRoot 'same-chat-reviewer.js'
+$SameChatReviewerRepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\chat-reviewer'))
+$SameChatReviewerToolsSource = if (Test-Path -LiteralPath $SameChatReviewerPackagedToolsSource -PathType Leaf) {
+    $SameChatReviewerPackagedToolsSource
+}
+else {
+    Join-Path $SameChatReviewerRepoRoot 'SameChat.ReviewerTools.mjs'
+}
+$SameChatReviewerCoreSource = if (Test-Path -LiteralPath $SameChatReviewerPackagedCoreSource -PathType Leaf) {
+    $SameChatReviewerPackagedCoreSource
+}
+else {
+    Join-Path $SameChatReviewerRepoRoot 'same-chat-reviewer.js'
+}
+$SameChatReviewerModulePath = Join-Path $ShimRoot 'same-chat-reviewer\SameChat.ReviewerTools.mjs'
+$SameChatReviewerStateRoot = Join-Path $StateRoot 'same-chat-reviewer'
 
 function Write-Info {
     param([Parameter(Mandatory = $true)][string]$Message)
@@ -238,8 +255,16 @@ function Save-DevSpaceConfig {
 
     $existingConfig = Read-JsonFile -FilePath $ConfigPath
     $config = Merge-DevSpaceConfig -ExistingConfig $existingConfig -AllowedRoots $Roots -Port ([int]$Settings.port) -PublicBaseUrl ([string]$Settings.publicBaseUrl)
+    $sameChatReviewerEnabled = $false
+    if ($existingConfig -and $existingConfig.PSObject.Properties['sameChatReviewerEnabled']) {
+        if ($existingConfig.sameChatReviewerEnabled -isnot [bool]) {
+            throw 'sameChatReviewerEnabled must be a boolean.'
+        }
+        $sameChatReviewerEnabled = [bool]$existingConfig.sameChatReviewerEnabled
+    }
     $config | Add-Member -NotePropertyName 'subagents' -NotePropertyValue $true -Force
     $config | Add-Member -NotePropertyName 'agentDir' -NotePropertyValue (Join-Path $ConfigRoot 'agents') -Force
+    $config | Add-Member -NotePropertyName 'sameChatReviewerEnabled' -NotePropertyValue $sameChatReviewerEnabled -Force
     Backup-File -FilePath $ConfigPath
     Write-JsonFile -FilePath $ConfigPath -Value $config
 }
@@ -286,6 +311,13 @@ function Get-ValidatedSpec {
     if ($roots.Count -eq 0) {
         throw 'At least one narrow allowed root is required.'
     }
+    $sameChatReviewerEnabled = $false
+    if ($config.PSObject.Properties['sameChatReviewerEnabled']) {
+        if ($config.sameChatReviewerEnabled -isnot [bool]) {
+            throw 'sameChatReviewerEnabled must be a boolean.'
+        }
+        $sameChatReviewerEnabled = [bool]$config.sameChatReviewerEnabled
+    }
 
     return [pscustomobject]@{
         Settings = $settings
@@ -295,6 +327,7 @@ function Get-ValidatedSpec {
         Port = [int]$settings.port
         PublicBaseUrl = [string]$settings.publicBaseUrl
         TunnelId = [string]$settings.tunnelId
+        SameChatReviewerEnabled = $sameChatReviewerEnabled
     }
 }
 
@@ -502,6 +535,7 @@ function Show-Status {
     Write-Info "public MCP: $($spec.PublicBaseUrl)/mcp"
     Write-Info "tunnel ID: $($spec.TunnelId)"
     Write-Info "machine: $env:COMPUTERNAME"
+    Write-Info "Same-Chat Reviewer: $(if ($spec.SameChatReviewerEnabled) { 'enabled (experimental)' } else { 'disabled' })"
     Write-Info 'allowed roots:'
     foreach ($root in $spec.Roots) {
         Write-Host "  - $root"
@@ -544,6 +578,9 @@ function Set-DevSpaceEnvironment {
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_MODULE', $WorkflowModulePath, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_STATE_DIR', $WorkflowStateRoot, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_WORKFLOW_CLI', $DevSpaceCli, 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_SAME_CHAT_REVIEWER_ENABLED', $(if ($Spec.SameChatReviewerEnabled) { '1' } else { '0' }), 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_SAME_CHAT_REVIEWER_MODULE', $SameChatReviewerModulePath, 'Process')
+    [Environment]::SetEnvironmentVariable('DEVSPACE_SAME_CHAT_REVIEWER_STATE_DIR', $SameChatReviewerStateRoot, 'Process')
     [Environment]::SetEnvironmentVariable('DEVSPACE_OAUTH_AUTO_APPROVE_CHATGPT', '1', 'Process')
 }
 
@@ -564,7 +601,8 @@ function Start-Stack {
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
     $workflowInstall = Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot
-    $runtimeComponentsChanged = $patchCount -gt 0 -or $workflowInstall.Changed
+    $sameChatReviewerInstall = Install-DevSpaceSameChatReviewerBundle -ToolsSourceFile $SameChatReviewerToolsSource -CoreSourceFile $SameChatReviewerCoreSource -BinDirectory $ShimRoot
+    $runtimeComponentsChanged = $patchCount -gt 0 -or $workflowInstall.Changed -or $sameChatReviewerInstall.Changed
     if ($patchCount -gt 0) {
         Write-Info "Applied $patchCount DevSpace $((Get-Content -LiteralPath (Join-Path (Split-Path -Parent (Split-Path -Parent $tools.DevSpaceCli)) 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version) compatibility fix(es)."
     }
@@ -718,6 +756,45 @@ function Add-Root {
     }
 }
 
+function Set-SameChatReviewerFeature {
+    param([Parameter(Mandatory = $true)][bool]$Enabled)
+
+    $config = Read-JsonFile -FilePath $ConfigPath
+    if (-not $config) {
+        throw 'DevSpace config is missing. Run setup-or-update first.'
+    }
+    $current = $false
+    if ($config.PSObject.Properties['sameChatReviewerEnabled']) {
+        if ($config.sameChatReviewerEnabled -isnot [bool]) {
+            throw 'sameChatReviewerEnabled must be a boolean.'
+        }
+        $current = [bool]$config.sameChatReviewerEnabled
+    }
+    if ($current -eq $Enabled) {
+        Write-Info "Same-Chat Reviewer is already $(if ($Enabled) { 'enabled' } else { 'disabled' })."
+        return
+    }
+
+    Backup-File -FilePath $ConfigPath
+    $config | Add-Member -NotePropertyName 'sameChatReviewerEnabled' -NotePropertyValue $Enabled -Force
+    Write-JsonFile -FilePath $ConfigPath -Value $config
+    Write-Info "Same-Chat Reviewer $(if ($Enabled) { 'enabled' } else { 'disabled' })."
+
+    $runtime = Read-JsonFile -FilePath $RuntimePath
+    if ($runtime) {
+        Write-Info 'Restarting the owned DevSpace stack to apply the Same-Chat Reviewer feature flag...'
+        Stop-Stack
+        Start-Stack
+    }
+    else {
+        Write-Info 'Run 03-START.cmd to apply the new feature flag.'
+    }
+
+    if ($Enabled) {
+        Write-Info 'After startup, refresh the DevSpace App actions in ChatGPT before the host E2E test.'
+    }
+}
+
 function Copy-OwnerPassword {
     $spec = Get-ValidatedSpec
     $setClipboard = Get-Command Set-Clipboard -ErrorAction SilentlyContinue
@@ -817,6 +894,7 @@ function Write-ReadyForChatGpt {
     Write-Host "MCP URL: $mcpUrl" -ForegroundColor Cyan
     Write-Host "Owner password: $OwnerToken" -ForegroundColor Yellow
     Write-Host 'Cross-session and cross-project workflow tools are included.' -ForegroundColor Green
+    Write-Host "Same-Chat Reviewer: $(if ($Spec.SameChatReviewerEnabled) { 'enabled (experimental)' } else { 'disabled' })" -ForegroundColor DarkGray
     Write-Host 'Keep the Owner password private. Use 06-COPY-PASSWORD.cmd when needed again.'
 }
 
@@ -831,6 +909,7 @@ function Install-OneClick {
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
     [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot)
+    [void](Install-DevSpaceSameChatReviewerBundle -ToolsSourceFile $SameChatReviewerToolsSource -CoreSourceFile $SameChatReviewerCoreSource -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     $roots = Get-InstallRoots
     $settings = Get-TunnelSettings -DevTunnel $tools.DevTunnel -Create
@@ -874,6 +953,7 @@ function Update-OneClick {
     [void](Install-DevSpaceAgentProfiles -ConfigRoot $ConfigRoot -SourceDirectory $AgentProfilesSource)
     [void](Install-DevSpaceAgentCliShim -NodePath $tools.Node -DevSpaceCli $tools.DevSpaceCli -AdminScript $AgentAdminScript -BinDirectory $ShimRoot)
     [void](Install-DevSpaceWorkflowModule -SourceFile $WorkflowModuleSource -BinDirectory $ShimRoot)
+    [void](Install-DevSpaceSameChatReviewerBundle -ToolsSourceFile $SameChatReviewerToolsSource -CoreSourceFile $SameChatReviewerCoreSource -BinDirectory $ShimRoot)
     Ensure-DevTunnelLogin -DevTunnel $tools.DevTunnel
     Start-Stack
     Invoke-Doctor -Tools $tools
@@ -910,4 +990,6 @@ switch ($Action) {
     'agent-stop' { Stop-Agent }
     'repair-state' { Repair-OneClickState }
     'restore-subagent-patch' { Restore-SubagentPatch }
+    'enable-same-chat-reviewer' { Set-SameChatReviewerFeature -Enabled $true }
+    'disable-same-chat-reviewer' { Set-SameChatReviewerFeature -Enabled $false }
 }
