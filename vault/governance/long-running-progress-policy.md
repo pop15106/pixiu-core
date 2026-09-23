@@ -86,9 +86,10 @@ Git、Release、Deploy 類工作完成時，最終回報至少包含：
 4. 重新判斷 claims；有新反證時進入 REASSESS／REPAIR，不因固定輪數停止。
 5. VERIFY 通過後仍要執行 RECHALLENGE。
 6. 只有 `scripts/critical-relay/critical-relay.js` 的 completion gate 沒有 blocker，才可進入 READY_TO_HANDOFF 或回報 🟢 全部完成。
-7. 跨 Session／模型交棒時，保留 canonical Critical Relay state；可放入既有 workflow `contextSnapshot`，不得只交接最終結論而遺失反證與未知項。
+7. 跨 Session／模型交棒時，保留 canonical Critical Relay state；使用獨立 handoff snapshot 與 `stateDigest`，接手時重新驗證，不得只交接最終結論而遺失反證與未知項。
+8. DevSpace workflow 的 CR-enabled task 必須設定 `criticalRelayRequired=true` 並保存結構化 `criticalRelay` state；handoff 缺 state 要拒絕，`complete` 必須對最新 state 重新執行 completion gate，不得信任舊的 `evaluation`。
 
-Critical Relay 只增加懷疑、反證與完成閘門；它不新增任何 Agent、寫入、push、Release、Deploy 或 Production 權限。
+Critical Relay state 若欄位型別錯誤、反證關聯不完整、ID 重複、status=blocked，或缺少 VERIFY → RECHALLENGE 歷程，一律 fail closed。Critical Relay 只增加懷疑、反證與完成閘門；它不新增任何 Agent、寫入、push、Release、Deploy 或 Production 權限。
 
 ## 7. 權限與安全邊界
 
