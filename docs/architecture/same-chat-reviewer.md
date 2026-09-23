@@ -1,7 +1,7 @@
 # Same-Chat Reviewer｜Advisory Reviewer Adapter
 
 日期：2026-09-23  
-狀態：Protocol / MCP registration 已完成；ChatGPT host 真實自動閉環尚未驗收。
+狀態：Git-side Protocol / MCP Apps Widget / OneClick Runtime / Portable 已完成；ChatGPT Host 真實自動閉環尚未驗收。
 
 ## 目的
 
@@ -149,14 +149,9 @@ Reviewer 說 `no_additional_findings` 時，也只代表本輪沒有新增 findi
 - `same_chat_review_consume`
 - `same_chat_review_capabilities`
 
-這層目前**沒有掛進現有 DevSpace 正式 tool catalog**。
+這層現在以 **opt-in experimental feature flag** 條件式掛進 DevSpace Runtime。
 
-原因：
-
-1. 先驗證 protocol / correlation / lifecycle。
-2. 不影響既有 workflow tools。
-3. 不放寬 independent review 規則。
-4. 真實 ChatGPT host E2E 未通過前，不把 experimental capability 當 production tool。
+預設 `sameChatReviewerEnabled=false`，所以既有使用者看不到這 5 個工具；只有明確啟用 Same-Chat Reviewer 後才註冊。原本 5 個 workflow tools 的名稱、狀態機與 independent-review 規則不變。
 
 ## 官方 UI 能力
 
@@ -254,3 +249,118 @@ MCP registration tested = true
 Host E2E verified       = false
 Auto continue verified  = false
 ```
+
+## Runtime / Widget 更新（2026-09-23）
+
+### MCP Apps Widget
+
+`same_chat_review_request` 已連結 UI resource：
+
+```text
+ui://pixiu/same-chat-reviewer/v1.html
+```
+
+MIME：
+
+```text
+text/html;profile=mcp-app
+```
+
+Widget 行為：
+
+- 優先使用 MCP Apps 標準 `ui/message` 要求 Host 建立 Reviewer Turn。
+- 標準 bridge 不可用時，才 feature-detect ChatGPT 相容的 `window.openai.sendFollowUpMessage`。
+- 成功 dispatch 後，以 ephemeral widget state 記錄 `dispatchedReviewId`，避免同一 UI instance 重複自動送出。
+- dispatch 失敗時顯示 Retry。
+- Widget 不呼叫 `same_chat_review_submit`、`same_chat_review_consume` 或 workflow complete；durable business state 仍完全保留在 server。
+
+Reviewer Turn 的 prompt 已明確要求：
+
+```text
+same_chat_review_submit
+  ↓
+same_chat_review_consume
+  ↓
+criticalRelayProposal
+  ↓
+CR REASSESS / REPAIR / VERIFY
+```
+
+即使沒有新增 finding，也不能跳過 VERIFY / RECHALLENGE / completion gate。
+
+### OneClick feature flag
+
+預設：
+
+```text
+sameChatReviewerEnabled = false
+DEVSPACE_SAME_CHAT_REVIEWER_ENABLED = 0
+DEVSPACE_WIDGETS = off
+```
+
+啟用：`16-ENABLE-SAME-CHAT-REVIEWER.cmd`
+
+停用：`17-DISABLE-SAME-CHAT-REVIEWER.cmd`
+
+啟用後：
+
+```text
+DEVSPACE_SAME_CHAT_REVIEWER_ENABLED = 1
+DEVSPACE_WIDGETS = on
+```
+
+OneClick 會部署兩檔 managed bundle：
+
+- `SameChat.ReviewerTools.mjs`
+- `same-chat-reviewer.js`
+
+切換 flag 時，若目前 stack 是由 OneClick 管理，會安全 restart 該 stack。啟用後需 Refresh ChatGPT DevSpace App actions，才會取得新工具／resource catalog。
+
+### DevSpace 1.0.8 upgrade
+
+目前 OneClick pin 的 DevSpace 版本為 1.0.8。
+
+Runtime patch 支援：
+
+- 原始 1.0.8 → 最新 Same-Chat patch。
+- 已知舊 OneClick patched hash → 最新 Same-Chat patch。
+- 未知 server drift → fail closed。
+
+因此舊機器已套過 OneClick patch，也不會因舊 manifest early-return 而永遠收不到新版 registration。
+
+### Portable delivery
+
+Portable ZIP 已包含 reviewer core、MCP tools / Widget resource module、enable / disable launcher，以及 OneClick runtime patch / feature flag。Builder / verifier 會檢查 payload 與 manifest metadata。
+
+### 已驗證的 Git-side Gate
+
+- Same-Chat Reviewer Run `35846254601`：Protocol + MCP Apps Widget registration + CR gate success。
+- Windows Runtime Run `35845503860`：OneClick runtime + portable build/verify success。
+- Windows Runtime Run `35846331834`：加入 Widget feature flag 後，Protocol、MCP Widget、OneClick Runtime、Portable build/verify 全數 success。
+
+### 仍未驗收的真實 Host E2E
+
+GitHub Actions 不能證明真實 ChatGPT Host 會完整執行：
+
+```text
+same_chat_review_request
+  ↓
+Widget ui/message
+  ↓
+ChatGPT Reviewer Turn
+  ↓
+same_chat_review_submit
+  ↓
+same_chat_review_consume
+  ↓
+CR REASSESS / REPAIR
+```
+
+因此目前仍固定：
+
+```text
+hostE2EVerified       = false
+autoContinueVerified = false
+```
+
+這兩個值只能由真實 ChatGPT Runtime receipt 升級，不能由設定值或 synthetic test 升級。
