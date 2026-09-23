@@ -273,8 +273,8 @@ test("MCP Apps resource 使用標準 resourceUri/MIME，widget 有單次 ui/mess
     assert.match(content.text, /dispatchedReviewId/);
     assert.match(content.text, /dispatchStatus/);
     assert.match(content.text, /重新送出 Reviewer Turn/);
-    assert.doesNotMatch(content.text, /same_chat_review_submit/);
-    assert.doesNotMatch(content.text, /same_chat_review_consume/);
+    assert.doesNotMatch(content.text, /request\("tools\/call"/);
+    assert.doesNotMatch(content.text, /openai\.callTool/);
   } finally {
     await f.cleanup();
   }
