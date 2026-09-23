@@ -5,8 +5,10 @@ const assert = require('assert');
 const {
   SCHEMA_VERSION,
   createCriticalRelay,
+  recordCriticalRelayPhase,
   evaluateCriticalRelay,
-  buildHandoffSnapshot
+  buildHandoffSnapshot,
+  verifyHandoffSnapshot
 } = require('./critical-relay');
 
 function completedState() {
@@ -15,7 +17,8 @@ function completedState() {
     completionCriteria: ['核心主張有可追溯證據']
   });
 
-  state.phase = 'RECHALLENGE';
+  recordCriticalRelayPhase(state, 'VERIFY');
+  recordCriticalRelayPhase(state, 'RECHALLENGE');
   state.iteration = 2;
   state.claims.push({
     id: 'claim-1',
@@ -26,8 +29,18 @@ function completedState() {
     counterEvidenceRefs: ['counter-1'],
     counterEvidenceStatus: 'addressed'
   });
-  state.evidence.push({ id: 'evidence-1', source: 'primary-source', supports: ['claim-1'] });
-  state.counterEvidence.push({ id: 'counter-1', source: 'contrary-source', challenges: ['claim-1'] });
+  state.evidence.push({
+    id: 'evidence-1',
+    url: 'https://example.com/primary',
+    supports: ['claim-1']
+  });
+  state.counterEvidence.push({
+    id: 'counter-1',
+    url: 'https://example.com/contrary',
+    claimRefs: ['claim-1'],
+    severity: 'high',
+    status: 'addressed'
+  });
   state.challenges.push({
     id: 'challenge-1',
     claimRefs: ['claim-1'],
@@ -52,8 +65,34 @@ function testCreatesCanonicalState() {
   });
   assert.strictEqual(state.schemaVersion, SCHEMA_VERSION);
   assert.strictEqual(state.phase, 'UNDERSTAND');
+  assert.deepStrictEqual(state.phaseHistory, ['UNDERSTAND']);
   assert.strictEqual(state.status, 'active');
   assert.deepStrictEqual(state.claims, []);
+}
+
+function testMalformedTopLevelArrayFailsClosed() {
+  const state = completedState();
+  state.claims = {};
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('claims 必須是陣列')));
+}
+
+function testMalformedTestsArrayFailsClosed() {
+  const state = completedState();
+  state.tests = {};
+  state.completionCriteria[0].evidenceRefs = ['evidence-1'];
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('tests 必須是陣列')));
+}
+
+function testBlockedStateCannotComplete() {
+  const state = completedState();
+  state.status = 'blocked';
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('status=blocked')));
 }
 
 function testOpenClaimBlocksCompletion() {
@@ -72,6 +111,44 @@ function testUnaddressedCounterEvidenceBlocksCompletion() {
   assert.ok(result.blockingReasons.some(reason => reason.includes('未處理 counterEvidence')));
 }
 
+function testReverseCounterEvidenceLinkIsRequired() {
+  const state = completedState();
+  state.counterEvidence.push({
+    id: 'counter-2',
+    url: 'https://example.com/contrary-2',
+    claimRefs: ['claim-1'],
+    severity: 'high',
+    status: 'open'
+  });
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(
+    result.blockingReasons.some(reason =>
+      reason.includes('該 claim 未反向列出此 counterEvidence')
+    )
+  );
+  assert.ok(result.blockingReasons.some(reason => reason.includes('高風險反證尚未處理')));
+}
+
+function testDuplicateIdsBlockCompletion() {
+  const state = completedState();
+  state.evidence.push({
+    id: 'evidence-1',
+    url: 'https://example.com/duplicate'
+  });
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('重複 id：evidence-1')));
+}
+
+function testWeakSourceLabelIsNotTraceable() {
+  const state = completedState();
+  state.evidence[0] = { id: 'evidence-1', source: 'xxx', supports: ['claim-1'] };
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('缺少可追溯定位')));
+}
+
 function testDanglingEvidenceReferenceBlocksCompletion() {
   const state = completedState();
   state.claims[0].evidenceRefs = ['evidence-999'];
@@ -83,9 +160,18 @@ function testDanglingEvidenceReferenceBlocksCompletion() {
 function testCompletionRequiresRechallengePhase() {
   const state = completedState();
   state.phase = 'VERIFY';
+  state.phaseHistory = ['UNDERSTAND', 'VERIFY'];
   const result = evaluateCriticalRelay(state);
   assert.strictEqual(result.canComplete, false);
   assert.ok(result.blockingReasons.some(reason => reason.includes('尚未進入 RECHALLENGE')));
+}
+
+function testCompletionRequiresVerifyThenRechallengeHistory() {
+  const state = completedState();
+  state.phaseHistory = ['UNDERSTAND', 'RECHALLENGE'];
+  const result = evaluateCriticalRelay(state);
+  assert.strictEqual(result.canComplete, false);
+  assert.ok(result.blockingReasons.some(reason => reason.includes('VERIFY → RECHALLENGE')));
 }
 
 function testSupportedClaimWithoutChallengeBlocksCompletion() {
@@ -127,11 +213,31 @@ function testResolvedRelayCanComplete() {
   assert.strictEqual(result.nextPhase, 'READY_TO_HANDOFF');
 }
 
+function testHandoffSnapshotIsDetachedAndDigestProtected() {
+  const state = completedState();
+  const snapshot = buildHandoffSnapshot(state);
+  assert.strictEqual(snapshot.evaluation.canComplete, true);
+  assert.match(snapshot.stateDigest, /^[a-f0-9]{64}$/);
+
+  state.claims[0].status = 'contested';
+  assert.strictEqual(snapshot.claims[0].status, 'supported');
+
+  const verified = verifyHandoffSnapshot(snapshot);
+  assert.strictEqual(verified.digestMatches, true);
+  assert.strictEqual(verified.canAccept, true);
+
+  snapshot.claims[0].status = 'contested';
+  const tampered = verifyHandoffSnapshot(snapshot);
+  assert.strictEqual(tampered.digestMatches, false);
+  assert.strictEqual(tampered.canAccept, false);
+}
+
 function testHandoffSnapshotKeepsCriticalState() {
   const snapshot = buildHandoffSnapshot(completedState());
   for (const key of [
     'mode',
     'status',
+    'phaseHistory',
     'claims',
     'assumptions',
     'evidence',
@@ -141,24 +247,32 @@ function testHandoffSnapshotKeepsCriticalState() {
     'tests',
     'completionCriteria',
     'remainingRisks',
-    'nextAction'
+    'nextAction',
+    'stateDigest'
   ]) {
     assert.ok(Object.prototype.hasOwnProperty.call(snapshot, key), `handoff 缺少 ${key}`);
   }
-  assert.strictEqual(snapshot.evaluation.canComplete, true);
 }
 
 for (const test of [
   testCreatesCanonicalState,
+  testMalformedTopLevelArrayFailsClosed,
+  testMalformedTestsArrayFailsClosed,
+  testBlockedStateCannotComplete,
   testOpenClaimBlocksCompletion,
   testUnaddressedCounterEvidenceBlocksCompletion,
+  testReverseCounterEvidenceLinkIsRequired,
+  testDuplicateIdsBlockCompletion,
+  testWeakSourceLabelIsNotTraceable,
   testDanglingEvidenceReferenceBlocksCompletion,
   testCompletionRequiresRechallengePhase,
+  testCompletionRequiresVerifyThenRechallengeHistory,
   testSupportedClaimWithoutChallengeBlocksCompletion,
   testDanglingChallengeReferenceBlocksCompletion,
   testChallengeWithoutMethodBlocksCompletion,
   testRequiredVerificationBlocksCompletion,
   testResolvedRelayCanComplete,
+  testHandoffSnapshotIsDetachedAndDigestProtected,
   testHandoffSnapshotKeepsCriticalState
 ]) {
   test();
