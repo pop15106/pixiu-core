@@ -5,65 +5,161 @@
     {
       "id": "legacy-java",
       "summary": "追蹤 Legacy Java、PCLMS、Servlet、Struts、Spring、SQL 與 Procedure 流程。",
-      "keywords": ["java", "pclms", "pepis", "pisso", "ptwcs", "struts", "servlet", "spring", "dao", "sql", "procedure", "排程", "報表", "流程"],
+      "keywords": [
+        "java",
+        "pclms",
+        "pepis",
+        "pisso",
+        "ptwcs",
+        "struts",
+        "servlet",
+        "spring",
+        "dao",
+        "sql",
+        "procedure",
+        "排程",
+        "報表",
+        "流程"
+      ],
       "priority": 30,
       "load": {
-        "skills": ["skills/legacy-java-flow-tracing/SKILL.md"],
-        "contexts": ["vault/context/tech-stack.md", "vault/context/pclms-overview.md"],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "skills": [
+          "skills/legacy-java-flow-tracing/SKILL.md"
+        ],
+        "contexts": [
+          "vault/context/tech-stack.md",
+          "vault/context/pclms-overview.md"
+        ],
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "code-implementation",
       "summary": "實作功能、修正缺陷與重構。",
-      "keywords": ["實作", "修正", "修 bug", "bug", "開發", "重構", "修改程式", "加功能"],
+      "keywords": [
+        "實作",
+        "修正",
+        "修 bug",
+        "bug",
+        "開發",
+        "重構",
+        "修改程式",
+        "加功能"
+      ],
       "priority": 20,
       "load": {
-        "skills": ["skills/tdd-workflow/SKILL.md"],
+        "skills": [
+          "skills/tdd-workflow/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "code-review",
       "summary": "程式碼正確性、可維護性與回歸風險審查。",
-      "keywords": ["code review", "審查程式", "檢查程式", "review", "回歸風險", "收尾", "跑驗證", "驗證", "測試", "確認能交付", "/go"],
+      "keywords": [
+        "code review",
+        "審查程式",
+        "檢查程式",
+        "review",
+        "回歸風險",
+        "收尾",
+        "跑驗證",
+        "驗證",
+        "測試",
+        "確認能交付",
+        "/go"
+      ],
       "priority": 25,
       "load": {
-        "skills": ["skills/pixiu-verify-loop/SKILL.md", "skills/verification-loop/SKILL.md"],
+        "skills": [
+          "skills/pixiu-verify-loop/SKILL.md",
+          "skills/verification-loop/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/judgment-rubrics.md"]
+        "governance": [
+          "vault/governance/judgment-rubrics.md"
+        ]
       }
     },
     {
       "id": "security-review",
       "summary": "資安、秘密資料、權限、輸入驗證與弱點檢查。",
-      "keywords": ["資安", "安全", "漏洞", "弱點", "secret", "token", "密碼", "權限", "owasp", "紅隊"],
+      "keywords": [
+        "資安",
+        "安全",
+        "漏洞",
+        "弱點",
+        "secret",
+        "token",
+        "密碼",
+        "權限",
+        "owasp",
+        "紅隊"
+      ],
       "priority": 50,
       "load": {
-        "skills": ["skills/security-review/SKILL.md"],
+        "skills": [
+          "skills/security-review/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/judgment-rubrics.md"]
+        "governance": [
+          "vault/governance/judgment-rubrics.md"
+        ]
       }
     },
     {
       "id": "architecture-analysis",
       "summary": "架構、根因、影響範圍、效能與方案比較。",
-      "keywords": ["架構", "根因", "root cause", "影響", "影響範圍", "現行操作", "功能影響", "效能", "瓶頸", "方案比較", "風險評估"],
+      "keywords": [
+        "架構",
+        "根因",
+        "root cause",
+        "影響",
+        "影響範圍",
+        "現行操作",
+        "功能影響",
+        "效能",
+        "瓶頸",
+        "方案比較",
+        "風險評估"
+      ],
       "priority": 25,
       "load": {
         "skills": [],
-        "contexts": ["vault/context/ai-mothership-loading-policy.md", ".agent/workflows/impact-assessment.md"],
-        "governance": ["vault/governance/judgment-rubrics.md"]
+        "contexts": [
+          "vault/context/ai-mothership-loading-policy.md",
+          ".agent/workflows/impact-assessment.md"
+        ],
+        "governance": [
+          "vault/governance/judgment-rubrics.md"
+        ]
       }
     },
     {
       "id": "research",
       "summary": "公開資料、Repo、論文與技術文章研究。",
-      "keywords": ["研究", "repo", "github", "論文", "文章", "搜尋", "查資料", "近期", "最新"],
+      "keywords": [
+        "研究",
+        "repo",
+        "github",
+        "論文",
+        "文章",
+        "搜尋",
+        "查資料",
+        "近期",
+        "最新"
+      ],
       "priority": 15,
       "load": {
-        "skills": ["skills/deep-research/SKILL.md"],
+        "skills": [
+          "skills/deep-research/SKILL.md"
+        ],
         "contexts": [],
         "governance": []
       }
@@ -71,134 +167,442 @@
     {
       "id": "work-document-orchestration",
       "summary": "以自然語言辨識需求、SA/PM 交辦、追加異動、報修、資料修復、事故、上版、操作手冊與資安排除；先建立可追溯 Work Record，再路由既有專門 Skill，維持 Draft -> In Progress -> Review -> Final 的證據鏈。",
-      "keywords": ["需求", "現在有個需求", "有個需求", "PM說", "PM 說", "PM剛", "PM 剛", "SA說", "SA 說", "SA剛", "SA 剛", "交代", "交辦", "追加調整", "追加需求", "需求變更", "報修", "客戶報修", "客戶反映", "客戶反應", "異常", "事故", "出事", "資料異常", "資料怪怪的", "手動修資料", "人工修資料", "人工 SQL", "人工SQL", "上版", "併版", "操作手冊", "資安排除", "弱點排除", "自保文件", "覆核單", "留個紀錄"],
+      "keywords": [
+        "需求",
+        "現在有個需求",
+        "有個需求",
+        "PM說",
+        "PM 說",
+        "PM剛",
+        "PM 剛",
+        "SA說",
+        "SA 說",
+        "SA剛",
+        "SA 剛",
+        "交代",
+        "交辦",
+        "追加調整",
+        "追加需求",
+        "需求變更",
+        "報修",
+        "客戶報修",
+        "客戶反映",
+        "客戶反應",
+        "異常",
+        "事故",
+        "出事",
+        "資料異常",
+        "資料怪怪的",
+        "手動修資料",
+        "人工修資料",
+        "人工 SQL",
+        "人工SQL",
+        "上版",
+        "併版",
+        "操作手冊",
+        "資安排除",
+        "弱點排除",
+        "自保文件",
+        "覆核單",
+        "留個紀錄"
+      ],
       "priority": 60,
       "load": {
-        "skills": ["skills/work-document-orchestrator/SKILL.md"],
+        "skills": [
+          "skills/work-document-orchestrator/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "repair-review",
       "summary": "事故／異常／報修後、正式修正前，整理現象與證據、重現、Root Cause 狀態、active path / blast radius、Repair Scope、資料修復、環境一致性、測試與回復方案；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM/必要角色覆核。",
-      "keywords": ["報修覆核單", "報修覆核", "報修單", "事故修復覆核", "故障修復覆核", "修復方案覆核", "bug修復覆核", "bug 修復覆核", "異常修復覆核", "問題修復覆核", "事故覆核", "維修覆核單"],
+      "keywords": [
+        "報修覆核單",
+        "報修覆核",
+        "報修單",
+        "事故修復覆核",
+        "故障修復覆核",
+        "修復方案覆核",
+        "bug修復覆核",
+        "bug 修復覆核",
+        "異常修復覆核",
+        "問題修復覆核",
+        "事故覆核",
+        "維修覆核單"
+      ],
       "priority": 42,
-      "suppresses": ["requirement-confirmation", "change-review", "documentation"],
+      "suppresses": [
+        "requirement-confirmation",
+        "change-review",
+        "documentation"
+      ],
       "load": {
-        "skills": ["skills/repair-review-sheet/SKILL.md", "skills/system-documentation/SKILL.md"],
+        "skills": [
+          "skills/repair-review-sheet/SKILL.md",
+          "skills/system-documentation/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "requirement-confirmation",
       "summary": "將 SA/PM 模糊口語需求、使用者自然語言理解與後續追加／變更整理成版本化待確認需求；保留 Requirement Delta、重算受影響程式／DB／驗收／測試／覆核；無 UI 預設 MD，有 UI 預設 DOCX，供 SA/PM 覆核。",
-      "keywords": ["需求確認", "確認需求", "需求釐清", "釐清需求", "口頭需求", "我理解的需求", "需求理解", "需求覆核", "需求確認文件", "需求確認書", "SA需求確認", "PM需求確認", "SA/PM需求覆核", "SA PM需求覆核", "需求範圍確認", "追加需求", "需求追加", "追加調整", "需求補充", "補充需求", "需求變更", "中途追加", "剛剛又補充", "另外還要調整"],
+      "keywords": [
+        "需求確認",
+        "確認需求",
+        "需求釐清",
+        "釐清需求",
+        "口頭需求",
+        "我理解的需求",
+        "需求理解",
+        "需求覆核",
+        "需求確認文件",
+        "需求確認書",
+        "SA需求確認",
+        "PM需求確認",
+        "SA/PM需求覆核",
+        "SA PM需求覆核",
+        "需求範圍確認",
+        "追加需求",
+        "需求追加",
+        "追加調整",
+        "需求補充",
+        "補充需求",
+        "需求變更",
+        "中途追加",
+        "剛剛又補充",
+        "另外還要調整"
+      ],
       "priority": 40,
-      "suppresses": ["change-review", "documentation"],
+      "suppresses": [
+        "change-review",
+        "documentation"
+      ],
       "load": {
-        "skills": ["skills/requirement-confirmation/SKILL.md", "skills/system-documentation/SKILL.md"],
+        "skills": [
+          "skills/requirement-confirmation/SKILL.md",
+          "skills/system-documentation/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "change-review",
       "summary": "併版或正式變更前，逐檔逐改動整理 diff、修改原因、跨層相依與環境一致性；指定範圍含 UI 時預設產 DOCX 並附 Before/After，另含驗證證據及 SA/PM 覆核紀錄。",
-      "keywords": ["變更內容整理", "整理變更內容", "此次變更", "此次改動", "改動程式範圍", "變更範圍整理", "併版前覆核", "併版覆核", "合併前覆核", "merge 前覆核", "merge前覆核", "變更覆核", "變更覆核文件", "併版覆核文件", "變更 diff", "改動 diff", "變更SA覆核", "變更PM覆核", "變更SA/PM覆核", "併版SA覆核", "併版PM覆核", "change review"],
+      "keywords": [
+        "變更內容整理",
+        "整理變更內容",
+        "此次變更",
+        "此次改動",
+        "改動程式範圍",
+        "變更範圍整理",
+        "併版前覆核",
+        "併版覆核",
+        "合併前覆核",
+        "merge 前覆核",
+        "merge前覆核",
+        "變更覆核",
+        "變更覆核文件",
+        "併版覆核文件",
+        "變更 diff",
+        "改動 diff",
+        "變更SA覆核",
+        "變更PM覆核",
+        "變更SA/PM覆核",
+        "併版SA覆核",
+        "併版PM覆核",
+        "change review"
+      ],
       "priority": 35,
-      "suppresses": ["documentation"],
+      "suppresses": [
+        "documentation"
+      ],
       "load": {
-        "skills": ["skills/change-review-evidence/SKILL.md", "skills/system-documentation/SKILL.md"],
+        "skills": [
+          "skills/change-review-evidence/SKILL.md",
+          "skills/system-documentation/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "documentation",
       "summary": "以原始碼、設定、Schema、Runtime、實際畫面與可追溯需求為證據，產出操作手冊、受測文件、As-Is 功能規格、To-Be 需求/變更規格、模組解說、交接與其他系統文件。",
-      "keywords": ["文件", "報告", "說明書", "readme", "整理文件", "簡報內容", "操作手冊", "操作流程", "SOP", "受測", "受測文件", "複測", "測試文件", "測試規格", "功能規格", "系統規格", "需求規格", "變更規格", "需求文件", "變更文件", "既有系統", "現有系統", "系統模組", "模組解說", "模組說明", "系統解說", "功能說明", "程式流程", "交接文件", "API規格", "介接規格", "DB解說", "Schema解說", "UI還原", "畫面還原"],
+      "keywords": [
+        "文件",
+        "報告",
+        "說明書",
+        "readme",
+        "整理文件",
+        "簡報內容",
+        "操作手冊",
+        "操作流程",
+        "SOP",
+        "受測",
+        "受測文件",
+        "複測",
+        "測試文件",
+        "測試規格",
+        "功能規格",
+        "系統規格",
+        "需求規格",
+        "變更規格",
+        "需求文件",
+        "變更文件",
+        "既有系統",
+        "現有系統",
+        "系統模組",
+        "模組解說",
+        "模組說明",
+        "系統解說",
+        "功能說明",
+        "程式流程",
+        "交接文件",
+        "API規格",
+        "介接規格",
+        "DB解說",
+        "Schema解說",
+        "UI還原",
+        "畫面還原"
+      ],
       "priority": 28,
       "load": {
-        "skills": ["skills/system-documentation/SKILL.md"],
+        "skills": [
+          "skills/system-documentation/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["vault/governance/minimal-implementation-ladder.md"]
+        "governance": [
+          "vault/governance/minimal-implementation-ladder.md"
+        ]
       }
     },
     {
       "id": "identity-calibration",
       "summary": "使用者偏好、角色定位與跨模型人格校準。",
-      "keywords": ["我的偏好", "個人偏好", "我的習慣", "你應該知道我", "根據你對我的了解", "角色定位", "人格校準", "我是誰"],
+      "keywords": [
+        "我的偏好",
+        "個人偏好",
+        "我的習慣",
+        "你應該知道我",
+        "根據你對我的了解",
+        "角色定位",
+        "人格校準",
+        "我是誰"
+      ],
       "priority": 32,
       "load": {
         "skills": [],
-        "contexts": ["vault/identity/founder-profile.md", "vault/identity/agent-persona.md"],
+        "contexts": [
+          "vault/identity/founder-profile.md",
+          "vault/identity/agent-persona.md"
+        ],
         "governance": []
       }
     },
     {
       "id": "prompt-engineering",
       "summary": "Prompt、提示詞與 system prompt 精煉。",
-      "keywords": ["prompt", "提示詞", "提示語", "system prompt", "優化 prompt", "改寫 prompt", "提示工程"],
+      "keywords": [
+        "prompt",
+        "提示詞",
+        "提示語",
+        "system prompt",
+        "優化 prompt",
+        "改寫 prompt",
+        "提示工程"
+      ],
       "priority": 18,
       "load": {
         "skills": [],
-        "contexts": ["rules/common/prompt-engineering.md"],
+        "contexts": [
+          "rules/common/prompt-engineering.md"
+        ],
         "governance": []
       }
     },
     {
       "id": "recap-memory",
       "summary": "Session 摘要、舊決策與跨 Session 記憶。",
-      "keywords": ["recap", "摘要", "現在到哪", "做到哪", "目前進度", "進度", "下一步", "之前", "上次", "前面", "剛剛", "對話", "紀錄", "記憶", "接續", "繼續", "昨天"],
+      "keywords": [
+        "recap",
+        "摘要",
+        "現在到哪",
+        "做到哪",
+        "目前進度",
+        "進度",
+        "下一步",
+        "之前",
+        "上次",
+        "前面",
+        "剛剛",
+        "對話",
+        "紀錄",
+        "記憶",
+        "接續",
+        "繼續",
+        "昨天"
+      ],
       "priority": 40,
       "load": {
-        "skills": ["skills/pixiu-session-recap/SKILL.md"],
-        "contexts": ["vault/memory/SESSION-INDEX.md"],
-        "governance": ["vault/sop/recap-standard.md"]
+        "skills": [
+          "skills/pixiu-session-recap/SKILL.md"
+        ],
+        "contexts": [
+          "vault/memory/SESSION-INDEX.md"
+        ],
+        "governance": [
+          "vault/sop/recap-standard.md"
+        ]
       }
     },
     {
       "id": "execution-progress",
       "summary": "長時間任務、完整自動接力、CI／Build／Test／Release／Deploy 的可見進度、輪詢與完成驗證。",
-      "keywords": ["完整自動接力", "自動接力", "github actions", "ci", "build", "test", "release", "deploy", "長時間任務", "長時間 command", "輪詢", "執行進度", "可見進度", "session id", "run id", "job id", "workflow id"],
+      "keywords": [
+        "完整自動接力",
+        "自動接力",
+        "github actions",
+        "長時間任務",
+        "長時間 command",
+        "輪詢",
+        "執行進度",
+        "可見進度",
+        "session id",
+        "run id",
+        "job id",
+        "workflow id",
+        "ci 等待",
+        "ci 執行中",
+        "build 等待",
+        "build 執行中",
+        "test 等待",
+        "測試執行中",
+        "release 等待",
+        "release 執行中",
+        "deploy 等待",
+        "deploy 執行中",
+        "部署等待",
+        "部署執行中"
+      ],
       "priority": 46,
       "load": {
         "skills": [],
         "contexts": [],
-        "governance": ["vault/governance/long-running-progress-policy.md"]
+        "governance": [
+          "vault/governance/long-running-progress-policy.md"
+        ]
+      }
+    },
+    {
+      "id": "git-fallback",
+      "summary": "本機 PixiuCore／DevSpace 不可用時，依使用者明確指令從 GitHub canonical repo 載入母體治理並沿用相同 Capability Router。",
+      "keywords": [
+        "切 git",
+        "改用 git",
+        "git fallback",
+        "github 直接改",
+        "直接在 github 改",
+        "devspace 斷線",
+        "devspace 掛了",
+        "devspace 不可用"
+      ],
+      "priority": 55,
+      "load": {
+        "skills": [],
+        "contexts": [
+          "vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md"
+        ],
+        "governance": [
+          "vault/governance/long-running-progress-policy.md"
+        ]
       }
     },
     {
       "id": "runtime-control",
       "summary": "Auto mode、Focus mode 與執行授權邊界。",
-      "keywords": ["auto mode", "自動模式", "自動放行", "跳過確認", "focus mode", "只看結果", "隱藏步驟"],
+      "keywords": [
+        "auto mode",
+        "自動模式",
+        "自動放行",
+        "跳過確認",
+        "focus mode",
+        "只看結果",
+        "隱藏步驟"
+      ],
       "priority": 45,
       "load": {
-        "skills": ["skills/claude-code-auto-mode-policy/SKILL.md"],
+        "skills": [
+          "skills/claude-code-auto-mode-policy/SKILL.md"
+        ],
         "contexts": [],
-        "governance": ["user_rules.md"]
+        "governance": [
+          "user_rules.md"
+        ]
       }
     },
     {
       "id": "agent-routing",
       "summary": "Agent Team、子代理與模型分派。",
-      "keywords": ["agent team", "多 agent", "子代理", "派工", "平行處理", "agent router", "平衡模式", "省錢模式", "品質優先模式"],
+      "keywords": [
+        "agent team",
+        "多 agent",
+        "子代理",
+        "派工",
+        "平行處理",
+        "agent router",
+        "平衡模式",
+        "省錢模式",
+        "品質優先模式"
+      ],
       "priority": 45,
       "load": {
         "skills": [],
         "contexts": [],
-        "governance": ["vault/governance/agent-team-mode-policy.md", "vault/governance/model-dispatch-rules.md", "vault/governance/delegation-templates.md"]
+        "governance": [
+          "vault/governance/agent-team-mode-policy.md",
+          "vault/governance/model-dispatch-rules.md",
+          "vault/governance/delegation-templates.md"
+        ]
       }
     },
     {
       "id": "typesafe-ai",
       "summary": "TypeSafe System One／Jev 的 typed judgment、Choice／Noul／Score、語意路由、評分、驗證與 confidence 設計。",
-      "keywords": ["typesafe", "type safe", "jev", "system one", "system-one", "choice", "noul", "typesafe score", "typed judgment", "decision primitive", "structured decision", "結構化判斷", "語意判斷", "決策原語", "信心分數"],
+      "keywords": [
+        "typesafe",
+        "type safe",
+        "jev",
+        "system one",
+        "system-one",
+        "choice",
+        "noul",
+        "typesafe score",
+        "typed judgment",
+        "decision primitive",
+        "structured decision",
+        "結構化判斷",
+        "語意判斷",
+        "決策原語",
+        "信心分數"
+      ],
       "priority": 48,
       "load": {
-        "skills": ["skills/typesafe-ai/SKILL.md"],
+        "skills": [
+          "skills/typesafe-ai/SKILL.md"
+        ],
         "contexts": [],
         "governance": []
       }
@@ -206,10 +610,19 @@
     {
       "id": "second-brain",
       "summary": "第二大腦、Qdrant、n8n 與 Embedding 健檢。",
-      "keywords": ["第二大腦", "qdrant", "n8n", "embedding", "nvidia", "記憶庫"],
+      "keywords": [
+        "第二大腦",
+        "qdrant",
+        "n8n",
+        "embedding",
+        "nvidia",
+        "記憶庫"
+      ],
       "priority": 35,
       "load": {
-        "skills": ["skills/second-brain-health-check/SKILL.md"],
+        "skills": [
+          "skills/second-brain-health-check/SKILL.md"
+        ],
         "contexts": [],
         "governance": []
       }

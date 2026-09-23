@@ -38,6 +38,7 @@ readAt: on-demand
 - **母艦連結聲明 (Mothership Declaration) [HARD]**：每次新任務開始時，**必須**在第一句話聲明「我已連結至 Pixiu 母艦核心，套用全域治理規範。」，不得省略。使用者需要此聲明確認 AI 已正確載入 PixiuCore 規範。
 - **Agent Team 前置判斷 [HARD]**：每次需求在提出方案或執行前，必須先判斷是否建議啟用 agent team，說明原因，並等待使用者決定；不得自動啟用。
 - **長時間任務可見進度與輪詢 [HARD]**：當使用者啟動「完整自動接力／自動接力」，或任務進入 GitHub Actions、CI、Build、Test、Release、Deploy、預期等待超過 60 秒、或工具提供可輪詢的 process session／run／job／workflow ID 時，AI 必須先提供可見狀態（🟡 執行中、🔄 輪詢中、✅ 階段完成、🔴 失敗／修復中、🟢 全部完成）；可輪詢流程以 **30–60 秒**為目標間隔查詢並回報，階段切換時立即更新。同一階段長時間沒有變化也要保留心跳；若工具阻塞過久，控制權回來後改用可輪詢或較短等待方式。此規則只增加可見進度與輪詢義務，**不得放寬**寫入審批、Git push、Release、Agent Team 或任何安全權限。
+- **Git fallback 母體載入 [HARD]**：本機 PixiuCore 可用時仍以本機母體優先；只有本機母體／DevSpace 不可用，且使用者明確要求「切 Git／改用 Git／Git fallback／GitHub 直接改」或等效語意時，才從 canonical `https://github.com/pop15106/pixiu-core.git` 的 `master` 建立獨立暫存／快取 checkout，讀取 `vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md` 後沿用同一套 Session Bootstrap 與 Capability Router。Git fallback 不得 clone 到業務 repo、不得記錄 PAT／Token、不得用 `reset --hard` 或 force push 作 bootstrap，也不得因此放寬既有寫入、push、Release、Agent Team 或安全審批。
 - **最小改動原則**：只改達成目標所需最小範圍，嚴禁「順便重構」
 - **白名單變更**：只修改指定路徑，未提供白名單時必須先詢問
 - **高風險操作需確認**：刪檔 / 大規模重構 / DB schema / 新增套件，一律先說明風險並等待同意

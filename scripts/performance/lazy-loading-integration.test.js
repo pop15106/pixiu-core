@@ -107,6 +107,17 @@ function testRepresentativeRoutes() {
 
   const plain = resolveCapabilities('把這句翻譯成英文', manifest);
   assert.deepStrictEqual(plain.capabilities, []);
+
+  const gitFallback = resolveCapabilities('DevSpace 斷線了，切 Git 繼續', manifest);
+  assert.ok(gitFallback.capabilities.includes('git-fallback'));
+  assert.ok(gitFallback.filesToLoad.includes('vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md'));
+
+  const fullAuto = resolveCapabilities('完整自動接力', manifest);
+  assert.ok(fullAuto.capabilities.includes('execution-progress'));
+  assert.ok(fullAuto.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
+
+  const unitTest = resolveCapabilities('幫我跑 unit test', manifest);
+  assert.strictEqual(unitTest.capabilities.includes('execution-progress'), false);
 }
 
 function testRecentWorkflowPhrasesRemainRoutable() {
@@ -141,6 +152,23 @@ function testManifestUsesCanonicalSkillSources() {
   assert.ok(skillPaths.includes('skills/claude-code-auto-mode-policy/SKILL.md'));
 }
 
+function testGitFallbackBootstrapAndTemplatesStayMinimal() {
+  const bootstrap = read('vault/bootstrap/SESSION-BOOTSTRAP.md');
+  const fallback = read('vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md');
+  assert.match(bootstrap, /Git fallback／切 Git/);
+  assert.match(fallback, /pop15106\/pixiu-core/);
+  assert.match(fallback, /獨立暫存|獨立.*快取/);
+  assert.doesNotMatch(read('AGENTS.md'), /GIT-FALLBACK-BOOTSTRAP/);
+  assert.doesNotMatch(read('.codex/AGENTS.md'), /GIT-FALLBACK-BOOTSTRAP/);
+
+  for (const name of ['codex', 'claude', 'gemini']) {
+    const template = read(`scripts/entry-sync/templates/${name}.md`);
+    assert.match(template, /GIT-FALLBACK-BOOTSTRAP\.md/);
+    assert.match(template, /pop15106\/pixiu-core/);
+    assert.match(template, /明確報錯/);
+  }
+}
+
 for (const test of [
   testStartupPayloadStaysBelowBudget,
   testEntryFilesUseRouterBeforeManifest,
@@ -149,7 +177,8 @@ for (const test of [
   testManifestReferencesExistingFiles,
   testRepresentativeRoutes,
   testRecentWorkflowPhrasesRemainRoutable,
-  testManifestUsesCanonicalSkillSources
+  testManifestUsesCanonicalSkillSources,
+  testGitFallbackBootstrapAndTemplatesStayMinimal
 ]) {
   test();
   process.stdout.write(`ok ${test.name}\n`);

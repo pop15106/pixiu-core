@@ -27,6 +27,18 @@ const manifest = {
       keywords: ['資安', '漏洞', 'secret'],
       load: { skills: ['security.md'], contexts: [], governance: ['security-policy.md'] },
       priority: 30
+    },
+    {
+      id: 'execution-progress',
+      keywords: ['完整自動接力', '自動接力', 'github actions', '輪詢', 'test 等待'],
+      load: { skills: [], contexts: [], governance: ['long-running-progress-policy.md'] },
+      priority: 46
+    },
+    {
+      id: 'git-fallback',
+      keywords: ['切 git', 'git fallback', 'devspace 斷線'],
+      load: { skills: [], contexts: ['GIT-FALLBACK-BOOTSTRAP.md'], governance: ['long-running-progress-policy.md'] },
+      priority: 55
     }
   ]
 };
@@ -134,6 +146,23 @@ function testMissingManifestDegradesWithoutFullScan() {
   assert.match(result.error, /找不到 Capability Manifest/);
 }
 
+function testRoutesFullAutoRelayToExecutionProgress() {
+  const result = resolveCapabilities('完整自動接力', manifest);
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.filesToLoad.includes('long-running-progress-policy.md'));
+}
+
+function testRoutesGitFallbackAndLoadsBootstrap() {
+  const result = resolveCapabilities('DevSpace 斷線了，切 Git 繼續', manifest);
+  assert.ok(result.capabilities.includes('git-fallback'));
+  assert.ok(result.filesToLoad.includes('GIT-FALLBACK-BOOTSTRAP.md'));
+}
+
+function testPlainUnitTestDoesNotTriggerExecutionProgress() {
+  const result = resolveCapabilities('幫我跑 unit test', manifest);
+  assert.strictEqual(result.capabilities.includes('execution-progress'), false);
+}
+
 for (const test of [
   testSelectsMatchingCapability,
   testLimitsNormalRequestToThreeCapabilities,
@@ -145,7 +174,10 @@ for (const test of [
   testManifestCapabilityLimitNeverExceedsHardCap,
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
-  testMissingManifestDegradesWithoutFullScan
+  testMissingManifestDegradesWithoutFullScan,
+  testRoutesFullAutoRelayToExecutionProgress,
+  testRoutesGitFallbackAndLoadsBootstrap,
+  testPlainUnitTestDoesNotTriggerExecutionProgress
 ]) {
   test();
   process.stdout.write(`ok ${test.name}\n`);

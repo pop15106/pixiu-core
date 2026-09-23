@@ -116,6 +116,7 @@ function Get-PixiuGlobalEntryDefinitions {
                 (Join-Path $resolvedCore 'CODEX.md'),
                 (Join-Path $resolvedCore '.codex\AGENTS.md'),
                 (Join-Path $resolvedCore 'vault\bootstrap\SESSION-BOOTSTRAP.md'),
+                (Join-Path $resolvedCore 'vault\bootstrap\GIT-FALLBACK-BOOTSTRAP.md'),
                 (Join-Path $resolvedCore 'scripts\router\resolve-capabilities.js')
             )
             Content = Get-PixiuTemplateContent -Name codex
@@ -126,6 +127,7 @@ function Get-PixiuGlobalEntryDefinitions {
             SourcePaths = @(
                 (Join-Path $resolvedCore 'CLAUDE.md'),
                 (Join-Path $resolvedCore 'vault\bootstrap\SESSION-BOOTSTRAP.md'),
+                (Join-Path $resolvedCore 'vault\bootstrap\GIT-FALLBACK-BOOTSTRAP.md'),
                 (Join-Path $resolvedCore 'scripts\router\resolve-capabilities.js')
             )
             Content = Get-PixiuTemplateContent -Name claude
@@ -136,6 +138,7 @@ function Get-PixiuGlobalEntryDefinitions {
             SourcePaths = @(
                 (Join-Path $resolvedCore 'GEMINI.md'),
                 (Join-Path $resolvedCore 'vault\bootstrap\SESSION-BOOTSTRAP.md'),
+                (Join-Path $resolvedCore 'vault\bootstrap\GIT-FALLBACK-BOOTSTRAP.md'),
                 (Join-Path $resolvedCore 'scripts\router\resolve-capabilities.js')
             )
             Content = Get-PixiuTemplateContent -Name gemini

@@ -41,6 +41,7 @@ priority: highest
 - 完成、詢問、升級與驗收判斷：`vault/governance/judgment-rubrics.md`
 - 修改入口檔：`vault/governance/entry-files-alignment.md`
 - 長時間任務／完整自動接力：`vault/governance/long-running-progress-policy.md`
+- Git fallback／切 Git：`vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md`
 - Recap：`vault/sop/recap-standard.md`
 
 ## 降級規則
