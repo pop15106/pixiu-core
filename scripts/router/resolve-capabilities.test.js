@@ -23,6 +23,12 @@ const manifest = {
       priority: 10
     },
     {
+      id: 'critical-reasoning',
+      keywords: ['對抗搜尋', '反證', '懷疑每個論點', 'critical relay'],
+      load: { skills: ['critical-relay.md'], contexts: [], governance: [] },
+      priority: 47
+    },
+    {
       id: 'security-review',
       keywords: ['資安', '漏洞', 'secret'],
       load: { skills: ['security.md'], contexts: [], governance: ['security-policy.md'] },
@@ -146,6 +152,20 @@ function testMissingManifestDegradesWithoutFullScan() {
   assert.match(result.error, /找不到 Capability Manifest/);
 }
 
+function testRoutesAdversarialSearchToCriticalRelay() {
+  const result = resolveCapabilities('對抗搜尋，懷疑每個論點並找反證', manifest);
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.filesToLoad.includes('critical-relay.md'));
+}
+
+function testCombinesCriticalRelayWithFullAuto() {
+  const result = resolveCapabilities('對抗搜尋，開完整自動接力', manifest);
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.filesToLoad.includes('critical-relay.md'));
+  assert.ok(result.filesToLoad.includes('long-running-progress-policy.md'));
+}
+
 function testRoutesFullAutoRelayToExecutionProgress() {
   const result = resolveCapabilities('完整自動接力', manifest);
   assert.ok(result.capabilities.includes('execution-progress'));
@@ -175,6 +195,8 @@ for (const test of [
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
   testMissingManifestDegradesWithoutFullScan,
+  testRoutesAdversarialSearchToCriticalRelay,
+  testCombinesCriticalRelayWithFullAuto,
   testRoutesFullAutoRelayToExecutionProgress,
   testRoutesGitFallbackAndLoadsBootstrap,
   testPlainUnitTestDoesNotTriggerExecutionProgress
