@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('node:fs');
-
 const {
   buildChatPrompt,
   createProbeRequest,
@@ -71,7 +69,12 @@ async function verifyCommand() {
     { now: input.now }
   );
 
-  printJson(result);
+  printJson({
+    ...result,
+    note: result.protocolVerified && !result.nativeVerified
+      ? 'CLI verify 只能驗證 protocol evidence；nativeVerified 必須由受信任 runtime adapter attestation 產生。'
+      : undefined
+  });
   process.exitCode = result.result === 'PASS' ? 0 : 1;
 }
 
@@ -132,6 +135,9 @@ function help() {
         readBack: true
       }
     }, null, 2),
+    '',
+    '注意：verify 指令不接受 native attestation。',
+    '真正的 nativeVerified 只能由 Codex App 的受信任 runtime adapter 在程式內呼叫 verifyProbe/runProbe 時提供。',
     ''
   ].join('\n'));
 }
