@@ -180,8 +180,7 @@
         "批判性搜尋",
         "質疑論點",
         "critical relay",
-        "adversarial search",
-        "cr 完整自動接力"
+        "adversarial search"
       ],
       "priority": 47,
       "load": {
@@ -190,7 +189,11 @@
         ],
         "contexts": [],
         "governance": []
-      }
+      },
+      "aliases": [
+        "cr 完整自動接力"
+      ],
+      "requiredWhenMatched": true
     },
     {
       "id": "work-document-orchestration",
@@ -532,7 +535,8 @@
         "governance": [
           "vault/governance/long-running-progress-policy.md"
         ]
-      }
+      },
+      "requiredWhenMatched": true
     },
     {
       "id": "git-fallback",
