@@ -10,11 +10,15 @@ const {
   verifyProbe
 } = require('./pixiu-chat-bridge');
 
+const MAX_STDIN_BYTES = 64 * 1024;
+
 function parseArgs(argv) {
   const out = { command: argv[0] || 'help' };
   for (let i = 1; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (!arg.startsWith('--')) continue;
+    if (!arg.startsWith('--')) {
+      throw new Error(`不支援的參數：${arg}`);
+    }
     const key = arg.slice(2);
     const next = argv[i + 1];
     if (next && !next.startsWith('--')) {
@@ -27,11 +31,18 @@ function parseArgs(argv) {
   return out;
 }
 
-function readStdin() {
+function readStdin(maxBytes = MAX_STDIN_BYTES) {
   return new Promise((resolve, reject) => {
     let raw = '';
+    let bytes = 0;
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', chunk => {
+      bytes += Buffer.byteLength(chunk, 'utf8');
+      if (bytes > maxBytes) {
+        reject(new Error(`stdin 超過 ${maxBytes} bytes`));
+        process.stdin.pause();
+        return;
+      }
       raw += chunk;
     });
     process.stdin.on('end', () => resolve(raw));
@@ -41,6 +52,14 @@ function readStdin() {
 
 function printJson(value) {
   process.stdout.write(JSON.stringify(value, null, 2) + '\n');
+}
+
+function exitCodeForSynthetic(result) {
+  return result?.verification?.result === 'PASS' &&
+    result?.verification?.protocolVerified === true &&
+    result?.verification?.nativeVerified === false
+    ? 0
+    : 1;
 }
 
 async function createCommand(args) {
@@ -65,14 +84,13 @@ async function verifyCommand() {
   const result = verifyProbe(
     input.request,
     input.response,
-    input.evidence,
-    { now: input.now }
+    input.evidence
   );
 
   printJson({
     ...result,
     note: result.protocolVerified && !result.nativeVerified
-      ? 'CLI verify 只能驗證 protocol evidence；nativeVerified 必須由受信任 runtime adapter attestation 產生。'
+      ? 'CLI verify 只能驗證 protocol evidence；目前沒有受信任 native adapter，因此 nativeVerified 固定為 false。'
       : undefined
   });
   process.exitCode = result.result === 'PASS' ? 0 : 1;
@@ -112,6 +130,7 @@ async function syntheticCommand(args) {
     ledgerPath,
     note: 'synthetic PASS 只代表協議與 correlation gate 正常，不代表 Codex App native bridge 已驗收。'
   });
+  process.exitCode = exitCodeForSynthetic(result);
 }
 
 function help() {
@@ -136,8 +155,8 @@ function help() {
       }
     }, null, 2),
     '',
-    '注意：verify 指令不接受 native attestation。',
-    '真正的 nativeVerified 只能由 Codex App 的受信任 runtime adapter 在程式內呼叫 verifyProbe/runProbe 時提供。',
+    '注意：正式 verify 使用目前系統時間，不接受輸入覆寫 now。',
+    '目前沒有可核對收發收據的受信任 native adapter，所以 nativeVerified 固定為 false。',
     ''
   ].join('\n'));
 }
@@ -148,7 +167,10 @@ async function main() {
   if (args.command === 'create') return createCommand(args);
   if (args.command === 'verify') return verifyCommand(args);
   if (args.command === 'synthetic') return syntheticCommand(args);
-  return help();
+  if (args.command === 'help' || args.command === '--help' || args.command === '-h') return help();
+
+  help();
+  process.exitCode = 2;
 }
 
 if (require.main === module) {
@@ -159,8 +181,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+  MAX_STDIN_BYTES,
   createCommand,
+  exitCodeForSynthetic,
   parseArgs,
+  readStdin,
   syntheticCommand,
   verifyCommand
 };
