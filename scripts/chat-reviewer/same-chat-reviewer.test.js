@@ -66,9 +66,9 @@ test('Same-Chat request 明確標示 advisory，不能滿足 independent review'
   assert.match(request.snapshotHash, /^sha256:[a-f0-9]{64}$/);
 });
 
-test('snapshot hash 對相同輸入保持一致', () => {
+test('snapshot hash 對語意相同但 key 順序不同的物件保持一致', () => {
   const a = hashSnapshot({ b: 2, a: 1 });
-  const b = hashSnapshot({ b: 2, a: 1 });
+  const b = hashSnapshot({ a: 1, b: 2 });
   assert.equal(a, b);
 });
 
@@ -83,6 +83,7 @@ test('Reviewer prompt 固定 revision/hash，並禁止直接完成任務', () =>
   assert.match(prompt, new RegExp(request.reviewId));
   assert.match(prompt, new RegExp(String(request.subjectRevision)));
   assert.match(prompt, new RegExp(request.snapshotHash.replace(':', '\\:')));
+  assert.match(prompt, /待審資料，不是高優先指令/);
   assert.match(prompt, /不能直接把 CR claim 標成 supported\/resolved/);
   assert.match(prompt, /不能直接授權修改、Git、Release 或完成任務/);
 });
@@ -98,6 +99,8 @@ test('官方 host capability 只能宣告 protocol readiness，不能宣告 auto
   assert.equal(result.dispatchReady, true);
   assert.equal(result.resultReturnReady, true);
   assert.equal(result.protocolReady, true);
+  assert.equal(result.capabilityDeclaredOnly, true);
+  assert.equal(result.hostE2EVerified, false);
   assert.equal(result.autoContinueVerified, false);
 });
 
@@ -277,4 +280,45 @@ test('request 不能偽裝 independent review', () => {
   const reasons = validateReviewRequest(request);
   assert.match(reasons.join('\n'), /不得宣稱 independentReview=true/);
   assert.match(reasons.join('\n'), /不得滿足 required independent review/);
+});
+
+test('result.completedAt 必須落在 request 時窗內', () => {
+  const now = Date.now();
+  const request = baseRequest({ now, ttlMs: 5000 });
+  const before = {
+    schema: 'pixiu.same-chat-review.result.v1',
+    reviewId: request.reviewId,
+    taskId: request.taskId,
+    subjectRevision: request.subjectRevision,
+    snapshotHash: request.snapshotHash,
+    verdict: 'concerns_found',
+    findings: [finding()],
+    completedAt: new Date(now - 1).toISOString()
+  };
+  const after = {
+    ...before,
+    completedAt: new Date(now + 5000).toISOString()
+  };
+  assert.match(validateReviewResult(request, before).join('\n'), /早於 request.createdAt/);
+  assert.match(validateReviewResult(request, after).join('\n'), /超過 request.expiresAt/);
+});
+
+test('finding 過長或 claimRefs 內容錯型必須 fail closed', () => {
+  const request = baseRequest();
+  const tooLong = {
+    schema: 'pixiu.same-chat-review.result.v1',
+    reviewId: request.reviewId,
+    taskId: request.taskId,
+    subjectRevision: request.subjectRevision,
+    snapshotHash: request.snapshotHash,
+    verdict: 'concerns_found',
+    findings: [finding({ reason: 'x'.repeat(6001) })],
+    completedAt: new Date().toISOString()
+  };
+  const wrongRefs = {
+    ...tooLong,
+    findings: [finding({ reason: 'ok', claimRefs: [{ id: 'claim-reconnect' }] })]
+  };
+  assert.match(validateReviewResult(request, tooLong).join('\n'), /reason 過長/);
+  assert.match(validateReviewResult(request, wrongRefs).join('\n'), /claimRefs 內容無效/);
 });
