@@ -160,6 +160,17 @@
       }
     },
     {
+      "id": "execution-progress",
+      "summary": "長時間任務、完整自動接力、CI／Build／Test／Release 的可見進度與輪詢心跳。",
+      "keywords": ["完整自動接力", "自動接力", "完整自動模式", "輪詢", "心跳", "github actions", "actions run", "workflow run", "release gate", "ci gate", "發行中", "發布中", "部署中", "長時間任務"],
+      "priority": 48,
+      "load": {
+        "skills": [],
+        "contexts": [],
+        "governance": ["vault/governance/long-running-progress-policy.md"]
+      }
+    },
+    {
       "id": "runtime-control",
       "summary": "Auto mode、Focus mode 與執行授權邊界。",
       "keywords": ["auto mode", "自動模式", "自動放行", "跳過確認", "focus mode", "只看結果", "隱藏步驟"],

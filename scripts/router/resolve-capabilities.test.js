@@ -134,6 +134,21 @@ function testMissingManifestDegradesWithoutFullScan() {
   assert.match(result.error, /找不到 Capability Manifest/);
 }
 
+function testActualManifestRoutesFullAutoRelayToProgressPolicy() {
+  const manifestPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    'vault',
+    'capabilities',
+    'capability-manifest.json'
+  );
+  const result = safeResolveFromFile('完整自動接力', manifestPath);
+  assert.strictEqual(result.degraded, false);
+  assert.deepStrictEqual(result.capabilities, ['execution-progress']);
+  assert.deepStrictEqual(result.filesToLoad, ['vault/governance/long-running-progress-policy.md']);
+}
+
 for (const test of [
   testSelectsMatchingCapability,
   testLimitsNormalRequestToThreeCapabilities,
@@ -145,7 +160,8 @@ for (const test of [
   testManifestCapabilityLimitNeverExceedsHardCap,
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
-  testMissingManifestDegradesWithoutFullScan
+  testMissingManifestDegradesWithoutFullScan,
+  testActualManifestRoutesFullAutoRelayToProgressPolicy
 ]) {
   test();
   process.stdout.write(`ok ${test.name}\n`);
