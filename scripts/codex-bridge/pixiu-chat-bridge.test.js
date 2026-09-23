@@ -148,6 +148,22 @@ test('未完成 Codex read-back 時不得通過', () => {
   assert.match(result.reasons.join('\n'), /尚未確認 read-back/);
 });
 
+test('缺少 transport 或 authMode 證據時不得通過', () => {
+  const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
+  const response = createProbeResponse(request, { now: BASE_TIME + 100 });
+
+  const result = verifyProbe(
+    request,
+    response,
+    nativeEvidence({ transport: '', authMode: '' }),
+    { now: BASE_TIME + 200 }
+  );
+
+  assert.equal(result.result, 'FAIL');
+  assert.match(result.reasons.join('\n'), /缺少 transport 證據/);
+  assert.match(result.reasons.join('\n'), /缺少 authMode 證據/);
+});
+
 test('synthetic round trip 可通過協議但不能冒充 native verified', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-chat-bridge-'));
   const ledgerPath = path.join(tmp, 'probe-ledger.jsonl');
