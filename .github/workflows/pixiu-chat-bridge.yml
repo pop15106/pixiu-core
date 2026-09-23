@@ -10,6 +10,7 @@ on:
       - 'scripts/codex-bridge/pixiu-chat-probe.js'
       - 'scripts/codex-bridge/README.md'
       - 'docs/handoffs/20260923-pixiu-chat-bridge-native-probe.md'
+      - 'docs/validation/20260923-pixiu-chat-bridge-cr-state.json'
       - '.github/workflows/pixiu-chat-bridge.yml'
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - 'scripts/codex-bridge/pixiu-chat-probe.js'
       - 'scripts/codex-bridge/README.md'
       - 'docs/handoffs/20260923-pixiu-chat-bridge-native-probe.md'
+      - 'docs/validation/20260923-pixiu-chat-bridge-cr-state.json'
       - '.github/workflows/pixiu-chat-bridge.yml'
   workflow_dispatch:
 
@@ -52,3 +54,6 @@ jobs:
             if (result.verification?.protocolVerified !== true) process.exit(1);
             if (result.verification?.nativeVerified !== false) process.exit(1);
           ' "${RESULT_FILE}"
+
+      - name: Run Critical Relay completion gate
+        run: node scripts/critical-relay/critical-relay.js check docs/validation/20260923-pixiu-chat-bridge-cr-state.json
