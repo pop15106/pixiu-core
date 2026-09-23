@@ -432,6 +432,17 @@ async function withLock(paths, operation) {
 function applyUpdate(task, input, helpers) {
   const next = clone(task);
   const actor = requiredString(input.actor, "actor", 128);
+  if (input.criticalRelayRequired !== undefined) {
+    const requestedCriticalRelay = booleanValue(
+      input.criticalRelayRequired,
+      "criticalRelayRequired",
+      false,
+    );
+    if (task.criticalRelayRequired && !requestedCriticalRelay) {
+      fail("criticalRelayRequired cannot be disabled once enabled.");
+    }
+    next.criticalRelayRequired = requestedCriticalRelay || task.criticalRelayRequired === true;
+  }
   if (input.criticalRelay !== undefined) {
     next.criticalRelay = validateCriticalRelayState(input.criticalRelay);
   }
@@ -1114,6 +1125,7 @@ export function registerDevSpaceWorkflowTools({
       deliverables: z.array(z.string().min(1).max(2_000)).max(50).optional(),
       openItems: z.array(z.string().min(1).max(2_000)).max(50).optional(),
       requiredNextAction: z.string().min(1).max(4_000).optional(),
+      criticalRelayRequired: z.boolean().optional().describe("Upgrade this task to require Critical Relay. Once enabled it cannot be disabled."),
       criticalRelay: z.unknown().optional().describe("Updated Critical Relay state. CR-enabled tasks are re-evaluated on complete."),
       reviewerActor: z.string().min(1).max(128).optional(),
       subjectRef: z.string().min(1).max(2_000).optional(),
