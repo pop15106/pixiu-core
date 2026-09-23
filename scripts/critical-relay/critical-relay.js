@@ -65,12 +65,44 @@ function severityBlocks(value) {
   return value === 'critical' || value === 'high';
 }
 
+function indexById(items) {
+  const index = new Map();
+  for (const item of listValue(items)) {
+    if (item && typeof item.id === 'string' && item.id.trim()) {
+      index.set(item.id, item);
+    }
+  }
+  return index;
+}
+
+function hasTraceableSource(item) {
+  return ['source', 'url', 'provenance', 'citation']
+    .some(key => typeof item?.[key] === 'string' && item[key].trim());
+}
+
 function evaluateCriticalRelay(state) {
   if (!state || state.schemaVersion !== SCHEMA_VERSION) {
     throw new Error(`不支援的 Critical Relay schema：${state?.schemaVersion || 'missing'}`);
   }
 
   const blockingReasons = [];
+  const completionPhases = new Set(['RECHALLENGE', 'READY_TO_HANDOFF', 'COMPLETE']);
+  const evidenceById = indexById(state.evidence);
+  const counterEvidenceById = indexById(state.counterEvidence);
+  const testById = indexById(state.tests);
+
+  if (!String(state.objective || '').trim()) {
+    blockingReasons.push('objective 不可為空');
+  }
+  if (listValue(state.completionCriteria).length === 0) {
+    blockingReasons.push('completionCriteria 至少需要一項');
+  }
+  if (!completionPhases.has(state.phase)) {
+    blockingReasons.push(`phase=${state.phase || 'missing'} 尚未進入 RECHALLENGE／READY_TO_HANDOFF／COMPLETE`);
+  }
+  if (!String(state.nextAction || '').trim()) {
+    blockingReasons.push('nextAction 不可為空');
+  }
 
   for (const claim of listValue(state.claims)) {
     const id = claim.id || 'claim';
@@ -80,6 +112,22 @@ function evaluateCriticalRelay(state) {
     }
     if (claim.status === 'supported' && listValue(claim.evidenceRefs).length === 0) {
       blockingReasons.push(`${id} 宣告 supported，但沒有 evidenceRefs`);
+    }
+    for (const evidenceRef of listValue(claim.evidenceRefs)) {
+      const evidence = evidenceById.get(evidenceRef);
+      if (!evidence) {
+        blockingReasons.push(`${id} 引用不存在的 evidence：${evidenceRef}`);
+      } else if (!hasTraceableSource(evidence)) {
+        blockingReasons.push(`${id} 引用的 evidence 缺少可追溯來源：${evidenceRef}`);
+      }
+    }
+    for (const counterEvidenceRef of listValue(claim.counterEvidenceRefs)) {
+      const counterEvidence = counterEvidenceById.get(counterEvidenceRef);
+      if (!counterEvidence) {
+        blockingReasons.push(`${id} 引用不存在的 counterEvidence：${counterEvidenceRef}`);
+      } else if (!hasTraceableSource(counterEvidence)) {
+        blockingReasons.push(`${id} 引用的 counterEvidence 缺少可追溯來源：${counterEvidenceRef}`);
+      }
     }
     if (
       listValue(claim.counterEvidenceRefs).length > 0 &&
@@ -117,10 +165,22 @@ function evaluateCriticalRelay(state) {
   }
 
   for (const criterion of listValue(state.completionCriteria)) {
+    const id = criterion.id || 'criterion';
     if (criterion.satisfied !== true) {
-      blockingReasons.push(`${criterion.id || 'criterion'} 完成條件尚未滿足`);
+      blockingReasons.push(`${id} 完成條件尚未滿足`);
     } else if (listValue(criterion.evidenceRefs).length === 0) {
-      blockingReasons.push(`${criterion.id || 'criterion'} 已標示完成，但缺少 evidenceRefs`);
+      blockingReasons.push(`${id} 已標示完成，但缺少 evidenceRefs`);
+    }
+    for (const evidenceRef of listValue(criterion.evidenceRefs)) {
+      const evidence = evidenceById.get(evidenceRef);
+      const test = testById.get(evidenceRef);
+      if (!evidence && !test) {
+        blockingReasons.push(`${id} 引用不存在的 evidence/test：${evidenceRef}`);
+      } else if (evidence && !hasTraceableSource(evidence)) {
+        blockingReasons.push(`${id} 引用的 evidence 缺少可追溯來源：${evidenceRef}`);
+      } else if (test && test.status !== 'passed') {
+        blockingReasons.push(`${id} 引用的 test 尚未通過：${evidenceRef}`);
+      }
     }
   }
 
@@ -146,8 +206,10 @@ function buildHandoffSnapshot(state) {
   return {
     schemaVersion: SCHEMA_VERSION,
     objective: state.objective,
+    mode: state.mode,
     phase: state.phase,
     iteration: state.iteration,
+    status: state.status,
     claims: listValue(state.claims),
     assumptions: listValue(state.assumptions),
     evidence: listValue(state.evidence),
