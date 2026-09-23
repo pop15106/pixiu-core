@@ -31,5 +31,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Run Same-Chat Reviewer tests
+      - name: Run Same-Chat Reviewer protocol tests
         run: node --test scripts/chat-reviewer/same-chat-reviewer.test.js
+
+      - name: Run Same-Chat Reviewer MCP registration tests
+        run: node --test scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs
