@@ -496,6 +496,75 @@ test("CR-enabled handoff requires structured Critical Relay state", async () => 
   }
 });
 
+test("workflow can upgrade to CR-required but cannot downgrade", async () => {
+  const fixture = await createFixture();
+  try {
+    let task = await fixture.controller.createTask(
+      baseCreate({
+        requireReview: false,
+        idempotencyKey: "cr-upgrade-create-001",
+      }),
+    );
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "claim",
+      expectedRevision: task.revision,
+      idempotencyKey: "cr-upgrade-claim-001",
+    });
+
+    await assert.rejects(
+      fixture.controller.updateTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "session-a",
+        actor: "alice",
+        action: "complete",
+        expectedRevision: task.revision,
+        idempotencyKey: "cr-upgrade-incomplete-001",
+        criticalRelayRequired: true,
+        criticalRelay: createCriticalRelay({
+          objective: "Upgrade existing task to Critical Relay",
+          completionCriteria: ["CR gate passes"],
+        }),
+      }),
+      /Critical Relay completion gate blocked/i,
+    );
+
+    task = await fixture.controller.updateTask({
+      taskId: task.taskId,
+      workspaceRoot: "C:\\Projects\\alpha",
+      sessionRef: "session-a",
+      actor: "alice",
+      action: "complete",
+      expectedRevision: task.revision,
+      idempotencyKey: "cr-upgrade-complete-001",
+      criticalRelayRequired: true,
+      criticalRelay: completedCriticalRelayState(),
+    });
+    assert.equal(task.status, "completed");
+    assert.equal(task.criticalRelayRequired, true);
+
+    await assert.rejects(
+      fixture.controller.updateTask({
+        taskId: task.taskId,
+        workspaceRoot: "C:\\Projects\\alpha",
+        sessionRef: "session-a",
+        actor: "alice",
+        action: "complete",
+        expectedRevision: task.revision,
+        idempotencyKey: "cr-upgrade-disable-001",
+        criticalRelayRequired: false,
+      }),
+      /cannot be disabled/i,
+    );
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
 test("local policy blocks or explicitly records unsupported Deep Research and Pro", () => {
   const requested = {
     model: "gpt-5.6-sol",
