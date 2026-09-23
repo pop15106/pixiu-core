@@ -1,6 +1,6 @@
 ---
 name: critical-relay
-description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay。
+description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、CR 完整自動接力。
 origin: Pixiu
 version: 0.1.1
 language: zh-TW
@@ -9,6 +9,11 @@ language: zh-TW
 # Critical Relay
 
 Critical Relay 是 PixiuCore 的批判推理接力層。它不取代 Deep Research、程式實作或 Verify Loop；它替這些能力增加一個共同的「可被推翻」流程與完成閘門。
+
+## 快速觸發
+
+- `CR 完整自動接力`：同時啟用 Critical Relay 與完整自動接力。
+- 不使用裸 `CR` 作全域關鍵字，避免短字串誤觸其他英文內容。
 
 ## 核心原則
 
