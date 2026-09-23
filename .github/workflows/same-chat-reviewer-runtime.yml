@@ -53,3 +53,6 @@ jobs:
           $zip = Get-ChildItem -LiteralPath $output -Filter 'DevSpace-OneClick-*.zip' -File | Select-Object -First 1
           if (-not $zip) { throw 'Portable ZIP was not created.' }
           Write-Host "Portable ZIP verified: $($zip.FullName)"
+
+      - name: Run Critical Relay runtime completion gate
+        run: node scripts/critical-relay/critical-relay.js check docs/validation/20260923-same-chat-reviewer-runtime-cr-state.json
