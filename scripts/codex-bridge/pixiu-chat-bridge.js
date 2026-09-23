@@ -145,16 +145,28 @@ function verifyProbe(request, response, evidence = {}, options = {}) {
   if (safeEvidence.manualCopy) reasons.push('此 probe 含人工 copy/paste');
 
   const synthetic = safeEvidence.transport === 'synthetic' || safeEvidence.authMode === 'synthetic';
-  const nativeVerified = reasons.length === 0 && !synthetic;
+  const protocolVerified = reasons.length === 0;
+  const nativeAttested = options.nativeAttested === true;
+  const nativeVerified = protocolVerified && !synthetic && nativeAttested;
+  const nativeReasons = [];
+
+  if (protocolVerified && synthetic) {
+    nativeReasons.push('synthetic transport 只能驗證協議，不能驗證 Codex App native transport');
+  }
+  if (protocolVerified && !synthetic && !nativeAttested) {
+    nativeReasons.push('缺少受信任 native runtime adapter attestation');
+  }
 
   return {
     schema: VERIFICATION_SCHEMA,
     probeId: request?.probeId || response?.probeId || '',
     checkedAt: iso(options.now),
-    result: reasons.length === 0 ? 'PASS' : 'FAIL',
+    result: protocolVerified ? 'PASS' : 'FAIL',
+    protocolVerified,
     nativeVerified,
     evidence: safeEvidence,
-    reasons
+    reasons,
+    nativeReasons
   };
 }
 
@@ -175,15 +187,27 @@ function appendLedgerEvent(ledgerPath, event) {
     type: String(event?.type || 'UNKNOWN'),
     probeId: String(event?.probeId || ''),
     result: event?.result ? String(event.result) : undefined,
+    protocolVerified: event?.protocolVerified === true,
+    nativeVerified: event?.nativeVerified === true,
     evidence: event?.evidence ? normalizeEvidence(event.evidence) : undefined,
-    reasons: Array.isArray(event?.reasons) ? event.reasons.map(String).slice(0, 20) : undefined
+    reasons: Array.isArray(event?.reasons) ? event.reasons.map(String).slice(0, 20) : undefined,
+    nativeReasons: Array.isArray(event?.nativeReasons)
+      ? event.nativeReasons.map(String).slice(0, 20)
+      : undefined
   };
 
   fs.appendFileSync(target, JSON.stringify(safeEvent) + '\n', 'utf8');
   return target;
 }
 
-async function runProbe({ transport, request, evidence, ledgerPath, now } = {}) {
+async function runProbe({
+  transport,
+  request,
+  evidence,
+  ledgerPath,
+  now,
+  nativeAttested = false
+} = {}) {
   if (!transport || typeof transport.send !== 'function' || typeof transport.read !== 'function') {
     throw new Error('transport 必須實作 send(prompt, request) 與 read(probeId, request)');
   }
@@ -202,13 +226,26 @@ async function runProbe({ transport, request, evidence, ledgerPath, now } = {}) 
     ? await evidence({ request: probe, response })
     : (evidence || {});
 
-  const verification = verifyProbe(probe, response, resolvedEvidence, { now });
+  const verification = verifyProbe(probe, response, resolvedEvidence, {
+    now,
+    nativeAttested
+  });
+
+  const eventType = verification.result !== 'PASS'
+    ? 'FAILED'
+    : verification.nativeVerified
+      ? 'NATIVE_VERIFIED'
+      : 'PROTOCOL_VERIFIED';
+
   appendLedgerEvent(ledgerPath, {
-    type: verification.result === 'PASS' ? 'VERIFIED' : 'FAILED',
+    type: eventType,
     probeId: probe.probeId,
     result: verification.result,
+    protocolVerified: verification.protocolVerified,
+    nativeVerified: verification.nativeVerified,
     evidence: verification.evidence,
     reasons: verification.reasons,
+    nativeReasons: verification.nativeReasons,
     at: now
   });
 
