@@ -240,10 +240,9 @@ function Install-DevSpace108RuntimePatch {
         if (-not [string]::Equals($backupHash, [string]$manifest.backupSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
             throw 'DevSpace 1.0.8 patch backup drift detected; refusing to continue.'
         }
-        if ([string]::Equals($targetHash, [string]$manifest.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
-            return 0
-        }
-        if (-not [string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $knownPatched = [string]::Equals($targetHash, [string]$manifest.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)
+        $alreadyRestored = [string]::Equals($targetHash, $backupHash, [System.StringComparison]::OrdinalIgnoreCase)
+        if (-not $knownPatched -and -not $alreadyRestored) {
             throw 'Unknown DevSpace 1.0.8 server drift detected; refusing to patch.'
         }
     }
@@ -279,6 +278,22 @@ function Install-DevSpace108RuntimePatch {
         $changed += 2
     }
 
+    if (-not $content.Contains('const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";')) {
+        $workflowLoaderPattern = 'const devSpaceWorkflowModule = process\.env\.DEVSPACE_WORKFLOW_MODULE\r?\n\s*\? await import\(pathToFileURL\(process\.env\.DEVSPACE_WORKFLOW_MODULE\)\.href\)\r?\n\s*: undefined;'
+        $workflowLoaderRegex = [regex]::new($workflowLoaderPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+        if (-not $workflowLoaderRegex.IsMatch($content)) {
+            throw "DevSpace 1.0.8 Same-Chat Reviewer loader patch point not found in $serverPath"
+        }
+        $sameChatLoader = @(
+            'const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";',
+            'const sameChatReviewerModule = sameChatReviewerEnabled && process.env.DEVSPACE_SAME_CHAT_REVIEWER_MODULE',
+            '    ? await import(pathToFileURL(process.env.DEVSPACE_SAME_CHAT_REVIEWER_MODULE).href)',
+            '    : undefined;'
+        ) -join [Environment]::NewLine
+        $content = $workflowLoaderRegex.Replace($content, ('$0' + [Environment]::NewLine + $sameChatLoader), 1)
+        $changed++
+    }
+
     if (-not $content.Contains('DevSpace OneClick: expose durable cross-session handoff and review tools.')) {
         $registrationPattern = '    if \(config\.toolMode === "codex"\) \{\r?\n        registerCodexProcessTools\(server, config, workspaces, processSessions\);\r?\n    \}'
         $registrationRegex = [regex]::new($registrationPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
@@ -294,6 +309,26 @@ function Install-DevSpace108RuntimePatch {
             '    });'
         ) -join [Environment]::NewLine
         $content = $registrationRegex.Replace($content, $registrationReplacement, 1)
+        $changed++
+    }
+
+    if (-not $content.Contains('Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.')) {
+        $sameChatRegistrationPattern = '(\s*\/\/ DevSpace OneClick: expose durable cross-session handoff and review tools\.\r?\n\s*devSpaceWorkflowModule\?\.registerDevSpaceWorkflowTools\(\{\r?\n\s*server, config, workspaces, registerAppTool, z,\r?\n\s*\}\);)'
+        $sameChatRegistrationRegex = [regex]::new($sameChatRegistrationPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+        if (-not $sameChatRegistrationRegex.IsMatch($content)) {
+            throw "DevSpace 1.0.8 Same-Chat Reviewer registration patch point not found in $serverPath"
+        }
+        $sameChatRegistration = @(
+            '    // Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.',
+            '    if (sameChatReviewerModule) {',
+            '        const sameChatReviewerStateDirectory = process.env.DEVSPACE_SAME_CHAT_REVIEWER_STATE_DIR;',
+            '        if (!sameChatReviewerStateDirectory) throw new Error("DEVSPACE_SAME_CHAT_REVIEWER_STATE_DIR is required when Same-Chat Reviewer is enabled.");',
+            '        sameChatReviewerModule.registerSameChatReviewerTools({',
+            '            server, registerAppTool, z, stateDirectory: sameChatReviewerStateDirectory,',
+            '        });',
+            '    }'
+        ) -join [Environment]::NewLine
+        $content = $sameChatRegistrationRegex.Replace($content, ('$1' + [Environment]::NewLine + $sameChatRegistration), 1)
         $changed++
     }
 
