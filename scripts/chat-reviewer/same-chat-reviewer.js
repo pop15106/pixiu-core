@@ -394,6 +394,28 @@ function readReviewState(statePath) {
   return JSON.parse(fs.readFileSync(statePath, 'utf8'));
 }
 
+function getReviewState(stateDirectory, reviewId) {
+  const statePath = reviewStatePath(stateDirectory, reviewId);
+  if (!fs.existsSync(statePath)) {
+    throw new SameChatReviewError('UNKNOWN_REVIEW', '找不到 review request');
+  }
+  return { statePath, state: readReviewState(statePath) };
+}
+
+function requestFromState(state) {
+  if (!state || state.schema !== STORE_SCHEMA || !state.request) {
+    throw new SameChatReviewError('INVALID_STORE_STATE', 'review state 無法還原 request');
+  }
+  const request = {
+    ...state.request
+  };
+  const reasons = validateReviewRequest(request);
+  if (reasons.length) {
+    throw new SameChatReviewError('INVALID_STORE_STATE', reasons.join('；'));
+  }
+  return request;
+}
+
 function writeReviewState(statePath, state, exclusive = false) {
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
   fs.writeFileSync(
@@ -427,6 +449,7 @@ function reserveReview(stateDirectory, request) {
       canSatisfyRequiredReview: false,
       subjectRevision: request.subjectRevision,
       snapshotHash: request.snapshotHash,
+      question: request.question,
       criteria: request.criteria,
       createdAt: request.createdAt,
       expiresAt: request.expiresAt
@@ -449,11 +472,7 @@ function submitReviewResult(stateDirectory, request, result) {
   const reasons = validateReviewResult(request, result, { checkExpiry: true });
   if (reasons.length) throw new SameChatReviewError('INVALID_RESULT', reasons.join('；'));
 
-  const statePath = reviewStatePath(stateDirectory, request.reviewId);
-  if (!fs.existsSync(statePath)) {
-    throw new SameChatReviewError('UNKNOWN_REVIEW', '找不到 review request');
-  }
-  const state = readReviewState(statePath);
+  const { statePath, state } = getReviewState(stateDirectory, request.reviewId);
   if (state.status !== 'pending') {
     throw new SameChatReviewError('RESULT_REPLAY', `review 狀態已是 ${state.status}`);
   }
@@ -476,11 +495,7 @@ function submitReviewResult(stateDirectory, request, result) {
 }
 
 function consumeReviewResult(stateDirectory, reviewId) {
-  const statePath = reviewStatePath(stateDirectory, reviewId);
-  if (!fs.existsSync(statePath)) {
-    throw new SameChatReviewError('UNKNOWN_REVIEW', '找不到 review request');
-  }
-  const state = readReviewState(statePath);
+  const { statePath, state } = getReviewState(stateDirectory, reviewId);
   if (state.status !== 'result_received') {
     throw new SameChatReviewError('NOT_READY', `review 狀態為 ${state.status}，不可 consume`);
   }
@@ -545,10 +560,12 @@ module.exports = {
   createReviewResult,
   defaultStateDirectory,
   evaluateHostCapabilities,
+  getReviewState,
   hashSnapshot,
   redactSensitiveText,
   stableValue,
   reserveReview,
+  requestFromState,
   reviewStatePath,
   submitReviewResult,
   toCriticalRelayProposal,
