@@ -30,6 +30,15 @@ node scripts/setup/install-to-codex.js
 目標是驗證 Codex App 是否可在不使用 OpenAI API Key、也不靠人工 copy/paste 的情況下，
 把 probe 自動送到 ChatGPT Chat，再由 Codex 自動讀回回覆。
 
+### 驗證層級
+
+Bridge 明確分成兩層，避免 synthetic 測試冒充原生完成：
+
+1. `protocolVerified`：request / response、correlation、TTL、read-back evidence 與禁止 API Key／人工 copy-paste 的規則通過。
+2. `nativeVerified`：除了 protocol gate 通過，還必須由**受信任 Codex App runtime adapter**提供 native attestation。
+
+單純從 CLI、JSON 或使用者輸入帶入 `transport=chatgpt-desktop-native`，不能把 `nativeVerified` 變成 `true`。
+
 ### 先跑 synthetic gate
 
 ```bash
@@ -44,6 +53,9 @@ synthetic PASS 只代表：
 - timeout / stale response 防護正常
 - ledger 正常
 - API Key／人工 copy-paste／未 read-back 的負向 gate 正常
+- protocol gate 正常
+
+synthetic ledger 的完成事件為 `PROTOCOL_VERIFIED`，不會寫成 `NATIVE_VERIFIED`。
 
 **synthetic PASS 不等於 native bridge 已驗收。**
 
@@ -55,26 +67,33 @@ node scripts/codex-bridge/pixiu-chat-probe.js create
 
 CLI 會產生 request 與只要求 Chat 回傳單行 JSON 的 prompt。
 
-真正的 native transport 必須由 Codex App runtime 提供，並在讀回後送進 `verifyProbe()`。
-目前官方文件確認新版桌面 App 同時提供 Chat、Work、Codex，且 Codex 中有 Quick Chat；
-但 Codex 與 ChatGPT history 仍是分開的 view。Repo 不會自行假設未公開的 app IPC／handoff API。
+`verify` CLI 只能驗證 protocol evidence；它不接受 native attestation：
+
+```bash
+node scripts/codex-bridge/pixiu-chat-probe.js verify < verification-input.json
+```
+
+真正的 native transport 必須由 Codex App runtime 提供，並在程式內呼叫 `runProbe()` 或
+`verifyProbe()` 時提供受信任的 native attestation。Repo 不會自行假設未公開的 app IPC／handoff API。
 
 ### Native 驗收必要條件
 
 只有以下條件全部成立，才能把原生單輪 round trip 標成 VERIFIED：
 
 ```text
-SEND           = PASS
-CHAT_RECEIVED  = PASS
-READ_BACK      = PASS
-API_KEY_USED   = false
-MANUAL_COPY    = false
-TRANSPORT      = <實際 native transport>
-RESULT         = PASS
+SEND              = PASS
+CHAT_RECEIVED     = PASS
+READ_BACK         = PASS
+API_KEY_USED      = false
+MANUAL_COPY       = false
+TRANSPORT         = <實際 native transport>
+RUNTIME_ATTESTED  = true
+PROTOCOL_VERIFIED = true
+NATIVE_VERIFIED   = true
 ```
 
 CI 只能驗證 synthetic gate。真實 Codex App native read-back 必須在 App runtime 做最後實機 Gate，
-不得用 synthetic transport 冒充。
+不得用 synthetic transport 或手填 evidence 冒充。
 
 ## 可選依賴
 
