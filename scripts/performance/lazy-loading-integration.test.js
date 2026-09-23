@@ -116,6 +116,16 @@ function testRepresentativeRoutes() {
   assert.ok(fullAuto.capabilities.includes('execution-progress'));
   assert.ok(fullAuto.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
 
+  const criticalRelay = resolveCapabilities('對抗搜尋，懷疑每個論點並找反證', manifest);
+  assert.ok(criticalRelay.capabilities.includes('critical-reasoning'));
+  assert.ok(criticalRelay.filesToLoad.includes('skills/critical-relay/SKILL.md'));
+
+  const combinedRelay = resolveCapabilities('對抗搜尋，開完整自動接力', manifest);
+  assert.ok(combinedRelay.capabilities.includes('critical-reasoning'));
+  assert.ok(combinedRelay.capabilities.includes('execution-progress'));
+  assert.ok(combinedRelay.filesToLoad.includes('skills/critical-relay/SKILL.md'));
+  assert.ok(combinedRelay.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
+
   const unitTest = resolveCapabilities('幫我跑 unit test', manifest);
   assert.strictEqual(unitTest.capabilities.includes('execution-progress'), false);
 }
