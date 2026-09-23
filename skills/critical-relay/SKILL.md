@@ -2,7 +2,7 @@
 name: critical-relay
 description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、CR 完整自動接力。
 origin: Pixiu
-version: 0.1.1
+version: 0.2.0
 language: zh-TW
 ---
 
@@ -46,7 +46,7 @@ Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動�
 
 ## 搜尋規則
 
-- 每個重要 claim 至少要有可追溯 evidence。
+- 每個重要 claim 至少要有可追溯 evidence；可追溯定位使用 URL、citation、provenance，或帶 `git:`／`repo:`／`doi:` 等 scheme 的 source，單純 `source: "xxx"` 不算。
 - 每個準備標成 `supported` 的 claim 至少要有一個 `challengeRef`，且 challenge 要反向指回該 claim、記錄 `method` 與 `result`，最後狀態為 `resolved`。
 - 主動使用與原假設相反的搜尋詞，例如 failure、criticism、limitation、counterexample、replication、rebuttal。
 - 重要資料優先級：官方／原始資料／論文原文 > 高品質二手分析 > 社群討論。
@@ -59,6 +59,7 @@ Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動�
 
 跨 ChatGPT、Codex、Gemini、GitHub 或 DevSpace handoff 時，保留下列欄位：
 
+- `phaseHistory`（完成前必須保留 `VERIFY → RECHALLENGE`）
 - `claims`
 - `assumptions`
 - `evidence`
@@ -78,7 +79,7 @@ Schema：
 
 `pixiu.critical-relay.v1`
 
-handoff 可把 `buildHandoffSnapshot(state)` 的結果放進既有 workflow 的 `contextSnapshot`；不需要新增另一套 ledger。
+handoff 使用 `buildHandoffSnapshot(state)` 建立獨立快照，附 `stateDigest`；接手時用 `verifyHandoffSnapshot(snapshot)` 重新驗證 digest 與 completion gate。既有 DevSpace workflow 另有結構化 `criticalRelay` 欄位，不再只依賴字串 `contextSnapshot`。
 
 ## Completion Gate
 
@@ -87,12 +88,14 @@ handoff 可把 `buildHandoffSnapshot(state)` 的結果放進既有 workflow 的 
 - claim 仍是 open / contested。
 - supported claim 沒有 evidenceRefs。
 - supported claim 沒有 challengeRefs，或 challenge 不存在、未反向指向 claim、未 resolved、缺少 method／result。
+- counterEvidence 與 claim 必須雙向互指；任一邊漏接、重複 ID 或 high / critical 反證尚未處理都會阻擋完成。
 - claim 有 counterEvidence，但尚未標示 addressed。
 - high / critical assumption 未驗證或未界定。
 - high / critical challenge 或 unknown 尚未 resolved。
 - 必要 test 未 passed。
 - completionCriteria 未滿足，或沒有 evidenceRefs。
 - high / critical remainingRisk 尚未 accepted、mitigated 或 resolved。
+- state 欄位型別錯誤、`status=blocked`、缺少 `VERIFY → RECHALLENGE` phaseHistory 都會 fail closed。
 
 可用下列指令檢查 state：
 
@@ -130,4 +133,4 @@ Critical Relay 本身不授權 Agent/subagent，也不放寬寫入、push、Rele
 - **Deep Research**：Critical Relay 增加反證搜尋與 claim 級證據帳本。
 - **Verify Loop**：Critical Relay 把「驗證成功」後再加一輪 RECHALLENGE。
 - **完整自動接力**：Critical Relay 成為完成條件的一部分；尚有 blocker 時不得回報 🟢 全部完成。
-- **Workflow handoff**：使用既有 `contextSnapshot` 傳遞 canonical state，不新增另一套 durable store。
+- **Workflow handoff**：CR-enabled task 設 `criticalRelayRequired=true` 並攜帶結構化 `criticalRelay` state；handoff 必須有 state，complete 會重新執行 completion gate，不信任舊 evaluation。仍沿用原本 workflow ledger，不新增另一套 durable store。
