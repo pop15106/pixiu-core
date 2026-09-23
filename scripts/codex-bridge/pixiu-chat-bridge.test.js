@@ -58,14 +58,31 @@ test('Chat prompt 只要求回傳可關聯的單行 JSON', () => {
   assert.ok(prompt.endsWith(expected));
 });
 
-test('正確的 native read-back 證據可通過 correlation gate', () => {
+test('看似完整的 native evidence 只能通過 protocol gate', () => {
   const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
   const response = createProbeResponse(request, { now: BASE_TIME + 100 });
   const result = verifyProbe(request, response, nativeEvidence(), { now: BASE_TIME + 200 });
 
   assert.equal(result.result, 'PASS');
+  assert.equal(result.protocolVerified, true);
+  assert.equal(result.nativeVerified, false);
+  assert.match(result.nativeReasons.join('\n'), /runtime adapter attestation/);
+});
+
+test('只有受信任 runtime adapter attestation 才能標成 native verified', () => {
+  const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
+  const response = createProbeResponse(request, { now: BASE_TIME + 100 });
+  const result = verifyProbe(
+    request,
+    response,
+    nativeEvidence(),
+    { now: BASE_TIME + 200, nativeAttested: true }
+  );
+
+  assert.equal(result.result, 'PASS');
+  assert.equal(result.protocolVerified, true);
   assert.equal(result.nativeVerified, true);
-  assert.deepEqual(result.reasons, []);
+  assert.deepEqual(result.nativeReasons, []);
 });
 
 test('probeId 不一致時拒絕回覆', () => {
@@ -77,6 +94,7 @@ test('probeId 不一致時拒絕回覆', () => {
 
   const result = verifyProbe(request, response, nativeEvidence(), { now: BASE_TIME + 200 });
   assert.equal(result.result, 'FAIL');
+  assert.equal(result.protocolVerified, false);
   assert.match(result.reasons.join('\n'), /probeId 不一致/);
 });
 
@@ -101,7 +119,7 @@ test('超時回覆不得通過', () => {
   assert.match(result.reasons.join('\n'), /超過 probe 有效期限/);
 });
 
-test('使用 API Key 的路徑不得標成 native verified', () => {
+test('使用 API Key 的路徑不得通過 protocol gate', () => {
   const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
   const response = createProbeResponse(request, { now: BASE_TIME + 100 });
 
@@ -109,15 +127,16 @@ test('使用 API Key 的路徑不得標成 native verified', () => {
     request,
     response,
     nativeEvidence({ apiKeyUsed: true }),
-    { now: BASE_TIME + 200 }
+    { now: BASE_TIME + 200, nativeAttested: true }
   );
 
   assert.equal(result.result, 'FAIL');
+  assert.equal(result.protocolVerified, false);
   assert.equal(result.nativeVerified, false);
   assert.match(result.reasons.join('\n'), /使用了 API Key/);
 });
 
-test('人工 copy paste 的路徑不得標成 native verified', () => {
+test('人工 copy paste 的路徑不得通過 protocol gate', () => {
   const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
   const response = createProbeResponse(request, { now: BASE_TIME + 100 });
 
@@ -125,7 +144,7 @@ test('人工 copy paste 的路徑不得標成 native verified', () => {
     request,
     response,
     nativeEvidence({ manualCopy: true }),
-    { now: BASE_TIME + 200 }
+    { now: BASE_TIME + 200, nativeAttested: true }
   );
 
   assert.equal(result.result, 'FAIL');
@@ -133,7 +152,7 @@ test('人工 copy paste 的路徑不得標成 native verified', () => {
   assert.match(result.reasons.join('\n'), /人工 copy\/paste/);
 });
 
-test('未完成 Codex read-back 時不得通過', () => {
+test('未完成 Codex read-back 時不得通過 protocol gate', () => {
   const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
   const response = createProbeResponse(request, { now: BASE_TIME + 100 });
 
@@ -141,14 +160,31 @@ test('未完成 Codex read-back 時不得通過', () => {
     request,
     response,
     nativeEvidence({ readBack: false }),
+    { now: BASE_TIME + 200, nativeAttested: true }
+  );
+
+  assert.equal(result.result, 'FAIL');
+  assert.equal(result.nativeVerified, false);
+  assert.match(result.reasons.join('\n'), /尚未確認 read-back/);
+});
+
+test('缺少 transport 或 authMode 證據時不得通過', () => {
+  const request = createProbeRequest({ now: BASE_TIME, ttlMs: 5000 });
+  const response = createProbeResponse(request, { now: BASE_TIME + 100 });
+
+  const result = verifyProbe(
+    request,
+    response,
+    nativeEvidence({ transport: '', authMode: '' }),
     { now: BASE_TIME + 200 }
   );
 
   assert.equal(result.result, 'FAIL');
-  assert.match(result.reasons.join('\n'), /尚未確認 read-back/);
+  assert.match(result.reasons.join('\n'), /缺少 transport 證據/);
+  assert.match(result.reasons.join('\n'), /缺少 authMode 證據/);
 });
 
-test('synthetic round trip 可通過協議但不能冒充 native verified', async () => {
+test('synthetic round trip 可驗證協議但永遠不能冒充 native', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-chat-bridge-'));
   const ledgerPath = path.join(tmp, 'probe-ledger.jsonl');
   let capturedRequest = null;
@@ -170,17 +206,28 @@ test('synthetic round trip 可通過協議但不能冒充 native verified', asyn
       authMode: 'synthetic',
       apiKeyUsed: false,
       manualCopy: false,
-      readBack: true
+      readBack: true,
+      authorization: 'Bearer should-not-be-persisted',
+      cookie: 'should-not-be-persisted',
+      secret: 'should-not-be-persisted'
     },
+    nativeAttested: true,
     ledgerPath,
     now: BASE_TIME + 200
   });
 
   assert.equal(result.verification.result, 'PASS');
+  assert.equal(result.verification.protocolVerified, true);
   assert.equal(result.verification.nativeVerified, false);
+  assert.match(result.verification.nativeReasons.join('\n'), /synthetic transport/);
 
-  const events = fs.readFileSync(ledgerPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
-  assert.deepEqual(events.map(event => event.type), ['CREATED', 'SENT', 'READ', 'VERIFIED']);
-  assert.equal(JSON.stringify(events).includes('apiKey'), true);
-  assert.equal(JSON.stringify(events).includes('secret'), false);
+  const rawLedger = fs.readFileSync(ledgerPath, 'utf8').trim();
+  const events = rawLedger.split(/\r?\n/).map(JSON.parse);
+  assert.deepEqual(
+    events.map(event => event.type),
+    ['CREATED', 'SENT', 'READ', 'PROTOCOL_VERIFIED']
+  );
+  assert.equal(rawLedger.includes('Bearer should-not-be-persisted'), false);
+  assert.equal(rawLedger.includes('cookie'), false);
+  assert.equal(rawLedger.includes('should-not-be-persisted'), false);
 });
