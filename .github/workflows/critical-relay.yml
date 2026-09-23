@@ -1,0 +1,44 @@
+name: Critical Relay
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "scripts/critical-relay/**"
+      - "skills/critical-relay/**"
+      - "scripts/router/**"
+      - "scripts/performance/lazy-loading-integration.test.js"
+      - "vault/capabilities/capability-manifest.json"
+      - "vault/governance/long-running-progress-policy.md"
+      - ".github/workflows/critical-relay.yml"
+  pull_request:
+    paths:
+      - "scripts/critical-relay/**"
+      - "skills/critical-relay/**"
+      - "scripts/router/**"
+      - "scripts/performance/lazy-loading-integration.test.js"
+      - "vault/capabilities/capability-manifest.json"
+      - "vault/governance/long-running-progress-policy.md"
+      - ".github/workflows/critical-relay.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Critical Relay contract
+        run: node scripts/critical-relay/critical-relay.test.js
+
+      - name: Capability Router
+        run: node scripts/router/resolve-capabilities.test.js
+
+      - name: Lazy loading integration
+        run: node scripts/performance/lazy-loading-integration.test.js
