@@ -32,9 +32,15 @@ function parseToolResult(value) {
 async function fixture() {
   const stateDirectory = await mkdtemp(join(tmpdir(), "same-chat-review-tools-"));
   const tools = new Map();
+  const resources = new Map();
   const z = fakeZod();
+  const server = {
+    registerResource(name, uri, options, handler) {
+      resources.set(uri, { name, uri, options, handler });
+    },
+  };
   const registration = registerSameChatReviewerTools({
-    server: {},
+    server,
     z,
     stateDirectory,
     registerAppTool(_server, name, descriptor, handler) {
@@ -45,6 +51,7 @@ async function fixture() {
   return {
     stateDirectory,
     tools,
+    resources,
     registration,
     async cleanup() {
       await rm(stateDirectory, { recursive: true, force: true });
@@ -94,25 +101,39 @@ test("註冊層只新增獨立 Same-Chat 工具，不碰既有 workflow 工具",
       ],
     );
     assert.equal(f.registration.toolNames.length, 5);
+    assert.equal(f.registration.resourceUri, "ui://pixiu/same-chat-reviewer/v1.html");
+    assert.equal(f.resources.size, 1);
     assert.ok(!f.tools.has("workflow_update"));
   } finally {
     await f.cleanup();
   }
 });
 
-test("request tool 建立 advisory request，但不宣稱已自動張貼 UI 訊息", async () => {
+test("request tool 掛載 widget 並維持 host E2E fail-closed", async () => {
   const f = await fixture();
   try {
-    const output = parseToolResult(
-      await f.tools.get("same_chat_review_request").handler(requestInput()),
+    const tool = f.tools.get("same_chat_review_request");
+    assert.equal(
+      tool.descriptor._meta.ui.resourceUri,
+      "ui://pixiu/same-chat-reviewer/v1.html",
     );
+    assert.equal(
+      tool.descriptor._meta["openai/outputTemplate"],
+      "ui://pixiu/same-chat-reviewer/v1.html",
+    );
+
+    const output = parseToolResult(await tool.handler(requestInput()));
     assert.equal(output.request.independentReview, false);
     assert.equal(output.request.canSatisfyRequiredReview, false);
     assert.equal(output.dispatch.preferredStandard, "MCP Apps ui/message");
-    assert.equal(output.dispatch.postsMessageAutomatically, false);
+    assert.equal(output.dispatch.serverPostsMessageAutomatically, false);
+    assert.equal(output.dispatch.widgetAttemptsSingleDispatch, true);
     assert.equal(output.dispatch.hostE2EVerified, false);
     assert.equal(output.dispatch.autoContinueVerified, false);
     assert.match(output.reviewerPrompt, /Same-Chat Advisory Review/);
+    assert.match(output.reviewerPrompt, /same_chat_review_submit/);
+    assert.match(output.reviewerPrompt, /same_chat_review_consume/);
+    assert.match(output.reviewerPrompt, /REASSESS \/ REPAIR \/ VERIFY/);
   } finally {
     await f.cleanup();
   }
@@ -226,6 +247,49 @@ test("capability tool 只能回報 declared readiness，不會冒充真實 host 
     assert.equal(result.capabilityDeclaredOnly, true);
     assert.equal(result.hostE2EVerified, false);
     assert.equal(result.autoContinueVerified, false);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("MCP Apps resource 使用標準 resourceUri/MIME，widget 有單次 ui/message 與 ChatGPT fallback", async () => {
+  const f = await fixture();
+  try {
+    const resource = f.resources.get("ui://pixiu/same-chat-reviewer/v1.html");
+    assert.ok(resource);
+    const result = await resource.handler();
+    assert.equal(result.contents.length, 1);
+    const content = result.contents[0];
+    assert.equal(content.uri, "ui://pixiu/same-chat-reviewer/v1.html");
+    assert.equal(content.mimeType, "text/html;profile=mcp-app");
+    assert.equal(content._meta.ui.prefersBorder, true);
+    assert.deepEqual(content._meta.ui.csp.connectDomains, []);
+    assert.deepEqual(content._meta.ui.csp.resourceDomains, []);
+    assert.match(content.text, /ui\/initialize/);
+    assert.match(content.text, /ui\/notifications\/initialized/);
+    assert.match(content.text, /ui\/notifications\/tool-result/);
+    assert.match(content.text, /ui\/message/);
+    assert.match(content.text, /sendFollowUpMessage/);
+    assert.match(content.text, /dispatchedReviewId/);
+    assert.match(content.text, /dispatchStatus/);
+    assert.match(content.text, /重新送出 Reviewer Turn/);
+    assert.doesNotMatch(content.text, /same_chat_review_submit/);
+    assert.doesNotMatch(content.text, /same_chat_review_consume/);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("resource 不依賴外部 script/style domain", async () => {
+  const f = await fixture();
+  try {
+    const resource = f.resources.get("ui://pixiu/same-chat-reviewer/v1.html");
+    const result = await resource.handler();
+    const content = result.contents[0];
+    assert.doesNotMatch(content.text, /<script[^>]+src=/i);
+    assert.doesNotMatch(content.text, /<link[^>]+href=/i);
+    assert.deepEqual(content._meta.ui.csp.connectDomains, []);
+    assert.deepEqual(content._meta.ui.csp.resourceDomains, []);
   } finally {
     await f.cleanup();
   }
