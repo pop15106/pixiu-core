@@ -709,6 +709,8 @@ export function createWorkflowController(options = {}) {
           acceptanceCriteria,
           requireReview: booleanValue(input.requireReview, "requireReview", true),
           executionPolicy: policy,
+          criticalRelayRequired,
+          ...(criticalRelay ? { criticalRelay } : {}),
           status: "open",
           currentOwner: null,
           revision: 1,
