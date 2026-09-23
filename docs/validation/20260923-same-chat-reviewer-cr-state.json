@@ -2,7 +2,7 @@
   "schemaVersion": "pixiu.critical-relay.v1",
   "objective": "建立 Same-Chat Reviewer advisory protocol 與 MCP registration layer，作為 Critical Relay 額外 challenger；不修改既有完整自動接力主幹、不弱化 independent review，並對真實 ChatGPT host auto-continue 能力保持 fail-closed。",
   "mode": "CR 完整自動接力",
-  "phase": "RECHALLENGE",
+  "phase": "COMPLETE",
   "phaseHistory": [
     "UNDERSTAND",
     "HYPOTHESIZE",
@@ -12,10 +12,11 @@
     "REASSESS",
     "REPAIR",
     "VERIFY",
-    "RECHALLENGE"
+    "RECHALLENGE",
+    "COMPLETE"
   ],
-  "iteration": 2,
-  "status": "active",
+  "iteration": 3,
+  "status": "completed",
   "claims": [
     {
       "id": "claim-advisory-boundary",
@@ -74,7 +75,8 @@
       "evidenceRefs": [
         "evidence-reviewer-tools",
         "evidence-devspace-independent-review",
-        "evidence-actions-run-7"
+        "evidence-actions-run-7",
+        "evidence-actions-run-10"
       ],
       "counterEvidenceRefs": [
         "counter-tool-catalog-collision"
@@ -142,6 +144,11 @@
       "id": "evidence-openai-reference",
       "url": "https://developers.openai.com/plugins/reference",
       "summary": "官方 reference 說明 sendFollowUpMessage、callTool 與 toolOutput；toolOutput 是 structuredContent。"
+    },
+    {
+      "id": "evidence-actions-run-10",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35843248055",
+      "summary": "Run 10 completed/success；Same-Chat protocol、MCP registration 與 Critical Relay completion gate 全數成功。"
     }
   ],
   "counterEvidence": [
@@ -294,6 +301,13 @@
       "required": true,
       "status": "passed",
       "source": "https://github.com/pop15106/pixiu-core/actions/runs/35842862002"
+    },
+    {
+      "id": "test-same-chat-run-10",
+      "name": "Same-Chat Reviewer GitHub Actions Run 10（含 Critical Relay gate）",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35843248055"
     }
   ],
   "completionCriteria": [
@@ -332,6 +346,14 @@
         "evidence-openai-ui-message",
         "evidence-openai-reference"
       ]
+    },
+    {
+      "id": "criterion-cr-self-gate",
+      "criterion": "Same-Chat Reviewer 的 protocol、MCP registration 與最新 CR canonical state 已在同一 GitHub Actions workflow 內通過 completion gate。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "test-same-chat-run-10"
+      ]
     }
   ],
   "remainingRisks": [
@@ -342,5 +364,5 @@
       "description": "真實 ChatGPT App runtime 的 ui/message → reviewer turn → submit → original task auto-resume 尚未 E2E；目前 capability 固定 fail-closed。"
     }
   ],
-  "nextAction": "把本 CR state 掛進 Same-Chat Reviewer workflow completion gate；通過後將本輪 protocol/MCP registration 工作標為 COMPLETE。真實 host adapter 留待下一個實機 E2E 階段。"
+  "nextAction": "本輪 Same-Chat Reviewer protocol/MCP registration 工作已完成；下一階段只有在真實 ChatGPT App runtime 可用時，才實測 ui/message → reviewer turn → submit → original task auto-resume，並以 runtime receipt 決定是否升級 hostE2EVerified/autoContinueVerified。"
 }
