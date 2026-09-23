@@ -58,6 +58,8 @@
 - 查看 Watchdog 排程與最近結果：`11-WATCHDOG-STATUS.cmd`
 - 立即執行一次健康檢查：`12-RUN-WATCHDOG-NOW.cmd`
 - 移除 Watchdog 排程與本機設定：`13-REMOVE-WATCHDOG.cmd`
+- 啟用 Same-Chat Reviewer（實驗功能）：`16-ENABLE-SAME-CHAT-REVIEWER.cmd`
+- 停用 Same-Chat Reviewer：`17-DISABLE-SAME-CHAT-REVIEWER.cmd`
 
 ## Windows Watchdog
 
@@ -146,6 +148,26 @@ Portable 套件已內建 `DevSpace.WorkflowStore.mjs`，安裝或更新時會自
 
 完整使用方式見 `WORKFLOW.zh-TW.md`。
 
+## Same-Chat Reviewer（實驗功能）
+
+Same-Chat Reviewer 預設關閉，不影響既有 workflow tools 或 independent review。
+
+要進行真實 ChatGPT Host E2E 前：
+
+1. 先執行 `00-SETUP-OR-UPDATE.cmd` 更新 OneClick runtime。
+2. 雙擊 `16-ENABLE-SAME-CHAT-REVIEWER.cmd`。
+3. 等待 DevSpace / Tunnel 回到 READY。
+4. 在 ChatGPT 對 DevSpace App 執行 Refresh actions / 重新連接，讓工具與 Widget catalog 重新載入。
+5. 確認可看到 `same_chat_review_*` 工具後，才開始 Host E2E。
+
+啟用時 OneClick 會將 `DEVSPACE_WIDGETS` 設為 `on`，並條件式註冊 5 個 `same_chat_review_*` 工具與 MCP Apps Widget。停用時會恢復不註冊這些工具，`DEVSPACE_WIDGETS=off`。
+
+這個功能只提供 CR advisory review；它不能滿足 `requireReview=true` 的 independent review，也不能直接完成 workflow / CR。
+
+GitHub Actions 已驗證 Protocol、MCP Widget registration、DevSpace 1.0.8 patch upgrade、Windows OneClick runtime 與 portable ZIP。**真實 ChatGPT Host 的自動 Reviewer Turn / auto-continue 仍必須在實機 App runtime 驗收，GitHub Actions 不能替代。**
+
+停用時雙擊 `17-DISABLE-SAME-CHAT-REVIEWER.cmd`；若 stack 正由 OneClick 管理，切換會安全 restart。
+
 ## 建立可分發 ZIP
 
 在 PixiuCore 原始碼 repo 內雙擊 `BUILD-PORTABLE-ZIP.cmd`，或執行：
@@ -160,13 +182,13 @@ ZIP 內含 `PORTABLE-MANIFEST.json`。`00-SETUP-OR-UPDATE.cmd` 在發佈包中�
 
 ## Subagent delegation
 
-安裝器會啟用 DevSpace 1.0.4 的 experimental Subagent delegation，並安裝三個 `xhigh` profile：
+安裝器會使用目前鎖定的 DevSpace 1.0.8，並保留 experimental Subagent delegation，並安裝三個 `xhigh` profile：
 
 - `codex-explorer`：唯讀盤點與依賴分析。
 - `codex-worker`：實作指定項目。
 - `codex-qa-tester`：獨立測試與驗證。
 
-Windows 相容修補會在每次安裝或啟動時檢查並重複安全套用，包括：授權目錄可在未初始化 Git 時使用、Node/npm PATH 傳入 Agent、隱藏背景 CMD 視窗，以及縮短 Agent 狀態查詢等待。修補只支援套件鎖定的 DevSpace 1.0.4；版本不同時會停止並顯示錯誤，不會盲目修改。若需回復官方檔案，可執行 `powershell -ExecutionPolicy Bypass -File .\devspace-oneclick.ps1 restore-subagent-patch`。還原前會用修補時記錄的 SHA-256 manifest 一次檢查全部六個 target 與備份；遇到同版 hotfix、target／備份漂移、缺少部分備份或版本不同時，會在寫入任何檔案前整批拒絕。全部備份都不存在時安全地不做事；已還原狀態可重複執行。舊版安裝器留下的備份若沒有 manifest，會拒絕未驗證還原。
+Windows 相容修補會在每次安裝或啟動時檢查並重複安全套用，包括：授權目錄可在未初始化 Git 時使用、Node/npm PATH 傳入 Agent、隱藏背景 CMD 視窗，以及縮短 Agent 狀態查詢等待。修補支援 OneClick 已明列的 DevSpace 1.0.4 / 1.0.8；其他版本會停止並顯示錯誤，不會盲目修改。若需回復官方檔案，可執行 `powershell -ExecutionPolicy Bypass -File .\devspace-oneclick.ps1 restore-subagent-patch`。還原前會用修補時記錄的 SHA-256 manifest 一次檢查全部六個 target 與備份；遇到同版 hotfix、target／備份漂移、缺少部分備份或版本不同時，會在寫入任何檔案前整批拒絕。全部備份都不存在時安全地不做事；已還原狀態可重複執行。舊版安裝器留下的備份若沒有 manifest，會拒絕未驗證還原。
 
 Skill root 判斷是時間點檢查：掃描時只把實際存在的 `SKILL.md` 視為 Skill，資料庫、參考文件等非 Skill 子目錄不會讓整個 root 誤判失敗。一般專案只有名稱與 SHA-256 內容都被較早來源完整涵蓋時，才略過 project-local root；檔案缺失、讀取失敗、獨有 Skill 或同名不同內容都 fail-open 保留專案能力。PixiuCore 本體另有 canonical 特例：workspace 必須有 `vault/bootstrap/SESSION-BOOTSTRAP.md`，較早的全域 root 實體路徑必須正是該 workspace 的 `skills/`，且 canonical 名稱全集涵蓋 `.agents/skills`，才把後者視為 portable 發佈層並略過。root-only API 無法把判斷與後續載入包成原子快照，因此仍保留極小競態窗口。
 
@@ -216,6 +238,6 @@ Git Bash 的 `npm`/`npx` 也會透過輕量 shim 直接轉給 `npm.cmd`/`npx.cmd
 - Node.js `>=22.19 <27`
 - Git for Windows（DevSpace 在 Windows 需要 Git Bash）
 - Microsoft Dev Tunnel CLI
-- `@waishnav/devspace@1.0.4`
+- `@waishnav/devspace@1.0.8`
 
 首次安裝可能出現 Windows 權限提示與 Microsoft 登入頁，這是正常流程。
