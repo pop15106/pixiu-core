@@ -1,0 +1,440 @@
+{
+  "schemaVersion": "pixiu.critical-relay.v1",
+  "objective": "將 Same-Chat Reviewer 以預設關閉的 feature flag 接入 DevSpace OneClick Runtime，完成 MCP Apps Widget、DevSpace 1.0.8 安全升級、Windows runtime 與 portable delivery 驗證，同時對真實 ChatGPT Host E2E / auto-continue 保持 fail-closed。",
+  "mode": "CR 完整自動接力",
+  "phase": "RECHALLENGE",
+  "phaseHistory": [
+    "UNDERSTAND",
+    "HYPOTHESIZE",
+    "EXECUTE",
+    "CHALLENGE",
+    "COUNTERSEARCH",
+    "REASSESS",
+    "REPAIR",
+    "VERIFY",
+    "RECHALLENGE"
+  ],
+  "iteration": 2,
+  "status": "active",
+  "claims": [
+    {
+      "id": "claim-feature-flag-isolated",
+      "statement": "Same-Chat Reviewer 預設關閉，只有 feature flag 啟用時才註冊 reviewer tools 與 Widget；既有 workflow tools 與 independent review 語意不變。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-oneclick",
+        "evidence-runtime-test",
+        "evidence-runtime-run"
+      ],
+      "counterEvidenceRefs": [
+        "counter-widgets-originally-off",
+        "counter-tool-catalog-regression"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-feature-flag"
+      ]
+    },
+    {
+      "id": "claim-runtime-upgrade-safe",
+      "statement": "DevSpace 1.0.8 可從原始或已知舊 OneClick patched 狀態安全升級至 Same-Chat registration，未知 server drift 仍 fail closed。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-runtime-patch",
+        "evidence-runtime-test",
+        "evidence-runtime-run"
+      ],
+      "counterEvidenceRefs": [
+        "counter-108-early-return"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-runtime-upgrade"
+      ]
+    },
+    {
+      "id": "claim-widget-safe",
+      "statement": "MCP Apps Widget 使用 ui resource + ui/message，具單次 dispatch / retry 防護，且 Widget 本身不能呼叫 reviewer submit/consume 或 workflow completion 工具。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-reviewer-tools",
+        "evidence-widget-test",
+        "evidence-widget-run",
+        "evidence-openai-ui"
+      ],
+      "counterEvidenceRefs": [
+        "counter-widget-double-dispatch",
+        "counter-widget-business-engine"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-widget-safe"
+      ]
+    },
+    {
+      "id": "claim-cr-return-path",
+      "statement": "Reviewer Turn 的 prompt 已固定要求 submit → consume → criticalRelayProposal → CR REASSESS/REPAIR/VERIFY，且 no finding 不能跳過既有 completion gate。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-reviewer-core",
+        "evidence-widget-run"
+      ],
+      "counterEvidenceRefs": [
+        "counter-reviewer-self-completion"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-cr-return"
+      ]
+    },
+    {
+      "id": "claim-portable-delivery",
+      "statement": "Portable ZIP 已包含 reviewer modules、enable/disable launchers 與 runtime patch metadata，builder/verifier 已在 Windows GitHub Actions 成功。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-portable-builder",
+        "evidence-portable-verifier",
+        "evidence-runtime-run"
+      ],
+      "counterEvidenceRefs": [
+        "counter-portable-missing-module"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-portable"
+      ]
+    },
+    {
+      "id": "claim-host-boundary",
+      "statement": "Git-side tests 只能證明 protocol/widget/runtime packaging；真實 ChatGPT Host 是否接受自動 ui/message、Reviewer Turn 是否自動 submit/consume、原流程是否 auto-resume 尚未 E2E，因此 hostE2EVerified 與 autoContinueVerified 維持 false。",
+      "status": "supported",
+      "evidenceRefs": [
+        "evidence-openai-ui",
+        "evidence-openai-reference",
+        "evidence-architecture"
+      ],
+      "counterEvidenceRefs": [
+        "counter-ui-message-not-host-e2e",
+        "counter-tool-output-not-model-answer"
+      ],
+      "counterEvidenceStatus": "addressed",
+      "challengeRefs": [
+        "challenge-host-boundary"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "assumption-real-host-requires-machine",
+      "statement": "真實 Host E2E 必須在啟用 DevSpace Runtime / Tunnel 並由 ChatGPT App 重新載入 tools/resources 後驗證；GitHub Actions 不能替代。",
+      "severity": "high",
+      "status": "bounded"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence-oneclick",
+      "source": "repo:scripts/devspace-portable/devspace-oneclick.ps1",
+      "summary": "OneClick 保存 sameChatReviewerEnabled，條件式設定 reviewer env / DEVSPACE_WIDGETS，提供 enable/disable action 並安全重啟 owned stack。"
+    },
+    {
+      "id": "evidence-runtime-patch",
+      "source": "repo:scripts/devspace-portable/DevSpace.OneClick.Subagents.psm1",
+      "summary": "兩檔 reviewer bundle installer、1.0.8 known-patch upgrade 與 conditional server registration。"
+    },
+    {
+      "id": "evidence-runtime-test",
+      "source": "repo:scripts/devspace-portable/tests/run-same-chat-reviewer-runtime-tests.ps1",
+      "summary": "Windows 隔離測試 bundle install/update/fail-closed、1.0.8 舊 patch upgrade、feature flag 與 registration。"
+    },
+    {
+      "id": "evidence-reviewer-tools",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.mjs",
+      "summary": "MCP tools + ui:// resource + standard ui/message + ChatGPT compatibility fallback + single-dispatch widget。"
+    },
+    {
+      "id": "evidence-reviewer-core",
+      "source": "repo:scripts/chat-reviewer/same-chat-reviewer.js",
+      "summary": "Reviewer prompt、correlation/lifecycle 與 submit→consume→CR 回流規則。"
+    },
+    {
+      "id": "evidence-widget-test",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs",
+      "summary": "Widget resource/MIME/meta/ui-message/fallback/single-dispatch/no-tool-execution 回歸測試。"
+    },
+    {
+      "id": "evidence-portable-builder",
+      "source": "repo:scripts/devspace-portable/build-portable-package.ps1",
+      "summary": "Portable payload 包含 reviewer modules 與 enable/disable launchers，manifest 宣告 Same-Chat Reviewer。"
+    },
+    {
+      "id": "evidence-portable-verifier",
+      "source": "repo:scripts/devspace-portable/verify-portable-package.ps1",
+      "summary": "Portable verifier 檢查 reviewer payload 與 manifest metadata。"
+    },
+    {
+      "id": "evidence-architecture",
+      "source": "repo:docs/architecture/same-chat-reviewer.md",
+      "summary": "Same-Chat Runtime / Widget / Host E2E 邊界與實機驗收步驟。"
+    },
+    {
+      "id": "evidence-widget-run",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35846254601",
+      "summary": "Same-Chat Reviewer protocol、MCP Apps Widget registration 與 CR gate success。"
+    },
+    {
+      "id": "evidence-runtime-run",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35846331834",
+      "summary": "Windows protocol、MCP Widget、OneClick runtime integration、portable build/verify 全數 success。"
+    },
+    {
+      "id": "evidence-openai-ui",
+      "url": "https://developers.openai.com/plugins/build/chatgpt-ui",
+      "summary": "官方說明 MCP Apps UI resource 與 ui/message / ChatGPT compatibility bridge。"
+    },
+    {
+      "id": "evidence-openai-reference",
+      "url": "https://developers.openai.com/plugins/reference",
+      "summary": "官方 reference 定義 sendFollowUpMessage、callTool 與 toolOutput；toolOutput 是工具 structuredContent。"
+    }
+  ],
+  "counterEvidence": [
+    {
+      "id": "counter-widgets-originally-off",
+      "source": "repo:scripts/devspace-portable/devspace-oneclick.ps1",
+      "claimRefs": [
+        "claim-feature-flag-isolated"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "原 OneClick 固定 DEVSPACE_WIDGETS=off；已改為只在 Same-Chat feature enabled 時 on。"
+    },
+    {
+      "id": "counter-tool-catalog-regression",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs",
+      "claimRefs": [
+        "claim-feature-flag-isolated"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "直接改既有 workflow tool catalog 會增加回歸風險；目前 Same-Chat tools 使用獨立 registration 並條件式掛載。"
+    },
+    {
+      "id": "counter-108-early-return",
+      "source": "repo:scripts/devspace-portable/DevSpace.OneClick.Subagents.psm1",
+      "claimRefs": [
+        "claim-runtime-upgrade-safe"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "舊 1.0.8 patch manifest 會在已知舊 patched hash 提前 return；已改成允許已知 patch 安全升級，未知 drift 仍拒絕。"
+    },
+    {
+      "id": "counter-widget-double-dispatch",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs",
+      "claimRefs": [
+        "claim-widget-safe"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "UI 重載可能造成 reviewer prompt 重送；Widget 以 memory + widget state 的 dispatchedReviewId/dispatchStatus 防止同 instance 重複自動 dispatch。"
+    },
+    {
+      "id": "counter-widget-business-engine",
+      "source": "repo:scripts/chat-reviewer/SameChat.ReviewerTools.test.mjs",
+      "claimRefs": [
+        "claim-widget-safe"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "若 Widget 自行 call submit/consume/workflow tool，會把 presentation layer 變成工作引擎；回歸測試明確禁止 tools/call/openai.callTool。"
+    },
+    {
+      "id": "counter-reviewer-self-completion",
+      "source": "repo:scripts/chat-reviewer/same-chat-reviewer.test.js",
+      "claimRefs": [
+        "claim-cr-return-path"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "Reviewer 若把 no finding 當 approval 會繞過 CR；prompt 與 proposal 固定 completionEffect=none。"
+    },
+    {
+      "id": "counter-portable-missing-module",
+      "source": "repo:scripts/devspace-portable/verify-portable-package.ps1",
+      "claimRefs": [
+        "claim-portable-delivery"
+      ],
+      "severity": "medium",
+      "status": "addressed",
+      "summary": "Portable 若漏 reviewer dependency，實機會 import 失敗；manifest verifier 已把兩個 module 與 launchers 列為必須 payload。"
+    },
+    {
+      "id": "counter-ui-message-not-host-e2e",
+      "url": "https://developers.openai.com/plugins/build/chatgpt-ui",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "ui/message 是 Host interaction primitive，不等於已證明特定 ChatGPT runtime 會無人介入完成完整 reviewer 閉環。"
+    },
+    {
+      "id": "counter-tool-output-not-model-answer",
+      "url": "https://developers.openai.com/plugins/reference",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "addressed",
+      "summary": "window.openai.toolOutput 是工具 structuredContent，不是最新 Reviewer Turn 的模型回答，不能用它冒充 result read-back。"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "challenge-feature-flag",
+      "claimRefs": [
+        "claim-feature-flag-isolated"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "檢查 OneClick config/env/server registration 並以 Windows integration test 驗證預設/啟用接線。",
+      "result": "Same-Chat 預設關閉；啟用時才設定 reviewer env + DEVSPACE_WIDGETS=on 並條件式註冊，既有 workflow tools 未改名或替換。"
+    },
+    {
+      "id": "challenge-runtime-upgrade",
+      "claimRefs": [
+        "claim-runtime-upgrade-safe"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "在 Windows test 建立假的 DevSpace 1.0.8 舊 patched manifest/hash，再執行最新版 patch。",
+      "result": "已知舊 patch 成功升級；backup hash 保持，manifest 更新 latest patched hash；未知 drift 邏輯仍 fail closed。"
+    },
+    {
+      "id": "challenge-widget-safe",
+      "claimRefs": [
+        "claim-widget-safe"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "驗證 MCP Apps resource/meta、標準 ui/message、ChatGPT fallback、dispatch state、CSP 與禁止 Widget tool call。",
+      "result": "Run 35846254601 通過；Widget 只負責 dispatch/status，不執行 reviewer business actions。"
+    },
+    {
+      "id": "challenge-cr-return",
+      "claimRefs": [
+        "claim-cr-return-path"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "對 reviewer prompt 與 proposal 做 no-finding / finding 反例測試。",
+      "result": "Prompt 固定 submit→consume→CR；proposal 保留 open status / completionEffect=none，既有 CR gate 不可跳過。"
+    },
+    {
+      "id": "challenge-portable",
+      "claimRefs": [
+        "claim-portable-delivery"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "Windows Actions 真正執行 build-portable-package.ps1，再由 package builder 內建 verifier 驗證 payload/manifest。",
+      "result": "Run 35846331834 的 portable build/verify step success。"
+    },
+    {
+      "id": "challenge-host-boundary",
+      "claimRefs": [
+        "claim-host-boundary"
+      ],
+      "severity": "high",
+      "status": "resolved",
+      "method": "反向核對官方 ui/message / sendFollowUpMessage / toolOutput 定義，並嘗試找是否足以證明無人介入 auto-resume。",
+      "result": "官方文件支持 primitive，但不能取代真實 ChatGPT Host receipt；因此本輪明確不把 Host E2E 列為已完成。"
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "unknown-real-host-e2e",
+      "question": "啟用 OneClick Same-Chat Reviewer 後，真實 ChatGPT Host 是否會接受 Widget ui/message、產生 Reviewer Turn、正確 submit/consume，並在不需使用者再輸入『繼續』時接回 CR？",
+      "severity": "high",
+      "status": "resolved",
+      "resolution": "對本輪 Git-side Runtime 工作採 fail-closed boundary：目前固定 hostE2EVerified=false、autoContinueVerified=false；待實機 DevSpace/Tunnel/ChatGPT App 上線後另開 Host E2E 驗收。"
+    }
+  ],
+  "tests": [
+    {
+      "id": "test-widget-run",
+      "name": "Same-Chat Reviewer Widget / CR GitHub Actions",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35846254601"
+    },
+    {
+      "id": "test-runtime-run",
+      "name": "Same-Chat Reviewer Windows Runtime / Portable GitHub Actions",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35846331834"
+    }
+  ],
+  "completionCriteria": [
+    {
+      "id": "criterion-feature-flag",
+      "criterion": "Same-Chat Reviewer 預設關閉，可由 OneClick enable/disable，啟用時條件式註冊 tools/widget，既有 workflow 語意不變。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-oneclick",
+        "test-runtime-run"
+      ]
+    },
+    {
+      "id": "criterion-runtime-upgrade",
+      "criterion": "DevSpace 1.0.8 原始/已知舊 patch 可安全升級，未知 drift fail closed。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-runtime-patch",
+        "evidence-runtime-test",
+        "test-runtime-run"
+      ]
+    },
+    {
+      "id": "criterion-widget",
+      "criterion": "MCP Apps Widget resource / ui-message / fallback / single-dispatch / presentation-only 邊界有自動回歸測試。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-reviewer-tools",
+        "evidence-widget-test",
+        "test-widget-run"
+      ]
+    },
+    {
+      "id": "criterion-portable",
+      "criterion": "Portable ZIP 包含並驗證 Same-Chat Runtime 必要 payload。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-portable-builder",
+        "evidence-portable-verifier",
+        "test-runtime-run"
+      ]
+    },
+    {
+      "id": "criterion-host-boundary",
+      "criterion": "在真實 ChatGPT Host E2E 以前，hostE2EVerified / autoContinueVerified 維持 false，且文件列出實機驗收步驟。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "evidence-architecture",
+        "evidence-openai-ui",
+        "evidence-openai-reference"
+      ]
+    }
+  ],
+  "remainingRisks": [
+    {
+      "id": "risk-real-host-e2e",
+      "severity": "high",
+      "status": "accepted",
+      "description": "真實 ChatGPT Host 的 ui/message 接受行為、Reviewer Turn tool calls 與無人介入 auto-resume 尚未驗收；本輪刻意不宣告完成。"
+    }
+  ],
+  "nextAction": "將本 state 掛入 Windows Runtime workflow completion gate；通過後完成 Git-side Runtime/Widget/Portable 階段。下一階段在實機 OneClick + Tunnel + ChatGPT App Refresh 後執行 Host E2E。"
+}
