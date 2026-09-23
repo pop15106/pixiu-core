@@ -12,6 +12,9 @@ import {
 } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import criticalRelayModule from "../critical-relay/critical-relay.js";
+
+const { evaluateCriticalRelay, SCHEMA_VERSION: CRITICAL_RELAY_SCHEMA_VERSION } = criticalRelayModule;
 
 const SCOPES = new Set(["single_session", "same_project", "cross_project"]);
 const EFFORTS = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
@@ -195,6 +198,41 @@ function internalIdempotencyKey(baseKey, phase) {
 
 function clone(value) {
   return structuredClone(value);
+}
+
+function validateCriticalRelayState(value, label = "Critical Relay state") {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    fail(`${label} must be an object.`);
+  }
+  const normalized = clone(value);
+  if (normalized.schemaVersion !== CRITICAL_RELAY_SCHEMA_VERSION) {
+    fail(`${label} uses an unsupported schema.`);
+  }
+  try {
+    evaluateCriticalRelay(normalized);
+  } catch (error) {
+    fail(`${label} is invalid: ${error.message}`);
+  }
+  return normalized;
+}
+
+function assertCriticalRelayComplete(task) {
+  if (!task.criticalRelayRequired && !task.criticalRelay) return;
+  if (!task.criticalRelay) {
+    fail("Critical Relay state is required before this task can complete.");
+  }
+  let evaluation;
+  try {
+    evaluation = evaluateCriticalRelay(task.criticalRelay);
+  } catch (error) {
+    fail(`Critical Relay completion gate could not evaluate state: ${error.message}`);
+  }
+  if (!evaluation.canComplete) {
+    fail(
+      `Critical Relay completion gate blocked: ${evaluation.blockingReasons.join(" | ")}`,
+    );
+  }
 }
 
 function defaultIdFactory(prefix) {
@@ -394,6 +432,9 @@ async function withLock(paths, operation) {
 function applyUpdate(task, input, helpers) {
   const next = clone(task);
   const actor = requiredString(input.actor, "actor", 128);
+  if (input.criticalRelay !== undefined) {
+    next.criticalRelay = validateCriticalRelayState(input.criticalRelay);
+  }
   switch (input.action) {
     case "claim": {
       if (task.status !== "open") fail("Only an open task can be claimed.");
@@ -406,6 +447,9 @@ function applyUpdate(task, input, helpers) {
         fail("Only active work can be handed off.");
       }
       assertOwner(task, actor);
+      if (next.criticalRelayRequired && !next.criticalRelay) {
+        fail("Critical Relay state is required before handoff for a CR-enabled task.");
+      }
       const toActor = requiredString(input.toActor, "handoff target", 128);
       if (toActor === actor) fail("Handoff target must differ from the current owner.");
       next.handoffs.push({
@@ -483,6 +527,7 @@ function applyUpdate(task, input, helpers) {
       } else if (task.status !== "in_progress") {
         fail("Only in-progress work can be completed.");
       }
+      assertCriticalRelayComplete(next);
       next.status = "completed";
       next.completedAt = helpers.now();
       break;
@@ -643,6 +688,12 @@ export function createWorkflowController(options = {}) {
         max: 50,
       });
       const policy = validatePolicy(input.policy);
+      const criticalRelayRequired = booleanValue(
+        input.criticalRelayRequired,
+        "criticalRelayRequired",
+        false,
+      );
+      const criticalRelay = validateCriticalRelayState(input.criticalRelay);
       return withLock(paths, async () => {
         const state = await readState(paths);
         const duplicate = await findIdempotentResult(state, idempotencyKey, workspaceRoot, sessionRef);
@@ -997,7 +1048,7 @@ export function registerDevSpaceWorkflowTools({
 
   registerAppTool(server, "workflow_create", {
     title: "Create workflow task",
-    description: "Create a durable DevSpace task for single-session, same-project, or cross-project handoff. Use this automatically when the user clearly says work should continue in another chat, session, or project; the user does not need to say workflow or handoff. Pure coordination does not start an Agent/model. Model and reasoning overrides are optional metadata only.",
+    description: "Create a durable DevSpace task for single-session, same-project, or cross-project handoff. Use this automatically when the user clearly says work should continue in another chat, session, or project; the user does not need to say workflow or handoff. Pure coordination does not start an Agent/model. CR-enabled tasks can set criticalRelayRequired and carry structured Critical Relay state. Model and reasoning overrides are optional metadata only.",
     inputSchema: {
       workspaceId: z.string().min(1),
       relatedWorkspaceIds: z.array(z.string().min(1)).max(20).optional(),
@@ -1007,6 +1058,8 @@ export function registerDevSpaceWorkflowTools({
       objective: z.string().min(1).max(8_000),
       acceptanceCriteria: z.array(z.string().min(1).max(2_000)).min(1).max(50),
       requireReview: z.boolean().optional(),
+      criticalRelayRequired: z.boolean().optional().describe("Require the Critical Relay completion gate for this workflow task."),
+      criticalRelay: z.unknown().optional().describe("Structured pixiu.critical-relay.v1 state. It is re-evaluated before completion."),
       ...policyFields,
       idempotencyKey: idempotencyField,
     },
@@ -1045,7 +1098,7 @@ export function registerDevSpaceWorkflowTools({
 
   registerAppTool(server, "workflow_update", {
     title: "Update workflow task",
-    description: "Claim, hand off, acknowledge, review, resume, complete, or block a task with revision-based concurrency control. Natural-language continuation intent is enough; users do not need to name claim, handoff, or acknowledge. Do not infer an Agent/model run from workflow coordination.",
+    description: "Claim, hand off, acknowledge, review, resume, complete, or block a task with revision-based concurrency control. Natural-language continuation intent is enough; users do not need to name claim, handoff, or acknowledge. CR-enabled tasks re-evaluate the latest Critical Relay state before completion. Do not infer an Agent/model run from workflow coordination.",
     inputSchema: {
       workspaceId: z.string().min(1),
       sessionRef: sessionField,
@@ -1059,6 +1112,7 @@ export function registerDevSpaceWorkflowTools({
       deliverables: z.array(z.string().min(1).max(2_000)).max(50).optional(),
       openItems: z.array(z.string().min(1).max(2_000)).max(50).optional(),
       requiredNextAction: z.string().min(1).max(4_000).optional(),
+      criticalRelay: z.unknown().optional().describe("Updated Critical Relay state. CR-enabled tasks are re-evaluated on complete."),
       reviewerActor: z.string().min(1).max(128).optional(),
       subjectRef: z.string().min(1).max(2_000).optional(),
       criteria: z.array(z.string().min(1).max(2_000)).max(50).optional(),
