@@ -486,8 +486,10 @@ function buildHandoffSnapshot(state) {
     remainingRisks: state.remainingRisks,
     nextAction: state.nextAction
   });
-  snapshot.evaluation = evaluateCriticalRelay(snapshot);
-  snapshot.stateDigest = stateDigest(snapshot);
+  const evaluation = evaluateCriticalRelay(snapshot);
+  const digest = stateDigest(snapshot);
+  snapshot.evaluation = evaluation;
+  snapshot.stateDigest = digest;
   return snapshot;
 }
 
