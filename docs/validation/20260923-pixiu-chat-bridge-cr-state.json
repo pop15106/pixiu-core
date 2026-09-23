@@ -2,16 +2,17 @@
   "schemaVersion": "pixiu.critical-relay.v1",
   "objective": "依 Pixiu Chat Bridge 檢查報告修正假成功、CI、evidence、timeout、終態、重放、時間、輸入與 log 缺口，並界定原生 Chat transport 的官方能力邊界。",
   "mode": "CR 完整自動接力",
-  "phase": "RECHALLENGE",
-  "iteration": 2,
-  "status": "active",
+  "phase": "COMPLETE",
+  "iteration": 3,
+  "status": "completed",
   "claims": [
     {
       "id": "claim-ci-repaired",
       "statement": "Pixiu Chat Bridge workflow 已從無法解析改為可執行，且真實 GitHub Actions job 成功。",
       "status": "supported",
       "evidenceRefs": [
-        "evidence-actions-run-35"
+        "evidence-actions-run-35",
+        "evidence-actions-run-39"
       ],
       "counterEvidenceRefs": [
         "counter-old-ci-failure"
@@ -116,6 +117,11 @@
       "id": "evidence-openai-history",
       "url": "https://help.openai.com/en/articles/20001275/",
       "summary": "官方說明 Codex 是獨立 view，歷史與 ChatGPT history 分開；Codex 內可開 Quick Chat。"
+    },
+    {
+      "id": "evidence-actions-run-39",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35838837953",
+      "summary": "Run 39 completed/success；更新後的 Bridge regression、synthetic probe 與 Critical Relay completion gate 全數成功。"
     }
   ],
   "counterEvidence": [
@@ -251,6 +257,13 @@
       "required": true,
       "status": "passed",
       "source": "https://github.com/pop15106/pixiu-core/actions/runs/35837910802"
+    },
+    {
+      "id": "test-actions-run-39",
+      "name": "Pixiu Chat Bridge GitHub Actions run 39（含 Critical Relay gate）",
+      "required": true,
+      "status": "passed",
+      "source": "https://github.com/pop15106/pixiu-core/actions/runs/35838837953"
     }
   ],
   "completionCriteria": [
@@ -279,6 +292,14 @@
         "evidence-openai-app-server",
         "evidence-openai-history"
       ]
+    },
+    {
+      "id": "criterion-cr-self-gate",
+      "criterion": "更新後文件與 CR canonical state 已由同一 workflow 執行 protocol tests、synthetic probe 與 Critical Relay completion gate 並成功。",
+      "satisfied": true,
+      "evidenceRefs": [
+        "test-actions-run-39"
+      ]
     }
   ],
   "remainingRisks": [
@@ -289,7 +310,7 @@
       "description": "既有 ChatGPT Chat 的官方 native programmatic transport 尚未從公開文件確認；功能刻意維持未實作與 fail-closed。"
     }
   ],
-  "nextAction": "維持 native fail-closed；若 OpenAI 公開可控制既有 ChatGPT Chat 的正式 transport，再新增受信任 adapter 與真實 E2E。",
+  "nextAction": "本輪 CR hardening 已完成；Native Chat transport 維持 fail-closed，待 OpenAI 公開可控制既有 ChatGPT Chat 的正式 send/read transport 後再新增 adapter 與真實 E2E。",
   "phaseHistory": [
     "UNDERSTAND",
     "HYPOTHESIZE",
@@ -299,6 +320,7 @@
     "REASSESS",
     "REPAIR",
     "VERIFY",
-    "RECHALLENGE"
+    "RECHALLENGE",
+    "COMPLETE"
   ]
 }
