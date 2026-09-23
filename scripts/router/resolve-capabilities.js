@@ -5,13 +5,55 @@ const fs = require('fs');
 const path = require('path');
 
 function normalizeText(value) {
-  return String(value || '').toLowerCase();
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+function isNegatedMatch(text, index) {
+  const prefix = text.slice(Math.max(0, index - 24), index);
+  return /(?:先不要|暫時不要|不是要|不要|不用|別|取消|關閉|不開)[^。！？!?]{0,12}$/u.test(prefix);
+}
+
+function isAsciiWordChar(value) {
+  return typeof value === 'string' && /^[a-z0-9_]$/iu.test(value);
+}
+
+function findMatch(normalized, phrase, { bounded = false } = {}) {
+  if (!phrase) return -1;
+  let cursor = 0;
+  while (cursor <= normalized.length - phrase.length) {
+    const index = normalized.indexOf(phrase, cursor);
+    if (index < 0) return -1;
+
+    const left = index > 0 ? normalized[index - 1] : '';
+    const rightIndex = index + phrase.length;
+    const right = rightIndex < normalized.length ? normalized[rightIndex] : '';
+    const leftBlocked = bounded && isAsciiWordChar(phrase[0]) && isAsciiWordChar(left);
+    const rightBlocked =
+      bounded &&
+      isAsciiWordChar(phrase[phrase.length - 1]) &&
+      isAsciiWordChar(right);
+
+    if (!leftBlocked && !rightBlocked && !isNegatedMatch(normalized, index)) {
+      return index;
+    }
+    cursor = index + 1;
+  }
+  return -1;
 }
 
 function scoreCapability(request, capability) {
   const normalized = normalizeText(request);
-  const keywords = Array.isArray(capability.keywords) ? capability.keywords : [];
-  const matches = keywords.filter(keyword => normalized.includes(normalizeText(keyword)));
+  const keywordMatches = (Array.isArray(capability.keywords) ? capability.keywords : [])
+    .map(normalizeText)
+    .filter(keyword => findMatch(normalized, keyword) >= 0);
+  const aliasMatches = (Array.isArray(capability.aliases) ? capability.aliases : [])
+    .map(normalizeText)
+    .filter(alias => findMatch(normalized, alias, { bounded: true }) >= 0);
+  const matches = [...new Set([...keywordMatches, ...aliasMatches])];
   return {
     score: matches.length,
     matches
@@ -43,15 +85,8 @@ function isValidCapabilityLimit(value) {
   return Number.isInteger(value) && value >= 0;
 }
 
-function resolveCapabilities(request, manifest, options = {}) {
-  const requestedMaxCapabilities = isValidCapabilityLimit(options.maxCapabilities)
-    ? options.maxCapabilities
-    : isValidCapabilityLimit(manifest.maxCapabilitiesPerRequest)
-      ? manifest.maxCapabilitiesPerRequest
-      : 3;
-  const maxCapabilities = Math.min(requestedMaxCapabilities, 3);
-
-  const ranked = (manifest.capabilities || [])
+function rankMatches(request, manifest) {
+  return (manifest.capabilities || [])
     .map(capability => {
       const scored = scoreCapability(request, capability);
       return {
@@ -67,15 +102,41 @@ function resolveCapabilities(request, manifest, options = {}) {
       const scoreDiff = right.score - left.score;
       if (scoreDiff !== 0) return scoreDiff;
       return left.capability.id.localeCompare(right.capability.id);
-    })
-    .slice(0, maxCapabilities);
+    });
+}
 
-  const selected = ranked.map(item => item.capability);
+function resolveCapabilities(request, manifest, options = {}) {
+  const requestedMaxCapabilities = isValidCapabilityLimit(options.maxCapabilities)
+    ? options.maxCapabilities
+    : isValidCapabilityLimit(manifest.maxCapabilitiesPerRequest)
+      ? manifest.maxCapabilitiesPerRequest
+      : 3;
+  const maxCapabilities = Math.min(requestedMaxCapabilities, 3);
+
+  if (maxCapabilities === 0) {
+    return { capabilities: [], filesToLoad: [], reasons: [] };
+  }
+
+  const ranked = rankMatches(request, manifest);
+  const required = ranked.filter(item => item.capability.requiredWhenMatched === true);
+  const optional = ranked.filter(item => item.capability.requiredWhenMatched !== true);
+  const selectedRanked = [];
+
+  for (const item of required) {
+    if (selectedRanked.length >= maxCapabilities) break;
+    selectedRanked.push(item);
+  }
+  for (const item of optional) {
+    if (selectedRanked.length >= maxCapabilities) break;
+    selectedRanked.push(item);
+  }
+
+  const selected = selectedRanked.map(item => item.capability);
 
   return {
     capabilities: selected.map(capability => capability.id),
     filesToLoad: collectFiles(selected),
-    reasons: ranked.map(item => ({
+    reasons: selectedRanked.map(item => ({
       capability: item.capability.id,
       matchedKeywords: item.matches
     }))
