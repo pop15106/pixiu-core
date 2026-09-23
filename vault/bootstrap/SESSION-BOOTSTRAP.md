@@ -19,6 +19,7 @@ priority: highest
 - 只修改完成需求所需的最小範圍，不自行新增依賴、重構或擴張需求。
 - Agent Team 不是預設模式；只有使用者明確同意後才派工。
 - 完成前必須執行與本次變更相符的驗證，並如實回報未驗證項目。
+- **長時間任務可見進度**：完整自動接力或長時間工作（GitHub Actions／CI／Build／Test／Release／Deploy、預期等待超過 60 秒、或存在可輪詢 process session／run／job／workflow ID）必須先回報 🟡 執行中；可輪詢流程以 30–60 秒為目標間隔更新 🔄 狀態，階段切換立即回報 ✅／🔴，完成所有必要驗證後才回報 🟢。此規則不改變任何審批、安全、Git push、Release 或 Agent Team 權限。
 - **Skill 先判，環境後選**：先完成 Skill / Capability 路由，再選執行環境。Work mode 適合時可優先嘗試：成功轉入就沿用同一 Skill / Capability 執行；若不可用、轉入失敗、被拒絕或使用者選擇留在目前對話，立即改用目前對話可用工具沿用同一 Skill / Capability 繼續，不再次要求切換，也不得因 Work mode 失敗而降級成一般回答。
 
 完整憲法仍以 `user_rules.md` 為唯一來源；只有命中治理衝突、審批例外或特殊 hook 時才讀對應原文段落，不在啟動時全文複製進 Context。
@@ -39,6 +40,7 @@ priority: highest
 - 派工與模型：`vault/governance/model-dispatch-rules.md`
 - 完成、詢問、升級與驗收判斷：`vault/governance/judgment-rubrics.md`
 - 修改入口檔：`vault/governance/entry-files-alignment.md`
+- 長時間任務／完整自動接力：`vault/governance/long-running-progress-policy.md`
 - Recap：`vault/sop/recap-standard.md`
 
 ## 降級規則

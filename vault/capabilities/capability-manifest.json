@@ -160,6 +160,17 @@
       }
     },
     {
+      "id": "execution-progress",
+      "summary": "長時間任務、完整自動接力、CI／Build／Test／Release／Deploy 的可見進度、輪詢與完成驗證。",
+      "keywords": ["完整自動接力", "自動接力", "github actions", "ci", "build", "test", "release", "deploy", "長時間任務", "長時間 command", "輪詢", "執行進度", "可見進度", "session id", "run id", "job id", "workflow id"],
+      "priority": 46,
+      "load": {
+        "skills": [],
+        "contexts": [],
+        "governance": ["vault/governance/long-running-progress-policy.md"]
+      }
+    },
+    {
       "id": "runtime-control",
       "summary": "Auto mode、Focus mode 與執行授權邊界。",
       "keywords": ["auto mode", "自動模式", "自動放行", "跳過確認", "focus mode", "只看結果", "隱藏步驟"],
