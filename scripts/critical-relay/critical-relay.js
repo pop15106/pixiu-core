@@ -89,6 +89,7 @@ function evaluateCriticalRelay(state) {
   const completionPhases = new Set(['RECHALLENGE', 'READY_TO_HANDOFF', 'COMPLETE']);
   const evidenceById = indexById(state.evidence);
   const counterEvidenceById = indexById(state.counterEvidence);
+  const challengeById = indexById(state.challenges);
   const testById = indexById(state.tests);
 
   if (!String(state.objective || '').trim()) {
@@ -110,8 +111,13 @@ function evaluateCriticalRelay(state) {
       blockingReasons.push(`${id} 尚未收斂：status=${claim.status || 'missing'}`);
       continue;
     }
-    if (claim.status === 'supported' && listValue(claim.evidenceRefs).length === 0) {
-      blockingReasons.push(`${id} 宣告 supported，但沒有 evidenceRefs`);
+    if (claim.status === 'supported') {
+      if (listValue(claim.evidenceRefs).length === 0) {
+        blockingReasons.push(`${id} 宣告 supported，但沒有 evidenceRefs`);
+      }
+      if (listValue(claim.challengeRefs).length === 0) {
+        blockingReasons.push(`${id} 宣告 supported，但沒有 challengeRefs`);
+      }
     }
     for (const evidenceRef of listValue(claim.evidenceRefs)) {
       const evidence = evidenceById.get(evidenceRef);
@@ -121,6 +127,26 @@ function evaluateCriticalRelay(state) {
         blockingReasons.push(`${id} 引用的 evidence 缺少可追溯來源：${evidenceRef}`);
       }
     }
+    for (const challengeRef of listValue(claim.challengeRefs)) {
+      const challenge = challengeById.get(challengeRef);
+      if (!challenge) {
+        blockingReasons.push(`${id} 引用不存在的 challenge：${challengeRef}`);
+        continue;
+      }
+      if (!listValue(challenge.claimRefs).includes(id)) {
+        blockingReasons.push(`${id} 的 challenge 未反向指向該 claim：${challengeRef}`);
+      }
+      if (challenge.status !== 'resolved') {
+        blockingReasons.push(`${id} 的 challenge 尚未 resolved：${challengeRef}`);
+      }
+      if (!String(challenge.method || '').trim()) {
+        blockingReasons.push(`${id} 的 challenge 缺少 method：${challengeRef}`);
+      }
+      if (!String(challenge.result || '').trim()) {
+        blockingReasons.push(`${id} 的 challenge 缺少 result：${challengeRef}`);
+      }
+    }
+
     for (const counterEvidenceRef of listValue(claim.counterEvidenceRefs)) {
       const counterEvidence = counterEvidenceById.get(counterEvidenceRef);
       if (!counterEvidence) {
