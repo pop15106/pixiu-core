@@ -2,13 +2,17 @@
 
 日期：2026-09-23  
 Repo：`pop15106/pixiu-core`  
-模式：Git fallback / no Agent / no subagent
+模式：Git fallback / CR 完整自動接力 / no Agent / no subagent
 
 ## 目標
 
-驗證 Codex App 是否可在不使用 OpenAI API Key 的前提下，將訊息自動送到既有 ChatGPT Chat，並自動讀回回覆。
+驗證 Codex App 是否可在不使用 OpenAI API Key、也不靠人工 copy/paste 的前提下，
+將訊息自動送到既有 ChatGPT Chat，並由 Codex 自動讀回答覆。
 
-## 2026-09-19 已確認的 Chat 端 Probe
+本輪工作依 `Pixiu-Chat-Bridge-Audit-20260923` 收斂「驗證骨架與防誤判」。
+**本輪 hardening 可以完成，但 Native Chat E2E 本身仍未完成。**
+
+## 2026-09-19 Chat 端 Probe
 
 ```json
 {"probeId":"pixiu-native-chat-20260919-01","received":true}
@@ -16,123 +20,221 @@ Repo：`pop15106/pixiu-core`
 
 已確認：
 
-- Chat 端收到指定 `probeId`。
-- Chat 端依協議原樣回傳指定單行 JSON。
-- Probe 過程沒有要求 Chat 使用工具、修改檔案或執行其他工作。
+- Chat 收到指定 `probeId`。
+- Chat 依協議回傳指定 JSON。
 
-這只能證明「Chat 收到 + Chat 回覆」，不能單獨證明 Codex App 已自動 read-back。
+未由這次 probe 單獨證明：
 
-## 2026-09-23 已完成實作
+- Codex 是否自動 read-back。
+- 是否完全沒有人工 copy/paste。
+- 實際 transport / auth session。
+- 是否未使用 API Key。
 
-### Bridge protocol
+因此不能用 2026-09-19 的結果宣告 Native round-trip VERIFIED。
 
-檔案：
+# 2026-09-23 CR Hardening
 
-- `scripts/codex-bridge/pixiu-chat-bridge.js`
-- `scripts/codex-bridge/pixiu-chat-probe.js`
-- `scripts/codex-bridge/pixiu-chat-bridge.test.js`
+## 已修正
 
-已完成：
+### 1. GitHub Actions
 
-- Native probe request / response schema。
-- 唯一 `probeId` + `nonce` correlation。
-- TTL / stale response gate。
-- API Key 使用路徑拒絕。
-- 人工 copy/paste 路徑拒絕。
-- Codex read-back evidence gate。
-- transport / authMode evidence gate。
-- ledger 寫入 `state/chat-bridge/probe-ledger.jsonl`。
-- ledger 只保留白名單 evidence，不保存任意 Authorization／Cookie／Secret 欄位。
-- `state/` 已由 repo `.gitignore` 排除。
+原 workflow 曾把換行寫成字面 `\n`，舊 Run `35834864462` 為 failure。
 
-### Protocol 與 Native 驗證分離
-
-目前明確區分：
-
-- `protocolVerified=true`：協議、correlation、TTL 與 evidence 規則通過。
-- `nativeVerified=true`：除了 protocol gate，還必須由受信任 Codex App runtime adapter 提供 attestation。
-
-CLI 或手填 JSON 無法直接把 `nativeVerified` 設成 true。
-
-synthetic transport 即使 protocol PASS，也只會：
-
-```text
-protocolVerified = true
-nativeVerified   = false
-ledger event     = PROTOCOL_VERIFIED
-```
-
-不得冒充 `NATIVE_VERIFIED`。
-
-### CLI
-
-```bash
-node scripts/codex-bridge/pixiu-chat-probe.js create
-node scripts/codex-bridge/pixiu-chat-probe.js verify < verification-input.json
-node scripts/codex-bridge/pixiu-chat-probe.js synthetic
-```
-
-`verify` CLI 只做 protocol evidence 驗證，不接受 native runtime attestation。
-
-### CI
-
-已新增：
-
-`.github/workflows/pixiu-chat-bridge.yml`
-
-內容會執行：
+已重建為有效 YAML，Node 22 執行：
 
 ```bash
 node --test scripts/codex-bridge/pixiu-chat-bridge.test.js
 node scripts/codex-bridge/pixiu-chat-probe.js synthetic
+node scripts/critical-relay/critical-relay.js check docs/validation/20260923-pixiu-chat-bridge-cr-state.json
 ```
 
-GitHub connector 目前無法取得本次 push 型 Actions run／check-run，因此不能把「workflow 檔已存在」宣稱為「GitHub Actions 已綠燈」。
+目前已取得真正的成功證據：
 
-先前為了取得 PR 型 run 建立的 PR #10 已關閉，原因是後續 hardening 已直接進入 master，該驗證分支內容已過時。
+- Run `35837910802`：Bridge tests + synthetic probe success。
+- Run `35838613880`：Bridge tests + synthetic probe + **Critical Relay completion gate** 全數 success。
 
-## 驗證結果
+## 2. Native 假成功
 
-2026-09-23 以與 master 相同的 Bridge／test 內容執行：
+已移除「呼叫者只傳 `nativeAttested=true` 就能得到 `nativeVerified=true`」的語意。
+
+目前：
 
 ```text
-Node.js: v22.16.0
-node --test scripts/codex-bridge/pixiu-chat-bridge.test.js
-
-tests: 12
-pass: 12
-fail: 0
+nativeVerified = false
 ```
 
-另外執行 synthetic CLI：
+只要真正受信任的 native adapter 尚不存在，就維持 fail-closed。
+CLI、mock、JSON evidence、legacy `nativeAttested` 都不能把它升級成 true。
+
+## 3. Evidence 嚴格型別
+
+必要 evidence：
+
+- `transport`
+- `authMode`
+- `apiKeyUsed`
+- `manualCopy`
+- `readBack`
+
+現在：
+
+- boolean 欄位必須是真正 boolean。
+- 缺欄位會 FAIL。
+- 字串 `"true"` / `"false"` 不會被當成安全值。
+- `evidence=null` 會得到結構化 FAIL，不會 TypeError。
+- transport / authMode 使用 allowlist 與配對檢查。
+- 過長 transport / authMode 不會原樣存入 ledger。
+- `sessionFingerprint` 只接受 SHA-256 格式。
+
+## 4. Timeout 與終態
+
+已加入：
+
+- 送出前 expiry 檢查。
+- send / read / evidence 共用 deadline。
+- read 永不回覆時會 timeout。
+- cancel 為 best-effort，自己也有等待上限。
+- send / read throw 會記錄 `FAILED`。
+- timeout 會記錄 `FAILED`。
+- live verify 使用可信系統時鐘。
+- `respondedAt` 不能早於 request，也不能晚於 expiresAt。
+
+## 5. Replay / Idempotency
+
+每個 probe 會建立隔離 state。
+
+相同 `probeId` 再執行時：
+
+- 不會再次 send。
+- 回傳 `PROBE_REPLAY`。
+- 需要重試時必須建立新的 probeId。
+
+若 send timeout 導致 outcome unknown，也不自動重送。
+
+## 6. Ledger / Secret 防護
+
+Ledger：
+
+`state/chat-bridge/probe-ledger.jsonl`
+
+另有 per-probe state：
+
+`state/chat-bridge/probes/`
+
+兩者均位於 `state/`，repo 已忽略。
+
+現在：
+
+- evidence 只保存白名單欄位。
+- 無效 fingerprint 不原樣保存。
+- 過長／未知 transport 不原樣保存。
+- adapter error 中常見 Authorization、API key、token、cookie、secret、password 會遮罩。
+- 回歸測試使用 canary marker 驗證原始敏感字串不落 ledger。
+
+## 7. CLI fail-closed
+
+`verify` 與 `synthetic` 都會依結果回傳正確 exit code。
+
+未知 CLI command：
+
+```text
+exit code = 2
+```
+
+Synthetic success 必須同時符合：
 
 ```text
 result           = PASS
 protocolVerified = true
 nativeVerified   = false
-transport        = synthetic
-authMode         = synthetic
 ```
 
-這是預期結果。
+# Regression
 
-## Git commits
+目前 GitHub Actions 已跑：
 
-本次主要 commits：
+```text
+tests 27
+pass  27
+fail  0
+```
 
-- `f5a72915a966376c7e0b2f3ae9250ea50bd6df7f` — checkpoint native probe 狀態。
-- `32b79a036ae22dc2bcabe3eba4d6ca6d47abaada` — Chat Bridge probe protocol。
-- `3461d226fd300a775b3bfd3e1ad6fd261f9bfa66` — 初版 tests。
-- `4c6a44b873e0ab28cb3b906e72043f4ee7ecb432` — probe CLI。
-- `3cfa7c20b20edcd89c7c8c6428fc3cc9cf2ca359` — GitHub Actions synthetic gate。
-- `b4709677a777a4e514fef8c5efba589d5aaf5d8a` — protocol/native 驗證分層。
-- `47815b6dfb9fd613eb6dffb4971394cbf547e3e4` — hardened tests。
-- `01ab29346ce1f582acaf1c974b95fb874065505a` — CLI 禁止自行 native attestation。
-- `e2a69f5c19ffe678f51a464f3f855d91e6fcbe8a` — 驗證層級文件。
+涵蓋：
 
-## 尚未完成的唯一核心 Gate
+- probeId / nonce correlation
+- fake native success
+- missing / wrong-type evidence
+- unknown transport / authMode
+- fingerprint 格式
+- expiresAt / respondedAt 時間順序
+- pre-send expired
+- hanging read
+- hanging cancel
+- send/read failure terminal
+- replay
+- ledger canary
+- trusted live clock
+- synthetic/native 邊界
+- CLI exit code
 
-Native App 真實 E2E 尚未驗收：
+# Critical Relay
+
+Canonical state：
+
+`docs/validation/20260923-pixiu-chat-bridge-cr-state.json`
+
+目前 state 已留下：
+
+- claims / assumptions
+- evidence / counterEvidence
+- challenges
+- unknowns
+- tests
+- completion criteria
+- remaining risk
+- phaseHistory：包含 `VERIFY → RECHALLENGE`
+
+Workflow 已把：
+
+```bash
+node scripts/critical-relay/critical-relay.js check docs/validation/20260923-pixiu-chat-bridge-cr-state.json
+```
+
+列為必要 gate。
+
+Run `35838613880` 已證明該 gate 成功。
+
+# Native Transport 能力邊界
+
+2026-09-23 重新查 OpenAI 官方公開文件。
+
+已確認：
+
+1. Codex `app-server` 可建立／續接 Codex thread、啟動 turn、接收事件與核准。
+2. 新版桌面 App 可在 ChatGPT / Codex 間切換。
+3. Codex history 與 ChatGPT history 仍是分開的 view。
+
+尚未從官方公開文件找到：
+
+> 「程式化指定一個既有 ChatGPT Chat，送入訊息，並由 Codex App 自動讀回答覆」
+
+的正式介面。
+
+因此目前明確不做：
+
+- 未公開 IPC。
+- 內部未公開 API。
+- UI automation 冒充 native API。
+- 把 Codex app-server 的 Codex thread 當成既有 ChatGPT Chat。
+
+官方參考：
+
+- https://developers.openai.com/zh-Hant/blog/codex-as-a-platform
+- https://help.openai.com/en/articles/20001275/
+
+# Native 最終 Gate
+
+Native App 真實 E2E 仍需：
 
 ```text
 PROBE_ID          = <unique id>
@@ -142,21 +244,33 @@ READ_BACK         = PASS
 API_KEY_USED      = false
 MANUAL_COPY       = false
 TRANSPORT         = <實際 native transport>
-RUNTIME_ATTESTED  = true
+RUNTIME_RECEIPT   = <可核對證據>
 PROTOCOL_VERIFIED = true
 NATIVE_VERIFIED   = true
 ```
 
-目前 repo 沒有使用未公開的 Codex App IPC／內部 API，也沒有以 UI 自動化冒充 native transport。
-
-在取得 Codex App 可用的正式 runtime transport / handoff 能力前：
+在取得正式 transport 前：
 
 **Native transport：【資料不足，無法確認】**
 
-## 完成定義
+# 完成狀態
 
-- Bridge protocol / CLI / ledger / synthetic gate：已完成。
-- 同版 Node tests：12/12 PASS。
-- Synthetic round-trip：PASS，且正確維持 `nativeVerified=false`。
-- GitHub Actions workflow：已建立；本次 run 狀態尚未能由現有 connector 驗證。
-- Native Codex App round-trip：待真實 runtime adapter + read-back E2E。
+## 本輪 CR Hardening
+
+- Bridge protocol hardening：完成。
+- Evidence fail-closed：完成。
+- Timeout / FAILED terminal：完成。
+- Replay：完成。
+- Log 防護：完成。
+- CLI exit code：完成。
+- GitHub Actions：已驗證成功。
+- Critical Relay completion gate：已驗證成功。
+- Agent / subagent：未使用。
+
+## Native Chat Bridge
+
+- Synthetic / protocol verification：完成。
+- 真實 Codex App → existing ChatGPT Chat → Codex read-back：**未完成**。
+- 原因：目前官方公開介面不足以建立可驗證的 existing-Chat native transport。
+
+後續只有在 OpenAI 公開可用的正式 transport 後，才新增 native adapter 與真實 E2E。
