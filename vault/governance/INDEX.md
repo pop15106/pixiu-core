@@ -26,6 +26,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 | 踩坑了、想記東西、想改 vault 檔案 | `maintenance-protocol.md`（第 1 節權限分級、第 2 節教訓迴路） |
 | 每月首次 session、或使用者說「做月維護」 | `maintenance-protocol.md` 第 6 節 |
 | 要動任何 AI 入口檔（CLAUDE/CODEX/GEMINI/AGENTS.md） | `entry-files-alignment.md` |
+| 本機母體／DevSpace 不可用，使用者明確要求切 Git／Git fallback | `../bootstrap/GIT-FALLBACK-BOOTSTRAP.md` |
 | 寫程式、修 bug、重構前判斷要做到多大／是否新增依賴、檔案、agent team | `minimal-implementation-ladder.md` |
 | 接手上一個 session 的工作、或 context 快用完 | `letter-to-future-sessions.md` |
 | 想知道這套制度為什麼長這樣 | `quick-diagnosis-2026-07-03.md`（背景，非必讀） |
@@ -49,6 +50,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 | `full-repo-audit-2026-07-03.md` | 2026-07-03 全 repo 審查（skills/agents/hooks 等） | 不更新（下次審查開新檔） |
 | `entry-files-alignment.md` | 入口檔路由制度＋各檔最小路由文字 | 低 |
 | `minimal-implementation-ladder.md` | 實作前最小化梯：反過度工程、少依賴、少 token，但不覆蓋安全與驗證 | 低 |
+| `../bootstrap/GIT-FALLBACK-BOOTSTRAP.md` | Git fallback 母體載入、獨立 checkout 與 Router 銜接 | 低 |
 | `agent-team-mode-policy.md` | 跨 AI Agent Team 啟動閘門、平衡／省錢／品質模式與能力映射 | 低 |
 | `model-dispatch-rules.md` | 派工、模型、回報、升降級、驗證 | 型號對照節常更新，其餘低 |
 | `judgment-rubrics.md` | 七類判斷的判準/正例/反例/動作 | 低 |

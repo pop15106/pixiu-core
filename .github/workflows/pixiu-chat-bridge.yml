@@ -1,0 +1,59 @@
+name: Pixiu Chat Bridge
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'scripts/codex-bridge/pixiu-chat-bridge.js'
+      - 'scripts/codex-bridge/pixiu-chat-bridge.test.js'
+      - 'scripts/codex-bridge/pixiu-chat-probe.js'
+      - 'scripts/codex-bridge/README.md'
+      - 'docs/handoffs/20260923-pixiu-chat-bridge-native-probe.md'
+      - 'docs/validation/20260923-pixiu-chat-bridge-cr-state.json'
+      - '.github/workflows/pixiu-chat-bridge.yml'
+  pull_request:
+    paths:
+      - 'scripts/codex-bridge/pixiu-chat-bridge.js'
+      - 'scripts/codex-bridge/pixiu-chat-bridge.test.js'
+      - 'scripts/codex-bridge/pixiu-chat-probe.js'
+      - 'scripts/codex-bridge/README.md'
+      - 'docs/handoffs/20260923-pixiu-chat-bridge-native-probe.md'
+      - 'docs/validation/20260923-pixiu-chat-bridge-cr-state.json'
+      - '.github/workflows/pixiu-chat-bridge.yml'
+  workflow_dispatch:
+
+jobs:
+  synthetic-probe:
+    name: Synthetic round-trip gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run protocol and regression tests
+        run: node --test scripts/codex-bridge/pixiu-chat-bridge.test.js
+
+      - name: Run synthetic probe
+        shell: bash
+        run: |
+          RESULT_FILE="${RUNNER_TEMP}/pixiu-chat-bridge-result.json"
+          LEDGER_FILE="${RUNNER_TEMP}/pixiu-chat-bridge-ledger.jsonl"
+          node scripts/codex-bridge/pixiu-chat-probe.js synthetic --ledger "${LEDGER_FILE}" > "${RESULT_FILE}"
+          cat "${RESULT_FILE}"
+          node -e '
+            const fs = require("fs");
+            const result = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            if (result.verification?.result !== "PASS") process.exit(1);
+            if (result.verification?.protocolVerified !== true) process.exit(1);
+            if (result.verification?.nativeVerified !== false) process.exit(1);
+          ' "${RESULT_FILE}"
+
+      - name: Run Critical Relay completion gate
+        run: node scripts/critical-relay/critical-relay.js check docs/validation/20260923-pixiu-chat-bridge-cr-state.json

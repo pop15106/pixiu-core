@@ -65,6 +65,7 @@ function New-TestCore {
         'GEMINI.md' = '# Gemini entry'
         '.codex\AGENTS.md' = '# Codex project entry'
         'vault\bootstrap\SESSION-BOOTSTRAP.md' = '# Bootstrap'
+        'vault\bootstrap\GIT-FALLBACK-BOOTSTRAP.md' = '# Git fallback bootstrap'
         'scripts\router\resolve-capabilities.js' = 'console.log("ok");'
         'scripts\codex-bridge\pixiu-global-hook-bridge.js' = 'console.log("bridge");'
     }
@@ -134,6 +135,9 @@ try {
     foreach ($definition in $definitions) {
         Assert-True ($definition.Content.Contains('PIXIU-GLOBAL-ENTRY:1')) "adds managed marker for $($definition.Name)"
         Assert-True ($definition.Content.Contains('resolve-capabilities.js')) "routes $($definition.Name) through the capability router"
+        Assert-True ($definition.Content.Contains('GIT-FALLBACK-BOOTSTRAP.md')) "includes Git fallback bootstrap source for $($definition.Name)"
+        Assert-True ($definition.Content.Contains('pop15106/pixiu-core')) "includes canonical GitHub fallback repo for $($definition.Name)"
+        Assert-True ($definition.SourcePaths -contains (Join-Path $core 'vault\bootstrap\GIT-FALLBACK-BOOTSTRAP.md')) "tracks Git fallback bootstrap source for $($definition.Name)"
         Assert-Equal ($definition.Content -match 'founder-profile|agent-persona|memory-summary') $false "does not embed legacy full-load rules for $($definition.Name)"
     }
 

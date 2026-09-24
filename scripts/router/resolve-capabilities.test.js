@@ -23,10 +23,31 @@ const manifest = {
       priority: 10
     },
     {
+      id: 'critical-reasoning',
+      keywords: ['對抗搜尋', '反證', '懷疑每個論點', 'critical relay'],
+      aliases: ['cr 完整自動接力'],
+      requiredWhenMatched: true,
+      load: { skills: ['critical-relay.md'], contexts: [], governance: [] },
+      priority: 47
+    },
+    {
       id: 'security-review',
       keywords: ['資安', '漏洞', 'secret'],
       load: { skills: ['security.md'], contexts: [], governance: ['security-policy.md'] },
       priority: 30
+    },
+    {
+      id: 'execution-progress',
+      keywords: ['完整自動接力', '自動接力', 'github actions', '輪詢', 'test 等待'],
+      requiredWhenMatched: true,
+      load: { skills: [], contexts: [], governance: ['long-running-progress-policy.md'] },
+      priority: 46
+    },
+    {
+      id: 'git-fallback',
+      keywords: ['切 git', 'git fallback', 'devspace 斷線'],
+      load: { skills: [], contexts: ['GIT-FALLBACK-BOOTSTRAP.md'], governance: ['long-running-progress-policy.md'] },
+      priority: 55
     }
   ]
 };
@@ -134,6 +155,80 @@ function testMissingManifestDegradesWithoutFullScan() {
   assert.match(result.error, /找不到 Capability Manifest/);
 }
 
+function testRoutesAdversarialSearchToCriticalRelay() {
+  const result = resolveCapabilities('對抗搜尋，懷疑每個論點並找反證', manifest);
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.filesToLoad.includes('critical-relay.md'));
+}
+
+function testCombinesCriticalRelayWithFullAuto() {
+  const result = resolveCapabilities('對抗搜尋，開完整自動接力', manifest);
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.filesToLoad.includes('critical-relay.md'));
+  assert.ok(result.filesToLoad.includes('long-running-progress-policy.md'));
+}
+
+function testCrFullAutoShortcutLoadsBothLayers() {
+  const result = resolveCapabilities('CR 完整自動接力', manifest);
+  assert.ok(result.capabilities.includes('critical-reasoning'));
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.filesToLoad.includes('critical-relay.md'));
+  assert.ok(result.filesToLoad.includes('long-running-progress-policy.md'));
+}
+
+function testCrShortcutNormalizesWhitespace() {
+  for (const request of [
+    'CR  完整自動接力',
+    'CR\n完整自動接力',
+    'CR　完整自動接力'
+  ]) {
+    const result = resolveCapabilities(request, manifest);
+    assert.ok(result.capabilities.includes('critical-reasoning'), request);
+    assert.ok(result.capabilities.includes('execution-progress'), request);
+  }
+}
+
+function testCrShortcutUsesAsciiBoundary() {
+  const result = resolveCapabilities('SCR 完整自動接力', manifest);
+  assert.strictEqual(result.capabilities.includes('critical-reasoning'), false);
+  assert.ok(result.capabilities.includes('execution-progress'));
+}
+
+function testNegatedCrShortcutDoesNotActivateModes() {
+  const result = resolveCapabilities('先不要 CR 完整自動接力，先討論', manifest);
+  assert.strictEqual(result.capabilities.includes('critical-reasoning'), false);
+  assert.strictEqual(result.capabilities.includes('execution-progress'), false);
+}
+
+function testRequiredModesSurviveCapabilityPressure() {
+  const result = resolveCapabilities(
+    'CR 完整自動接力，DevSpace 斷線了，切 Git，處理資安漏洞',
+    manifest
+  );
+  assert.deepStrictEqual(
+    result.capabilities,
+    ['critical-reasoning', 'execution-progress', 'git-fallback']
+  );
+}
+
+function testRoutesFullAutoRelayToExecutionProgress() {
+  const result = resolveCapabilities('完整自動接力', manifest);
+  assert.ok(result.capabilities.includes('execution-progress'));
+  assert.ok(result.filesToLoad.includes('long-running-progress-policy.md'));
+}
+
+function testRoutesGitFallbackAndLoadsBootstrap() {
+  const result = resolveCapabilities('DevSpace 斷線了，切 Git 繼續', manifest);
+  assert.ok(result.capabilities.includes('git-fallback'));
+  assert.ok(result.filesToLoad.includes('GIT-FALLBACK-BOOTSTRAP.md'));
+}
+
+function testPlainUnitTestDoesNotTriggerExecutionProgress() {
+  const result = resolveCapabilities('幫我跑 unit test', manifest);
+  assert.strictEqual(result.capabilities.includes('execution-progress'), false);
+}
+
 function testActualManifestRoutesFullAutoRelayToProgressPolicy() {
   const manifestPath = path.join(
     __dirname,
@@ -161,6 +256,16 @@ for (const test of [
   testReturnsBootstrapOnlyWhenNoMatch,
   testDeduplicatesFiles,
   testMissingManifestDegradesWithoutFullScan,
+  testRoutesAdversarialSearchToCriticalRelay,
+  testCombinesCriticalRelayWithFullAuto,
+  testCrFullAutoShortcutLoadsBothLayers,
+  testCrShortcutNormalizesWhitespace,
+  testCrShortcutUsesAsciiBoundary,
+  testNegatedCrShortcutDoesNotActivateModes,
+  testRequiredModesSurviveCapabilityPressure,
+  testRoutesFullAutoRelayToExecutionProgress,
+  testRoutesGitFallbackAndLoadsBootstrap,
+  testPlainUnitTestDoesNotTriggerExecutionProgress,
   testActualManifestRoutesFullAutoRelayToProgressPolicy
 ]) {
   test();

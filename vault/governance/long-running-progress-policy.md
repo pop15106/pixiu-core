@@ -1,63 +1,105 @@
+---
+type: governance
+date: 2026-09-23
+lastVerified: 2026-09-23
+project: PIXIUCORE
+system: PIXIUCORE
+topic: long-running-progress-policy
+status: active
+tags: [pixiucore, governance, progress, polling, ci, release, automation]
+summary: 長時間任務與完整自動接力的可見進度、輪詢心跳、階段切換與 Git／Release 完成驗證規則。
+---
+
 # 長時間任務可見進度與輪詢政策
 
-## 目的
+> 本政策只規範「可見進度與輪詢」。它不新增任何寫入、Git push、Release、Deploy、Agent Team 或安全權限，也不取代既有審批閘門。
 
-當任務進入 GitHub Actions、CI、Build、Test、Release、遠端部署、長時間命令或其他需要等待的階段時，持續提供使用者可見的進度訊號，讓使用者能辨識「仍在執行」、「階段已切換」或「已失敗」。
+## 1. 觸發條件
 
-## 觸發條件
+符合下列任一條件時，啟用本政策：
 
-符合以下任一情況時套用：
+- 使用者說「完整自動接力」。
+- 使用者說「自動接力」。
+- 工作進入 GitHub Actions。
+- 工作進入 CI。
+- 工作進入 Build。
+- 工作進入 Test。
+- 工作進入 Release。
+- 工作進入 Deploy。
+- 預期等待超過 60 秒。
+- 工具提供 process session、run ID、job ID 或 workflow ID，可持續查詢狀態。
 
-- 使用者說「完整自動接力」、「自動接力」、「完整自動模式」或同義語句。
-- 任務進入 GitHub Actions、CI、Build、Test、Release、部署或遠端工作流。
-- 單一步驟預期等待超過 60 秒。
-- 工具回傳可輪詢的 process session、run ID、job ID、workflow ID 或等效識別碼。
+只要命中其中一項，就不得長時間完全沒有可見狀態。
 
-## 可見狀態格式
+## 2. 可見狀態
 
-使用以下狀態前綴：
+對使用者回報時使用下列狀態：
 
-- 🟡 執行中：剛開始一個長時間階段。
-- 🔄 輪詢中：遠端或背景工作仍持續執行。
-- ✅ 階段完成：單一階段完成，準備進入下一階段。
-- 🔴 失敗／修復中：目前階段失敗，附失敗步驟與下一個處理動作。
-- 🟢 全部完成：任務與必要驗證全部完成。
+- 🟡 **執行中**：工作已開始，正在進行目前階段。
+- 🔄 **輪詢中**：背景流程仍在執行，正在查詢最新狀態。
+- ✅ **階段完成**：目前階段已完成，準備進入下一階段。
+- 🔴 **失敗／修復中**：發現失敗，正在蒐集錯誤或依既有授權範圍修復。
+- 🟢 **全部完成**：所有必要階段與驗證都已完成。
 
-每次回報至少包含：
+狀態文字可依任務補充目前階段、run／job／session ID、已完成項目與下一步，但不得以狀態訊息取代實際驗證。
 
-1. 任務或版本名稱。
-2. 目前階段。
-3. 已完成階段。
-4. 可取得時顯示進度數字，例如 `11 / 23`。
-5. 失敗時顯示失敗步驟與下一個處理動作。
+## 3. 輪詢規則
 
-## 輪詢規則
+1. 長時間工作開始前，先回報一次可見狀態。
+2. 可輪詢背景流程以 **30–60 秒**為目標間隔查詢一次。
+3. 優先使用非阻塞方式，避免單次工具呼叫長時間佔住控制權。
+4. 本機長命令若工具提供 session ID，優先保留 session 並用 ID 查詢，而不是反覆重啟命令。
+5. GitHub Actions／CI 若提供 run ID、job ID 或 workflow ID，優先使用該 ID 查詢同一執行個體。
+6. 階段切換時立即回報，不等待下一個輪詢週期。
+7. 同一階段長時間沒有狀態變化，也要保留心跳；心跳至少說明「仍在同一階段」與最後一次已知狀態。
+8. 完成必要驗證後，才能結束完整自動接力並回報 🟢 全部完成。
+9. 若工具本身阻塞超過目標輪詢間隔，控制權回來後改用可輪詢、較短等待或狀態查詢方式；不得因一次長阻塞而持續靜默。
+10. 若平台或工具不支援主動輪詢，必須明確說明限制，並在每次重新取得可用狀態時立即更新。
 
-1. 啟動長時間工作前，先送出一次「🟡 執行中」狀態。
-2. 可輪詢的背景流程以 30–60 秒為目標間隔查詢一次。
-3. 優先使用非阻塞執行方式：
-   - 本機長命令使用可取得 session ID 的執行工具。
-   - GitHub Actions、CI 與 Release 使用 run / job ID 查詢。
-4. 每次階段切換時立即回報，不等待下一個固定輪詢點。
-5. 同一階段若狀態沒有改變，仍以心跳方式回報目前階段，避免使用者誤判為斷線。
-6. 工具本身若一次阻塞超過輪詢間隔，控制權返回後立即回報，後續改用可輪詢或較短等待的執行方式。
-7. 遠端流程完成後，繼續驗證最終狀態；Release 任務至少確認公開狀態、tag、commit 與 assets／交付物。
-8. 最終回報後才結束完整自動接力回合。
+## 4. 失敗與修復回報
 
-## 執行邊界
+- 一旦確認失敗，立即切換為 🔴 失敗／修復中。
+- 回報已確認的錯誤、目前停在哪一階段，以及下一個安全動作。
+- 沒有既有寫入或修復授權時，只能做唯讀診斷並回到原有審批閘門。
+- 修復後重新進入原階段時，回報新的執行 ID 或重試次數，避免把舊失敗 run 誤認為新 run。
 
-- 本政策只管理「進度可見性與輪詢」，不改變既有審批、安全、寫入、Git push、Release 或 Agent Team 權限。
-- 使用者已授權的工作照既有授權範圍執行。
-- 遇到需要使用者重新決策的阻塞時，以 🔴 回報並清楚列出需要的決策。
-- 不因輪詢本身啟用 Agent Team 或子 Agent。
+## 5. Git／Release 完成回報
 
-## 完成回報
+Git、Release、Deploy 類工作完成時，最終回報至少包含：
 
-Git／Release 類任務完成時，最終回報至少包含：
+- **final status**：成功、失敗或部分完成。
+- **commit SHA**：本次最終 commit；未產生則明確標示。
+- **tag**：本次 tag；未建立則明確標示。
+- **release URL / workflow URL**：有建立或執行時提供；沒有則明確標示。
+- **assets / delivery verification**：逐項說明必要資產、交付物或部署結果是否已驗證。
+- **未完成項目**：任何尚未完成、未驗證或被權限阻擋的項目。
 
-- 最終狀態。
-- Commit SHA。
-- Tag。
-- Release URL 或工作流 URL。
-- Assets／交付物數量與驗證結果。
-- 尚未完成或未驗證的項目；若無則明確寫「無」。
+只有 commit、tag、release、assets／delivery 等本次實際要求的必要項目都完成驗證後，才可宣稱整體工作完成。
+
+## 6. Critical Relay 整合
+
+當 Capability Router 同時命中 `critical-reasoning` 與 `execution-progress` 時，完整自動接力必須把 Critical Relay completion gate 納入完成判斷：
+
+1. 先執行原任務的搜尋、分析、實作或驗證。
+2. 對核心 claims 執行 CHALLENGE，明確提出可推翻它的條件。
+3. 主動執行 COUNTERSEARCH／反例測試，保存 counterEvidence。
+4. 重新判斷 claims；有新反證時進入 REASSESS／REPAIR，不因固定輪數停止。
+5. VERIFY 通過後仍要執行 RECHALLENGE。
+6. 只有 `scripts/critical-relay/critical-relay.js` 的 completion gate 沒有 blocker，才可進入 READY_TO_HANDOFF 或回報 🟢 全部完成。
+7. 跨 Session／模型交棒時，保留 canonical Critical Relay state；使用獨立 handoff snapshot 與 `stateDigest`，接手時重新驗證，不得只交接最終結論而遺失反證與未知項。
+8. DevSpace workflow 的 CR-enabled task 必須設定 `criticalRelayRequired=true` 並保存結構化 `criticalRelay` state；handoff 缺 state 要拒絕，`complete` 必須對最新 state 重新執行 completion gate，不得信任舊的 `evaluation`。
+
+Critical Relay state 若欄位型別錯誤、反證關聯不完整、ID 重複、status=blocked，或缺少 VERIFY → RECHALLENGE 歷程，一律 fail closed。Critical Relay 只增加懷疑、反證與完成閘門；它不新增任何 Agent、寫入、push、Release、Deploy 或 Production 權限。
+
+## 7. 權限與安全邊界
+
+本政策不得被解讀為任何額外授權。以下規則維持原狀：
+
+- 寫入審批。
+- Git push 審批。
+- Release／Deploy 權限。
+- Agent Team／subagent 權限。
+- 刪檔、依賴、DB、秘密資料與其他安全規則。
+- 分階段任務的既有審核門檻。
+
+「完整自動接力」只代表需要持續推進已授權工作並維持可見進度；不代表可以跳過任何 L0 或安全閘門。

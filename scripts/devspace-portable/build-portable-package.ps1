@@ -53,6 +53,8 @@ $payloadFiles = @(
     '13-REMOVE-WATCHDOG.cmd',
     '14-RECONNECT-SAFE.cmd',
     '15-FORCE-RECONNECT.cmd',
+    '16-ENABLE-SAME-CHAT-REVIEWER.cmd',
+    '17-DISABLE-SAME-CHAT-REVIEWER.cmd',
     'START-CONNECTION.cmd',
     'DISCONNECT.cmd',
     'FORCE-RECONNECT.cmd',
@@ -97,6 +99,15 @@ try {
         Copy-Item -LiteralPath $source -Destination (Join-Path $packageRoot $relativePath) -Force
     }
 
+    $sameChatReviewerSourceRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\chat-reviewer'))
+    foreach ($reviewerFile in @('SameChat.ReviewerTools.mjs', 'same-chat-reviewer.js')) {
+        $reviewerSource = Join-Path $sameChatReviewerSourceRoot $reviewerFile
+        if (-not (Test-Path -LiteralPath $reviewerSource -PathType Leaf)) {
+            throw "Portable Same-Chat Reviewer source is missing: $reviewerSource"
+        }
+        Copy-Item -LiteralPath $reviewerSource -Destination (Join-Path $packageRoot $reviewerFile) -Force
+    }
+
     $agentTarget = Join-Path $packageRoot 'agents'
     Ensure-Directory -Directory $agentTarget
     foreach ($profile in @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'agents') -Filter '*.md' -File)) {
@@ -119,6 +130,9 @@ try {
         builtAtUtc = [DateTime]::UtcNow.ToString('o')
         includesCrossSessionWorkflow = $true
         workflowModule = 'DevSpace.WorkflowStore.mjs'
+        includesSameChatReviewer = $true
+        sameChatReviewerToolsModule = 'SameChat.ReviewerTools.mjs'
+        sameChatReviewerCoreModule = 'same-chat-reviewer.js'
         files = $manifestFiles
     }
     $manifestPath = Join-Path $packageRoot 'PORTABLE-MANIFEST.json'
@@ -142,7 +156,7 @@ try {
     Compress-Archive -Path $packageRoot -DestinationPath $zipPath -CompressionLevel Optimal -Force
 
     Write-Host "Portable package created: $zipPath" -ForegroundColor Green
-    Write-Host 'The ZIP contains cross-session/cross-project workflow support and no local Owner password, tunnel state, or ChatGPT token.'
+    Write-Host 'The ZIP contains cross-session/cross-project workflow support plus the opt-in Same-Chat Reviewer runtime, and no local Owner password, tunnel state, or ChatGPT token.'
     return $zipPath
 }
 finally {

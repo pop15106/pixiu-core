@@ -21,6 +21,12 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | Convert
 if ([int]$manifest.schemaVersion -ne 1) {
     throw 'Unsupported portable manifest schema version.'
 }
+if ($manifest.includesSameChatReviewer -ne $true) {
+    throw 'Portable manifest does not declare Same-Chat Reviewer support.'
+}
+if ([string]$manifest.sameChatReviewerToolsModule -ne 'SameChat.ReviewerTools.mjs' -or [string]$manifest.sameChatReviewerCoreModule -ne 'same-chat-reviewer.js') {
+    throw 'Portable manifest Same-Chat Reviewer module metadata is invalid.'
+}
 
 $requiredPayload = @(
     '00-SETUP-OR-UPDATE.cmd',
@@ -32,6 +38,10 @@ $requiredPayload = @(
     'QA-TROUBLESHOOTING.txt',
     'devspace-oneclick.ps1',
     'DevSpace.WorkflowStore.mjs',
+    'SameChat.ReviewerTools.mjs',
+    'same-chat-reviewer.js',
+    '16-ENABLE-SAME-CHAT-REVIEWER.cmd',
+    '17-DISABLE-SAME-CHAT-REVIEWER.cmd',
     'DevSpace.OneClick.Subagents.psm1',
     'verify-portable-package.ps1',
     'WORKFLOW.zh-TW.md'

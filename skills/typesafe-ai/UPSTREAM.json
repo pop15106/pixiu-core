@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "typesafe-ai",
+  "sourceRepository": "typesafe-ai/skills",
+  "sourcePath": "skills/typesafe-ai/SKILL.md",
+  "sourceCommit": "65a39f393687675ce170e6094757de20370365b9",
+  "sourceRelease": "v0.5.7",
+  "license": "MIT",
+  "vendoredAt": "2026-09-21",
+  "syncPolicy": "manual-pinned",
+  "canonicalPath": "skills/typesafe-ai/SKILL.md",
+  "portablePath": ".agents/skills/typesafe-ai/SKILL.md",
+  "note": "Canonical 與 portable 的 SKILL.md 必須保持 byte-identical；更新前先讀 TypeSafe live docs 與 upstream 變更。"
+}

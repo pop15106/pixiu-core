@@ -35,6 +35,19 @@ Pixiu DevSpace OneClick｜快速使用說明
 
 純 workflow 接力不會自動啟動 Agent / model。
 只有你在目前對話明確要求使用 Agent / model 時才允許 workflow_run。
+Same-Chat Reviewer（實驗功能）
+-----------------------------
+預設關閉，不影響既有 workflow。
+要測試時：
+1. 先雙擊 00-SETUP-OR-UPDATE.cmd 更新。
+2. 雙擊 16-ENABLE-SAME-CHAT-REVIEWER.cmd。
+3. 等待 DevSpace / Tunnel READY。
+4. 回 ChatGPT Refresh DevSpace App actions / 重新連接。
+5. 確認 same_chat_review_* 工具出現後，再做 Host E2E。
+
+測完可雙擊 17-DISABLE-SAME-CHAT-REVIEWER.cmd 關閉。
+它只做 CR advisory review，不能取代 independent review。
+GitHub 測試通過不代表 ChatGPT Host auto-continue 已通過；這一段仍要實機驗證。
 
 ChatGPT 第一次設定
 -----------------
