@@ -1,126 +1,40 @@
 ---
 name: verification-loop
-description: "A comprehensive verification system for Claude Code sessions."
-origin: ECC
+description: 驗證共用檢查清單。依專案實際工具執行建置、型別、測試、安全及差異覆核；授權與修復行為依 pixiu-verify-loop。
+origin: ECC / Pixiu
+version: 0.2.0
+language: zh-TW
 ---
 
-# Verification Loop Skill
+# 驗證共用檢查清單
 
-A comprehensive verification system for Claude Code sessions.
+先讀 `skills/pixiu-verify-loop/SKILL.md` 判定本次授權。這份清單不自行授予修復、推送或啟動 Agent 的權限。
 
-## When to Use
+## 依修改範圍選擇檢查
 
-Invoke this skill:
-- After completing a feature or significant code change
-- Before creating a PR
-- When you want to ensure quality gates pass
-- After refactoring
+| 項目 | 執行依據 | 成功證據 |
+| --- | --- | --- |
+| 建置 | 實際 pom.xml、Gradle、package scripts 或其他建置設定 | 完整命令、exitCode=0、產物檢查 |
+| 型別／Lint | 專案既有設定與工具 | 結果及未處理項目 |
+| 單元／整合 | 本次需求與受影響依賴 | 正常、錯誤、邊界及回歸結果 |
+| UI／API | 真實操作流程與請求內容 | 操作紀錄、請求／回應及必要截圖 |
+| 安全 | 改動涉及的輸入、授權、憑證與依賴 | diff 覆核或既有掃描工具結果 |
+| 交付差異 | 明確 baseSha、目標版本及新增檔案 | 完整範圍清單與未預期變更檢查 |
 
-## Verification Phases
+Java 版本等技術限制以專案設定為準，通用技能不硬套版本、框架或虛構指令。沿用既有 coverage 門檻；沒有量測就標 NOT_MEASURED，不自行宣稱百分比。
 
-### Phase 1: Build Verification
-```bash
-# Check if project builds
-npm run build 2>&1 | tail -20
-# OR
-pnpm build 2>&1 | tail -20
-```
+## 分段驗證
 
-If build fails, STOP and fix before continuing.
+先跑改動對應的小測試，再跑受影響回歸；每個最小可交付單位都有驗收證據。修正或收斂後重驗。只要輸入版本不同，就重新核對測試結果。
 
-### Phase 2: Type Check
-```bash
-# TypeScript projects
-npx tsc --noEmit 2>&1 | head -30
+保存真實命令的 exit code，再截取輸出摘要。避免以 `command | head`、`command | tail` 的最後成功碼掩蓋測試失敗。命令找不到、測試零筆或測試工具不可用，保留原始結果並標記 NOT_RUN／FAIL。
 
-# Python projects
-pyright . 2>&1 | head -30
-```
+已授權修復的紅燈依 `pixiu-verify-loop` 進 REPAIR；唯讀審核保持唯讀。單一 Agent 依序讀取 diff 做自我覆核，有獨立覆核要求時照實保留缺口。
 
-Report all type errors. Fix critical ones before continuing.
+## 證據與完成
 
-### Phase 3: Lint Check
-```bash
-# JavaScript/TypeScript
-npm run lint 2>&1 | head -30
+測試紀錄至少包含 command、exitCode、outputRef、headSha、changeDigest、測試數及各結果。headSha 和 changeDigest 對應實際受驗收版本；changeDigest 涵蓋新增檔案，排除自身證據檔時明確記錄範圍。
 
-# Python
-ruff check . 2>&1 | head -30
-```
+PASS、FAIL、NOT_RUN 與 N/A 分開列出，N/A 附理由；必要驗收未執行就維持未完成。文件型任務驗證 read-back、連結、編碼與發布一致性，不假裝做了 UI 操作。
 
-### Phase 4: Test Suite
-```bash
-# Run tests with coverage
-npm run test -- --coverage 2>&1 | tail -50
-
-# Check coverage threshold
-# Target: 80% minimum
-```
-
-Report:
-- Total tests: X
-- Passed: X
-- Failed: X
-- Coverage: X%
-
-### Phase 5: Security Scan
-```bash
-# Check for secrets
-grep -rn "sk-" --include="*.ts" --include="*.js" . 2>/dev/null | head -10
-grep -rn "api_key" --include="*.ts" --include="*.js" . 2>/dev/null | head -10
-
-# Check for console.log
-grep -rn "console.log" --include="*.ts" --include="*.tsx" src/ 2>/dev/null | head -10
-```
-
-### Phase 6: Diff Review
-```bash
-# Show what changed
-git diff --stat
-git diff HEAD~1 --name-only
-```
-
-Review each changed file for:
-- Unintended changes
-- Missing error handling
-- Potential edge cases
-
-## Output Format
-
-After running all phases, produce a verification report:
-
-```
-VERIFICATION REPORT
-==================
-
-Build:     [PASS/FAIL]
-Types:     [PASS/FAIL] (X errors)
-Lint:      [PASS/FAIL] (X warnings)
-Tests:     [PASS/FAIL] (X/Y passed, Z% coverage)
-Security:  [PASS/FAIL] (X issues)
-Diff:      [X files changed]
-
-Overall:   [READY/NOT READY] for PR
-
-Issues to Fix:
-1. ...
-2. ...
-```
-
-## Continuous Mode
-
-For long sessions, run verification every 15 minutes or after major changes:
-
-```markdown
-Set a mental checkpoint:
-- After completing each function
-- After finishing a component
-- Before moving to next task
-
-Run: /verify
-```
-
-## Integration with Hooks
-
-This skill complements PostToolUse hooks but provides deeper verification.
-Hooks catch issues immediately; this skill provides comprehensive review.
+CR 任務在 VERIFY 之後進 RECHALLENGE，再跑 completion gate。完成報告列出變更、驗證、剩餘風險、commit、push 與 CI 狀態。測試輸出含秘密資料時遮蔽敏感值再留存。

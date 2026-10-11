@@ -1,59 +1,32 @@
 ---
 name: go
-description: 啟動 Pixiu 端對端自我驗證迴圈（E2E Test → /simplify → PR 草稿）。仿 Boris Cherny /go skill，但加上 Pixiu 硬閘門（紅燈不自動修、PR 不自動推）。
+description: 依本次授權啟動 Pixiu 自我驗證；單一 Agent 依序實測、覆核、修復重驗，完成後按授權交付或推送。
 origin: Pixiu
-version: 0.1.0
+version: 0.2.0
 ---
 
-# /go — Pixiu 驗證迴圈啟動指令
+# /go — Pixiu 驗證入口
 
-> 本指令即 `pixiu-verify-loop` skill 的入口 slash command。
-> 對應 Boris Cherny 公開分享的 `/go` 驗證主張，Pixiu 版加三道硬閘門。
+讀取目前 checkout 的 `skills/pixiu-verify-loop/SKILL.md`；當目前專案不是 PixiuCore 時，使用已確認的 PIXIU_CORE 路徑。載入技能前核對來源，避免全域舊副本覆蓋本次指定版本。
 
-## 行為合約
+## 行為契約
 
-收到 `/go`（可帶參數）時，**立即**：
-
-1. 讀取 `%PIXIU_CORE%\skills\pixiu-verify-loop\SKILL.md` 取得完整三步驟。
-2. 依當前任務棧自動選驗證路徑（Java / Node / Python / React / CLI / DB / GUI）。
-3. 按順序跑：
-   - **步驟 1｜E2E Verification**：啟動服務 → 跑 criteria → 產紅綠燈報告。
-   - **步驟 2｜/simplify**（前一步全綠才跑）：呼叫 Claude Code built-in `/simplify`。
-   - **步驟 3｜產 PR 草稿**（不推送）：輸出 `git push` / `gh pr create` 指令供使用者手動執行。
-4. 全程輸出繁體中文。
-
-## 硬閘門（違反即停）
-
-- 步驟 1 紅燈 → 立即停、出紅燈報告、**不自動改碼**。
-- 步驟 2 改動 > 30% → 退回手動審核。
-- 步驟 3 遇到非 git repo → 只輸出摘要，**不建分支**。
-- 任何階段觸發母體寫入（%PIXIU_CORE% 任何檔案）→ 呼叫「絕對用戶審批閘門」。
+1. 從原始需求、既有專案慣例及程式碼建立可驗收條件；清楚標記假設。一般可逆細節可自主決定，業務語意或不可逆決策缺資料才確認。
+2. 核對本次授權：唯讀審核保持唯讀；已授權實作／修復可在範圍內處理紅燈。相同失敗兩次無新證據先診斷，不原樣重試。
+3. 單一 Agent 依序執行實測、重新讀取 diff、自我覆核與必要重驗；不以 /simplify 或角色切換暗中啟動其他 Agent，也不將自我覆核說成獨立審查。
+4. CR 任務留下 VERIFY → RECHALLENGE、實際工具輸出與可驗證 state。執行 completion gate；非零 exit code 表示未完成。
+5. 驗收通過後，已有本次 push 授權就直接推送；無授權則交付本機差異及 PR 內容草稿。Release、Deploy、DB 寫入、刪檔與額外 Agent 各自檢查授權。
+6. 推送前重查遠端 SHA，保留他人提交；推送後讀回 SHA 與 CI 狀態。失敗、未執行及等待中如實區分。
 
 ## 參數
 
-`$ARGUMENTS` 可為：
+- `quick`：只跑指定實測；不將未執行的全套驗收標綠。
+- `full`：實測、覆核、修復重驗及交付，預設使用本模式。
+- `pr-only`：整理現有證據與 PR 內容草稿；缺少目前版本的驗證時標為未驗證，不推送。
+- `dry-run`：只列規劃命令與 criteria，保留未執行狀態。
 
-- `quick` — 只跑步驟 1（E2E 驗證），不跑 /simplify、不產 PR。
-- `full` — 完整三步驟（預設）。
-- `pr-only` — 跳過驗證直接產 PR 草稿（僅適用於已手動驗證過的情況）。
-- `dry-run` — 只列出會跑的 criteria 與指令，不實際執行。
+## 交接
 
-## Criteria 宣告
+沿用本次任務 ledger；無 ledger 時在授權專案 `.cr/` 保存 state、實測紀錄與 handoff。記錄目前 Git 版本、變更指紋、已完成項目、尚未驗收項目、失敗軌跡及唯一下一步；恢復時重新核對 Git。
 
-若任務未明確宣告 acceptance criteria，先詢問使用者；取得後再動手。不得憑推論自行擬定 criteria 跑驗證。
-
-## 審計
-
-每次完整跑完寫入 `%PIXIU_CORE%\vault\memory\verify-loop.log`，格式：
-
-```
-[時間]｜taskId｜技術棧｜步驟1結果｜步驟2改動行數｜PR狀態｜總耗時
-```
-
-## 與 Recap 銜接
-
-步驟 3 結束後自動觸發 `pixiu-session-recap` 模式 B（Phase Recap），把驗證結果併入當前階段摘要並寫入 `vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md`。
-
-## 版本
-
-- v0.1.0｜2026-04-17｜初版。同步 `pixiu-verify-loop` SKILL.md。
+此指令不切換模型、不啟動背景 Agent、不修改全域模型設定。推理強度只依實際 adapter 支援與授權處理，未確認的 actual 值保持 null。

@@ -7,9 +7,13 @@ on:
     paths:
       - "scripts/critical-relay/**"
       - "skills/critical-relay/**"
+      - "skills/pixiu-verify-loop/**"
+      - "skills/verification-loop/**"
+      - ".agents/skills/critical-relay/**"
+      - ".agents/skills/pixiu-verify-loop/**"
+      - ".agents/skills/verification-loop/**"
+      - "commands/go.md"
       - "scripts/router/**"
-      - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
-      - "scripts/devspace-portable/tests/workflow-store.test.mjs"
       - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
       - "scripts/devspace-portable/tests/workflow-store.test.mjs"
       - "scripts/performance/lazy-loading-integration.test.js"
@@ -20,11 +24,22 @@ on:
     paths:
       - "scripts/critical-relay/**"
       - "skills/critical-relay/**"
+      - "skills/pixiu-verify-loop/**"
+      - "skills/verification-loop/**"
+      - ".agents/skills/critical-relay/**"
+      - ".agents/skills/pixiu-verify-loop/**"
+      - ".agents/skills/verification-loop/**"
+      - "commands/go.md"
       - "scripts/router/**"
+      - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
+      - "scripts/devspace-portable/tests/workflow-store.test.mjs"
       - "scripts/performance/lazy-loading-integration.test.js"
       - "vault/capabilities/capability-manifest.json"
       - "vault/governance/long-running-progress-policy.md"
       - ".github/workflows/critical-relay.yml"
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -32,20 +47,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Critical Relay contract
         run: node scripts/critical-relay/critical-relay.test.js
-
+      - name: Single-agent execution contract and publication
+        run: node --test scripts/critical-relay/execution-contract.test.js
       - name: Capability Router
         run: node scripts/router/resolve-capabilities.test.js
-
       - name: Critical Relay integration
         run: node scripts/critical-relay/critical-relay.integration.test.js
-
       - name: Workflow completion integration
         run: node --test scripts/devspace-portable/tests/workflow-store.test.mjs

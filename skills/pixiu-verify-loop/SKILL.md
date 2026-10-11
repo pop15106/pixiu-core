@@ -1,151 +1,55 @@
 ---
 name: pixiu-verify-loop
-description: Pixiu 版端對端自我驗證迴圈（仿 Boris /go）。任務寫入階段完成後強制啟動三步驟：端對端測試 → /simplify 收斂 → 產 PR 草稿。綁 Pixiu L3 流程層 + L6 校準層，任一階段紅燈即停、不自動修。觸發詞：驗證、跑驗證、跑看看、收尾、收斂、產 PR、端對端測試。Slash 入口：/go（見 commands/go.md）。
+description: Pixiu 自我驗證：依本次授權分為唯讀審核、已授權修復與 CR 完整自動接力。使用單一 Agent 依序執行實測、差異覆核、修復重驗及交付；/go 由 commands/go.md 載入。
 origin: Pixiu
-version: 0.1.1
-layer_binding: L3-流程 / L4-技能 / L6-校準
+version: 0.2.0
 language: zh-TW
 ---
 
-# Pixiu 自我驗證迴圈（Verify Loop）
+# Pixiu 自我驗證迴圈
 
-> 本 Skill 對應 Boris 的「給 Claude 一個可以驗證自己的方法」核心主張。
-> Boris 原話：**「驗證能從 Claude 拿到 2–3 倍產出，4.7 之後更明顯。」**
-> Pixiu 版在此基礎上加硬閘門：紅燈不自動修、PR 不自動推、每步寫 audit。
+## 授權先判
 
----
+以使用者本次授權決定行為，而非把「驗證」視為新的寫入或推送許可。
 
-## 觸發條件
+| 模式 | 紅燈處置 | 交付 |
+| --- | --- | --- |
+| 唯讀審核 | 收集失敗證據，保持程式不變 | findings、風險與修復建議 |
+| 已授權實作／修復 | 在原範圍修復根因並重驗 | 變更、實測結果與 handoff |
+| CR 完整自動接力 | REPAIR；相同失敗兩次無新證據先 REASSESS | CR completion gate 通過後依本次授權 commit／push |
 
-任一成立即啟動：
-- 使用者輸入「驗證」、「跑驗證」、「跑看看」、「收尾」、「收斂」、「端對端測試」、「產 PR」
-- 使用者輸入 `/go`（走 slash command 路徑，由 `commands/go.md` 載入本 skill）
-- 任務涉及寫入／編輯／重構，且主要寫入階段已完成
-- 長任務（> 30 分鐘或 > 10 個工具呼叫）的收尾
-- 被 `pixiu-session-recap` 呼叫作為階段收斂手段
+DB 寫入、刪檔、Production、Release、Deploy、秘密資料及超出範圍的修改各自檢查權限。已有的明確授權沿用，不為同一個已授權動作反覆詢問。工具拒絕或環境硬阻礙照實記錄。
 
-> 備註：`/go` 為真正的 slash command，由 Claude Code CLI 攔截後解析 `commands/go.md`，而非由本 skill 的關鍵字觸發。請勿把 `/go` 當一般文字關鍵字。
+## 1. 實測
 
----
+先讀專案實際 build／test 設定，從需求萃取可驗收條件；一般可逆細節採現有慣例並記錄假設。業務語意或不可逆決策不明時才確認。
 
-## 三步驟
+每完成一個最小端到端工作單位即驗證。依實際修改選編譯、單元、整合、API、UI 或資料庫唯讀檢查；新 UI 行為需要頁面操作，不以編譯成功替代。先跑相關小測試，再跑受影響回歸。
 
-### 步驟 1｜端對端測試（E2E Verification）
+每次驗證保留 command、exit code、輸出定位、Git headSha 與變更摘要。先保存真實 exit code 再精簡輸出；不以管線最後一個 head／tail 的成功碼代替測試結果。區分 PASS、FAIL、NOT_RUN 與有理由的 N/A，必要 NOT_RUN 不能標綠。
 
-依**技術棧**自動選擇驗證路徑：
+紅燈先建立最小重現、檢查根因與已排除假設。依授權表處理；修復後先重跑失敗項，再重跑受影響回歸。相同失敗兩次無新證據時換成診斷，不原樣重試或修改測試來掩蓋錯誤。明確資源邊界耗盡時保存未完成狀態，不能以「重試結束」代替驗收。
 
-| 棧別 | 驗證工具 | 預設指令 |
-|------|---------|---------|
-| **後端（Java / Spring Boot）** | 啟動 server → 跑 curl / 整合測試 | `./gradlew bootRun` + `curl -s http://localhost:PORT/health` |
-| **後端（Node / Python）** | 同上，改用對應啟動指令 | `npm run dev` / `uvicorn main:app` |
-| **前端（React / Vue）** | Claude Chromium Extension + Playwright | `npx playwright test` or 瀏覽器截圖對照 |
-| **CLI / Script** | bash 直接跑 + 驗輸出 | `bash scripts/run.sh && echo OK` |
-| **桌面 / GUI App** | computer use tool | 開啟 app → 操作關鍵路徑 → 截圖比對 |
-| **Database** | 連線跑 read-only 驗證 SQL | `SELECT COUNT(*) FROM ...` |
+## 2. 單一 Agent 依序覆核
 
-**驗證目標**必須事先宣告（從任務中萃取）：
-```
-Criteria（由任務自動萃取，若無則問使用者）：
-- 功能 A：呼叫 X 端點回 200 且 body 含 Y
-- 功能 B：頁面載入後按下 Z 出現 W
-- 效能：p95 回應 < 300ms
-- 回歸：既有測試 100% 綠燈
-```
+重新讀取最新 diff，依序核對需求完整性、程式相依、錯誤處理、邊界與回歸。只修與本次需求有關的問題；有任何修正即重驗。
 
-**紅燈處理**：任一 criteria 失敗 → **立即停止**，輸出「紅燈報告」含：失敗項目、錯誤訊息、可能原因（標信心）、修復選項 2–3 個。**不自動改碼**（Pixiu「禁止預先實作」硬閘門優先）。
+這是 sequential self-review，不是獨立審查。保留 findings 與修復證據；不得把換角色名稱說成第二個 reviewer。獨立 reviewer 是必要條件但目前缺少時，保持該條件未完成。
 
----
+單一 Agent 模式採直接讀檔與測試覆核。任何會啟動額外 Agent 的工具（含 /simplify 的多 Agent 實作）都需要另行明確授權。CR 交付契約的 agentPolicy 保持 single。
 
-### 步驟 2｜`/simplify` 收斂
+## 3. 完成與推送
 
-步驟 1 全綠後才執行。呼叫 Claude Code built-in `/simplify`：
-- 會啟動 3 個並行 review agents，各自看完整 diff
-- 自動修掉有效 issue、過濾 false positive
-- 輸出一份「改了什麼」摘要
+逐項核對驗收條件、最新 diff、測試輸出與未預期改動。CR 任務保留 VERIFY → RECHALLENGE，再執行 `node scripts/critical-relay/critical-relay.js check <state.json>`；gate 非零即未完成。
 
-**Pixiu 補強**：
-- `/simplify` 結束後，寫一份「收斂差異報告」到 `vault/memory/simplify-<taskId>.md`
-- 若改動行數 > 原本 30%，退回手動審核（可能過度重構）
+有本次 push 授權且必要檢查通過，直接推送已覆核的變更；推送前確認遠端基準，遠端前進時整合並重驗，使用非強制 push 保護他人提交。沒有 push 授權則交付本機變更與 PR 內容草稿。Release／Deploy 另判。
 
----
+推送後讀回遠端 SHA；存在 CI 時取得 run ID、輪詢至終態並區分成功／失敗／尚未完成。CI 只在推送後執行，不能把本機通過預先說成遠端 CI 通過。
 
-### 步驟 3｜產 PR 草稿（不自動推）
+## 狀態與報告
 
-步驟 2 綠燈後，**產 PR 草稿但不推送**：
+沿用現行 durable workflow 的 criticalRelay state；沒有 ledger 時，在授權專案的 `.cr/` 保存 state 與 handoff。每個里程碑記錄基準／目標 SHA、改動內容指紋、驗收進度、失敗軌跡、唯一下一步。恢復時重新核對 Git 與實測版本；新的修改使舊測試證據失效。
 
-```
-📦 PR 草稿
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-標題：[type: 一句話]
-分支：feature/<taskId>
-基底：main（或使用者指定）
+回報完成內容、測試命令與結果、未驗證項目、風險、commit／push／CI 各自狀態。模型名稱與推理強度只根據執行環境提供的實際值，未確認填 null。此流程不切換 ChatGPT 模型，也不保證效能倍率。
 
-摘要：
-- 目標：[從任務還原]
-- 變更：[主要改動 3–5 條]
-- 風險：[潛在影響範圍]
-
-測試結果：
-- E2E：[步驟 1 全部 criteria 綠燈]
-- 回歸：[既有測試數量 / 通過數]
-- 效能：[若有基準，附數據]
-
-遺留事項：
-- [需人工確認的 TODO]
-- [未涵蓋的邊界情境]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-git push 指令（請手動執行）：
-  git push -u origin feature/<taskId>
-gh pr create 指令（請手動執行）：
-  gh pr create --title "..." --body-file PR_BODY.md
-```
-
-**為什麼不自動推**：PR 推到遠端 = 觸發 CI、通知 reviewer、佔 quota，屬「高風險操作」，依 Pixiu 憲法必須停下等明確同意。
-
----
-
-## 失敗分級與處置
-
-| 情境 | 處置 |
-|------|------|
-| 步驟 1 紅燈 | 停、出紅燈報告、不自動修 |
-| 步驟 2 改動 > 30% | 退回手動審核 |
-| 步驟 3 無法產 diff（非 git repo） | 只輸出摘要，不建分支 |
-| 過程中觸發母體寫入 | 立即停、呼叫「絕對用戶審批閘門」 |
-
----
-
-## 與其他 Skill 的互動
-
-- **與 `claude-code-auto-mode-policy` 配合**：Auto mode 開啟時，本 Skill 仍須完整跑三步驟，**不得省略紅燈報告與 PR 草稿審核**。
-- **被 `pixiu-session-recap` 呼叫**：Recap 偵測到階段結束時自動觸發本 Skill 作為收斂。
-- **與 `opus-behavior-core` L3 行動層**：對應「事後驗證」規則的實作層。
-
----
-
-## 與 Pixiu 憲法銜接
-
-- **L0 絕對用戶審批閘門**：PR 推送、master push、package 異動仍需 yes
-- **禁止預先實作**：步驟 1 紅燈不得自動改碼
-- **最小改動原則**：`/simplify` 改動 > 30% 退回手動
-- **可見推理一律中文**：三步驟所有輸出皆繁中
-
----
-
-## 審計記錄
-
-每次完整跑完寫入 `vault/memory/verify-loop.log`：
-```
-[時間]｜taskId｜技術棧｜步驟1結果｜步驟2改動行數｜PR狀態｜總耗時
-```
-
----
-
-## 版本與來源
-- v0.1.1｜2026-04-17
-  - 移除 `/go` 作為一般關鍵字觸發，改為 slash command 入口（`commands/go.md`）。
-  - 釐清 slash command 與自然語關鍵字兩條觸發路徑。
-- v0.1.0｜2026-04-17
-  - 初版。
-- 來源：Boris Cherny `/go` skill 公開分享、Claude Code built-in `/simplify`、Pixiu 七層治理架構 L3+L6。
+長任務狀態依 `vault/governance/long-running-progress-policy.md`；可見進度不代表已啟動背景 Agent。一般驗證不強制產生全域記憶檔，handoff 保留在本次任務的證據範圍。

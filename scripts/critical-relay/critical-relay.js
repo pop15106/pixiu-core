@@ -3,6 +3,7 @@
 
 const { createHash } = require('node:crypto');
 const fs = require('fs');
+const { DELIVERY_MODE, evaluateExecutionContract } = require('./execution-contract');
 
 const SCHEMA_VERSION = 'pixiu.critical-relay.v1';
 const ARRAY_FIELDS = [
@@ -83,7 +84,11 @@ function createCriticalRelay(input = {}) {
     tests: [],
     completionCriteria: criteria,
     remainingRisks: [],
-    nextAction: input.nextAction || '建立第一批可驗證主張與假設'
+    nextAction: input.nextAction || '建立第一批可驗證主張與假設',
+    ...((input.mode === DELIVERY_MODE || input.executionContractRequired === true)
+      ? { executionContractRequired: true } : {}),
+    ...(input.executionContract !== undefined
+      ? { executionContract: deepClone(input.executionContract) } : {})
   };
 }
 
@@ -175,6 +180,16 @@ function evaluateCriticalRelay(state) {
   }
 
   const blockingReasons = [];
+
+  // 舊 state 維持相容；完整交付模式即使移除 required 旗標也不能略過新契約。
+  if (state.executionContractRequired !== undefined &&
+      typeof state.executionContractRequired !== 'boolean') {
+    blockingReasons.push('executionContractRequired 必須是布林值');
+  }
+  if (state.mode === DELIVERY_MODE || state.executionContractRequired === true ||
+      state.executionContract !== undefined) {
+    blockingReasons.push(...evaluateExecutionContract(state.executionContract, state));
+  }
 
   for (const fieldName of ARRAY_FIELDS) {
     if (!Array.isArray(state[fieldName])) {
@@ -484,7 +499,11 @@ function buildHandoffSnapshot(state) {
     tests: state.tests,
     completionCriteria: state.completionCriteria,
     remainingRisks: state.remainingRisks,
-    nextAction: state.nextAction
+    nextAction: state.nextAction,
+    ...(state.executionContractRequired !== undefined
+      ? { executionContractRequired: state.executionContractRequired } : {}),
+    ...(state.executionContract !== undefined
+      ? { executionContract: state.executionContract } : {})
   });
   const evaluation = evaluateCriticalRelay(snapshot);
   const digest = stateDigest(snapshot);
