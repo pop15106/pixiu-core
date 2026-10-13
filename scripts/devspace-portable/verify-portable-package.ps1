@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$PackageRoot = $PSScriptRoot
+    [string]$PackageRoot
 )
 
 Set-StrictMode -Version Latest
@@ -11,7 +11,18 @@ function Get-Sha256 {
     return (Get-FileHash -LiteralPath $FilePath -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-$root = [System.IO.Path]::GetFullPath($PackageRoot)
+if (-not $PSBoundParameters.ContainsKey('PackageRoot')) {
+    $PackageRoot = $PSScriptRoot
+}
+if ([string]::IsNullOrWhiteSpace($PackageRoot)) {
+    throw 'Portable package root is empty.'
+}
+try {
+    $root = [System.IO.Path]::GetFullPath($PackageRoot)
+}
+catch {
+    throw "Portable package root path is invalid: $PackageRoot. $($_.Exception.Message)"
+}
 $manifestPath = Join-Path $root 'PORTABLE-MANIFEST.json'
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Portable manifest is missing: $manifestPath"
@@ -71,7 +82,12 @@ foreach ($required in $requiredPayload) {
 $rootPrefix = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 foreach ($entry in $manifestFiles) {
     $relativePath = [string]$entry.path
-    $target = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
+    try {
+        $target = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
+    }
+    catch {
+        throw "Portable manifest payload path is invalid: $relativePath. $($_.Exception.Message)"
+    }
     if (-not $target.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Portable payload escapes the package root: $relativePath"
     }
