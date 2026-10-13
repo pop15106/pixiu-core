@@ -31,7 +31,7 @@ $qaGuide = Join-Path $portableRoot 'QA-TROUBLESHOOTING.txt'
 $oneClick = Join-Path $portableRoot 'devspace-oneclick.ps1'
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("devspace-portable-package-test-" + [guid]::NewGuid().ToString('N'))
 $outputRoot = Join-Path $testRoot 'out'
-$extractRoot = Join-Path $testRoot 'extract'
+$extractRoot = Join-Path $testRoot ('extract with spaces ' + [char]0x4E2D + [char]0x6587)
 
 try {
     New-Item -ItemType Directory -Path $outputRoot, $extractRoot -Force | Out-Null
@@ -84,6 +84,54 @@ try {
 
         & powershell -NoProfile -ExecutionPolicy Bypass -File $verifier -PackageRoot $packageRoot | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'extracted release passes SHA-256 verification'
+
+        $extractedVerifier = Join-Path $packageRoot 'verify-portable-package.ps1'
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $extractedVerifier | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'extracted verifier resolves its own script directory without -PackageRoot'
+
+        $stubRoot = Join-Path $testRoot 'powershell-shim'
+        New-Item -ItemType Directory -Path $stubRoot -Force | Out-Null
+        $stubPath = Join-Path $stubRoot 'powershell.cmd'
+        $stubContent = @'
+@echo off
+echo %*>>"%ONECLICK_TEST_LOG%"
+if /I "%~n5"=="verify-portable-package" exit /b %ONECLICK_TEST_VERIFY_EXIT%
+exit /b 0
+'@
+        [System.IO.File]::WriteAllText($stubPath, $stubContent, [System.Text.Encoding]::ASCII)
+        $originalPath = $env:PATH
+        $originalLog = [Environment]::GetEnvironmentVariable('ONECLICK_TEST_LOG', 'Process')
+        $originalVerifyExit = [Environment]::GetEnvironmentVariable('ONECLICK_TEST_VERIFY_EXIT', 'Process')
+        $launchCommand = 'call "' + (Join-Path $packageRoot '00-SETUP-OR-UPDATE.cmd') + '" <NUL'
+        try {
+            $env:PATH = "$stubRoot;$originalPath"
+
+            $blockedLogPath = Join-Path $testRoot 'launcher-blocked.log'
+            $env:ONECLICK_TEST_LOG = $blockedLogPath
+            $env:ONECLICK_TEST_VERIFY_EXIT = '27'
+            & $env:ComSpec /d /c $launchCommand | Out-Null
+            $blockedExit = $LASTEXITCODE
+            $blockedLog = if (Test-Path -LiteralPath $blockedLogPath) { @(Get-Content -LiteralPath $blockedLogPath) } else { @() }
+            $blockedVerifierCalls = @($blockedLog | Where-Object { $_ -like '*verify-portable-package.ps1*' })
+            $blockedInstallCalls = @($blockedLog | Where-Object { $_ -like '*devspace-oneclick.ps1*' })
+            Assert-True ($blockedExit -ne 0 -and $blockedVerifierCalls.Count -eq 1 -and $blockedInstallCalls.Count -eq 0) 'CMD refuses to install when package verification fails'
+            Assert-True ($blockedVerifierCalls.Count -eq 1 -and $blockedVerifierCalls[0].Contains('-PackageRoot')) 'CMD supplies the package root to the verifier'
+
+            $successLogPath = Join-Path $testRoot 'launcher-success.log'
+            $env:ONECLICK_TEST_LOG = $successLogPath
+            $env:ONECLICK_TEST_VERIFY_EXIT = '0'
+            & $env:ComSpec /d /c $launchCommand | Out-Null
+            $successExit = $LASTEXITCODE
+            $successLog = if (Test-Path -LiteralPath $successLogPath) { @(Get-Content -LiteralPath $successLogPath) } else { @() }
+            $successVerifierCalls = @($successLog | Where-Object { $_ -like '*verify-portable-package.ps1*' })
+            $successInstallCalls = @($successLog | Where-Object { $_ -like '*devspace-oneclick.ps1*' })
+            Assert-True ($successExit -eq 0 -and $successVerifierCalls.Count -eq 1 -and $successInstallCalls.Count -eq 1) 'CMD installs only after successful verification'
+        }
+        finally {
+            $env:PATH = $originalPath
+            [Environment]::SetEnvironmentVariable('ONECLICK_TEST_LOG', $originalLog, 'Process')
+            [Environment]::SetEnvironmentVariable('ONECLICK_TEST_VERIFY_EXIT', $originalVerifyExit, 'Process')
+        }
 
         [System.IO.File]::AppendAllText(
             (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs'),
