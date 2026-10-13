@@ -91,14 +91,31 @@ try {
 
         $stubRoot = Join-Path $testRoot 'powershell-shim'
         New-Item -ItemType Directory -Path $stubRoot -Force | Out-Null
-        $stubPath = Join-Path $stubRoot 'powershell.cmd'
+        $stubPath = Join-Path $stubRoot 'powershell.exe'
         $stubContent = @'
-@echo off
-echo %*>>"%ONECLICK_TEST_LOG%"
-if /I "%~n5"=="verify-portable-package" exit /b %ONECLICK_TEST_VERIFY_EXIT%
-exit /b 0
+using System;
+using System.IO;
+
+public class PortablePackagePowerShellShim {
+    public static int Main(string[] args) {
+        string logPath = Environment.GetEnvironmentVariable("ONECLICK_TEST_LOG");
+        if (!String.IsNullOrEmpty(logPath)) {
+            File.AppendAllText(logPath, String.Join(" ", args) + Environment.NewLine);
+        }
+        foreach (string arg in args) {
+            if (arg != null && arg.EndsWith("verify-portable-package.ps1", StringComparison.OrdinalIgnoreCase)) {
+                int code;
+                if (Int32.TryParse(Environment.GetEnvironmentVariable("ONECLICK_TEST_VERIFY_EXIT"), out code)) {
+                    return code;
+                }
+                return 1;
+            }
+        }
+        return 0;
+    }
+}
 '@
-        [System.IO.File]::WriteAllText($stubPath, $stubContent, [System.Text.Encoding]::ASCII)
+        Add-Type -TypeDefinition $stubContent -OutputType ConsoleApplication -OutputAssembly $stubPath
         $originalPath = $env:PATH
         $originalLog = [Environment]::GetEnvironmentVariable('ONECLICK_TEST_LOG', 'Process')
         $originalVerifyExit = [Environment]::GetEnvironmentVariable('ONECLICK_TEST_VERIFY_EXIT', 'Process')
