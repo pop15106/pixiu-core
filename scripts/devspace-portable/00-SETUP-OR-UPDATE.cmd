@@ -4,9 +4,11 @@ title DevSpace - Setup or Update
 
 if exist "%~dp0PORTABLE-MANIFEST.json" (
   echo [1/2] Verifying portable package integrity...
-  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verify-portable-package.ps1"
-  set "EXIT_CODE=%ERRORLEVEL%"
-  if not "%EXIT_CODE%"=="0" goto :failed
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verify-portable-package.ps1" -PackageRoot "%~dp0"
+  if errorlevel 1 (
+    set "EXIT_CODE=1"
+    goto :failed
+  )
 ) else (
   echo [1/2] Source checkout detected. Package manifest verification skipped.
 )
