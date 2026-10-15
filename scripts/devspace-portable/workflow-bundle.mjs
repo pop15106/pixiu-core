@@ -25,6 +25,15 @@ export const runtimeFiles = [
   'scripts/critical-relay/plan-migration.js',
   'scripts/router/resource-policy.js'
 ];
+export const sessionWorkflowFiles = [...runtimeFiles,
+  'scripts/devspace-portable/SessionWorkflow.Core.mjs',
+  'scripts/devspace-portable/SessionWorkflow.DevSpaceProjectResolver.mjs',
+  'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'];
+function filesFor(manifest) {
+  if (manifest.compatibilityProfile === undefined) return runtimeFiles;
+  if (manifest.compatibilityProfile === 'session-workflow-v3-cr-v1') return sessionWorkflowFiles;
+  throw new Error('BUNDLE_PROFILE_UNSUPPORTED');
+}
 const schema = 'pixiu.workflow-bundle.v1';
 const manifestName = 'WORKFLOW-BUNDLE.json';
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -103,10 +112,11 @@ export function assembleBundle(sourceRoot, destination) {
 
 export function verifyBundle(bundleRoot) {
   const manifest = readJson(bundleRoot, manifestName);
+  const expectedFiles = filesFor(manifest);
   if (typeof manifest.sourceDirty !== 'boolean' || !/^[a-f0-9]{40,64}$/u.test(manifest.sourceCommit) || manifest.schemaVersion !== schema || manifest.entry !== sourceEntry || manifest.executionSchema !== 'pixiu.cr-execution.v2' ||
-      !Array.isArray(manifest.files) || manifest.files.length !== runtimeFiles.length ||
-      new Set(manifest.files.map(item => item.path)).size !== runtimeFiles.length ||
-      runtimeFiles.some(name => !manifest.files.some(item => item.path === name))) throw new Error('BUNDLE_MANIFEST_INVALID');
+      !Array.isArray(manifest.files) || manifest.files.length !== expectedFiles.length ||
+      new Set(manifest.files.map(item => item.path)).size !== expectedFiles.length ||
+      expectedFiles.some(name => !manifest.files.some(item => item.path === name))) throw new Error('BUNDLE_MANIFEST_INVALID');
   for (const entry of manifest.files) {
     const target = safePath(bundleRoot, entry.path);
     if (!fs.statSync(target).isFile()) throw new Error(`BUNDLE_FILE_INVALID:${entry.path}`);
@@ -114,7 +124,7 @@ export function verifyBundle(bundleRoot) {
     if (hash(bytes) !== entry.sha256 || bytes.length !== entry.length) throw new Error(`BUNDLE_HASH_MISMATCH:${entry.path}`);
   }
   if (fingerprint(manifest.files) !== manifest.contentDigest ||
-      JSON.stringify(filesBelow(bundleRoot)) !== JSON.stringify([...runtimeFiles, manifestName].sort())) throw new Error('BUNDLE_FILE_SET_MISMATCH');
+      JSON.stringify(filesBelow(bundleRoot)) !== JSON.stringify([...expectedFiles, manifestName].sort())) throw new Error('BUNDLE_FILE_SET_MISMATCH');
   return manifest;
 }
 
@@ -124,7 +134,8 @@ export function probeBundle(bundleRoot) {
   const schemaUrl = pathToFileURL(safePath(bundleRoot, 'scripts/critical-relay/execution-contract.js')).href;
   const code = `const m=await import(${JSON.stringify(entryUrl)}); const c=(await import(${JSON.stringify(schemaUrl)})).default;
     if(typeof m.createWorkflowController!=='function'||c.EVIDENCE_SCHEMA_VERSION!=='pixiu.cr-execution.v2') throw Error('BUNDLE_RUNTIME_INVALID');
-    console.log(JSON.stringify({node:process.version,executionSchema:c.EVIDENCE_SCHEMA_VERSION,loadedModule:${JSON.stringify(entryUrl)}}));`;
+    if (${JSON.stringify(manifest.compatibilityProfile ?? null)} && m.criticalRelayRuntime?.integrationProfile !== ${JSON.stringify(manifest.compatibilityProfile ?? null)}) throw Error('BUNDLE_COMPATIBILITY_PROFILE_MISMATCH');
+    console.log(JSON.stringify({node:process.version,executionSchema:c.EVIDENCE_SCHEMA_VERSION,loadedModule:${JSON.stringify(entryUrl)},compatibilityProfile:m.criticalRelayRuntime?.integrationProfile ?? null,ledgerSchemas:m.criticalRelayRuntime?.ledgerSchemas ?? [1]}));`;
   const value = execFileSync(process.execPath, ['--input-type=module', '-e', code],
     { cwd: bundleRoot, encoding: 'utf8', windowsHide: true, timeout: 15000, maxBuffer: 1024 * 1024 });
   return { ...JSON.parse(value.trim()), sourceCommit: manifest.sourceCommit, sourceDirty: manifest.sourceDirty, contentDigest: manifest.contentDigest };
@@ -243,7 +254,7 @@ export function installBundle(bundleRoot, bin, onStep = () => {}) {
     } else {
       const stage = `${release}.stage-${randomUUID()}`;
       fs.mkdirSync(safePath(bin, stage, true), { recursive: true });
-      for (const name of [...runtimeFiles, manifestName]) writeNew(bin, `${stage}/${name}`, fs.readFileSync(safePath(bundleRoot, name)));
+      for (const name of [...filesFor(manifest), manifestName]) writeNew(bin, `${stage}/${name}`, fs.readFileSync(safePath(bundleRoot, name)));
       verifyBundle(safePath(bin, stage));
       fs.renameSync(safePath(bin, stage), releasePath);
     }
