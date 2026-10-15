@@ -4,12 +4,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createCriticalRelay, recordCriticalRelayPhase } = require('./critical-relay');
+const { createLifecycle, lifecycleBinding } = require('./lifecycle');
 const { createExecutionContract, EVIDENCE_SCHEMA_VERSION } = require('./execution-contract');
 const { bindPlan, loadPlan, sourceSnapshot, readJson, atomicJson, digestObject, boundedPath } = require('./test-plan');
 const { validateBinding, verifyRun } = require('./evidence-verifier');
 const { recoveryFor, RUN_SCHEMA } = require('./test-runner');
 
-function createEvidenceState(root, planPath, { objective, scope = ['scripts/'] } = {}) {
+function createEvidenceState(root, planPath, { objective, scope = ['scripts/'], lifecycleOptions } = {}) {
   const plan = loadPlan(root, planPath);
   const source = sourceSnapshot(root);
   const executionContract = createExecutionContract({ baseSha: source.headSha, scope,
@@ -22,6 +23,7 @@ function createEvidenceState(root, planPath, { objective, scope = ['scripts/'] }
   executionContract.evidenceHistory = [];
   return createCriticalRelay({ objective: objective || '依事前計劃完成必要驗證，保留反證覆核',
     mode: 'FULL_AUTOMATIC_RELAY', executionContract,
+    ...(lifecycleOptions ? { lifecycle: createLifecycle(lifecycleOptions) } : {}),
     completionCriteria: plan.criteria.map(item => ({ id: item.id, criterion: item.criterion || item.id,
       satisfied: false, evidenceRefs: [] })) });
 }
@@ -96,12 +98,15 @@ function applyRunEvidence(root, state, runRef, { authorizedRepair = false, chang
 
 function initializeFallback(root, planPath, options = {}) {
   const bindingPath = '.cr/verification-binding.json';
+  const lifecyclePath = '.cr/lifecycle-binding.json';
   const statePath = '.cr/state.json';
   if (fs.existsSync(boundedPath(root, bindingPath, { mustExist: false })) ||
+      fs.existsSync(boundedPath(root, lifecyclePath, { mustExist: false })) ||
       fs.existsSync(boundedPath(root, statePath, { mustExist: false }))) throw new Error('已有 CR fallback 任務，請恢復原狀態或明確遷移');
   const state = createEvidenceState(root, planPath, options);
   // 固定 binding 與可更新 state 分開保存；舊 general state 不能繞過本次交付門檻。
   atomicJson(root, bindingPath, state.executionContract.verificationBinding);
+  if (state.lifecycleRequired) atomicJson(root, lifecyclePath, lifecycleBinding(state.lifecycle));
   atomicJson(root, statePath, state);
   return state;
 }
@@ -110,13 +115,18 @@ if (require.main === module) {
   const [action, value] = process.argv.slice(2);
   try {
     if (action === 'init') initializeFallback(process.cwd(), value || 'scripts/critical-relay/public-core.plan.json');
+    else if (action === 'init-lifecycle') {
+      const [taskType = 'development', depth = 'standard', riskCsv = ''] = process.argv.slice(4);
+      initializeFallback(process.cwd(), value || 'scripts/critical-relay/public-core.plan.json',
+        { lifecycleOptions: { taskType, depth, riskSignals: riskCsv ? riskCsv.split(',') : [] } });
+    }
     else if (action === 'ingest') {
       const state = readJson(process.cwd(), '.cr/state.json');
       const run = readJson(process.cwd(), value);
       const pinned = readJson(process.cwd(), '.cr/verification-binding.json');
       if (digestObject(pinned) !== digestObject(state.executionContract?.verificationBinding)) throw new Error('fallback binding 不符');
       atomicJson(process.cwd(), '.cr/state.json', applyRunEvidence(process.cwd(), state, { runId: run.runId, resultPath: value }));
-    } else throw new Error('用法：relay-evidence.js init [plan.json] 或 ingest .cr/runs/<runId>/result.json');
+    } else throw new Error('用法：relay-evidence.js init [plan.json]，init-lifecycle [plan.json] [development|research] [quick|standard|deep] [risk1,risk2]，或 ingest <result.json>');
     console.log('已保存 CR state；完成仍需反證覆核與正式 gate。');
   } catch (error) { console.error(error.message); process.exitCode = 2; }
 }
