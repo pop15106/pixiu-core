@@ -15,7 +15,7 @@ node scripts/devspace-portable/prepare-session-workflow-cr.mjs <母體來源> <�
 node scripts/devspace-portable/workflow-bundle.mjs verify <套件目錄>
 ```
 
-新配置為 `session-workflow-v3-cr-v1`，有 18 個明確 runtime 檔案。一般 PixiuCore 配置仍是原本的 15 個檔案。套件完整性檢查、安裝交易與回復使用同一套 bundle 工具；套件中的核心與 resolver 採固定相對路徑，不被舊環境變數轉向。
+新配置為 `session-workflow-v3-cr-v1`，目前有 22 個明確 runtime 檔案（標準配置 19 個）。套件完整性檢查、安裝交易與回復使用同一套 bundle 工具；套件中的核心與 resolver 採固定相對路徑，不被舊環境變數轉向。
 
 雜湊是內容關聯，不是簽章。安裝仍須明確授權、備份原入口、確認現行程序身分並保留帳本。原始 ledger 不包含在可攜套件中。
 
@@ -23,7 +23,7 @@ node scripts/devspace-portable/workflow-bundle.mjs verify <套件目錄>
 
 建立和所有原本的 mutation seam，在既有 ledger 交易範圍內加入必要 CR 狀態、固定計劃與來源根目錄。完成必須通過原始證據回讀、必要測試及 VERIFY／RECHALLENGE；普通 update 和 extension mutation 都不能省略 gate。
 
-已啟用 CR 的任務不能刪除必要性或更換 binding。狀態由持有者更新；同專案交接後發現來源變動會清除驗證 checkpoint，要求重測。原本非 CR 任務不被強制改型，既有跨專案及控制角色的可見性規則保持原樣。
+已啟用 CR 的任務不能刪除必要性或更換 binding。Lifecycle 任務另固定 lifecycleBinding，不可刪除全流程必要性或降級 Quick。狀態由持有者更新；同專案交接後發現來源變動會清除驗證 checkpoint，要求重測。原本非 CR 任務不被強制改型，既有跨專案及控制角色的可見性規則保持原樣。
 
 本配置只支援單專案 CR。新的多專案 CR 建立會明確拒絕；原有非 CR 跨專案任務維持原流程。跨專案完整證據、顯式計劃遷移的 schema 3 adapter 仍需後續實作，不冒稱全部工作流已支援。
 

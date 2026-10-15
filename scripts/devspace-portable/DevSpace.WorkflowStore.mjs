@@ -13,6 +13,8 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import criticalRelayModule from "../critical-relay/critical-relay.js";
+import lifecycleModule from "../critical-relay/lifecycle.js";
+const { lifecycleBinding, verifyLifecycleBinding } = lifecycleModule;
 import evidenceVerifier from "../critical-relay/evidence-verifier.js";
 const { latchBinding, verifyStateEvidence } = evidenceVerifier;
 import planMigration from "../critical-relay/plan-migration.js";
@@ -229,6 +231,11 @@ function assertCriticalRelayComplete(task) {
   if (!task.criticalRelay) {
     fail("Critical Relay state is required before this task can complete.");
   }
+  if (task.lifecycleBinding &&
+      (task.criticalRelay.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(task.lifecycleBinding, task.criticalRelay.lifecycle))) {
+    fail("CR lifecycle completion gate blocked: pinned lifecycle was removed or changed.");
+  }
   let evaluation;
   try {
     evaluation = evaluateCriticalRelay(task.criticalRelay);
@@ -242,6 +249,25 @@ function assertCriticalRelayComplete(task) {
   }
   const verified = verifyStateEvidence(task.criticalRelay, task.projectRoots[0], task.verificationBinding);
   if (!verified.canComplete) fail(`Critical Relay evidence gate blocked: ${verified.blockingReasons.join(" | ")}`);
+}
+
+function assertLifecycleMutationSafety(previous, next, action) {
+  if (previous.lifecycleBinding) {
+    if (!next.lifecycleBinding ||
+        JSON.stringify(previous.lifecycleBinding) !== JSON.stringify(next.lifecycleBinding) ||
+        next.criticalRelay?.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(previous.lifecycleBinding, next.criticalRelay?.lifecycle)) {
+      fail('CR Lifecycle binding 不能由一般更新或 extension mutation 移除、替換或降級');
+    }
+  }
+  if (next.criticalRelay?.lifecycleRequired === true &&
+      !verifyLifecycleBinding(next.lifecycleBinding, next.criticalRelay.lifecycle)) {
+    fail('新啟用的 CR Lifecycle 必須同時固定 workflow policy binding');
+  }
+  // Extension mutation 不得直接設定 completed 來繞開原本的 complete 入口。
+  if (next.status === 'completed' && previous.status !== 'completed' && action !== 'complete') {
+    assertCriticalRelayComplete(next);
+  }
 }
 
 function defaultIdFactory(prefix) {
@@ -449,6 +475,9 @@ function applyUpdate(task, input, helpers) {
       prepareMigration(task.projectRoots[0], task.criticalRelay, task.verificationBinding, input.verificationMigration));
     next.criticalRelay = changed.state;
     next.verificationBinding = changed.binding;
+    if (task.lifecycleBinding && (next.criticalRelay.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(task.lifecycleBinding, next.criticalRelay.lifecycle)))
+      fail('CR lifecycle binding 不能在驗證計劃遷移時降級或移除');
     next.verificationMigrations = [...(task.verificationMigrations || []), changed.receipt];
     next.status = "in_progress";
     return next;
@@ -470,6 +499,12 @@ function applyUpdate(task, input, helpers) {
   // 初次啟用後固定驗證計劃；接手者不能藉由替換 state 降級。
   const verificationBinding = latchBinding(task.projectRoots[0], next.criticalRelay, task.verificationBinding);
   if (verificationBinding) next.verificationBinding = verificationBinding;
+  if (task.lifecycleBinding && (next.criticalRelay?.lifecycleRequired !== true ||
+      !verifyLifecycleBinding(task.lifecycleBinding, next.criticalRelay?.lifecycle))) {
+    fail('CR lifecycle binding 不能刪除、降級或更改風險');
+  }
+  if (!task.lifecycleBinding && next.criticalRelay?.lifecycleRequired === true)
+    next.lifecycleBinding = lifecycleBinding(next.criticalRelay.lifecycle);
   switch (input.action) {
     case "claim": {
       if (task.status !== "open") fail("Only an open task can be claimed.");
@@ -665,6 +700,7 @@ export function createWorkflowController(options = {}) {
         fail(`Stale revision: expected ${expectedRevision}, current revision is ${task.revision}.`);
       }
       const next = await mutator(clone(task), { actor, idFactory, now });
+      assertLifecycleMutationSafety(task, next, input.action);
       next.revision = task.revision + 1;
       next.updatedAt = now();
       return clone(
@@ -694,6 +730,7 @@ export function createWorkflowController(options = {}) {
       if (!task) fail(`Unknown workflow task: ${taskId}`);
       assertTaskVisible(task, workspaceRoot, sessionRef);
       const next = await mutator(clone(task), { actor, idFactory, now });
+      assertLifecycleMutationSafety(task, next, input.action);
       next.revision = task.revision + 1;
       next.updatedAt = now();
       return clone(
@@ -740,6 +777,7 @@ export function createWorkflowController(options = {}) {
       );
       const criticalRelay = validateCriticalRelayState(input.criticalRelay);
       const verificationBinding = latchBinding(workspaceRoot, criticalRelay);
+      const pinnedLifecycle = criticalRelay?.lifecycleRequired === true ? lifecycleBinding(criticalRelay.lifecycle) : undefined;
       return withLock(paths, async () => {
         const state = await readState(paths);
         const duplicate = await findIdempotentResult(state, idempotencyKey, workspaceRoot, sessionRef);
@@ -758,6 +796,7 @@ export function createWorkflowController(options = {}) {
           criticalRelayRequired,
           ...(criticalRelay ? { criticalRelay } : {}),
           ...(verificationBinding ? { verificationBinding } : {}),
+          ...(pinnedLifecycle ? { lifecycleBinding: pinnedLifecycle } : {}),
           status: "open",
           currentOwner: null,
           revision: 1,

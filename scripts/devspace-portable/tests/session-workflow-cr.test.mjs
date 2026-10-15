@@ -7,7 +7,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { prepareSessionBundle, baselineDigests } from '../prepare-session-workflow-cr.mjs';
-import { verifyBundle, installBundle, rollbackBundle } from '../workflow-bundle.mjs';
+import { verifyBundle, installBundle, rollbackBundle, sessionWorkflowFiles } from '../workflow-bundle.mjs';
 import support from '../../critical-relay/test-support.js';
 import stateTools from '../../critical-relay/relay-evidence.js';
 import runner from '../../critical-relay/test-runner.js';
@@ -72,7 +72,7 @@ test('指定已知三個舊模組；未知版本在建立目的地前拒絕',t=>
 });
 
 test('compatibility 套件包括 18 個模組並保留 takeover 與專案解析註冊',()=>{
-  assert.equal(verifyBundle(bundle).files.length,18);
+  assert.equal(verifyBundle(bundle).files.length,sessionWorkflowFiles.length);
   assert.deepEqual(adapter.criticalRelayRuntime.ledgerSchemas,[1,2,3]);
   const source=fs.readFileSync(path.join(bundle,'scripts/devspace-portable/DevSpace.WorkflowStore.mjs'),'utf8');
   for(const text of ['workflow_takeover','project_resolve','criticalRelayRequired: z.boolean()','workspaceRoot: workspace.workspaceRoot'])assert.ok(source.includes(text));

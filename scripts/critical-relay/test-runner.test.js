@@ -266,7 +266,7 @@ test('超量輸出受控停止，不產生假成功', async t => {
 test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   const root = path.resolve(__dirname, '../..');
   const plan = validatePlan(readJson(root, 'scripts/critical-relay/public-core.plan.json'));
-  assert.equal(plan.commands.length, 14);
+  assert.equal(plan.commands.length, 18);
   for (const command of plan.commands) {
     assert.equal(command.required, true);
     assert.equal(fs.statSync(boundedPath(root, command.file)).isFile(), true);

@@ -2,7 +2,7 @@
 name: critical-relay
 description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、CR 完整自動接力。
 origin: Pixiu
-version: 0.4.0
+version: 0.5.0
 language: zh-TW
 ---
 
@@ -127,6 +127,12 @@ exit code 0 代表可進入 READY_TO_HANDOFF；exit code 2 代表仍有 blocker�
 紅燈是修復訊號，不是固定停止點；在既有授權範圍內持續修正與重測。只有真正的權限、安全、Production、Release 或外部憑證閘門才進入 BLOCKED。
 
 Critical Relay 本身不授權 Agent/subagent，也不放寬寫入、push、Release 或 Deploy 權限。
+
+## CR 全流程：研究／設計／開發／驗證
+
+使用者明確要求 CR 研究、CR 搜尋、CR 設計、CR 開發或 CR 全流程時，Router 額外載入 `skills/critical-relay-lifecycle/SKILL.md` 和 `.agent/workflows/cr-lifecycle.md`。研究查可追溯原始來源、反向搜尋與反證；設計比較取捨；開發執行反例；驗證仍依真實測試與 VERIFY → RECHALLENGE 判斷。
+
+Lifecycle 決策事件沿用 canonical Critical Relay state，不另建第二份任務帳本。新建完整交付可使用 `relay-evidence.js init-lifecycle`；既有任務不強迫遷移。Lifecycle 每輪決策及反證只代表已記錄之查核，不是網路搜尋、UI/API 實測、額外 Agent 或自動取得 Push/Release/Deploy 權限。
 
 ## v2 本機證據驗證
 

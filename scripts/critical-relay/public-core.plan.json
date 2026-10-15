@@ -1,8 +1,8 @@
 {
   "schemaVersion": "pixiu.test-plan.v1",
   "id": "pixiu-public-core",
-  "revision": 4,
-  "parentDigest": "6c53d332aad4572d1f6b928e47cbd9b12b24492cce093886b2724393fa926f9d",
+  "revision": 5,
+  "parentDigest": "e9459f2fbf595a2c70783cbe0aaab4f69ccb1d0db48c5f91279b29d06ee414e2",
   "profile": "local-only",
   "criteria": [
     {
@@ -36,6 +36,13 @@
     {
       "id": "criterion-heartbeat",
       "criterion": "長時間測試保持可輪詢心跳、斷線區分與完整證據終態",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "criterion-lifecycle",
+      "criterion": "CR 研究、設計、開發與驗證決策及反證連結可回讀；Router、Skill、Workflow 與正式完成閘門一致",
       "requiredEvidenceKinds": [
         "test"
       ]
@@ -195,6 +202,52 @@
       "timeoutMs": 30000,
       "criterionRefs": [
         "criterion-heartbeat"
+      ]
+    },
+    {
+      "id": "cr-lifecycle",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/lifecycle.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-lifecycle"
+      ]
+    },
+    {
+      "id": "cr-lifecycle-cli",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/lifecycle-cli.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-lifecycle"
+      ]
+    },
+    {
+      "id": "workflow-lifecycle",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/tests/workflow-lifecycle.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-lifecycle",
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "schema3-lifecycle",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/SessionWorkflow.CrBridge.lifecycle.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-lifecycle",
+        "criterion-handoff"
       ]
     }
   ]

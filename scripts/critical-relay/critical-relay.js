@@ -4,6 +4,7 @@
 const { createHash } = require('node:crypto');
 const fs = require('fs');
 const { DELIVERY_MODE, evaluateExecutionContract } = require('./execution-contract');
+const { createLifecycle, evaluateLifecycle, verifyLifecycleBinding } = require('./lifecycle');
 
 const SCHEMA_VERSION = 'pixiu.critical-relay.v1';
 const ARRAY_FIELDS = [
@@ -88,7 +89,9 @@ function createCriticalRelay(input = {}) {
     ...((input.mode === DELIVERY_MODE || input.executionContractRequired === true)
       ? { executionContractRequired: true } : {}),
     ...(input.executionContract !== undefined
-      ? { executionContract: deepClone(input.executionContract) } : {})
+      ? { executionContract: deepClone(input.executionContract) } : {}),
+    ...(input.lifecycle !== undefined || input.lifecycleRequired === true
+      ? { lifecycleRequired: true, lifecycle: deepClone(input.lifecycle || createLifecycle()) } : {})
   };
 }
 
@@ -180,6 +183,12 @@ function evaluateCriticalRelay(state) {
   }
 
   const blockingReasons = [];
+
+  // Legacy state 維持原行為；新任務在驗收前必須走完全流程。
+  if (state.lifecycle !== undefined || state.lifecycleRequired !== undefined) {
+    if (state.lifecycleRequired !== true) blockingReasons.push('lifecycleRequired 不可降級');
+    blockingReasons.push(...evaluateLifecycle(state.lifecycle, state).blockingReasons);
+  }
 
   // 舊 state 維持相容；完整交付模式即使移除 required 旗標也不能略過新契約。
   if (state.executionContractRequired !== undefined &&
@@ -503,7 +512,9 @@ function buildHandoffSnapshot(state) {
     ...(state.executionContractRequired !== undefined
       ? { executionContractRequired: state.executionContractRequired } : {}),
     ...(state.executionContract !== undefined
-      ? { executionContract: state.executionContract } : {})
+      ? { executionContract: state.executionContract } : {}),
+    ...(state.lifecycleRequired !== undefined ? { lifecycleRequired: state.lifecycleRequired } : {}),
+    ...(state.lifecycle !== undefined ? { lifecycle: state.lifecycle } : {})
   });
   const evaluation = evaluateCriticalRelay(snapshot);
   const digest = stateDigest(snapshot);
@@ -539,9 +550,16 @@ function checkFile(filePath, workspaceRoot = process.cwd()) {
   const { readJson, boundedPath } = require('./test-plan');
   const pinPath = boundedPath(workspaceRoot, '.cr/verification-binding.json', { mustExist: false });
   const pinned = fs.existsSync(pinPath) ? readJson(workspaceRoot, '.cr/verification-binding.json') : undefined;
+  const lifecyclePinPath = boundedPath(workspaceRoot, '.cr/lifecycle-binding.json', { mustExist: false });
+  const lifecyclePin = fs.existsSync(lifecyclePinPath) ? readJson(workspaceRoot, '.cr/lifecycle-binding.json') : undefined;
   const verified = state.mode === 'FULL_AUTOMATIC_RELAY' && !pinned
     ? { canComplete: false, blockingReasons: ['CLI 完整交付需先建立 .cr/verification-binding.json；請執行 relay-evidence init'] }
     : verifyStateEvidence(state, workspaceRoot, pinned);
+  if ((state.lifecycleRequired === true || lifecyclePin) &&
+      (!lifecyclePin || state.lifecycleRequired !== true || !verifyLifecycleBinding(lifecyclePin,state.lifecycle))) {
+    verified.canComplete = false;
+    verified.blockingReasons.push('CR 全流程固定 lifecycle binding 缺失、降級或改變');
+  }
   snapshot.evaluation.blockingReasons.push(...verified.blockingReasons);
   snapshot.evaluation.canComplete = snapshot.evaluation.canComplete && verified.canComplete;
   if (!snapshot.evaluation.canComplete) snapshot.evaluation.nextPhase = 'CHALLENGE';

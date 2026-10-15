@@ -11,6 +11,8 @@ import { createRequire } from 'node:module';
 export const runtimeFiles = [
   'scripts/devspace-portable/DevSpace.WorkflowStore.mjs',
   'scripts/critical-relay/critical-relay.js',
+  'scripts/critical-relay/lifecycle.js',
+  'scripts/critical-relay/lifecycle-cli.js',
   'scripts/critical-relay/execution-contract.js',
   'scripts/critical-relay/test-plan.js',
   'scripts/critical-relay/test-runner.js',

@@ -18,7 +18,7 @@ const MAX_OUTPUT = 4 * 1024 * 1024;
 
 function engineDigest() {
   return digestObject(['test-plan.js', 'test-runner.js', 'evidence-parser.js', 'evidence-reporter.js',
-    'evidence-verifier.js', 'execution-contract.js', 'status-heartbeat.js', 'status-watch.js', 'relay-evidence.js', 'run-journal.js', 'run-recovery.js', 'process-identity.js', 'auxiliary-lock.js', 'plan-migration.js', '../router/resource-policy.js']
+    'evidence-verifier.js', 'execution-contract.js', 'critical-relay.js', 'lifecycle.js', 'lifecycle-cli.js', 'status-heartbeat.js', 'status-watch.js', 'relay-evidence.js', 'run-journal.js', 'run-recovery.js', 'process-identity.js', 'auxiliary-lock.js', 'plan-migration.js', '../router/resource-policy.js']
     .map(name => [name, hash(fs.readFileSync(path.join(__dirname, name)))]));
 }
 
