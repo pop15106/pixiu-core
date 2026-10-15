@@ -4,9 +4,29 @@
 
 ## 本次支援範圍
 
-`public-core.plan.json` 第 4 版固定十四組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
+`public-core.plan.json` 第 5 版固定十八組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
 
 目前 adapter 只執行 Node `node:test`。UI、API、build、document 可作驗收所需種類，但尚無對應的自動收集 adapter，缺少該證據就阻擋完成。此工具不會以 build 或核心測試假冒產品 UI／API 驗收。
+
+## 全生命週期 CR：研究→設計→開發→驗證
+
+本版將研究、方案評估、程式開發與既有 CR Verification 連在同一份 state。來源在 `scripts/critical-relay/lifecycle.js`，可由 Router 載入 `skills/critical-relay-lifecycle/SKILL.md` 與 `.agent/workflows/cr-lifecycle.md`。
+
+新任務採 `pixiu.cr-lifecycle.v1` 並固定政策 binding，舊任務不被強制升版：
+
+```text
+node scripts/critical-relay/relay-evidence.js init-lifecycle scripts/critical-relay/public-core.plan.json development standard
+node scripts/critical-relay/lifecycle-cli.js status
+node scripts/critical-relay/lifecycle-cli.js record .cr/research-event.json
+node scripts/critical-relay/lifecycle-cli.js advance
+node scripts/critical-relay/lifecycle-cli.js reopen .cr/new-evidence.json
+```
+
+`record` 只保存具 method/result 和現存主張／證據／反證 ID 的事件；`advance` 在當前階段必備紀錄完整時才會前進，`reopen` 保留舊輪但使過去的完成標記與測試 checkpoint 失效。深度 Quick／Standard（預設）／Deep 由實際風險選擇，高風險不得降級；Deep 需要兩個不同來源位置。
+
+已使用 DevSpace Workflow Ledger 的任務沿用該 ledger，透過 `createEvidenceState(root, planPath, { lifecycleOptions:{ taskType:'development', depth:'standard', riskSignals:[] }})` 建立附加狀態，不執行 fallback init。標準版與家用 schema-3 相容橋接均固定 lifecycleBinding，不能移除、降級或藉修改 metadata 宣告完成。
+
+純研究任務用 `taskType=research`，只需研究及來源證據驗收；不得冒稱做了程式或 UI/API 實測。Ledger、CLI 與心跳均不授權 Agent、背景推播、網頁或 Git push；研究與開發須由當前明確授權的執行者實際操作。雜湊不是外部第三方簽章。
 
 ## 長任務心跳與輪詢（Git-only 維護）
 
