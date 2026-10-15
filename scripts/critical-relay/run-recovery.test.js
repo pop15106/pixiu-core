@@ -138,7 +138,22 @@ test('真實 test-runner 執行中整棵測試程序終止，仍可回讀已落�
   const stop = () => {
     if (child.exitCode !== null || child.signalCode !== null) return;
     if (process.platform === 'win32') spawnSync(path.join(process.env.SystemRoot, 'System32/taskkill.exe'), ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore', timeout: 10000 });
-    else { try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); } }
+    else {
+      // 測試 runner 會建立獨立程序群組；只終止本 fixture 已記錄且建立時間相符的子群組。
+      try {
+        const lock = readJson(f.root, '.cr/runner.lock');
+        if (lock.pid === child.pid && lock.workspaceRoot === fs.realpathSync(f.root)) {
+          for (const descendant of lock.children || []) {
+            try {
+              if (pidStatus(descendant.pid) === 'ALIVE' && processIdentity(descendant.pid).birth === descendant.birth) {
+                process.kill(-descendant.pid, 'SIGKILL');
+              }
+            } catch (error) { if (!['ESRCH', 'ENOENT'].includes(error.code)) throw error; }
+          }
+        }
+      } catch (error) { if (error.code !== 'ENOENT') throw error; }
+      try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); }
+    }
   };
   t.after(async () => { stop(); await closed; });
   let runId, progress;
