@@ -456,6 +456,9 @@ function applyUpdate(task, input, helpers) {
       prepareMigration(task.projectRoots[0], task.criticalRelay, task.verificationBinding, input.verificationMigration));
     next.criticalRelay = changed.state;
     next.verificationBinding = changed.binding;
+    if (task.lifecycleBinding && (next.criticalRelay.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(task.lifecycleBinding, next.criticalRelay.lifecycle)))
+      fail('CR lifecycle binding 不能在驗證計劃遷移時降級或移除');
     next.verificationMigrations = [...(task.verificationMigrations || []), changed.receipt];
     next.status = "in_progress";
     return next;
