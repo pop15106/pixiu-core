@@ -28,6 +28,9 @@ on:
       - "GEMINI.md"
       - ".codex/AGENTS.md"
       - "commands/go.md"
+      - "commands/cr-lifecycle.md"
+      - ".agent/workflows/cr-lifecycle.md"
+      - ".agents/skills/critical-relay-lifecycle/**"
       - ".gitignore"
       - ".github/workflows/critical-relay.yml"
   pull_request:
@@ -56,6 +59,9 @@ on:
       - "GEMINI.md"
       - ".codex/AGENTS.md"
       - "commands/go.md"
+      - "commands/cr-lifecycle.md"
+      - ".agent/workflows/cr-lifecycle.md"
+      - ".agents/skills/critical-relay-lifecycle/**"
       - ".gitignore"
       - ".github/workflows/critical-relay.yml"
 
