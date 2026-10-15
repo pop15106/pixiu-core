@@ -78,7 +78,7 @@ function validatePlan(plan) {
     if (!isObject(command) || !validId(command.id) || ids.has(command.id) ||
         command.adapter !== 'node-test' || command.evidenceKind !== 'test' ||
         typeof command.required !== 'boolean' || (!command.required && !command.optionalReason?.trim()) ||
-        !Number.isSafeInteger(command.timeoutMs) || command.timeoutMs < 100 || command.timeoutMs > 300000 ||
+        !Number.isSafeInteger(command.timeoutMs) || command.timeoutMs < 100 || command.timeoutMs > 900000 ||
         !Array.isArray(command.criterionRefs) || !command.criterionRefs.length ||
         !command.criterionRefs.every(id => criteria.has(id))) {
       throw new Error('測試命令格式、重複 ID 或關聯不合法');

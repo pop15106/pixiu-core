@@ -114,6 +114,11 @@ for (const [name, mutate] of [
   ['實際參數遭改寫', (root, record) => { record.commands[0].argv[0] = '--no-warnings'; }],
   ['實際執行檔遭替換', (root, record) => { record.commands[0].executable = 'another-node'; }],
   ['工作目錄遭替換', (root, record) => { record.commands[0].cwd = 'other-root'; }],
+  ['事件 checkpoint 遺失', (root, record) => { fs.unlinkSync(path.join(root, record.commands[0].stdoutPath.replace('.stdout.jsonl', '.progress.json'))); }],
+  ['事件 checkpoint 未完成', (root, record) => {
+    const progressPath = record.commands[0].stdoutPath.replace('.stdout.jsonl', '.progress.json');
+    const progress = readJson(root, progressPath); progress.complete = false; atomicJson(root, progressPath, progress);
+  }],
   ['未完成結果', (root, record) => { record.outcome = 'RUNNING'; record.endedAt = null; }],
   ['證據越界', (root, record) => { record.commands[0].stdoutPath = '../outside'; }],
   ['證據種類替換', (root, record) => { record.commands[0].evidenceKind = 'build'; }],
@@ -238,7 +243,7 @@ test('超量輸出受控停止，不產生假成功', async t => {
 test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   const root = path.resolve(__dirname, '../..');
   const plan = validatePlan(readJson(root, 'scripts/critical-relay/public-core.plan.json'));
-  assert.equal(plan.commands.length, 9);
+  assert.equal(plan.commands.length, 12);
   for (const command of plan.commands) {
     assert.equal(command.required, true);
     assert.equal(fs.statSync(boundedPath(root, command.file)).isFile(), true);

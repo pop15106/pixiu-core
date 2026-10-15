@@ -15,6 +15,10 @@ import { pathToFileURL } from "node:url";
 import criticalRelayModule from "../critical-relay/critical-relay.js";
 import evidenceVerifier from "../critical-relay/evidence-verifier.js";
 const { latchBinding, verifyStateEvidence } = evidenceVerifier;
+import planMigration from "../critical-relay/plan-migration.js";
+const { prepareMigration } = planMigration;
+import runRecovery from "../critical-relay/run-recovery.js";
+const { withControl } = runRecovery;
 
 const { evaluateCriticalRelay, SCHEMA_VERSION: CRITICAL_RELAY_SCHEMA_VERSION } = criticalRelayModule;
 
@@ -29,6 +33,7 @@ const UPDATE_ACTIONS = new Set([
   "submit_review",
   "resume",
   "complete",
+  "migrate_verification",
   "block",
 ]);
 const REVIEW_VERDICTS = new Set(["approved", "changes_required", "blocked"]);
@@ -436,6 +441,18 @@ async function withLock(paths, operation) {
 function applyUpdate(task, input, helpers) {
   const next = clone(task);
   const actor = requiredString(input.actor, "actor", 128);
+  if (input.action === "migrate_verification") {
+    assertOwner(task, actor);
+    if (!["in_progress", "changes_requested"].includes(task.status)) fail("Verification migration requires active owned work.");
+    if (input.criticalRelay !== undefined || input.criticalRelayRequired !== undefined) fail("Migration cannot also replace Critical Relay state.");
+    const changed = withControl(task.projectRoots[0], () =>
+      prepareMigration(task.projectRoots[0], task.criticalRelay, task.verificationBinding, input.verificationMigration));
+    next.criticalRelay = changed.state;
+    next.verificationBinding = changed.binding;
+    next.verificationMigrations = [...(task.verificationMigrations || []), changed.receipt];
+    next.status = "in_progress";
+    return next;
+  }
   if (input.criticalRelayRequired !== undefined) {
     const requestedCriticalRelay = booleanValue(
       input.criticalRelayRequired,
@@ -1136,7 +1153,7 @@ export function registerDevSpaceWorkflowTools({
       sessionRef: sessionField,
       actor: actorField,
       taskId: z.string().min(1).max(80),
-      action: z.enum(["claim", "handoff", "acknowledge", "request_review", "submit_review", "resume", "complete", "block"]),
+      action: z.enum(["claim", "handoff", "acknowledge", "request_review", "submit_review", "resume", "complete", "migrate_verification", "block"]),
       expectedRevision: z.number().int().positive(),
       idempotencyKey: idempotencyField,
       toActor: z.string().min(1).max(128).optional(),
@@ -1146,6 +1163,7 @@ export function registerDevSpaceWorkflowTools({
       requiredNextAction: z.string().min(1).max(4_000).optional(),
       criticalRelayRequired: z.boolean().optional().describe("Upgrade this task to require Critical Relay. Once enabled it cannot be disabled."),
       criticalRelay: z.unknown().optional().describe("Updated Critical Relay state. CR-enabled tasks are re-evaluated on complete."),
+      verificationMigration: z.unknown().optional().describe("Explicitly authorized plan migration: old/new digest, plan path, approvalRef and reason. Never infer permission to remove requirements."),
       reviewerActor: z.string().min(1).max(128).optional(),
       subjectRef: z.string().min(1).max(2_000).optional(),
       criteria: z.array(z.string().min(1).max(2_000)).max(50).optional(),

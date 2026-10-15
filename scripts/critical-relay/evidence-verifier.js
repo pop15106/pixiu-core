@@ -73,6 +73,11 @@ function verifyRun(root, binding, runRef) {
           Date.parse(result.endedAt) < Date.parse(result.startedAt)) {
         throw new Error(`必要測試未成功或 runtime 不符：${expected.id}`);
       }
+      const progress = readJson(root, `${prefix}/${expected.id}.progress.json`);
+      if (progress.schemaVersion !== 'pixiu.run-journal.v1' || progress.commandId !== expected.id || progress.complete !== true ||
+          progress.partialStdout !== false || progress.stdoutBytes !== Buffer.byteLength(stdout) || progress.stderrBytes !== Buffer.byteLength(stderr)) {
+        throw new Error(`事件日誌未完整落盤：${expected.id}`);
+      }
       const parsed = parseTestOutput(stdout);
       if (!parsed.clean || digestObject(parsed.counts) !== digestObject(result.counts)) throw new Error(`必要測試零筆、未通過或統計矛盾：${expected.id}`);
     }
@@ -86,6 +91,11 @@ function verifyRun(root, binding, runRef) {
 }
 
 function verifyStateEvidence(state, root, trustedBinding) {
+  try {
+    if (fs.existsSync(root) && fs.existsSync(boundedPath(root, '.cr/migration-pending.json', { mustExist: false }))) {
+      return { canComplete: false, blockingReasons: ['MIGRATION_INCOMPLETE：先恢復計劃遷移，再重新測試'] };
+    }
+  } catch (error) { return { canComplete: false, blockingReasons: [error.message] }; }
   const binding = state?.executionContract?.verificationBinding;
   if (state?.mode !== FULL_MODE && binding === undefined && trustedBinding === undefined) return { canComplete: true, blockingReasons: [] };
   try {

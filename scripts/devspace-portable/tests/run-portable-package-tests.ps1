@@ -49,6 +49,7 @@ try {
     Assert-True ($builderText.Contains("[string]`$OutputDirectory") -and $builderText.Contains("Join-Path `$PSScriptRoot 'dist'")) 'portable builder resolves its default output after PSScriptRoot is available'
     $launcherText = [System.IO.File]::ReadAllText($launcher)
     Assert-True ($launcherText.Contains('PORTABLE-MANIFEST.json') -and $launcherText.Contains('setup-or-update')) 'launcher verifies release packages and calls the unified setup/update action'
+    Assert-True ($launcherText.Contains('-IntegrityOnly') -and $launcherText.Contains('if errorlevel 1 goto :failed')) 'bootstrap uses integrity-only verification and preserves a failing exit code'
 
     $oneClickText = [System.IO.File]::ReadAllText($oneClick)
     Assert-True $oneClickText.Contains("'setup-or-update'") 'OneClick exposes the unified setup/update action'
@@ -84,6 +85,30 @@ try {
 
         & powershell -NoProfile -ExecutionPolicy Bypass -File $verifier -PackageRoot $packageRoot | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'extracted release passes SHA-256 verification'
+
+        # 在沒有 Node 搜尋路徑的子程序中驗證首次安裝前檢，不修改系統 PATH。
+        $originalPath = $env:PATH
+        try {
+            $env:PATH = "$env:SystemRoot\System32"
+            & (Join-Path $PSHOME 'powershell.exe') -NoProfile -ExecutionPolicy Bypass -File $verifier -PackageRoot $packageRoot -IntegrityOnly | Out-Null
+            Assert-True ($LASTEXITCODE -eq 0) 'pre-bootstrap integrity works without Node on PATH'
+        }
+        finally { $env:PATH = $originalPath }
+
+        $fixtureBin = Join-Path $testRoot 'fixture-bin'
+        New-Item -ItemType Directory -Path $fixtureBin -Force | Out-Null
+        $previousModule = 'export const fixturePrevious = true;'
+        [System.IO.File]::WriteAllText((Join-Path $fixtureBin 'DevSpace.WorkflowStore.mjs'), $previousModule)
+        [System.IO.File]::WriteAllText((Join-Path $fixtureBin 'workflow-state.json'), 'neutral-ledger-sentinel')
+        Import-Module (Join-Path $packageRoot 'DevSpace.OneClick.Subagents.psm1') -Force
+        $installed = Install-DevSpaceWorkflowModule -SourceFile (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') -BinDirectory $fixtureBin
+        Assert-True ($installed.Changed -eq $true -and $installed.executionSchema -eq 'pixiu.cr-execution.v2') 'PowerShell installer deploys the complete verified v2 bundle'
+        Assert-True ([System.IO.File]::ReadAllText($installed.Path).Contains('workflow-releases/')) 'installed entry points into the immutable dependency bundle'
+        $reinstalled = Install-DevSpaceWorkflowModule -SourceFile (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs') -BinDirectory $fixtureBin
+        Assert-True ($reinstalled.Changed -eq $false) 'PowerShell bundle reinstall is idempotent'
+        & node (Join-Path $packageRoot 'workflow-bundle.mjs') rollback $fixtureBin $installed.receiptId | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0 -and [System.IO.File]::ReadAllText($installed.Path) -eq $previousModule) 'bundle rollback restores the exact previous entry'
+        Assert-True ([System.IO.File]::ReadAllText((Join-Path $fixtureBin 'workflow-state.json')) -eq 'neutral-ledger-sentinel') 'upgrade and rollback preserve the existing ledger'
 
         [System.IO.File]::AppendAllText(
             (Join-Path $packageRoot 'DevSpace.WorkflowStore.mjs'),

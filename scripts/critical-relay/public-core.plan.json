@@ -1,7 +1,8 @@
 {
   "schemaVersion": "pixiu.test-plan.v1",
   "id": "pixiu-public-core",
-  "revision": 1,
+  "revision": 2,
+  "parentDigest": "ab515c3d06234157022e4cb6d15fa85c2bb984b88a4fc0019948a008d7c3d0cb",
   "profile": "local-only",
   "criteria": [
     { "id": "criterion-core", "criterion": "既有 CR、路由及 workflow 契約維持通過", "requiredEvidenceKinds": ["test"] },
@@ -17,7 +18,10 @@
     { "id": "workflow-store", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-store.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 60000, "criterionRefs": ["criterion-core"] },
     { "id": "lazy-loading", "adapter": "node-test", "file": "scripts/performance/lazy-loading-integration.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 30000, "criterionRefs": ["criterion-private-isolation"] },
     { "id": "resource-policy", "adapter": "node-test", "file": "scripts/router/resource-policy.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 30000, "criterionRefs": ["criterion-private-isolation"] },
-    { "id": "evidence-runner", "adapter": "node-test", "file": "scripts/critical-relay/test-runner.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 300000, "criterionRefs": ["criterion-evidence"] },
-    { "id": "workflow-evidence", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-evidence.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] }
+    { "id": "evidence-runner", "adapter": "node-test", "file": "scripts/critical-relay/test-runner.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 600000, "criterionRefs": ["criterion-evidence"] },
+    { "id": "workflow-evidence", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-evidence.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] },
+    { "id": "workflow-bundle", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-bundle.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] },
+    { "id": "run-recovery", "adapter": "node-test", "file": "scripts/critical-relay/run-recovery.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 240000, "criterionRefs": ["criterion-evidence"] },
+    { "id": "plan-migration", "adapter": "node-test", "file": "scripts/critical-relay/plan-migration.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] }
   ]
 }

@@ -4,7 +4,7 @@
 
 ## 本次支援範圍
 
-`public-core.plan.json` 固定九組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
+`public-core.plan.json` 第 2 版固定十二組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
 
 目前 adapter 只執行 Node `node:test`。UI、API、build、document 可作驗收所需種類，但尚無對應的自動收集 adapter，缺少該證據就阻擋完成。此工具不會以 build 或核心測試假冒產品 UI／API 驗收。
 
@@ -57,7 +57,9 @@ createTask 會固定 `verificationBinding`。更新時不可改成另一份計�
 
 ## 證據與來源
 
-每輪在 `.cr/runs/<runId>/` 保存執行前 plan.json、result.json、逐命令 stdout.jsonl 與 stderr.log。資料先寫入臨時檔、fsync，再原子更新結果；尚未完整收尾的 RUNNING 不計為成功。單一 runner.lock 避免重複執行。
+每輪在 `.cr/runs/<runId>/` 保存執行前 plan.json、result.json、逐命令 stdout.jsonl、stderr.log 與 progress.json。完整事件逐行寫入並 fsync，再保存位元組位置及事件數；命令尚未完成就能回讀已落盤事件。截斷尾端不拼成完整行，沒有完整終態仍不得成功。
+
+runner.lock v2 保存工作區、主機、使用者、PID、程序建立時間及子程序身分。受控恢復先證實主控與已記錄子程序都不存活，再歸檔原鎖與結果並標示 INTERRUPTED。活 PID（包含已被重用的 PID）、身分未知或尚未確認的子程序啟動窗口一律阻擋，不自動殺程序，也不按鎖齡刪鎖。
 
 測試結果使用 Node 官方事件。檔案層空測試結果不計為案例；suite 容器不重複計數。正常 stdout 只當成 log，不能靠印出 PASS 或 JSON 冒充案例。正式完成時，重新解析原始事件、核對 counts、檔案 digest、runId、計劃、runtime 與目前來源。
 
@@ -73,10 +75,42 @@ Git 子模組以 gitlink commit 與初始化狀態納入來源指紋。未初始
 
 ## CI 與部署狀態
 
-`critical-relay.yml` 呼叫相同 runner，測試失敗仍嘗試保存指定 run 證據，保留失敗結論。CI 未執行就標 CI_NOT_RUN，本機通過不能改寫為 CI 成功。本次修改不觸發新的 Actions、不推送、不發行或部署。
+`critical-relay.yml` 呼叫相同 runner，測試失敗仍嘗試保存指定 run 證據，保留失敗結論。CI 未執行就標 CI_NOT_RUN，本機通過不能改寫為 CI 成功。runner 本身不執行 push、Release 或 Deploy；push 依儲存庫既有設定觸發 CI，結果以精確 SHA 的 run 回讀為準。
 
-新模組尚未安裝到現正運作的 DevSpace 程序。套件檔案清單、舊 runtime 升級、實際 Host 載入來源與 portable import graph 必須在部署前另驗；來源 worktree 通過不等於現有桌面／MCP 已生效。
+`scripts/devspace-portable/workflow-bundle.mjs` 組裝明確的依賴清單並保存內容指紋。打包驗證會在乾淨目錄真正 import；安裝器先驗證完整包，再切換單一入口，舊入口與 receipt 保留以供回復。`verify-portable-package.ps1 -IntegrityOnly` 僅供首次 bootstrap 前檢；Node 安裝完成後仍須做真正的 runtime 驗證。
 
-## 已知後續工作
+套件的 Node 版本、v2 schema、實際載入路徑、來源 HEAD、來源是否未提交及內容指紋由 probe 回讀。這次只在暫存目錄做升級與回復，不重啟現正運作的 DevSpace。
 
-下一版優先處理：驗證計劃的明確遷移、異常斷電後 runner.lock 的受控恢復、portable 模組依賴與實機升級、Linux 交叉驗證，以及 Java 8／Maven／UI／API adapter。先驗證這些能力，再擴大支援範圍。
+## 明確恢復與計劃遷移
+
+程序已終止且取得本次恢復授權時：
+
+```text
+node scripts/critical-relay/run-recovery.js recover <runId> --authorized
+```
+
+恢復只保留／標記原執行，不把部分結果轉成成功；之後以原計劃建立新 run 並完整重跑。目前不自動沿用部分完成的命令。遇到活子程序或無法確認的啟動窗口，先查明實際程序，不以 force 方式清鎖。
+
+必要測試計劃需合法升版時，用新 revision、parentDigest、修改原因、授權定位與前後完整 digest 建立 approval.json，再執行：
+
+```text
+node scripts/critical-relay/plan-migration.js migrate .cr/approval.json --authorized
+```
+
+approval 必須含 newPlanPath、expectedOldDigest、expectedNewDigest、reason、approvalRef。移除必要命令或降低證據種類需另逐項列入 approvedRequiredRemovals／approvedEvidenceReductions；即使明確允許移除，舊的未解失敗也不會自動消失。只增加測試不需要這兩個移除清單。
+
+fallback 先保存前後 snapshot 與交易 marker，再更新 binding 和 state；中途停止時 gate 保持阻擋。核對並授權後可恢復同一交易：
+
+```text
+node scripts/critical-relay/plan-migration.js resume <migrationId> --authorized
+```
+
+使用既有 workflow ledger 時，以 `migrate_verification` action 與 verificationMigration 物件執行相同驗證，沿用原 revision／idempotency 控制；不再建立另一套 fallback。新計劃會使舊驗收狀態失效，必須重測並重新覆核。
+
+## 已知限制與後續工作
+
+尚未更新 active DevSpace 或重啟服務；實際桌面／MCP 版本生效仍需另外授權與回讀。套件完整性不是數位簽章，不能替代供應鏈信任。
+
+若在很短的 control.lock／workflow-install.lock 臨界區被硬終止，這些輔助鎖目前保持阻擋，不自動清除；完整磁碟斷電時序也未全部驗證。來源或狀態被別的程序修改時，恢復會拒絕覆蓋。這些情境不宣稱已達到任意中斷皆可自動續跑。
+
+下一版仍需完成 Java 8／Maven、UI／API adapter、逐案例需求追溯、多工作區驗證，以及受控實機安裝。

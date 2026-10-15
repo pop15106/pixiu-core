@@ -827,7 +827,7 @@ function Install-DevSpaceWorkflowModule {
         throw "DevSpace workflow module source is missing: $SourceFile"
     }
 
-    # 此入口仍是單檔部署器；先驗證來源與目的地，再建立目錄或備份。
+    # 先驗證來源與目的地，再選擇完整依賴包或舊單檔路徑。
     function Assert-WorkflowDeploymentPlainPath {
         param([string]$PathToCheck)
         $current = [System.IO.Path]::GetFullPath($PathToCheck)
@@ -847,6 +847,17 @@ function Install-DevSpaceWorkflowModule {
     $target = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
     Assert-WorkflowDeploymentPlainPath -PathToCheck $SourceFile
     Assert-WorkflowDeploymentPlainPath -PathToCheck $target
+    $bundleTool = Join-Path (Split-Path -Parent ([System.IO.Path]::GetFullPath($SourceFile))) 'workflow-bundle.mjs'
+    $sourceTextForRouting = [System.IO.File]::ReadAllText($SourceFile)
+    if ($sourceTextForRouting -match 'critical-relay/critical-relay\.js') {
+        if (-not (Test-Path -LiteralPath $bundleTool -PathType Leaf)) {
+            throw 'WORKFLOW_BUNDLE_INSTALLER_MISSING: the installed workflow was not changed.'
+        }
+        Assert-WorkflowDeploymentPlainPath -PathToCheck $bundleTool
+        $bundleResult = & node $bundleTool install $SourceFile $BinDirectory
+        if ($LASTEXITCODE -ne 0) { throw 'WORKFLOW_BUNDLE_INSTALL_FAILED: verify the retained installation before retrying.' }
+        return (($bundleResult | Out-String) | ConvertFrom-Json)
+    }
     $sourceBytes = [System.IO.File]::ReadAllBytes($SourceFile)
     $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
     try {

@@ -12,6 +12,7 @@ module.exports = async function* reporter(events) {
   const counts = emptyCounts();
   let nativeSummary = null;
   let ordinal = 0;
+  const pendingLogs = new Map();
   for await (const { type, data } of events) {
     if (type === 'test:start') {
       const level = data.nesting || 0;
@@ -37,8 +38,22 @@ module.exports = async function* reporter(events) {
     } else if (type === 'test:summary') {
       nativeSummary = { success: data.success, counts: data.counts };
     } else if (type === 'test:stdout' || type === 'test:stderr') {
-      yield encode({ schemaVersion: SCHEMA, record: 'log', stream: type, message: data.message });
+      const key = `${type}:${data.file || ''}`;
+      let pending = (pendingLogs.get(key)?.message || '') + data.message;
+      if (Buffer.byteLength(pending) > 4 * 1024 * 1024) {
+        yield encode({ schemaVersion: SCHEMA, record: 'limit', stream: type, message: '單行輸出超出上限' });
+        pending = '';
+      }
+      let index;
+      while ((index = pending.indexOf('\n')) >= 0) {
+        yield encode({ schemaVersion: SCHEMA, record: 'log', stream: type, message: pending.slice(0, index + 1) });
+        pending = pending.slice(index + 1);
+      }
+      pendingLogs.set(key, { stream: type, message: pending });
     }
+  }
+  for (const pending of pendingLogs.values()) {
+    if (pending.message) yield encode({ schemaVersion: SCHEMA, record: 'log', ...pending });
   }
   yield encode({ schemaVersion: SCHEMA, record: 'end', counts, nativeSummary });
 };

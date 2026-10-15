@@ -17,6 +17,7 @@ function createEvidenceState(root, planPath, { objective, scope = ['scripts/'] }
   executionContract.schemaVersion = EVIDENCE_SCHEMA_VERSION;
   executionContract.source = { baseSha: source.headSha, headSha: source.headSha, changeDigest: source.changeDigest };
   executionContract.verificationBinding = bindPlan(root, planPath);
+  executionContract.verificationPlanSnapshot = structuredClone(plan);
   executionContract.verificationRun = null;
   executionContract.evidenceHistory = [];
   return createCriticalRelay({ objective: objective || '依事前計劃完成必要驗證，保留反證覆核',
@@ -26,6 +27,7 @@ function createEvidenceState(root, planPath, { objective, scope = ['scripts/'] }
 }
 
 function applyRunEvidence(root, state, runRef, { authorizedRepair = false, changedApproach = {} } = {}) {
+  if (fs.existsSync(boundedPath(root, '.cr/migration-pending.json', { mustExist: false }))) throw new Error('MIGRATION_INCOMPLETE');
   const next = structuredClone(state);
   const contract = next.executionContract;
   validateBinding(root, contract?.verificationBinding);
