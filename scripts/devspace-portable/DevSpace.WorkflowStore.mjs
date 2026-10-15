@@ -251,6 +251,25 @@ function assertCriticalRelayComplete(task) {
   if (!verified.canComplete) fail(`Critical Relay evidence gate blocked: ${verified.blockingReasons.join(" | ")}`);
 }
 
+function assertLifecycleMutationSafety(previous, next, action) {
+  if (previous.lifecycleBinding) {
+    if (!next.lifecycleBinding ||
+        JSON.stringify(previous.lifecycleBinding) !== JSON.stringify(next.lifecycleBinding) ||
+        next.criticalRelay?.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(previous.lifecycleBinding, next.criticalRelay?.lifecycle)) {
+      fail('CR Lifecycle binding 不能由一般更新或 extension mutation 移除、替換或降級');
+    }
+  }
+  if (next.criticalRelay?.lifecycleRequired === true &&
+      !verifyLifecycleBinding(next.lifecycleBinding, next.criticalRelay.lifecycle)) {
+    fail('新啟用的 CR Lifecycle 必須同時固定 workflow policy binding');
+  }
+  // Extension mutation 不得直接設定 completed 來繞開原本的 complete 入口。
+  if (next.status === 'completed' && previous.status !== 'completed' && action !== 'complete') {
+    assertCriticalRelayComplete(next);
+  }
+}
+
 function defaultIdFactory(prefix) {
   return `${prefix}_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
 }
@@ -681,6 +700,7 @@ export function createWorkflowController(options = {}) {
         fail(`Stale revision: expected ${expectedRevision}, current revision is ${task.revision}.`);
       }
       const next = await mutator(clone(task), { actor, idFactory, now });
+      assertLifecycleMutationSafety(task, next, input.action);
       next.revision = task.revision + 1;
       next.updatedAt = now();
       return clone(
@@ -710,6 +730,7 @@ export function createWorkflowController(options = {}) {
       if (!task) fail(`Unknown workflow task: ${taskId}`);
       assertTaskVisible(task, workspaceRoot, sessionRef);
       const next = await mutator(clone(task), { actor, idFactory, now });
+      assertLifecycleMutationSafety(task, next, input.action);
       next.revision = task.revision + 1;
       next.updatedAt = now();
       return clone(
