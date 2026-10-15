@@ -13,6 +13,8 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import criticalRelayModule from "../critical-relay/critical-relay.js";
+import lifecycleModule from "../critical-relay/lifecycle.js";
+const { lifecycleBinding, verifyLifecycleBinding } = lifecycleModule;
 import evidenceVerifier from "../critical-relay/evidence-verifier.js";
 const { latchBinding, verifyStateEvidence } = evidenceVerifier;
 import planMigration from "../critical-relay/plan-migration.js";
@@ -228,6 +230,11 @@ function assertCriticalRelayComplete(task) {
   if (!task.criticalRelayRequired && !task.criticalRelay) return;
   if (!task.criticalRelay) {
     fail("Critical Relay state is required before this task can complete.");
+  }
+  if (task.lifecycleBinding &&
+      (task.criticalRelay.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(task.lifecycleBinding, task.criticalRelay.lifecycle))) {
+    fail("CR lifecycle completion gate blocked: pinned lifecycle was removed or changed.");
   }
   let evaluation;
   try {
@@ -470,6 +477,12 @@ function applyUpdate(task, input, helpers) {
   // 初次啟用後固定驗證計劃；接手者不能藉由替換 state 降級。
   const verificationBinding = latchBinding(task.projectRoots[0], next.criticalRelay, task.verificationBinding);
   if (verificationBinding) next.verificationBinding = verificationBinding;
+  if (task.lifecycleBinding && (next.criticalRelay?.lifecycleRequired !== true ||
+      !verifyLifecycleBinding(task.lifecycleBinding, next.criticalRelay?.lifecycle))) {
+    fail('CR lifecycle binding 不能刪除、降級或更改風險');
+  }
+  if (!task.lifecycleBinding && next.criticalRelay?.lifecycleRequired === true)
+    next.lifecycleBinding = lifecycleBinding(next.criticalRelay.lifecycle);
   switch (input.action) {
     case "claim": {
       if (task.status !== "open") fail("Only an open task can be claimed.");
@@ -740,6 +753,7 @@ export function createWorkflowController(options = {}) {
       );
       const criticalRelay = validateCriticalRelayState(input.criticalRelay);
       const verificationBinding = latchBinding(workspaceRoot, criticalRelay);
+      const pinnedLifecycle = criticalRelay?.lifecycleRequired === true ? lifecycleBinding(criticalRelay.lifecycle) : undefined;
       return withLock(paths, async () => {
         const state = await readState(paths);
         const duplicate = await findIdempotentResult(state, idempotencyKey, workspaceRoot, sessionRef);
@@ -758,6 +772,7 @@ export function createWorkflowController(options = {}) {
           criticalRelayRequired,
           ...(criticalRelay ? { criticalRelay } : {}),
           ...(verificationBinding ? { verificationBinding } : {}),
+          ...(pinnedLifecycle ? { lifecycleBinding: pinnedLifecycle } : {}),
           status: "open",
           currentOwner: null,
           revision: 1,
