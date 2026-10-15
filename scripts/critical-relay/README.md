@@ -18,7 +18,7 @@ node scripts/critical-relay/test-runner.js
 
 入口依事前計劃逐組執行，輸出 JSON 進度及最後的 runId、resultPath、planDigest、來源指紋。`PASS` 表示必要命令執行成功，不表示使用者需求、反證覆核、推送、CI、產品功能或部署已完成。
 
-exit code：0 為必要命令通過；1 為測試失敗、零筆、取消、逾時或來源變更；2 為入口或環境錯誤。各命令的真實 exit code、signal、outcome、leaf-case 統計均保留在結果中。獨立命令繼續收集；依賴失敗命令的項目標為 NOT_RUN。
+exit code：0 為必要命令及證據回讀通過；1 為測試失敗、零筆、取消、逾時、來源變更或證據回讀未通過；2 為入口或環境錯誤。各命令的真實 exit code、signal、outcome、leaf-case 統計均保留在結果中。獨立命令繼續收集；依賴失敗命令的項目標為 NOT_RUN。
 
 ## CR 完整交付：沒有既有 workflow ledger 時
 
@@ -62,6 +62,8 @@ createTask 會固定 `verificationBinding`。更新時不可改成另一份計�
 測試結果使用 Node 官方事件。檔案層空測試結果不計為案例；suite 容器不重複計數。正常 stdout 只當成 log，不能靠印出 PASS 或 JSON 冒充案例。正式完成時，重新解析原始事件、核對 counts、檔案 digest、runId、計劃、runtime 與目前來源。
 
 來源採 Git tracked 加未忽略的 untracked 檔案，對路徑及工作區原始 bytes 計算指紋；唯一額外排除區是 `.cr/`。新增、刪除與修改都影響指紋。提交後 HEAD 改變也須重跑。Windows 與 Linux 換行及 runtime 不同時需要各自驗證，不能互換證據。
+
+Git 子模組以 gitlink commit 與初始化狀態納入來源指紋。未初始化且沒有內容的模組不自動下載，也不宣稱其功能已驗證；必要命令依賴它時仍標 ENV_BLOCKED。已初始化模組需 HEAD 與 index 指標一致且沒有未提交修改。未初始化卻有不明內容時拒絕。
 
 只讀授權根目錄中的證據，拒絕路徑穿越、絕對資源路徑及 symlink／junction。工作目錄本身由已授權入口提供；這不構成作業系統沙盒。測試程式仍以目前 OS 帳號權限執行。
 

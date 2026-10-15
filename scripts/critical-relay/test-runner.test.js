@@ -250,3 +250,43 @@ test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   assert.match(workflow, /if-no-files-found: error/);
   assert.match(workflow, /path: \.cr\/runs\//);
 });
+
+test('未初始化子模組只記錄固定 commit，指標改變會影響來源指紋', t => {
+  const fixture = makeFixture(t);
+  fs.mkdirSync(path.join(fixture.root, 'optional-module'));
+  const firstSha = fixture.git(['rev-parse', 'HEAD']).toString().trim();
+  fixture.git(['update-index', '--add', '--cacheinfo', `160000,${firstSha},optional-module`]);
+  const first = sourceSnapshot(fixture.root);
+  assert.deepEqual(first.submodules, [{ path: 'optional-module', commit: firstSha, initialized: false }]);
+  fixture.git(['update-index', '--cacheinfo', `160000,${'a'.repeat(40)},optional-module`]);
+  assert.notEqual(sourceSnapshot(fixture.root).changeDigest, first.changeDigest);
+  fs.writeFileSync(path.join(fixture.root, 'optional-module/unverified.txt'), '中性未確認內容');
+  assert.throws(() => sourceSnapshot(fixture.root), /未初始化子模組/);
+});
+
+test('已初始化子模組的未提交修改會阻擋來源驗證', t => {
+  const fixture = makeFixture(t);
+  const modulePath = path.join(fixture.root, 'local-module');
+  fs.mkdirSync(modulePath);
+  const subGit = args => fixture.git(['-C', modulePath, ...args]);
+  subGit(['init', '--quiet']);
+  fs.writeFileSync(path.join(modulePath, 'sample.txt'), '中性子模組');
+  subGit(['add', '.']);
+  subGit(['-c', 'user.name=CR Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'core.hooksPath=NUL',
+    'commit', '--quiet', '-m', '子模組測試基準']);
+  const sha = subGit(['rev-parse', 'HEAD']).toString().trim();
+  fixture.git(['update-index', '--add', '--cacheinfo', `160000,${sha},local-module`]);
+  assert.equal(sourceSnapshot(fixture.root).submodules[0].initialized, true);
+  fs.writeFileSync(path.join(modulePath, 'sample.txt'), '已變更');
+  assert.throws(() => sourceSnapshot(fixture.root), /未提交內容/);
+});
+
+test('必要命令依賴未初始化子模組時仍保持 ENV_BLOCKED', async t => {
+  const fixture = makeFixture(t, [null], plan => { plan.commands[0].file = 'optional-module/required.test.js'; });
+  fs.mkdirSync(path.join(fixture.root, 'optional-module'));
+  const sha = fixture.git(['rev-parse', 'HEAD']).toString().trim();
+  fixture.git(['update-index', '--add', '--cacheinfo', `160000,${sha},optional-module`]);
+  const result = await run(fixture);
+  assert.equal(result.commands[0].outcome, 'ENV_BLOCKED');
+  assert.equal(result.outcome, 'FAIL');
+});

@@ -97,28 +97,67 @@ function validatePlan(plan) {
 function loadPlan(root, relative) { return validatePlan(readJson(root, relative)); }
 
 function sourceSnapshot(root) {
-  const options = { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 16 * 1024 * 1024 };
+  const base = fs.realpathSync(root);
+  const options = { cwd: base, encoding: 'utf8', windowsHide: true, maxBuffer: 16 * 1024 * 1024 };
   const headSha = execFileSync('git', ['rev-parse', 'HEAD'], options).trim();
   if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(headSha)) throw new Error('無法確認 Git HEAD');
-  const paths = [...new Set(execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], options)
-    .split('\0').filter(Boolean))].sort();
+  const index = new Map();
+  for (const row of execFileSync('git', ['ls-files', '--stage', '-z'], options).split('\0').filter(Boolean)) {
+    const tab = row.indexOf('\t');
+    const [mode, sha, stage] = row.slice(0, tab).split(' ');
+    if (tab < 0 || stage !== '0') throw new Error('Git index 尚有衝突或格式錯誤');
+    index.set(row.slice(tab + 1), { mode, sha });
+  }
+  const paths = [...new Set([...index.keys(), ...execFileSync('git', ['ls-files', '--others', '--exclude-standard', '-z'], options)
+    .split('\0').filter(Boolean)])].sort();
   if (!paths.length) throw new Error('來源清單為空');
+  const checkedDirectories = new Set([base]);
+  const comparable = value => process.platform === 'win32' ? value.toLowerCase() : value;
   const h = createHash('sha256');
+  const submodules = [];
   let fileCount = 0;
   for (const relative of paths) {
     // 唯一的輸出排除區是 .cr；私人未追蹤資料遵循 Git ignore。
     if (relative.startsWith('.cr/')) continue;
-    const target = boundedPath(root, relative, { mustExist: false });
-    h.update(relative + '\0');
-    if (!fs.existsSync(target)) h.update('deleted\0');
+    safeRelative(relative);
+    const parts = relative.split('/');
+    let directory = base;
+    for (const part of parts.slice(0, -1)) {
+      directory = path.join(directory, part);
+      if (!checkedDirectories.has(directory) && fs.existsSync(directory)) {
+        if (fs.lstatSync(directory).isSymbolicLink()) throw new Error(`來源路徑含連結：${relative}`);
+        checkedDirectories.add(directory);
+      }
+    }
+    const target = path.join(base, ...parts);
+    const exists = fs.existsSync(target);
+    // 每個既存檔案仍核對實際路徑，快取父目錄不會略過後續連結替換。
+    if (exists && comparable(fs.realpathSync(target)) !== comparable(target)) throw new Error(`來源路徑被重新導向：${relative}`);
+    const entry = index.get(relative);
+    h.update(relative + '\0' + (entry?.mode || 'untracked') + '\0');
+    if (entry?.mode === '160000') {
+      const initialized = exists && fs.existsSync(path.join(target, '.git'));
+      if (exists && (!fs.lstatSync(target).isDirectory() || fs.lstatSync(target).isSymbolicLink())) {
+        throw new Error(`子模組路徑不合法：${relative}`);
+      }
+      if (!initialized && exists && fs.readdirSync(target).length) throw new Error(`未初始化子模組含有未確認內容：${relative}`);
+      if (initialized) {
+        const subOptions = { ...options, cwd: target };
+        const actual = execFileSync('git', ['rev-parse', 'HEAD'], subOptions).trim();
+        const dirty = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all'], subOptions).trim();
+        if (actual !== entry.sha || dirty) throw new Error(`子模組版本不符或尚有未提交內容：${relative}`);
+      }
+      submodules.push({ path: relative, commit: entry.sha, initialized });
+      h.update('gitlink\0' + entry.sha + '\0' + String(initialized) + '\0');
+    } else if (!exists) h.update('deleted\0');
     else {
       const info = fs.lstatSync(target);
-      if (!info.isFile()) throw new Error(`來源包含未支援的檔案類型：${relative}`);
+      if (!info.isFile() || info.isSymbolicLink()) throw new Error(`來源包含未支援的檔案類型：${relative}`);
       h.update('file\0').update(fs.readFileSync(target)).update('\0');
     }
     fileCount++;
   }
-  return { headSha, changeDigest: h.digest('hex'), fileCount, policy: 'git-files-working-bytes-v1' };
+  return { headSha, changeDigest: h.digest('hex'), fileCount, submodules, policy: 'git-files-working-bytes-v2' };
 }
 
 function bindPlan(root, planPath) {
