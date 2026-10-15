@@ -1,6 +1,17 @@
 {
   "schemaVersion": 1,
   "maxCapabilitiesPerRequest": 3,
+  "resourcePolicy": {
+    "schemaVersion": 1,
+    "localPrivate": {
+      "vault/identity/founder-profile.md": "本機使用者身分資料",
+      "vault/identity/agent-persona.md": "本機角色校準資料",
+      "vault/memory/memory-summary.md": "本機私人記憶摘要",
+      "vault/memory/SESSION-INDEX.md": "本機私人對話索引",
+      "vault/context/tech-stack.md": "公司技術環境脈絡",
+      "vault/context/pclms-overview.md": "公司系統脈絡"
+    }
+  },
   "capabilities": [
     {
       "id": "legacy-java",

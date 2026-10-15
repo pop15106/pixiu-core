@@ -57,3 +57,6 @@ vault/identity/
 
 # DevSpace portable 發佈產物由 build-portable-package.ps1 產生，不納入版本控制
 /scripts/devspace-portable/dist/
+
+# CR 本機測試證據、執行狀態及交接資料預設不提交
+/.cr/
