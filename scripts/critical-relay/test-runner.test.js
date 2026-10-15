@@ -13,6 +13,29 @@ const { makeFixture, passing } = require('./test-support');
 const run = fixture => runPlan({ workspaceRoot: fixture.root, planPath: fixture.planPath, expectedPlanDigest: fixture.binding.planDigest });
 const check = (fixture, result) => verifyRun(fixture.root, fixture.binding, { runId: result.runId, resultPath: result.resultPath });
 
+test('正式 runner 的心跳與終態可以回讀，且不冒充 CR completion gate', async t => {
+  const fixture = makeFixture(t);
+  const result = await run(fixture);
+  assert.equal(result.outcome, 'PASS');
+  const { readRunStatus, latestRunId } = require('./status-heartbeat');
+  const status = readRunStatus(fixture.root, result.runId);
+  assert.equal(latestRunId(fixture.root), result.runId);
+  assert.equal(status.observed, 'TESTS_PASS_GATE_NOT_CONFIRMED');
+  assert.equal(status.completedCommands, 1);
+  assert.equal(status.totalCommands, 1);
+  assert.ok(status.heartbeatSeq >= 3);
+  assert.equal(check(fixture, result).canComplete, true);
+});
+
+test('正式 runner 遇到失敗，心跳的終態也不能變成 PASS', async t => {
+  const fixture = makeFixture(t, ["require('node:test')('中性失敗', () => { throw new Error('expected'); });"]);
+  const result = await run(fixture);
+  assert.equal(result.outcome, 'FAIL');
+  const status = require('./status-heartbeat').readRunStatus(fixture.root, result.runId);
+  assert.equal(status.observed, 'RUN_TERMINATED_UNSUCCESSFULLY');
+  assert.equal(status.outcome, 'FAIL');
+});
+
 test('真實執行、計劃快照、原始事件及回讀全部成功', async t => {
   const fixture = makeFixture(t);
   const result = await run(fixture);
@@ -243,7 +266,7 @@ test('超量輸出受控停止，不產生假成功', async t => {
 test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   const root = path.resolve(__dirname, '../..');
   const plan = validatePlan(readJson(root, 'scripts/critical-relay/public-core.plan.json'));
-  assert.equal(plan.commands.length, 13);
+  assert.equal(plan.commands.length, 14);
   for (const command of plan.commands) {
     assert.equal(command.required, true);
     assert.equal(fs.statSync(boundedPath(root, command.file)).isFile(), true);

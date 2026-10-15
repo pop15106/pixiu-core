@@ -14,6 +14,8 @@ export const runtimeFiles = [
   'scripts/critical-relay/execution-contract.js',
   'scripts/critical-relay/test-plan.js',
   'scripts/critical-relay/test-runner.js',
+  'scripts/critical-relay/status-heartbeat.js',
+  'scripts/critical-relay/status-watch.js',
   'scripts/critical-relay/evidence-parser.js',
   'scripts/critical-relay/evidence-reporter.js',
   'scripts/critical-relay/evidence-verifier.js',

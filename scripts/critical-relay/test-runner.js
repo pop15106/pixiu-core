@@ -11,13 +11,14 @@ const { parseTestOutput } = require('./evidence-parser');
 const { decideRecovery } = require('./execution-contract');
 const { createRunJournal } = require('./run-journal');
 const { acquireRunLock } = require('./run-recovery');
+const { startRunHeartbeat } = require('./status-heartbeat');
 
 const RUN_SCHEMA = 'pixiu.test-run.v1';
 const MAX_OUTPUT = 4 * 1024 * 1024;
 
 function engineDigest() {
   return digestObject(['test-plan.js', 'test-runner.js', 'evidence-parser.js', 'evidence-reporter.js',
-    'evidence-verifier.js', 'execution-contract.js', 'relay-evidence.js', 'run-journal.js', 'run-recovery.js', 'process-identity.js', 'auxiliary-lock.js', 'plan-migration.js', '../router/resource-policy.js']
+    'evidence-verifier.js', 'execution-contract.js', 'status-heartbeat.js', 'status-watch.js', 'relay-evidence.js', 'run-journal.js', 'run-recovery.js', 'process-identity.js', 'auxiliary-lock.js', 'plan-migration.js', '../router/resource-policy.js']
     .map(name => [name, hash(fs.readFileSync(path.join(__dirname, name)))]));
 }
 
@@ -127,13 +128,16 @@ async function runPlan({ workspaceRoot, planPath = 'scripts/critical-relay/publi
   const result = { schemaVersion: RUN_SCHEMA, runId, planPath, planDigest, profile: plan.profile,
     engineDigest: engineDigest(), startedAt: new Date().toISOString(), endedAt: null,
     sourceBefore, sourceAfter: null, outcome: 'RUNNING', commands: [], executionOwner: runLock.identity, currentCommandId: null };
+  let statusHeartbeat;
   try {
     fs.mkdirSync(boundedPath(root, runPath, { mustExist: false }), { recursive: true });
     atomicJson(root, `${runPath}/plan.json`, plan);
     atomicJson(root, resultPath, result);
+    statusHeartbeat = startRunHeartbeat(root, { runId, totalCommands: plan.commands.length, planDigest });
     for (const command of plan.commands) {
       result.currentCommandId = command.id;
       atomicJson(root, resultPath, result);
+      statusHeartbeat.progress({ commandId: command.id, status: 'RUNNING', doneCount: result.commands.length });
       onProgress({ runId, commandId: command.id, status: 'RUNNING' });
       const journal = createRunJournal(root, runPath, command.id);
       const blocked = (command.dependsOn || []).some(id => result.commands.find(item => item.commandId === id)?.outcome !== 'PASS');
@@ -157,6 +161,7 @@ async function runPlan({ workspaceRoot, planPath = 'scripts/critical-relay/publi
       result.commands.push({ ...record, runId, planDigest, stdoutPath, stdoutDigest: hash(stdout),
         stderrPath, stderrDigest: hash(stderr) });
       atomicJson(root, resultPath, result);
+      statusHeartbeat.progress({ commandId: command.id, status: raw.outcome, doneCount: result.commands.length });
       onProgress({ runId, commandId: command.id, status: raw.outcome, counts: raw.counts });
     }
     result.currentCommandId = null;
@@ -167,9 +172,16 @@ async function runPlan({ workspaceRoot, planPath = 'scripts/critical-relay/publi
       : plan.commands.some(command => command.required && result.commands.find(item => item.commandId === command.id)?.outcome !== 'PASS') ? 'FAIL' : 'PASS';
     result.endedAt = new Date().toISOString();
     result.recovery = recoveryFor(result, history, { authorizedRepair });
+    if (statusHeartbeat.error) {
+      result.outcome = 'FAIL';
+      result.monitorError = 'CR_HEARTBEAT_WRITE_FAILED';
+      atomicJson(root, resultPath, result);
+    }
     atomicJson(root, resultPath, result);
+    statusHeartbeat.finish(result.outcome === 'PASS' ? 'PASS' : result.outcome === 'SOURCE_CHANGED' ? 'SOURCE_CHANGED' : 'FAIL');
     return { ...result, resultPath };
   } finally {
+    statusHeartbeat?.close();
     runLock.release();
   }
 }
