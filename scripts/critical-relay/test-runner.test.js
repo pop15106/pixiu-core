@@ -243,7 +243,7 @@ test('超量輸出受控停止，不產生假成功', async t => {
 test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   const root = path.resolve(__dirname, '../..');
   const plan = validatePlan(readJson(root, 'scripts/critical-relay/public-core.plan.json'));
-  assert.equal(plan.commands.length, 12);
+  assert.equal(plan.commands.length, 13);
   for (const command of plan.commands) {
     assert.equal(command.required, true);
     assert.equal(fs.statSync(boundedPath(root, command.file)).isFile(), true);
@@ -254,6 +254,20 @@ test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   assert.match(workflow, /include-hidden-files: true/);
   assert.match(workflow, /if-no-files-found: error/);
   assert.match(workflow, /path: \.cr\/runs\//);
+});
+
+test('控制鎖仍在使用時證據閘門阻擋，正常釋放後可回讀同一輪', async t => {
+  const fixture = makeFixture(t);
+  const result = await run(fixture);
+  assert.equal(check(fixture, result).canComplete, true);
+  const { acquireAuxiliaryLock } = require('./auxiliary-lock');
+  const lease = acquireAuxiliaryLock(fixture.root, 'control');
+  try {
+    const checked = check(fixture, result);
+    assert.equal(checked.canComplete, false);
+    assert.match(checked.blockingReasons.join(' '), /控制鎖/);
+  } finally { lease.release(); }
+  assert.equal(check(fixture, result).canComplete, true);
 });
 
 test('未初始化子模組只記錄固定 commit，指標改變會影響來源指紋', t => {

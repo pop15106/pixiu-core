@@ -4,7 +4,7 @@
 
 ## 本次支援範圍
 
-`public-core.plan.json` 第 2 版固定十二組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
+`public-core.plan.json` 第 3 版固定十三組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
 
 目前 adapter 只執行 Node `node:test`。UI、API、build、document 可作驗收所需種類，但尚無對應的自動收集 adapter，缺少該證據就阻擋完成。此工具不會以 build 或核心測試假冒產品 UI／API 驗收。
 
@@ -107,10 +107,16 @@ node scripts/critical-relay/plan-migration.js resume <migrationId> --authorized
 
 使用既有 workflow ledger 時，以 `migrate_verification` action 與 verificationMigration 物件執行相同驗證，沿用原 revision／idempotency 控制；不再建立另一套 fallback。新計劃會使舊驗收狀態失效，必須重測並重新覆核。
 
+## 輔助鎖與套件切換恢復
+
+`control.lock` 與 `workflow-install.lock` 使用帶有持有者身分的追加式世代紀錄。檔案存在不代表鎖仍在使用；請依 `auxiliary-lock-guide.md` 的 inspect／recover 操作，不手動刪除鎖或歷史。控制鎖未釋放時，證據 gate 保持阻擋。
+
+套件入口切換使用前後快照與 `workflow-transition.pending.json`。恢復只接續同一交易；遇到第三方修改不覆蓋。建置清理採有界重試，保留主要錯誤與既有 ZIP。操作、相容性、已驗證故障情境與信任邊界詳見 `scripts/critical-relay/auxiliary-lock-guide.md`。
+
 ## 已知限制與後續工作
 
 尚未更新 active DevSpace 或重啟服務；實際桌面／MCP 版本生效仍需另外授權與回讀。套件完整性不是數位簽章，不能替代供應鏈信任。
 
-若在很短的 control.lock／workflow-install.lock 臨界區被硬終止，這些輔助鎖目前保持阻擋，不自動清除；完整磁碟斷電時序也未全部驗證。來源或狀態被別的程序修改時，恢復會拒絕覆蓋。這些情境不宣稱已達到任意中斷皆可自動續跑。
+輔助鎖、計劃 binding/state 之間及套件入口切換前後已有程序強制終止測試。ENOSPC／EIO／不支援硬連結與 rename 失敗採故障注入，並非真的把磁碟寫滿或證明所有硬體斷電時序。網路檔案系統、任意非合作寫入者、歷史鏈自動壓縮及全機斷電尚未驗證。資料缺失或不一致保持阻擋，不宣稱任意中斷皆可自動續跑。
 
 下一版仍需完成 Java 8／Maven、UI／API adapter、逐案例需求追溯、多工作區驗證，以及受控實機安裝。

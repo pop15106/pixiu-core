@@ -7,6 +7,7 @@ const { EVIDENCE_PROFILE, isObject, isDigest, boundedPath, readJson, readText, l
   digestObject, hash, sourceSnapshot } = require('./test-plan');
 const { parseTestOutput } = require('./evidence-parser');
 const { RUN_SCHEMA, engineDigest } = require('./test-runner');
+const { inspectAuxiliaryLock } = require('./auxiliary-lock');
 const FULL_MODE = 'FULL_AUTOMATIC_RELAY';
 
 function validateBinding(root, binding) {
@@ -33,6 +34,8 @@ function verifyRun(root, binding, runRef) {
   const blockingReasons = [];
   let report = null, plan = null;
   try {
+    const control = inspectAuxiliaryLock(root, 'control');
+    if (!['ABSENT', 'IDLE'].includes(control.status)) throw new Error('驗證控制鎖尚未釋放或需恢復');
     validateBinding(root, binding);
     if (!isObject(runRef) || typeof runRef.runId !== 'string' ||
         !/^[a-f0-9-]{36}$/u.test(runRef.runId) || runRef.resultPath !== `.cr/runs/${runRef.runId}/result.json`) {

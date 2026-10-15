@@ -19,6 +19,8 @@ export const runtimeFiles = [
   'scripts/critical-relay/relay-evidence.js',
   'scripts/critical-relay/run-journal.js',
   'scripts/critical-relay/run-recovery.js',
+  'scripts/critical-relay/process-identity.js',
+  'scripts/critical-relay/auxiliary-lock.js',
   'scripts/critical-relay/plan-migration.js',
   'scripts/router/resource-policy.js'
 ];
@@ -28,6 +30,14 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 const serialize = value => JSON.stringify(value, null, 2) + '\n';
 const moduleName = 'DevSpace.WorkflowStore.mjs';
 const sourceEntry = runtimeFiles[0];
+const here = path.dirname(fileURLToPath(import.meta.url));
+const packagedRuntime = path.join(here, 'workflow-runtime');
+const helperRoot = fs.existsSync(path.join(packagedRuntime, manifestName)) ? packagedRuntime : path.resolve(here, '../..');
+const { withAuxiliaryLock } = (await import(pathToFileURL(safePath(helperRoot, 'scripts/critical-relay/auxiliary-lock.js')).href)).default;
+const transitionSchema = 'pixiu.workflow-transition.v1';
+const pendingName = 'workflow-transition.pending.json';
+const isUuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u.test(value);
+const isDigest = value => typeof value === 'string' && /^[a-f0-9]{64}$/u.test(value);
 
 function safePath(root, relative, missing = false) {
   if (typeof relative !== 'string' || /[:\\\x00]/u.test(relative) ||
@@ -119,12 +129,93 @@ export function probeBundle(bundleRoot) {
   return { ...JSON.parse(value.trim()), sourceCommit: manifest.sourceCommit, sourceDirty: manifest.sourceDirty, contentDigest: manifest.contentDigest };
 }
 
-function installLock(bin) {
+function withInstallLock(bin, operation) {
+  safePath(bin, moduleName, true);
   fs.mkdirSync(bin, { recursive: true });
-  const lockPath = safePath(bin, 'workflow-install.lock', true);
-  const fd = fs.openSync(lockPath, 'wx', 0o600);
-  fs.writeFileSync(fd, serialize({ pid: process.pid, owner: os.userInfo().username }));
-  return () => { fs.closeSync(fd); fs.unlinkSync(lockPath); };
+  return withAuxiliaryLock(bin, 'install', operation);
+}
+function durableNew(root, relative, value) {
+  writeNew(root, relative, value);
+  const fd = fs.openSync(safePath(root, relative), 'r+');
+  try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+}
+function assertNoPending(bin) {
+  if (fs.existsSync(safePath(bin, pendingName, true))) throw new Error('BUNDLE_TRANSITION_PENDING');
+}
+function currentDigest(bin) {
+  const target = safePath(bin, moduleName, true);
+  return fs.existsSync(target) ? hash(fs.readFileSync(target)) : null;
+}
+
+function finishTransition(bin, marker, onStep = () => {}) {
+  if (marker?.schemaVersion !== transitionSchema || !isUuid(marker.transactionId) || !isDigest(marker.receiptDigest)) {
+    throw new Error('BUNDLE_TRANSITION_MARKER_INVALID');
+  }
+  const dir = `workflow-transactions/${marker.transactionId}`;
+  const receiptBytes = fs.readFileSync(safePath(bin, `${dir}/transaction.json`));
+  const transaction = JSON.parse(receiptBytes.toString('utf8'));
+  if (hash(receiptBytes) !== marker.receiptDigest || transaction.schemaVersion !== transitionSchema ||
+      transaction.transactionId !== marker.transactionId || transaction.target !== moduleName ||
+      !['install', 'rollback'].includes(transaction.action) || !isUuid(transaction.receiptId) ||
+      !isDigest(transaction.afterDigest) || (transaction.beforeDigest !== null && !isDigest(transaction.beforeDigest))) {
+    throw new Error('BUNDLE_TRANSITION_CHANGED');
+  }
+  const receipt = readJson(bin, `workflow-receipts/${transaction.receiptId}/receipt.json`);
+  if (receipt.schemaVersion !== 'pixiu.workflow-install.v1' || receipt.receiptId !== transaction.receiptId ||
+      receipt.target !== moduleName || receipt.bundleDigest !== transaction.bundleDigest) throw new Error('BUNDLE_RECEIPT_INVALID');
+  const before = transaction.action === 'install' ? receipt.previousDigest : receipt.installedDigest;
+  const after = transaction.action === 'install' ? receipt.installedDigest : receipt.previousDigest;
+  if (before !== transaction.beforeDigest || after !== transaction.afterDigest) throw new Error('BUNDLE_TRANSITION_CHANGED');
+  const nextBytes = fs.readFileSync(safePath(bin, `${dir}/after.mjs`));
+  if (hash(nextBytes) !== after) throw new Error('BUNDLE_TRANSITION_AFTER_CHANGED');
+  if (before !== null && hash(fs.readFileSync(safePath(bin, `${dir}/before.mjs`))) !== before) throw new Error('BUNDLE_TRANSITION_BEFORE_CHANGED');
+  if (receipt.previousDigest !== null && hash(fs.readFileSync(safePath(bin, `workflow-receipts/${receipt.receiptId}/previous.mjs`))) !== receipt.previousDigest) {
+    throw new Error('BUNDLE_BACKUP_CHANGED');
+  }
+  if (transaction.action === 'install') {
+    const manifest = verifyBundle(safePath(bin, `workflow-releases/${receipt.bundleDigest}`));
+    if (manifest.contentDigest !== receipt.bundleDigest || !nextBytes.equals(Buffer.from(pointerFor(manifest)))) throw new Error('BUNDLE_TRANSITION_BUNDLE_CHANGED');
+  }
+  onStep('before-switch', transaction);
+  const actual = currentDigest(bin);
+  if (actual !== before && actual !== after) throw new Error('BUNDLE_TRANSITION_TARGET_CHANGED');
+  const changed = actual !== after;
+  if (changed) atomicReplace(bin, moduleName, nextBytes);
+  onStep('pointer-switched', transaction);
+  atomicReplace(bin, `${dir}/committed.json`, serialize({ transactionId: transaction.transactionId, afterDigest: after, completedAt: new Date().toISOString() }));
+  onStep('committed', transaction);
+  if (currentDigest(bin) !== after || serialize(readJson(bin, pendingName)) !== serialize(marker)) throw new Error('BUNDLE_TRANSITION_TARGET_CHANGED');
+  fs.unlinkSync(safePath(bin, pendingName));
+  onStep('pending-cleared', transaction);
+  return { Path: safePath(bin, moduleName), Changed: changed, transactionId: transaction.transactionId,
+    receiptId: transaction.receiptId, action: transaction.action, restarted: false };
+}
+function startTransition(bin, receipt, action, nextBytes, onStep) {
+  assertNoPending(bin);
+  const before = currentDigest(bin);
+  const expected = action === 'install' ? receipt.previousDigest : receipt.installedDigest;
+  if (before !== expected) throw new Error('BUNDLE_TARGET_CHANGED');
+  const transactionId = randomUUID(), dir = `workflow-transactions/${transactionId}`;
+  if (before !== null) durableNew(bin, `${dir}/before.mjs`, fs.readFileSync(safePath(bin, moduleName)));
+  durableNew(bin, `${dir}/after.mjs`, nextBytes);
+  const transaction = { schemaVersion: transitionSchema, transactionId, target: moduleName, action,
+    receiptId: receipt.receiptId, bundleDigest: receipt.bundleDigest, beforeDigest: before,
+    afterDigest: hash(nextBytes), createdAt: new Date().toISOString() };
+  const serialized = serialize(transaction);
+  durableNew(bin, `${dir}/transaction.json`, serialized);
+  const marker = { schemaVersion: transitionSchema, transactionId, receiptDigest: hash(serialized) };
+  // marker 在入口切換前持久化；重啟後只能恢復同一交易，不能另開一次覆蓋。
+  atomicReplace(bin, pendingName, serialize(marker));
+  onStep('pending-written', transaction);
+  return finishTransition(bin, marker, onStep);
+}
+export function resumeBundleTransition(bin, { authorized = false, transactionId } = {}, onStep = () => {}) {
+  if (authorized !== true || !isUuid(transactionId)) throw new Error('BUNDLE_RESUME_AUTHORIZATION_REQUIRED');
+  return withInstallLock(bin, () => {
+    const marker = readJson(bin, pendingName);
+    if (marker.transactionId !== transactionId) throw new Error('BUNDLE_TRANSITION_ID_MISMATCH');
+    return finishTransition(bin, marker, onStep);
+  });
 }
 function pointerFor(manifest) {
   return `// 此入口由受驗證的 workflow 套件產生；舊版本與資料保留以供回復。\n` +
@@ -132,15 +223,16 @@ function pointerFor(manifest) {
     `export const workflowBundleDigest = '${manifest.contentDigest}';\n`;
 }
 
-export function installBundle(bundleRoot, bin) {
+export function installBundle(bundleRoot, bin, onStep = () => {}) {
   const manifest = verifyBundle(bundleRoot);
+  // 真正 import 在持有切換鎖前執行；不可在不可中斷區留下未登錄的可寫子程序。
   probeBundle(bundleRoot);
   const release = `workflow-releases/${manifest.contentDigest}`;
   const releasePath = safePath(bin, release, true);
   const target = safePath(bin, moduleName, true);
   const nextBytes = Buffer.from(pointerFor(manifest));
-  const releaseLock = installLock(bin);
-  try {
+  const result = withInstallLock(bin, () => {
+    assertNoPending(bin);
     const before = fs.existsSync(target) ? fs.readFileSync(target) : null;
     if (fs.existsSync(releasePath)) {
       if (verifyBundle(releasePath).contentDigest !== manifest.contentDigest) throw new Error('BUNDLE_EXISTING_RELEASE_INVALID');
@@ -148,30 +240,28 @@ export function installBundle(bundleRoot, bin) {
       const stage = `${release}.stage-${randomUUID()}`;
       fs.mkdirSync(safePath(bin, stage, true), { recursive: true });
       for (const name of [...runtimeFiles, manifestName]) writeNew(bin, `${stage}/${name}`, fs.readFileSync(safePath(bundleRoot, name)));
-      probeBundle(safePath(bin, stage));
+      verifyBundle(safePath(bin, stage));
       fs.renameSync(safePath(bin, stage), releasePath);
     }
-    const actual = probeBundle(releasePath);
-    if (before && before.equals(nextBytes)) return { Path: target, Changed: false, ...actual };
+    verifyBundle(releasePath);
+    if (before && before.equals(nextBytes)) return { Path: target, Changed: false };
     const receiptId = randomUUID();
     const receiptDir = `workflow-receipts/${receiptId}`;
     fs.mkdirSync(safePath(bin, receiptDir, true), { recursive: true });
-    if (before) writeNew(bin, `${receiptDir}/previous.mjs`, before);
+    if (before) durableNew(bin, `${receiptDir}/previous.mjs`, before);
     const receipt = { schemaVersion: 'pixiu.workflow-install.v1', receiptId, target: moduleName,
       previousDigest: before ? hash(before) : null, installedDigest: hash(nextBytes), bundleDigest: manifest.contentDigest };
-    writeNew(bin, `${receiptDir}/receipt.json`, serialize(receipt));
-    // 全部模組先驗證，再以單一入口的原子替換切換版本。
-    if (before && (!fs.existsSync(target) || !fs.readFileSync(target).equals(before))) throw new Error('BUNDLE_TARGET_CHANGED');
-    if (!before && fs.existsSync(target)) throw new Error('BUNDLE_TARGET_CHANGED');
-    atomicReplace(bin, moduleName, nextBytes);
-    return { Path: target, Changed: true, receiptId, ...actual };
-  } finally { releaseLock(); }
+    durableNew(bin, `${receiptDir}/receipt.json`, serialize(receipt));
+    onStep('receipt-written', receipt);
+    return startTransition(bin, receipt, 'install', nextBytes, onStep);
+  });
+  return { ...result, ...probeBundle(releasePath) };
 }
 
-export function rollbackBundle(bin, receiptId) {
-  if (!/^[a-f0-9-]{36}$/u.test(receiptId)) throw new Error('BUNDLE_RECEIPT_INVALID');
-  const releaseLock = installLock(bin);
-  try {
+export function rollbackBundle(bin, receiptId, onStep = () => {}) {
+  if (!isUuid(receiptId)) throw new Error('BUNDLE_RECEIPT_INVALID');
+  return withInstallLock(bin, () => {
+    assertNoPending(bin);
     const dir = `workflow-receipts/${receiptId}`;
     const receipt = readJson(bin, `${dir}/receipt.json`);
     if (receipt.receiptId !== receiptId || receipt.target !== moduleName || receipt.schemaVersion !== 'pixiu.workflow-install.v1') throw new Error('BUNDLE_RECEIPT_INVALID');
@@ -181,9 +271,9 @@ export function rollbackBundle(bin, receiptId) {
     if (receipt.previousDigest === null) throw new Error('BUNDLE_NO_PREVIOUS_VERSION');
     const previous = fs.readFileSync(safePath(bin, `${dir}/previous.mjs`));
     if (hash(previous) !== receipt.previousDigest) throw new Error('BUNDLE_BACKUP_CHANGED');
-    atomicReplace(bin, moduleName, previous);
-    return { Path: target, restoredDigest: receipt.previousDigest, receiptId, restarted: false };
-  } finally { releaseLock(); }
+    const result = startTransition(bin, receipt, 'rollback', previous, onStep);
+    return { ...result, restoredDigest: receipt.previousDigest };
+  });
 }
 
 export function installFromSource(sourceFile, bin) {
@@ -210,13 +300,14 @@ export function installFromSource(sourceFile, bin) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const [action, a, b] = process.argv.slice(2);
+    const [action, a, b, authorization] = process.argv.slice(2);
     let result;
     if (action === 'assemble') result = assembleBundle(path.resolve(a), path.resolve(b));
     else if (action === 'verify') result = probeBundle(path.resolve(a));
     else if (action === 'install') result = installFromSource(path.resolve(a), path.resolve(b));
     else if (action === 'rollback') result = rollbackBundle(path.resolve(a), b);
-    else throw new Error('用法：workflow-bundle.mjs assemble|verify|install|rollback <path> [path或receiptId]');
+    else if (action === 'resume' && authorization === '--authorized') result = resumeBundleTransition(path.resolve(a), { transactionId: b, authorized: true });
+    else throw new Error('用法：workflow-bundle.mjs assemble|verify|install|rollback <path> [path或receiptId]；resume <bin> <transactionId> --authorized');
     console.log(JSON.stringify(result));
   } catch (error) { console.error(error.message); process.exitCode = 2; }
 }

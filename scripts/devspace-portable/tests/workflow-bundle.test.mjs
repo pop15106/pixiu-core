@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
+import { once } from 'node:events';
+import lockTools from '../../critical-relay/auxiliary-lock.js';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { assembleBundle, verifyBundle, probeBundle, installBundle, rollbackBundle, runtimeFiles } from '../workflow-bundle.mjs';
+import { assembleBundle, verifyBundle, probeBundle, installBundle, rollbackBundle, resumeBundleTransition, runtimeFiles } from '../workflow-bundle.mjs';
+const { inspectAuxiliaryLock, recoverAuxiliaryLock } = lockTools;
 
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 function fixture(t) {
@@ -94,7 +97,7 @@ test('原備份被修改則拒絕回復，保留現行新版本', t => {
 test('既有安裝鎖與 junction 都不能被覆蓋或跟隨', t => {
   const f = fixture(t);
   fs.writeFileSync(path.join(f.bin, 'workflow-install.lock'), '其他操作');
-  assert.throws(() => installBundle(f.bundle, f.bin), /EEXIST/);
+  assert.throws(() => installBundle(f.bundle, f.bin), /INVALID_OR_LEGACY/);
   assert.equal(fs.readFileSync(path.join(f.bin, 'workflow-install.lock'), 'utf8'), '其他操作');
   fs.unlinkSync(path.join(f.bin, 'workflow-install.lock'));
   const outside = path.join(f.root, 'outside'); fs.mkdirSync(outside);
@@ -123,4 +126,109 @@ test('從安裝後完整依賴包可執行中性 Node 驗證，不借用開發 c
   const { default: verifier } = await import(pathToFileURL(path.join(path.dirname(modulePath), 'evidence-verifier.js')).href);
   const { default: planner } = await import(pathToFileURL(path.join(path.dirname(modulePath), 'test-plan.js')).href);
   assert.equal(verifier.verifyRun(project, planner.bindPlan(project, 'plan.json'), result).canComplete, true);
+});
+
+async function killAtTransition(f, mode, phase, receiptId = '') {
+  const holder = fileURLToPath(new URL('./workflow-transition-holder.mjs', import.meta.url));
+  const child = spawn(process.execPath, [holder, mode, f.bundle, f.bin, phase, receiptId],
+    { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+  let output = '', error = '';
+  child.stdout.on('data', value => { output += value; });
+  child.stderr.on('data', value => { error += value; });
+  const ended = once(child, 'exit');
+  try {
+    const deadline = Date.now() + 20000;
+    while (!output.includes('\n')) {
+      if (child.exitCode !== null || child.signalCode !== null) throw new Error(error || '套件測試程序提早結束');
+      if (Date.now() > deadline) throw new Error('等待套件中斷點逾時');
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    const status = inspectAuxiliaryLock(f.bin, 'install');
+    assert.throws(() => recoverAuxiliaryLock(f.bin, 'install', { ...status, authorized: true }), /OWNER_ALIVE_OR_UNKNOWN/);
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    await ended;
+  }
+  const status = inspectAuxiliaryLock(f.bin, 'install');
+  assert.equal(status.status, 'RECOVERY_REQUIRED');
+  return { status, notice: JSON.parse(output.trim().split('\n')[0]) };
+}
+
+for (const phase of ['receipt-written', 'pending-written', 'pointer-switched', 'committed']) {
+  test(`安裝在 ${phase} 真正硬終止後先恢復鎖，再按原交易處理入口`, async t => {
+    const f = fixture(t);
+    const previous = 'export const previous=true;\n';
+    fs.writeFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), previous);
+    fs.writeFileSync(path.join(f.bin, 'workflow-state.json'), '中性 ledger 保留資料');
+    const { status, notice } = await killAtTransition(f, 'install', phase);
+    const beforeRecovery = fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'));
+    recoverAuxiliaryLock(f.bin, 'install', { ...status, authorized: true });
+    assert.deepEqual(fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs')), beforeRecovery);
+    if (phase === 'receipt-written') {
+      assert.equal(beforeRecovery.toString(), previous);
+      assert.equal(fs.existsSync(path.join(f.bin, 'workflow-transition.pending.json')), false);
+      assert.equal(installBundle(f.bundle, f.bin).Changed, true);
+    } else {
+      assert.throws(() => installBundle(f.bundle, f.bin), /TRANSITION_PENDING/);
+      assert.throws(() => resumeBundleTransition(f.bin, { transactionId: notice.transactionId }), /AUTHORIZATION/);
+      const resumed = resumeBundleTransition(f.bin, { authorized: true, transactionId: notice.transactionId });
+      assert.equal(resumed.transactionId, notice.transactionId);
+      assert.equal(fs.existsSync(path.join(f.bin, 'workflow-transition.pending.json')), false);
+    }
+    assert.equal(importInstalled(f.bin).loaded, true);
+    assert.equal(fs.readFileSync(path.join(f.bin, 'workflow-state.json'), 'utf8'), '中性 ledger 保留資料');
+  });
+}
+
+for (const phase of ['pending-written', 'pointer-switched']) {
+  test(`回復在 ${phase} 真正硬終止後只恢復同一份原入口`, async t => {
+    const f = fixture(t);
+    const previous = 'export const previous=true;\n';
+    fs.writeFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), previous);
+    const installed = installBundle(f.bundle, f.bin);
+    const { status, notice } = await killAtTransition(f, 'rollback', phase, installed.receiptId);
+    recoverAuxiliaryLock(f.bin, 'install', { ...status, authorized: true });
+    const resumed = resumeBundleTransition(f.bin, { authorized: true, transactionId: notice.transactionId });
+    assert.equal(resumed.action, 'rollback');
+    assert.equal(fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), 'utf8'), previous);
+  });
+}
+
+test('切換中斷後有其他人改入口，恢復拒絕覆蓋並保留 pending', t => {
+  const f = fixture(t);
+  fs.writeFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), 'export const old=true;');
+  assert.throws(() => installBundle(f.bundle, f.bin, step => { if (step === 'pending-written') throw new Error('中性中斷'); }), /中斷/);
+  const marker = JSON.parse(fs.readFileSync(path.join(f.bin, 'workflow-transition.pending.json'), 'utf8'));
+  fs.writeFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), 'export const someoneElse=true;');
+  assert.throws(() => resumeBundleTransition(f.bin, { authorized: true, transactionId: marker.transactionId }), /TARGET_CHANGED/);
+  assert.equal(fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), 'utf8'), 'export const someoneElse=true;');
+  assert.equal(fs.existsSync(path.join(f.bin, 'workflow-transition.pending.json')), true);
+});
+
+test('入口 rename 注入磁碟錯誤後保留原入口，可恢復同一交易', t => {
+  const f = fixture(t);
+  const previous = 'export const previous=true;\n';
+  const target = path.join(f.bin, 'DevSpace.WorkflowStore.mjs');
+  fs.writeFileSync(target, previous);
+  const original = fs.renameSync;
+  fs.renameSync = (from, to) => {
+    if (to === target) throw Object.assign(new Error('中性磁碟滿'), { code: 'ENOSPC' });
+    return original(from, to);
+  };
+  try { assert.throws(() => installBundle(f.bundle, f.bin), /磁碟滿/); } finally { fs.renameSync = original; }
+  assert.equal(fs.readFileSync(target, 'utf8'), previous);
+  const marker = JSON.parse(fs.readFileSync(path.join(f.bin, 'workflow-transition.pending.json'), 'utf8'));
+  resumeBundleTransition(f.bin, { authorized: true, transactionId: marker.transactionId });
+  assert.equal(importInstalled(f.bin).loaded, true);
+});
+
+test('切換後寫入終態失敗，恢復不再切換入口且舊備份保持不變', t => {
+  const f = fixture(t);
+  fs.writeFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'), 'export const previous=true;');
+  assert.throws(() => installBundle(f.bundle, f.bin, step => { if (step === 'pointer-switched') throw new Error('中性 EIO'); }), /EIO/);
+  const before = fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs'));
+  const marker = JSON.parse(fs.readFileSync(path.join(f.bin, 'workflow-transition.pending.json'), 'utf8'));
+  const result = resumeBundleTransition(f.bin, { authorized: true, transactionId: marker.transactionId });
+  assert.equal(result.Changed, false);
+  assert.deepEqual(fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs')), before);
 });

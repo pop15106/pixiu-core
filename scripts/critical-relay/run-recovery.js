@@ -2,65 +2,15 @@
 'use strict';
 
 const fs = require('node:fs');
-const path = require('node:path');
-const os = require('node:os');
-const { execFileSync } = require('node:child_process');
+const { processIdentity, ownerIdentity, sameOwner, pidStatus } = require('./process-identity');
+const { withAuxiliaryLock } = require('./auxiliary-lock');
 const { randomUUID } = require('node:crypto');
 const { boundedPath, readJson, atomicJson, digestObject, hash } = require('./test-plan');
 const SCHEMA = 'pixiu.runner-lock.v2';
 const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u.test(value);
 
-function processBirth(pid) {
-  if (!Number.isSafeInteger(pid) || pid < 1) throw new Error('RECOVERY_INVALID_PID');
-  if (process.platform === 'linux') {
-    const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf8');
-    const fields = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
-    return `${fs.readFileSync('/proc/sys/kernel/random/boot_id', 'utf8').trim()}:${fields[19]}`;
-  }
-  if (process.platform === 'win32') {
-    const shell = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    const output = execFileSync(shell, ['-NoProfile', '-NonInteractive', '-Command',
-      `$ErrorActionPreference='Stop'; [string](Get-Process -Id ${pid}).StartTime.ToUniversalTime().Ticks`],
-    { encoding: 'utf8', windowsHide: true, timeout: 10000, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-    if (!/^\d+$/u.test(output)) throw new Error('RECOVERY_PROCESS_BIRTH_UNAVAILABLE');
-    return output;
-  }
-  throw new Error('RECOVERY_PLATFORM_UNSUPPORTED');
-}
-
-function pidStatus(pid) {
-  if (!Number.isSafeInteger(pid) || pid < 1) return 'UNKNOWN';
-  try {
-    process.kill(pid, 0);
-    if (process.platform === 'linux') {
-      const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf8');
-      const state = stat.slice(stat.lastIndexOf(')') + 2).split(' ')[0];
-      if (state === 'Z' || state === 'X') return 'DEAD';
-    }
-    return 'ALIVE';
-  } catch (error) { return ['ESRCH', 'ENOENT'].includes(error.code) ? 'DEAD' : 'UNKNOWN'; }
-}
-function processIdentity(pid = process.pid) {
-  return { pid, birth: processBirth(pid) };
-}
-function ownerIdentity(root) {
-  return { workspaceRoot: fs.realpathSync(root), hostname: os.hostname(), owner: os.userInfo().username };
-}
-function sameOwner(root, record) {
-  const expected = ownerIdentity(root);
-  return Object.keys(expected).every(key => expected[key] === record[key]);
-}
-
 function withControl(root, operation) {
-  const cr = boundedPath(root, '.cr', { mustExist: false });
-  fs.mkdirSync(cr, { recursive: true });
-  const control = boundedPath(root, '.cr/control.lock', { mustExist: false });
-  const fd = fs.openSync(control, 'wx', 0o600);
-  try {
-    fs.writeFileSync(fd, JSON.stringify({ pid: process.pid, operationId: randomUUID() }));
-    fs.fsyncSync(fd);
-    return operation();
-  } finally { fs.closeSync(fd); fs.unlinkSync(control); }
+  return withAuxiliaryLock(root, 'control', operation);
 }
 
 function acquireRunLock(root, runId) {

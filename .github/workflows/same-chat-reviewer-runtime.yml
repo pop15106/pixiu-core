@@ -52,7 +52,11 @@ jobs:
         run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/devspace-portable/tests/run-tests.ps1
 
       - name: Run workflow bundle and interrupted verification regression
-        run: node --test scripts/devspace-portable/tests/workflow-bundle.test.mjs scripts/critical-relay/run-recovery.test.js scripts/critical-relay/plan-migration.test.js
+        run: node --test scripts/devspace-portable/tests/workflow-bundle.test.mjs scripts/critical-relay/run-recovery.test.js scripts/critical-relay/plan-migration.test.js scripts/critical-relay/auxiliary-lock.test.js
+
+      - name: Verify bounded cleanup and primary error preservation
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/devspace-portable/tests/run-portable-cleanup-tests.ps1
 
       - name: Verify clean extracted installation and rollback
         shell: powershell

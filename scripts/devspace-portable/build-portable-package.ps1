@@ -5,6 +5,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'Portable.Cleanup.psm1') -Force
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $PSScriptRoot 'dist'
@@ -159,9 +160,7 @@ try {
     $stamp = Get-Date -Format 'yyyyMMdd'
     $zipName = "DevSpace-OneClick-$stamp-$sourceCommit.zip"
     $zipPath = Join-Path $outputRoot $zipName
-    if (Test-Path -LiteralPath $zipPath) {
-        Remove-Item -LiteralPath $zipPath -Force
-    }
+    # 保留既有 ZIP，直到本輪臨時封裝成功才替換。
     # 使用唯讀共享來源串流，避免 Compress-Archive 對剛完成 import 的檔案要求不必要的獨占存取。
     Add-Type -AssemblyName System.IO.Compression
     $archiveTemporary = "$zipPath.$([guid]::NewGuid().ToString('N')).tmp"
@@ -200,7 +199,14 @@ try {
     return $zipPath
 }
 finally {
-    if (Test-Path -LiteralPath $temporaryRoot) {
-        Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
+    try {
+        $cleanup = Remove-PortableTemporaryDirectory -TemporaryRoot $temporaryRoot
+        if (-not $cleanup.Removed) {
+            Write-Warning -WarningAction Continue ("PORTABLE_CLEANUP_RETAINED: " + ($cleanup | ConvertTo-Json -Compress))
+        }
+    }
+    catch {
+        # 清理本身的非預期錯誤另行揭露，原建置例外及已驗證 ZIP 保持原狀。
+        Write-Warning -WarningAction Continue ("PORTABLE_CLEANUP_ERROR: " + $_.Exception.Message + "; temporaryRoot=" + $temporaryRoot)
     }
 }

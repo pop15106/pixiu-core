@@ -1,8 +1,8 @@
 {
   "schemaVersion": "pixiu.test-plan.v1",
   "id": "pixiu-public-core",
-  "revision": 2,
-  "parentDigest": "ab515c3d06234157022e4cb6d15fa85c2bb984b88a4fc0019948a008d7c3d0cb",
+  "revision": 3,
+  "parentDigest": "0bccdd243cdb7209cd8013a7ce0c98e5fac551a87cea056b06c686ef7905aec2",
   "profile": "local-only",
   "criteria": [
     { "id": "criterion-core", "criterion": "既有 CR、路由及 workflow 契約維持通過", "requiredEvidenceKinds": ["test"] },
@@ -20,8 +20,9 @@
     { "id": "resource-policy", "adapter": "node-test", "file": "scripts/router/resource-policy.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 30000, "criterionRefs": ["criterion-private-isolation"] },
     { "id": "evidence-runner", "adapter": "node-test", "file": "scripts/critical-relay/test-runner.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 600000, "criterionRefs": ["criterion-evidence"] },
     { "id": "workflow-evidence", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-evidence.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] },
-    { "id": "workflow-bundle", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-bundle.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] },
+    { "id": "workflow-bundle", "adapter": "node-test", "file": "scripts/devspace-portable/tests/workflow-bundle.test.mjs", "evidenceKind": "test", "required": true, "timeoutMs": 300000, "criterionRefs": ["criterion-handoff"] },
     { "id": "run-recovery", "adapter": "node-test", "file": "scripts/critical-relay/run-recovery.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 240000, "criterionRefs": ["criterion-evidence"] },
-    { "id": "plan-migration", "adapter": "node-test", "file": "scripts/critical-relay/plan-migration.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] }
+    { "id": "plan-migration", "adapter": "node-test", "file": "scripts/critical-relay/plan-migration.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 180000, "criterionRefs": ["criterion-handoff"] },
+    { "id": "auxiliary-lock", "adapter": "node-test", "file": "scripts/critical-relay/auxiliary-lock.test.js", "evidenceKind": "test", "required": true, "timeoutMs": 240000, "criterionRefs": ["criterion-evidence", "criterion-handoff"] }
   ]
 }
