@@ -3,6 +3,7 @@ import path from 'node:path';
 import { open } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import relay from '../critical-relay/critical-relay.js';
+import lifecyclePolicy from '../critical-relay/lifecycle.js';
 import verifier from '../critical-relay/evidence-verifier.js';
 import planner from '../critical-relay/test-plan.js';
 import identity from '../critical-relay/process-identity.js';
@@ -40,6 +41,13 @@ export function enforceCriticalRelay(previous, next, input, projectRef, rootToPr
   if (next.scope === 'cross_project' || (next.projectRefs?.length ?? 1) !== 1 || (next.projectRoots?.length ?? 1) !== 1) fail('多專案 CR 尚未支援；原有非 CR 跨專案任務維持原流程');
   if (previous?.verificationProjectRef && projectRef !== previous.verificationProjectRef) fail('驗證專案不可變更');
   const binding = verifier.latchBinding(root, nextState, previous?.verificationBinding);
+  if (previous?.lifecycleBinding &&
+      (nextState.lifecycleRequired !== true ||
+        !lifecyclePolicy.verifyLifecycleBinding(previous.lifecycleBinding, nextState.lifecycle))) {
+    fail('CR Lifecycle 必要政策不能移除、降級或更改');
+  }
+  if (nextState.lifecycleRequired === true)
+    next.lifecycleBinding = previous?.lifecycleBinding || lifecyclePolicy.lifecycleBinding(nextState.lifecycle);
   next.criticalRelayRequired = true;
   next.criticalRelay = nextState;
   next.verificationBinding = binding;
