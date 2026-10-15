@@ -177,7 +177,7 @@
     },
     {
       "id": "critical-reasoning",
-      "summary": "對重要主張執行懷疑、反證搜尋、反例測試、交叉驗證與重新判斷，並以 Critical Relay completion gate 控制交棒。",
+      "summary": "Critical Relay 對研究、設計、開發、驗證加入反向搜尋、取捨決策與證據回讀，並以 completion gate 控制交棒。",
       "keywords": [
         "對抗搜尋",
         "對抗式搜尋",
@@ -196,13 +196,29 @@
       "priority": 47,
       "load": {
         "skills": [
-          "skills/critical-relay/SKILL.md"
+          "skills/critical-relay/SKILL.md",
+          "skills/critical-relay-lifecycle/SKILL.md"
         ],
         "contexts": [],
-        "governance": []
+        "governance": [".agent/workflows/cr-lifecycle.md"]
       },
       "aliases": [
-        "cr 完整自動接力"
+        "cr 完整自動接力",
+        "cr全流程",
+        "cr 全流程",
+        "cr研究",
+        "cr 研究",
+        "cr設計",
+        "cr 設計",
+        "cr開發",
+        "cr 開發",
+        "cr搜尋",
+        "cr 搜尋",
+        "cr research",
+        "cr design",
+        "cr development",
+        "cr lifecycle",
+        "critical relay lifecycle"
       ],
       "requiredWhenMatched": true
     },
