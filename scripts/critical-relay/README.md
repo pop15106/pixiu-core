@@ -4,9 +4,27 @@
 
 ## 本次支援範圍
 
-`public-core.plan.json` 第 3 版固定十三組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
+`public-core.plan.json` 第 4 版固定十四組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
 
 目前 adapter 只執行 Node `node:test`。UI、API、build、document 可作驗收所需種類，但尚無對應的自動收集 adapter，缺少該證據就阻擋完成。此工具不會以 build 或核心測試假冒產品 UI／API 驗收。
+
+## 長任務心跳與輪詢（Git-only 維護）
+
+新啟動的 CR runner 每 **15 秒**更新 `.cr/runs/<runId>/status.json`，讓單組測試沒有任何輸出時仍能觀測心跳。輪詢端預設 **10 秒**讀一次；最後心跳超過 **45 秒**則回傳 `HEARTBEAT_STALE`，只表示本輪無法證實仍在執行，**不得自動推斷測試失敗或成功，也不得刪鎖或重啟另一輪**。
+
+```text
+node scripts/critical-relay/status-watch.js status
+node scripts/critical-relay/status-watch.js watch
+node scripts/critical-relay/status-watch.js task
+```
+
+- `status` 只查一次最新執行狀態，或指定真實的 UUID runId。
+- `watch` 預設每 10 秒讀取同一個 run；顯示命令、完成組數、journal 事件數和最近心跳時間，遇到終態或 stale 結束。最大輪詢次數由程式限制。
+- `task` 查既有 `.cr/state.json` 研究／設計／開發階段的**上次 checkpoint**，不宣稱目前 Agent 仍在線。
+- `TESTS_PASS_GATE_NOT_CONFIRMED` 代表 runner 的 `result.json` 已報測試結束，但仍須既有 evidence verifier／CR completion gate 和 RECHALLENGE。
+- `latest-run.json` 與 heartbeat 只提供查詢，不增加第二份帳本或任何 Agent、排程／背景 ChatGPT 推播權限。連線完全失效時，ChatGPT 無法自行推送進度。
+
+新狀態只對安裝新版後**重新啟動的 run** 生效；舊 run 不會補寫虛構心跳。兩台現有 DevSpace **不因原始碼推送而自動升級**，需要另行做安裝與服務載入驗收。心跳及狀態文件保存在忽略版本控管的 `.cr/`，不得將個別任務或憑證同步到 GitHub。
 
 ## 單純執行公共核心測試
 
