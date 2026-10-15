@@ -5,6 +5,7 @@ import os from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 
 // 只打包明確的 runtime 依賴，不複製整個母體、測試、私人資料或憑證。
 export const runtimeFiles = [
@@ -33,7 +34,7 @@ const sourceEntry = runtimeFiles[0];
 const here = path.dirname(fileURLToPath(import.meta.url));
 const packagedRuntime = path.join(here, 'workflow-runtime');
 const helperRoot = fs.existsSync(path.join(packagedRuntime, manifestName)) ? packagedRuntime : path.resolve(here, '../..');
-const { withAuxiliaryLock } = (await import(pathToFileURL(safePath(helperRoot, 'scripts/critical-relay/auxiliary-lock.js')).href)).default;
+const requireModule = createRequire(import.meta.url);
 const transitionSchema = 'pixiu.workflow-transition.v1';
 const pendingName = 'workflow-transition.pending.json';
 const isUuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u.test(value);
@@ -131,6 +132,9 @@ export function probeBundle(bundleRoot) {
 
 function withInstallLock(bin, operation) {
   safePath(bin, moduleName, true);
+  // 套件入口先驗證完整內容，通過後才能載入同步鎖模組；verify 本身不提早執行待驗證內容。
+  if (helperRoot === packagedRuntime) verifyBundle(helperRoot);
+  const { withAuxiliaryLock } = requireModule(safePath(helperRoot, 'scripts/critical-relay/auxiliary-lock.js'));
   fs.mkdirSync(bin, { recursive: true });
   return withAuxiliaryLock(bin, 'install', operation);
 }

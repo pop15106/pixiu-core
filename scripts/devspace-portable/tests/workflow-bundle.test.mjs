@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import lockTools from '../../critical-relay/auxiliary-lock.js';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -35,6 +35,22 @@ test('乾淨套件依賴完整，回讀實際載入位置與 v2 schema', t => {
   assert.ok(probe.loadedModule.startsWith(pathToFileURL(f.bundle).href));
   assert.equal(probe.contentDigest, manifest.contentDigest);
   assert.throws(() => assembleBundle(repo, f.bundle), /DESTINATION_EXISTS/);
+});
+
+test('獨立套件驗證器拒絕竄改內容前不會先執行鎖模組', t => {
+  const f = fixture(t);
+  const prepared = path.join(f.root, 'workflow-runtime');
+  fs.renameSync(f.bundle, prepared);
+  const tool = path.join(f.root, 'workflow-bundle.mjs');
+  fs.copyFileSync(path.join(repo, 'scripts/devspace-portable/workflow-bundle.mjs'), tool);
+  const marker = path.join(f.root, 'unexpected-load.txt');
+  // 中性副作用只寫入本案例的暫存目錄，用來驗證 hash 檢查的先後順序。
+  fs.appendFileSync(path.join(prepared, 'scripts/critical-relay/auxiliary-lock.js'),
+    `\nrequire('node:fs').writeFileSync(${JSON.stringify(marker)}, 'neutral verifier fixture');\n`);
+  const result = spawnSync(process.execPath, [tool, 'verify', prepared], { cwd: f.root, encoding: 'utf8', windowsHide: true, timeout: 15000 });
+  assert.equal(result.status, 2, result.stderr);
+  assert.match(result.stderr, /BUNDLE_HASH_MISMATCH/);
+  assert.equal(fs.existsSync(marker), false);
 });
 
 test('缺少任何 runtime 模組都阻擋套件與安裝', t => {
