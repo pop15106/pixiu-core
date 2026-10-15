@@ -2,40 +2,61 @@ name: Critical Relay
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
     paths:
+      - "skills/**"
+      - "user_rules.md"
+      - "vault/README.md"
+      - "rules/common/prompt-engineering.md"
       - "scripts/critical-relay/**"
+      - "scripts/router/**"
+      - "scripts/performance/**"
+      - "scripts/devspace-portable/**"
+      - "scripts/entry-sync/templates/**"
       - "skills/critical-relay/**"
       - "skills/pixiu-verify-loop/**"
       - "skills/verification-loop/**"
       - ".agents/skills/critical-relay/**"
       - ".agents/skills/pixiu-verify-loop/**"
       - ".agents/skills/verification-loop/**"
+      - "vault/bootstrap/**"
+      - "vault/capabilities/**"
+      - "vault/governance/**"
+      - "AGENTS.md"
+      - "CODEX.md"
+      - "CLAUDE.md"
+      - "GEMINI.md"
+      - ".codex/AGENTS.md"
       - "commands/go.md"
-      - "scripts/router/**"
-      - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
-      - "scripts/devspace-portable/tests/workflow-store.test.mjs"
-      - "scripts/performance/lazy-loading-integration.test.js"
-      - "vault/capabilities/capability-manifest.json"
-      - "vault/governance/long-running-progress-policy.md"
+      - ".gitignore"
       - ".github/workflows/critical-relay.yml"
   pull_request:
     paths:
+      - "skills/**"
+      - "user_rules.md"
+      - "vault/README.md"
+      - "rules/common/prompt-engineering.md"
       - "scripts/critical-relay/**"
+      - "scripts/router/**"
+      - "scripts/performance/**"
+      - "scripts/devspace-portable/**"
+      - "scripts/entry-sync/templates/**"
       - "skills/critical-relay/**"
       - "skills/pixiu-verify-loop/**"
       - "skills/verification-loop/**"
       - ".agents/skills/critical-relay/**"
       - ".agents/skills/pixiu-verify-loop/**"
       - ".agents/skills/verification-loop/**"
+      - "vault/bootstrap/**"
+      - "vault/capabilities/**"
+      - "vault/governance/**"
+      - "AGENTS.md"
+      - "CODEX.md"
+      - "CLAUDE.md"
+      - "GEMINI.md"
+      - ".codex/AGENTS.md"
       - "commands/go.md"
-      - "scripts/router/**"
-      - "scripts/devspace-portable/DevSpace.WorkflowStore.mjs"
-      - "scripts/devspace-portable/tests/workflow-store.test.mjs"
-      - "scripts/performance/lazy-loading-integration.test.js"
-      - "vault/capabilities/capability-manifest.json"
-      - "vault/governance/long-running-progress-policy.md"
+      - ".gitignore"
       - ".github/workflows/critical-relay.yml"
 
 permissions:
@@ -51,13 +72,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Critical Relay contract
-        run: node scripts/critical-relay/critical-relay.test.js
-      - name: Single-agent execution contract and publication
-        run: node --test scripts/critical-relay/execution-contract.test.js
-      - name: Capability Router
-        run: node scripts/router/resolve-capabilities.test.js
-      - name: Critical Relay integration
-        run: node scripts/critical-relay/critical-relay.integration.test.js
-      - name: Workflow completion integration
-        run: node --test scripts/devspace-portable/tests/workflow-store.test.mjs
+      - name: Run public core with local evidence
+        run: node scripts/critical-relay/test-runner.js
+      # 即使測試失敗仍保存指定的去敏證據；不把失敗結論改成成功。
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: critical-relay-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cr/runs/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

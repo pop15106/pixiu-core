@@ -2,7 +2,7 @@
 name: pixiu-verify-loop
 description: Pixiu 自我驗證：依本次授權分為唯讀審核、已授權修復與 CR 完整自動接力。使用單一 Agent 依序執行實測、差異覆核、修復重驗及交付；/go 由 commands/go.md 載入。
 origin: Pixiu
-version: 0.2.0
+version: 0.3.0
 language: zh-TW
 ---
 
@@ -45,6 +45,12 @@ DB 寫入、刪檔、Production、Release、Deploy、秘密資料及超出範圍
 有本次 push 授權且必要檢查通過，直接推送已覆核的變更；推送前確認遠端基準，遠端前進時整合並重驗，使用非強制 push 保護他人提交。沒有 push 授權則交付本機變更與 PR 內容草稿。Release／Deploy 另判。
 
 推送後讀回遠端 SHA；存在 CI 時取得 run ID、輪詢至終態並區分成功／失敗／尚未完成。CI 只在推送後執行，不能把本機通過預先說成遠端 CI 通過。
+
+## v2 執行證據入口
+
+PixiuCore 的必要測試固定於 `scripts/critical-relay/public-core.plan.json`。使用 `test-runner.js` 自動收集命令、exit code、結構化案例與來源指紋，再以 `relay-evidence.js` 回填既有 criticalRelay state。新完整交付使用 v2 契約；有 ledger 就沿用 ledger，沒有才初始化 `.cr/state.json` 與獨立 binding。
+
+只有必要命令成功不等於完成；CLI／workflow 完成入口必須回讀證據，再滿足 VERIFY → RECHALLENGE。取消、逾時、零筆、缺檔、過期或必要清單變動都不標綠。使用者已授權的修復由目前單一 Agent 執行，helper 不啟動模型。操作及未支援的 adapter 見 `scripts/critical-relay/README.md`。
 
 ## 狀態與報告
 

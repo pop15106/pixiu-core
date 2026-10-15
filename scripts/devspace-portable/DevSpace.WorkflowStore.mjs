@@ -13,6 +13,8 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import criticalRelayModule from "../critical-relay/critical-relay.js";
+import evidenceVerifier from "../critical-relay/evidence-verifier.js";
+const { latchBinding, verifyStateEvidence } = evidenceVerifier;
 
 const { evaluateCriticalRelay, SCHEMA_VERSION: CRITICAL_RELAY_SCHEMA_VERSION } = criticalRelayModule;
 
@@ -233,6 +235,8 @@ function assertCriticalRelayComplete(task) {
       `Critical Relay completion gate blocked: ${evaluation.blockingReasons.join(" | ")}`,
     );
   }
+  const verified = verifyStateEvidence(task.criticalRelay, task.projectRoots[0], task.verificationBinding);
+  if (!verified.canComplete) fail(`Critical Relay evidence gate blocked: ${verified.blockingReasons.join(" | ")}`);
 }
 
 function defaultIdFactory(prefix) {
@@ -446,6 +450,9 @@ function applyUpdate(task, input, helpers) {
   if (input.criticalRelay !== undefined) {
     next.criticalRelay = validateCriticalRelayState(input.criticalRelay);
   }
+  // 初次啟用後固定驗證計劃；接手者不能藉由替換 state 降級。
+  const verificationBinding = latchBinding(task.projectRoots[0], next.criticalRelay, task.verificationBinding);
+  if (verificationBinding) next.verificationBinding = verificationBinding;
   switch (input.action) {
     case "claim": {
       if (task.status !== "open") fail("Only an open task can be claimed.");
@@ -485,6 +492,16 @@ function applyUpdate(task, input, helpers) {
       handoff.acknowledgedAt = helpers.now();
       next.currentOwner = actor;
       next.status = "in_progress";
+      if (next.verificationBinding && next.criticalRelay.executionContract.verificationRun) {
+        const verified = verifyStateEvidence(next.criticalRelay, task.projectRoots[0], next.verificationBinding);
+        if (!verified.canComplete) {
+          next.criticalRelay.executionContract.verification = null;
+          next.criticalRelay.status = "active";
+          next.criticalRelay.phase = "REASSESS";
+          next.criticalRelay.phaseHistory.push("REASSESS");
+          next.criticalRelay.nextAction = `接手後需重驗：${verified.blockingReasons.join(" | ")}`;
+        }
+      }
       break;
     }
     case "request_review": {
@@ -705,6 +722,7 @@ export function createWorkflowController(options = {}) {
         false,
       );
       const criticalRelay = validateCriticalRelayState(input.criticalRelay);
+      const verificationBinding = latchBinding(workspaceRoot, criticalRelay);
       return withLock(paths, async () => {
         const state = await readState(paths);
         const duplicate = await findIdempotentResult(state, idempotencyKey, workspaceRoot, sessionRef);
@@ -722,6 +740,7 @@ export function createWorkflowController(options = {}) {
           executionPolicy: policy,
           criticalRelayRequired,
           ...(criticalRelay ? { criticalRelay } : {}),
+          ...(verificationBinding ? { verificationBinding } : {}),
           status: "open",
           currentOwner: null,
           revision: 1,

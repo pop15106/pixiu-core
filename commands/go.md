@@ -2,7 +2,7 @@
 name: go
 description: 依本次授權啟動 Pixiu 自我驗證；單一 Agent 依序實測、覆核、修復重驗，完成後按授權交付或推送。
 origin: Pixiu
-version: 0.2.0
+version: 0.3.0
 ---
 
 # /go — Pixiu 驗證入口
@@ -24,6 +24,10 @@ version: 0.2.0
 - `full`：實測、覆核、修復重驗及交付，預設使用本模式。
 - `pr-only`：整理現有證據與 PR 內容草稿；缺少目前版本的驗證時標為未驗證，不推送。
 - `dry-run`：只列規劃命令與 criteria，保留未執行狀態。
+
+## v2 本機驗證入口
+
+PixiuCore 完整交付先依 `scripts/critical-relay/README.md` 建立固定計劃與 v2 state，再執行 `node scripts/critical-relay/test-runner.js`。使用既有 workflow ledger 時回填其 criticalRelay；沒有 ledger 才使用 `.cr/` fallback。原始事件、必要清單與來源指紋需由 CLI／workflow 完成入口重新核對，不以手填 passed 或過去 CI 紀錄代替。
 
 ## 交接
 

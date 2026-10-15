@@ -252,6 +252,5 @@ for (const test of [
   testRoutesGitFallbackAndLoadsBootstrap,
   testPlainUnitTestDoesNotTriggerExecutionProgress
 ]) {
-  test();
-  process.stdout.write(`ok ${test.name}\n`);
+  require('node:test')(test.name, test);
 }

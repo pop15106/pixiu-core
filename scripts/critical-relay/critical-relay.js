@@ -531,9 +531,20 @@ function verifyHandoffSnapshot(snapshot) {
   };
 }
 
-function checkFile(filePath) {
+function checkFile(filePath, workspaceRoot = process.cwd()) {
   const state = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const snapshot = buildHandoffSnapshot(state);
+  // 完成入口必須回讀實測證據；純結構函式仍供歷史資料與單元測試使用。
+  const { verifyStateEvidence } = require('./evidence-verifier');
+  const { readJson, boundedPath } = require('./test-plan');
+  const pinPath = boundedPath(workspaceRoot, '.cr/verification-binding.json', { mustExist: false });
+  const pinned = fs.existsSync(pinPath) ? readJson(workspaceRoot, '.cr/verification-binding.json') : undefined;
+  const verified = state.mode === 'FULL_AUTOMATIC_RELAY' && !pinned
+    ? { canComplete: false, blockingReasons: ['CLI 完整交付需先建立 .cr/verification-binding.json；請執行 relay-evidence init'] }
+    : verifyStateEvidence(state, workspaceRoot, pinned);
+  snapshot.evaluation.blockingReasons.push(...verified.blockingReasons);
+  snapshot.evaluation.canComplete = snapshot.evaluation.canComplete && verified.canComplete;
+  if (!snapshot.evaluation.canComplete) snapshot.evaluation.nextPhase = 'CHALLENGE';
   process.stdout.write(JSON.stringify(snapshot, null, 2) + '\n');
   return snapshot.evaluation.canComplete;
 }
@@ -554,5 +565,6 @@ module.exports = {
   recordCriticalRelayPhase,
   evaluateCriticalRelay,
   buildHandoffSnapshot,
-  verifyHandoffSnapshot
+  verifyHandoffSnapshot,
+  checkFile
 };

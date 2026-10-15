@@ -79,6 +79,5 @@ for (const test of [
   testCrModesStayLoadedUnderCapabilityPressure,
   testCriticalRelayFilesExistInCleanCheckout
 ]) {
-  test();
-  process.stdout.write(`ok ${test.name}\n`);
+  require('node:test')(test.name, test);
 }
