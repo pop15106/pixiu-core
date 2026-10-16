@@ -2,7 +2,7 @@
 name: critical-relay
 description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、CR 完整自動接力。
 origin: Pixiu
-version: 0.3.0
+version: 0.5.0
 language: zh-TW
 ---
 
@@ -127,6 +127,20 @@ exit code 0 代表可進入 READY_TO_HANDOFF；exit code 2 代表仍有 blocker�
 紅燈是修復訊號，不是固定停止點；在既有授權範圍內持續修正與重測。只有真正的權限、安全、Production、Release 或外部憑證閘門才進入 BLOCKED。
 
 Critical Relay 本身不授權 Agent/subagent，也不放寬寫入、push、Release 或 Deploy 權限。
+
+## CR 全流程：研究／設計／開發／驗證
+
+使用者明確要求 CR 研究、CR 搜尋、CR 設計、CR 開發或 CR 全流程時，Router 額外載入 `skills/critical-relay-lifecycle/SKILL.md` 和 `.agent/workflows/cr-lifecycle.md`。研究查可追溯原始來源、反向搜尋與反證；設計比較取捨；開發執行反例；驗證仍依真實測試與 VERIFY → RECHALLENGE 判斷。
+
+Lifecycle 決策事件沿用 canonical Critical Relay state，不另建第二份任務帳本。新建完整交付可使用 `relay-evidence.js init-lifecycle`；既有任務不強迫遷移。Lifecycle 每輪決策及反證只代表已記錄之查核，不是網路搜尋、UI/API 實測、額外 Agent 或自動取得 Push/Release/Deploy 權限。
+
+## v2 本機證據驗證
+
+新實作任務使用 `scripts/critical-relay/relay-evidence.js` 的 `createEvidenceState` 或 `init`，建立 `pixiu.cr-execution.v2`、固定 `verificationBinding` 與必要測試計劃。公共核心統一執行 `node scripts/critical-relay/test-runner.js`，再回填真實 run；完成仍需重新讀 diff、處理反證並進 RECHALLENGE。
+
+CLI check 與 workflow complete 都回讀原始事件、統計、檔案及實際來源。完整交付缺 binding／run、零筆、過期證據或模式降級時阻擋；舊 general 紀錄保留結構相容，舊 v1 實作任務要明確遷移與重驗。下方 v1 helper 範例僅供歷史結構相容，不是新實作任務入口。
+
+操作、信任邊界、CI 與部署限制詳見 `scripts/critical-relay/README.md`。目前只支援 Node 測試 adapter；UI／API／build 缺少對應證據就保持未完成。雜湊不代表獨立或不可偽造的驗證。
 
 ## 單一 Agent 交付契約
 

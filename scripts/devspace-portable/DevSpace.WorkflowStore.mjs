@@ -13,6 +13,14 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import criticalRelayModule from "../critical-relay/critical-relay.js";
+import lifecycleModule from "../critical-relay/lifecycle.js";
+const { lifecycleBinding, verifyLifecycleBinding } = lifecycleModule;
+import evidenceVerifier from "../critical-relay/evidence-verifier.js";
+const { latchBinding, verifyStateEvidence } = evidenceVerifier;
+import planMigration from "../critical-relay/plan-migration.js";
+const { prepareMigration } = planMigration;
+import runRecovery from "../critical-relay/run-recovery.js";
+const { withControl } = runRecovery;
 
 const { evaluateCriticalRelay, SCHEMA_VERSION: CRITICAL_RELAY_SCHEMA_VERSION } = criticalRelayModule;
 
@@ -27,6 +35,7 @@ const UPDATE_ACTIONS = new Set([
   "submit_review",
   "resume",
   "complete",
+  "migrate_verification",
   "block",
 ]);
 const REVIEW_VERDICTS = new Set(["approved", "changes_required", "blocked"]);
@@ -222,6 +231,11 @@ function assertCriticalRelayComplete(task) {
   if (!task.criticalRelay) {
     fail("Critical Relay state is required before this task can complete.");
   }
+  if (task.lifecycleBinding &&
+      (task.criticalRelay.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(task.lifecycleBinding, task.criticalRelay.lifecycle))) {
+    fail("CR lifecycle completion gate blocked: pinned lifecycle was removed or changed.");
+  }
   let evaluation;
   try {
     evaluation = evaluateCriticalRelay(task.criticalRelay);
@@ -232,6 +246,27 @@ function assertCriticalRelayComplete(task) {
     fail(
       `Critical Relay completion gate blocked: ${evaluation.blockingReasons.join(" | ")}`,
     );
+  }
+  const verified = verifyStateEvidence(task.criticalRelay, task.projectRoots[0], task.verificationBinding);
+  if (!verified.canComplete) fail(`Critical Relay evidence gate blocked: ${verified.blockingReasons.join(" | ")}`);
+}
+
+function assertLifecycleMutationSafety(previous, next, action) {
+  if (previous.lifecycleBinding) {
+    if (!next.lifecycleBinding ||
+        JSON.stringify(previous.lifecycleBinding) !== JSON.stringify(next.lifecycleBinding) ||
+        next.criticalRelay?.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(previous.lifecycleBinding, next.criticalRelay?.lifecycle)) {
+      fail('CR Lifecycle binding 不能由一般更新或 extension mutation 移除、替換或降級');
+    }
+  }
+  if (next.criticalRelay?.lifecycleRequired === true &&
+      !verifyLifecycleBinding(next.lifecycleBinding, next.criticalRelay.lifecycle)) {
+    fail('新啟用的 CR Lifecycle 必須同時固定 workflow policy binding');
+  }
+  // Extension mutation 不得直接設定 completed 來繞開原本的 complete 入口。
+  if (next.status === 'completed' && previous.status !== 'completed' && action !== 'complete') {
+    assertCriticalRelayComplete(next);
   }
 }
 
@@ -432,6 +467,21 @@ async function withLock(paths, operation) {
 function applyUpdate(task, input, helpers) {
   const next = clone(task);
   const actor = requiredString(input.actor, "actor", 128);
+  if (input.action === "migrate_verification") {
+    assertOwner(task, actor);
+    if (!["in_progress", "changes_requested"].includes(task.status)) fail("Verification migration requires active owned work.");
+    if (input.criticalRelay !== undefined || input.criticalRelayRequired !== undefined) fail("Migration cannot also replace Critical Relay state.");
+    const changed = withControl(task.projectRoots[0], () =>
+      prepareMigration(task.projectRoots[0], task.criticalRelay, task.verificationBinding, input.verificationMigration));
+    next.criticalRelay = changed.state;
+    next.verificationBinding = changed.binding;
+    if (task.lifecycleBinding && (next.criticalRelay.lifecycleRequired !== true ||
+        !verifyLifecycleBinding(task.lifecycleBinding, next.criticalRelay.lifecycle)))
+      fail('CR lifecycle binding 不能在驗證計劃遷移時降級或移除');
+    next.verificationMigrations = [...(task.verificationMigrations || []), changed.receipt];
+    next.status = "in_progress";
+    return next;
+  }
   if (input.criticalRelayRequired !== undefined) {
     const requestedCriticalRelay = booleanValue(
       input.criticalRelayRequired,
@@ -446,6 +496,15 @@ function applyUpdate(task, input, helpers) {
   if (input.criticalRelay !== undefined) {
     next.criticalRelay = validateCriticalRelayState(input.criticalRelay);
   }
+  // 初次啟用後固定驗證計劃；接手者不能藉由替換 state 降級。
+  const verificationBinding = latchBinding(task.projectRoots[0], next.criticalRelay, task.verificationBinding);
+  if (verificationBinding) next.verificationBinding = verificationBinding;
+  if (task.lifecycleBinding && (next.criticalRelay?.lifecycleRequired !== true ||
+      !verifyLifecycleBinding(task.lifecycleBinding, next.criticalRelay?.lifecycle))) {
+    fail('CR lifecycle binding 不能刪除、降級或更改風險');
+  }
+  if (!task.lifecycleBinding && next.criticalRelay?.lifecycleRequired === true)
+    next.lifecycleBinding = lifecycleBinding(next.criticalRelay.lifecycle);
   switch (input.action) {
     case "claim": {
       if (task.status !== "open") fail("Only an open task can be claimed.");
@@ -485,6 +544,16 @@ function applyUpdate(task, input, helpers) {
       handoff.acknowledgedAt = helpers.now();
       next.currentOwner = actor;
       next.status = "in_progress";
+      if (next.verificationBinding && next.criticalRelay.executionContract.verificationRun) {
+        const verified = verifyStateEvidence(next.criticalRelay, task.projectRoots[0], next.verificationBinding);
+        if (!verified.canComplete) {
+          next.criticalRelay.executionContract.verification = null;
+          next.criticalRelay.status = "active";
+          next.criticalRelay.phase = "REASSESS";
+          next.criticalRelay.phaseHistory.push("REASSESS");
+          next.criticalRelay.nextAction = `接手後需重驗：${verified.blockingReasons.join(" | ")}`;
+        }
+      }
       break;
     }
     case "request_review": {
@@ -631,6 +700,7 @@ export function createWorkflowController(options = {}) {
         fail(`Stale revision: expected ${expectedRevision}, current revision is ${task.revision}.`);
       }
       const next = await mutator(clone(task), { actor, idFactory, now });
+      assertLifecycleMutationSafety(task, next, input.action);
       next.revision = task.revision + 1;
       next.updatedAt = now();
       return clone(
@@ -660,6 +730,7 @@ export function createWorkflowController(options = {}) {
       if (!task) fail(`Unknown workflow task: ${taskId}`);
       assertTaskVisible(task, workspaceRoot, sessionRef);
       const next = await mutator(clone(task), { actor, idFactory, now });
+      assertLifecycleMutationSafety(task, next, input.action);
       next.revision = task.revision + 1;
       next.updatedAt = now();
       return clone(
@@ -705,6 +776,8 @@ export function createWorkflowController(options = {}) {
         false,
       );
       const criticalRelay = validateCriticalRelayState(input.criticalRelay);
+      const verificationBinding = latchBinding(workspaceRoot, criticalRelay);
+      const pinnedLifecycle = criticalRelay?.lifecycleRequired === true ? lifecycleBinding(criticalRelay.lifecycle) : undefined;
       return withLock(paths, async () => {
         const state = await readState(paths);
         const duplicate = await findIdempotentResult(state, idempotencyKey, workspaceRoot, sessionRef);
@@ -722,6 +795,8 @@ export function createWorkflowController(options = {}) {
           executionPolicy: policy,
           criticalRelayRequired,
           ...(criticalRelay ? { criticalRelay } : {}),
+          ...(verificationBinding ? { verificationBinding } : {}),
+          ...(pinnedLifecycle ? { lifecycleBinding: pinnedLifecycle } : {}),
           status: "open",
           currentOwner: null,
           revision: 1,
@@ -1117,7 +1192,7 @@ export function registerDevSpaceWorkflowTools({
       sessionRef: sessionField,
       actor: actorField,
       taskId: z.string().min(1).max(80),
-      action: z.enum(["claim", "handoff", "acknowledge", "request_review", "submit_review", "resume", "complete", "block"]),
+      action: z.enum(["claim", "handoff", "acknowledge", "request_review", "submit_review", "resume", "complete", "migrate_verification", "block"]),
       expectedRevision: z.number().int().positive(),
       idempotencyKey: idempotencyField,
       toActor: z.string().min(1).max(128).optional(),
@@ -1127,6 +1202,7 @@ export function registerDevSpaceWorkflowTools({
       requiredNextAction: z.string().min(1).max(4_000).optional(),
       criticalRelayRequired: z.boolean().optional().describe("Upgrade this task to require Critical Relay. Once enabled it cannot be disabled."),
       criticalRelay: z.unknown().optional().describe("Updated Critical Relay state. CR-enabled tasks are re-evaluated on complete."),
+      verificationMigration: z.unknown().optional().describe("Explicitly authorized plan migration: old/new digest, plan path, approvalRef and reason. Never infer permission to remove requirements."),
       reviewerActor: z.string().min(1).max(128).optional(),
       subjectRef: z.string().min(1).max(2_000).optional(),
       criteria: z.array(z.string().min(1).max(2_000)).max(50).optional(),

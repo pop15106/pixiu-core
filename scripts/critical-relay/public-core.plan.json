@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "pixiu.test-plan.v1",
+  "id": "pixiu-public-core",
+  "revision": 5,
+  "parentDigest": "e9459f2fbf595a2c70783cbe0aaab4f69ccb1d0db48c5f91279b29d06ee414e2",
+  "profile": "local-only",
+  "criteria": [
+    {
+      "id": "criterion-core",
+      "criterion": "既有 CR、路由及 workflow 契約維持通過",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "criterion-private-isolation",
+      "criterion": "公開核心不依賴私人資料，必要資源缺失仍阻擋",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "criterion-evidence",
+      "criterion": "實際測試、統計、輸出、來源及必要計劃可回讀核對",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "criterion-handoff",
+      "criterion": "修復重測、交接恢復及正式完成入口正反例通過",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "criterion-heartbeat",
+      "criterion": "長時間測試保持可輪詢心跳、斷線區分與完整證據終態",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "criterion-lifecycle",
+      "criterion": "CR 研究、設計、開發與驗證決策及反證連結可回讀；Router、Skill、Workflow 與正式完成閘門一致",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "core-cr",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/critical-relay.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-core"
+      ]
+    },
+    {
+      "id": "execution-contract",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/execution-contract.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-core"
+      ]
+    },
+    {
+      "id": "router",
+      "adapter": "node-test",
+      "file": "scripts/router/resolve-capabilities.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-core"
+      ]
+    },
+    {
+      "id": "cr-integration",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/critical-relay.integration.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-core"
+      ]
+    },
+    {
+      "id": "workflow-store",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/tests/workflow-store.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 60000,
+      "criterionRefs": [
+        "criterion-core"
+      ]
+    },
+    {
+      "id": "lazy-loading",
+      "adapter": "node-test",
+      "file": "scripts/performance/lazy-loading-integration.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-private-isolation"
+      ]
+    },
+    {
+      "id": "resource-policy",
+      "adapter": "node-test",
+      "file": "scripts/router/resource-policy.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-private-isolation"
+      ]
+    },
+    {
+      "id": "evidence-runner",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/test-runner.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 600000,
+      "criterionRefs": [
+        "criterion-evidence"
+      ]
+    },
+    {
+      "id": "workflow-evidence",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/tests/workflow-evidence.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "workflow-bundle",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/tests/workflow-bundle.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 300000,
+      "criterionRefs": [
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "run-recovery",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/run-recovery.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 240000,
+      "criterionRefs": [
+        "criterion-evidence"
+      ]
+    },
+    {
+      "id": "plan-migration",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/plan-migration.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "auxiliary-lock",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/auxiliary-lock.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 240000,
+      "criterionRefs": [
+        "criterion-evidence",
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "heartbeat",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/status-heartbeat.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-heartbeat"
+      ]
+    },
+    {
+      "id": "cr-lifecycle",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/lifecycle.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-lifecycle"
+      ]
+    },
+    {
+      "id": "cr-lifecycle-cli",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/lifecycle-cli.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-lifecycle"
+      ]
+    },
+    {
+      "id": "workflow-lifecycle",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/tests/workflow-lifecycle.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-lifecycle",
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "schema3-lifecycle",
+      "adapter": "node-test",
+      "file": "scripts/devspace-portable/SessionWorkflow.CrBridge.lifecycle.test.mjs",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 30000,
+      "criterionRefs": [
+        "criterion-lifecycle",
+        "criterion-handoff"
+      ]
+    }
+  ]
+}

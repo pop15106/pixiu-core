@@ -2,7 +2,7 @@
 name: verification-loop
 description: 驗證共用檢查清單。依專案實際工具執行建置、型別、測試、安全及差異覆核；授權與修復行為依 pixiu-verify-loop。
 origin: ECC / Pixiu
-version: 0.2.0
+version: 0.3.0
 language: zh-TW
 ---
 
@@ -30,6 +30,12 @@ Java 版本等技術限制以專案設定為準，通用技能不硬套版本、
 保存真實命令的 exit code，再截取輸出摘要。避免以 `command | head`、`command | tail` 的最後成功碼掩蓋測試失敗。命令找不到、測試零筆或測試工具不可用，保留原始結果並標記 NOT_RUN／FAIL。
 
 已授權修復的紅燈依 `pixiu-verify-loop` 進 REPAIR；唯讀審核保持唯讀。單一 Agent 依序讀取 diff 做自我覆核，有獨立覆核要求時照實保留缺口。
+
+## v2 事前計劃與證據回讀
+
+完整交付使用 `scripts/critical-relay/README.md` 的 v2 入口：先固定必要計劃，再執行與保存原始事件。正式完成入口回讀 run、統計、檔案指紋與目前 Git 工作區。必要測試不能在失敗後刪除或改為非必要；測試數為零、全部略過或來源改變時保持未完成。一般 build／document／UI／API 驗證需要自己的 adapter，不能套用 Node 通過數假冒。
+
+公共核心按 `resourcePolicy` 區分公開必要檔與本機私人脈絡。私人內容不納入公共測試；指定能力真的需要私人內容時，另列缺少的前置資料。
 
 ## 證據與完成
 

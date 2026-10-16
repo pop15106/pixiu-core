@@ -1,6 +1,7 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [string]$PackageRoot
+    [string]$PackageRoot,
+    [switch]$IntegrityOnly
 )
 
 Set-StrictMode -Version Latest
@@ -49,6 +50,8 @@ $requiredPayload = @(
     'QA-TROUBLESHOOTING.txt',
     'devspace-oneclick.ps1',
     'DevSpace.WorkflowStore.mjs',
+    'workflow-bundle.mjs',
+    'workflow-runtime/WORKFLOW-BUNDLE.json',
     'SameChat.ReviewerTools.mjs',
     'same-chat-reviewer.js',
     '16-ENABLE-SAME-CHAT-REVIEWER.cmd',
@@ -113,6 +116,18 @@ $unexpected = @($actualRelativePaths | Where-Object { $_ -notin $manifestRelativ
 $missing = @($manifestRelativePaths | Where-Object { $_ -notin $actualRelativePaths })
 if ($unexpected.Count -gt 0 -or $missing.Count -gt 0) {
     throw "Portable payload file set mismatch. Unexpected=$($unexpected -join ', '); Missing=$($missing -join ', ')"
+}
+
+# 除了檔案 digest，必須確認解壓後的 runtime 實際可載入。
+if ($manifest.workflowExecutionSchema -ne 'pixiu.cr-execution.v2') {
+    throw 'WORKFLOW_EXECUTION_SCHEMA_MISSING'
+}
+if ($IntegrityOnly) {
+    Write-Host 'WORKFLOW_RUNTIME_NOT_RUN: integrity-only bootstrap check; installation must verify runtime after Node setup.'
+}
+else {
+    & node (Join-Path $root 'workflow-bundle.mjs') verify (Join-Path $root 'workflow-runtime')
+    if ($LASTEXITCODE -ne 0) { throw 'WORKFLOW_RUNTIME_VERIFY_FAILED' }
 }
 
 Write-Host "Portable package verified: $($manifest.packageName) $($manifest.sourceCommit)" -ForegroundColor Green

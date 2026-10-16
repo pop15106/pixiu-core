@@ -2,6 +2,7 @@
 
 // 執行契約只驗證交付證據；不啟動模型、不修改推理設定，也不授予外部操作權限。
 const SCHEMA_VERSION = 'pixiu.cr-execution.v1';
+const EVIDENCE_SCHEMA_VERSION = 'pixiu.cr-execution.v2';
 const DELIVERY_MODE = 'FULL_AUTOMATIC_RELAY';
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -41,7 +42,15 @@ function evaluateExecutionContract(contract, state) {
   const reasons = [];
   const fail = message => reasons.push(`executionContract: ${message}`);
   if (!object(contract)) return ['executionContract 必須是物件'];
-  if (contract.schemaVersion !== SCHEMA_VERSION) fail('schemaVersion 不支援');
+  if (![SCHEMA_VERSION, EVIDENCE_SCHEMA_VERSION].includes(contract.schemaVersion)) fail('schemaVersion 不支援');
+  if (contract.schemaVersion === EVIDENCE_SCHEMA_VERSION) {
+    const binding = contract.verificationBinding;
+    const run = contract.verificationRun;
+    if (!object(binding) || binding.profile !== 'local-evidence-v1' || !text(binding.planPath) || !digest(binding.planDigest)) {
+      fail('v2 缺少固定的驗證計劃 binding');
+    }
+    if (!object(run) || !text(run.runId) || !text(run.resultPath)) fail('v2 缺少可回讀的執行證據');
+  }
   if (contract.agentPolicy !== 'single') fail('此交付模式使用 single Agent');
   if (!Array.isArray(contract.scope) || !contract.scope.length || !contract.scope.every(text)) {
     fail('scope 必須列出已授權範圍');
@@ -139,5 +148,5 @@ function decideRecovery({ authorized = false, hardBlocker = false,
   return consecutiveFailures >= 2 && !newEvidence ? 'REASSESS' : 'REPAIR';
 }
 
-module.exports = { SCHEMA_VERSION, DELIVERY_MODE, createExecutionContract,
+module.exports = { SCHEMA_VERSION, EVIDENCE_SCHEMA_VERSION, DELIVERY_MODE, createExecutionContract,
   evaluateExecutionContract, decideRecovery };

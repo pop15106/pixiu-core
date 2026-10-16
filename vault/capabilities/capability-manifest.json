@@ -1,6 +1,17 @@
 {
   "schemaVersion": 1,
   "maxCapabilitiesPerRequest": 3,
+  "resourcePolicy": {
+    "schemaVersion": 1,
+    "localPrivate": {
+      "vault/identity/founder-profile.md": "本機使用者身分資料",
+      "vault/identity/agent-persona.md": "本機角色校準資料",
+      "vault/memory/memory-summary.md": "本機私人記憶摘要",
+      "vault/memory/SESSION-INDEX.md": "本機私人對話索引",
+      "vault/context/tech-stack.md": "公司技術環境脈絡",
+      "vault/context/pclms-overview.md": "公司系統脈絡"
+    }
+  },
   "capabilities": [
     {
       "id": "legacy-java",
@@ -166,7 +177,7 @@
     },
     {
       "id": "critical-reasoning",
-      "summary": "對重要主張執行懷疑、反證搜尋、反例測試、交叉驗證與重新判斷，並以 Critical Relay completion gate 控制交棒。",
+      "summary": "Critical Relay 對研究、設計、開發、驗證加入反向搜尋、取捨決策與證據回讀，並以 completion gate 控制交棒。",
       "keywords": [
         "對抗搜尋",
         "對抗式搜尋",
@@ -185,13 +196,29 @@
       "priority": 47,
       "load": {
         "skills": [
-          "skills/critical-relay/SKILL.md"
+          "skills/critical-relay/SKILL.md",
+          "skills/critical-relay-lifecycle/SKILL.md"
         ],
         "contexts": [],
-        "governance": []
+        "governance": [".agent/workflows/cr-lifecycle.md"]
       },
       "aliases": [
-        "cr 完整自動接力"
+        "cr 完整自動接力",
+        "cr全流程",
+        "cr 全流程",
+        "cr研究",
+        "cr 研究",
+        "cr設計",
+        "cr 設計",
+        "cr開發",
+        "cr 開發",
+        "cr搜尋",
+        "cr 搜尋",
+        "cr research",
+        "cr design",
+        "cr development",
+        "cr lifecycle",
+        "critical relay lifecycle"
       ],
       "requiredWhenMatched": true
     },

@@ -180,7 +180,8 @@ function Set-PatchedTextFile {
         [Parameter(Mandatory = $true)][string]$AlreadyPatchedText,
         [Parameter(Mandatory = $true)][string]$Pattern,
         [Parameter(Mandatory = $true)][string]$Replacement,
-        [Parameter(Mandatory = $true)][string]$Description
+        [Parameter(Mandatory = $true)][string]$Description,
+        [switch]$AppendToMatch
     )
 
     if (-not (Test-Path -LiteralPath $FilePath)) {
@@ -204,6 +205,8 @@ function Set-PatchedTextFile {
 
     $evaluator = [System.Text.RegularExpressions.MatchEvaluator]{
         param($Match)
+        # 字串預設保持字面意義；需要保留原文時明確附加，不解讀 JavaScript 的 $ 符號。
+        if ($AppendToMatch) { return $Match.Value + $Replacement }
         return $Replacement
     }
     $updated = $regex.Replace($content, $evaluator, 1)
@@ -564,7 +567,7 @@ function Install-DevSpaceSubagentWindowsPatch {
         '    ? await import(pathToFileURL(process.env.DEVSPACE_SAME_CHAT_REVIEWER_MODULE).href)'
         '    : undefined;'
     ) -join [Environment]::NewLine
-    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";' -Pattern 'const devSpaceWorkflowModule = process\.env\.DEVSPACE_WORKFLOW_MODULE\r?\n\s*\? await import\(pathToFileURL\(process\.env\.DEVSPACE_WORKFLOW_MODULE\)\.href\)\r?\n\s*: undefined;' -Replacement ('$0' + [Environment]::NewLine + $sameChatLoaderReplacement) -Description 'Same-Chat Reviewer conditional module loading') {
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";' -Pattern 'const devSpaceWorkflowModule = process\.env\.DEVSPACE_WORKFLOW_MODULE\r?\n\s*\? await import\(pathToFileURL\(process\.env\.DEVSPACE_WORKFLOW_MODULE\)\.href\)\r?\n\s*: undefined;' -Replacement ([Environment]::NewLine + $sameChatLoaderReplacement) -AppendToMatch -Description 'Same-Chat Reviewer conditional module loading') {
         $changed++
     }
 
@@ -590,7 +593,7 @@ function Install-DevSpaceSubagentWindowsPatch {
         '        });'
         '    }'
     ) -join [Environment]::NewLine
-    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.' -Pattern '(\s*\/\/ DevSpace OneClick: expose durable cross-session handoff and review tools\.\r?\n\s*devSpaceWorkflowModule\?\.registerDevSpaceWorkflowTools\(\{\r?\n\s*server, config, workspaces, registerAppTool, z,\r?\n\s*\}\);)' -Replacement ('$1' + [Environment]::NewLine + $sameChatRegistrationReplacement) -Description 'Same-Chat Reviewer conditional registration') {
+    if (Set-PatchedTextFile -FilePath $serverPath -AlreadyPatchedText 'Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.' -Pattern '(\s*\/\/ DevSpace OneClick: expose durable cross-session handoff and review tools\.\r?\n\s*devSpaceWorkflowModule\?\.registerDevSpaceWorkflowTools\(\{\r?\n\s*server, config, workspaces, registerAppTool, z,\r?\n\s*\}\);)' -Replacement ([Environment]::NewLine + $sameChatRegistrationReplacement) -AppendToMatch -Description 'Same-Chat Reviewer conditional registration') {
         $changed++
     }
 
@@ -827,7 +830,7 @@ function Install-DevSpaceWorkflowModule {
         throw "DevSpace workflow module source is missing: $SourceFile"
     }
 
-    # 此入口仍是單檔部署器；先驗證來源與目的地，再建立目錄或備份。
+    # 先驗證來源與目的地，再選擇完整依賴包或舊單檔路徑。
     function Assert-WorkflowDeploymentPlainPath {
         param([string]$PathToCheck)
         $current = [System.IO.Path]::GetFullPath($PathToCheck)
@@ -847,6 +850,17 @@ function Install-DevSpaceWorkflowModule {
     $target = Join-Path $BinDirectory 'DevSpace.WorkflowStore.mjs'
     Assert-WorkflowDeploymentPlainPath -PathToCheck $SourceFile
     Assert-WorkflowDeploymentPlainPath -PathToCheck $target
+    $bundleTool = Join-Path (Split-Path -Parent ([System.IO.Path]::GetFullPath($SourceFile))) 'workflow-bundle.mjs'
+    $sourceTextForRouting = [System.IO.File]::ReadAllText($SourceFile)
+    if ($sourceTextForRouting -match 'critical-relay/critical-relay\.js') {
+        if (-not (Test-Path -LiteralPath $bundleTool -PathType Leaf)) {
+            throw 'WORKFLOW_BUNDLE_INSTALLER_MISSING: the installed workflow was not changed.'
+        }
+        Assert-WorkflowDeploymentPlainPath -PathToCheck $bundleTool
+        $bundleResult = & node $bundleTool install $SourceFile $BinDirectory
+        if ($LASTEXITCODE -ne 0) { throw 'WORKFLOW_BUNDLE_INSTALL_FAILED: verify the retained installation before retrying.' }
+        return (($bundleResult | Out-String) | ConvertFrom-Json)
+    }
     $sourceBytes = [System.IO.File]::ReadAllBytes($SourceFile)
     $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
     try {
