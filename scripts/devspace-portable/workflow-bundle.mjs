@@ -32,12 +32,12 @@ export const runtimeFiles = [
   'scripts/critical-relay/process-identity.js',
   'scripts/critical-relay/auxiliary-lock.js',
   'scripts/critical-relay/plan-migration.js',
-  'scripts/router/resource-policy.js'
+  'scripts/router/resource-policy.js',
+  'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'
 ];
 export const sessionWorkflowFiles = [...runtimeFiles,
   'scripts/devspace-portable/SessionWorkflow.Core.mjs',
-  'scripts/devspace-portable/SessionWorkflow.DevSpaceProjectResolver.mjs',
-  'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'];
+  'scripts/devspace-portable/SessionWorkflow.DevSpaceProjectResolver.mjs'];
 function filesFor(manifest) {
   if (manifest.compatibilityProfile === undefined) return runtimeFiles;
   if (manifest.compatibilityProfile === 'session-workflow-v3-cr-v1') return sessionWorkflowFiles;
