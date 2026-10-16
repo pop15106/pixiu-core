@@ -185,3 +185,20 @@ test('任務 checkpoint 來源格式錯誤時保持拒絕', t => {
   fs.writeFileSync(path.join(f.root, '.cr/state.json'), JSON.stringify({ schemaVersion: 'unknown', phase: 'PASS' }));
   assert.throws(() => readLifecycleStage(f.root), /CANONICAL_STATE_INVALID/);
 });
+
+test('watch CLI 明確區分過期、未完成與測試通過',t=>{
+  const {spawnSync}=require('node:child_process');
+  for(const [mode,code] of [['stale',4],['running',3],['pass',0]]){
+    const f=fixture(t),now={value:Date.now()-(mode==='stale'?120000:0)},heartbeat=runner(f,now);
+    if(mode==='pass'){heartbeat.finish('PASS');saveResult(f,'PASS');}else heartbeat.close();
+    const result=spawnSync(process.execPath,[path.join(__dirname,'status-watch.js'),'watch',f.runId,'1000','1'],{cwd:f.root,encoding:'utf8',windowsHide:true,timeout:10000});
+    assert.equal(result.status,code,result.stderr);const last=JSON.parse(result.stdout.trim().split('\n').at(-1));
+    if(mode==='running')assert.equal(last.monitorStopped,'MAX_POLLS_REACHED_NOT_COMPLETED');
+    if(mode==='pass')assert.equal(last.observed,'TESTS_PASS_GATE_NOT_CONFIRMED');
+  }
+});
+test('最後一次輪詢剛好收到終態時不誤標為上限停止',async t=>{
+  const f=fixture(t),now={value:Date.now()},heartbeat=runner(f,now);let calls=0;
+  const result=await watch(f.root,f.runId,{maxPolls:1,emit:()=>{if(calls++===0){heartbeat.finish('PASS');saveResult(f,'PASS');}}});
+  assert.equal(result.observed,'TESTS_PASS_GATE_NOT_CONFIRMED');assert.equal(result.monitorStopped,undefined);
+});

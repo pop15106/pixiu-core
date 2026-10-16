@@ -57,6 +57,19 @@ test('原有任務沒有 lifecycle 時仍可建立並依原方式操作',async t
     criticalRelayRequired:true,criticalRelay:state,idempotencyKey:'legacy-lifecycle-001'});
   assert.equal(task.lifecycleBinding,undefined);
 });
+
+test('正式 workflow mutation 拒絕 cycle 倒退且不寫入失敗更新',async t=>{
+  const f=await setup(t);
+  const original=structuredClone(f.state);
+  f.state.evidence.push({id:'new-evidence',source:'repo:fixture/new'});
+  f.state.lifecycle=lifecycle.reopenLifecycle(f.state.lifecycle,{reason:'新證據',evidenceRef:'new-evidence'});
+  const claimed=await f.controller.updateTask({...f.base,taskId:f.task.taskId,action:'claim',
+    criticalRelay:f.state,expectedRevision:1,idempotencyKey:'claim-reopened-001'});
+  await assert.rejects(f.controller.updateTask({...f.base,taskId:f.task.taskId,action:'handoff',
+    toActor:'receiver',contextSnapshot:'中性回歸',deliverables:['fixture'],openItems:[],requiredNextAction:'重驗',
+    criticalRelay:original,expectedRevision:claimed.revision,idempotencyKey:'rollback-cycle-001'}),/CYCLE_REGRESSED/);
+  assert.equal((await f.controller.getTask({...f.base,taskId:f.task.taskId})).revision,claimed.revision);
+});
 test('真實 runner → 研究／設計／開發／驗證 → CR 及 ledger 完成閘門',async t=>{
   const f=await setup(t);
   const claimed=await f.controller.updateTask({...f.base,taskId:f.task.taskId,action:'claim',
@@ -68,7 +81,7 @@ test('真實 runner → 研究／設計／開發／驗證 → CR 及 ledger 完�
     evidenceRefs:[evidenceId],challengeRefs:['challenge-fixture'],counterEvidenceRefs:[]}];
   state.challenges=[{id:'challenge-fixture',claimRefs:['claim-fixture'],severity:'high',
     status:'resolved',method:'中性錯誤分支反例測試',result:'拒絕假成功'}];
-  const record=event=>{state.lifecycle=recordEvent(state.lifecycle,event)};
+   const record=event=>{state.lifecycle=recordEvent(state.lifecycle,event,state)};
   const go=()=>{state.lifecycle=advanceStage(state.lifecycle,state)};
   record({id:'source',kind:'source_check',claimRefs:['claim-fixture'],evidenceRefs:[evidenceId],
     method:'讀 runner 原始證據',result:'可回查'});
@@ -101,4 +114,10 @@ test('真實 runner → 研究／設計／開發／驗證 → CR 及 ledger 完�
   assert.deepEqual(done.lifecycleBinding,f.task.lifecycleBinding);
   const restored=await f.controller.getTask({...f.base,taskId:done.taskId});
   assert.equal(restored.criticalRelay.lifecycle.stage,'complete');
+  const rerun=await runPlan({workspaceRoot:f.root,planPath:f.planPath});
+  const refreshed=applyRunEvidence(f.root,state,rerun);
+  assert.equal(refreshed.lifecycle.cycle,2);
+  assert.equal(refreshed.lifecycle.entries.length,state.lifecycle.entries.length);
+  recordCriticalRelayPhase(refreshed,'RECHALLENGE');
+  assert.equal(evaluateCriticalRelay(refreshed).canComplete,false);
 });

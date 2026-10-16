@@ -1,3 +1,6 @@
+import runtimeInfo from '../critical-relay/runtime-info.js';
+import researchEvidence from '../critical-relay/research-evidence.js';
+export const loadedRuntime=runtimeInfo.reportLoadedRuntime(import.meta.url,'session-workflow-v3-cr-v1',[1,2,3]);
 import fs from 'node:fs';
 import path from 'node:path';
 import { open } from 'node:fs/promises';
@@ -29,7 +32,9 @@ export function enforceCriticalRelay(previous, next, input, projectRef, rootToPr
   if (!required) return next;
   if (previous?.criticalRelayRequired && next.criticalRelayRequired !== true) fail('extension 不可移除必要 CR');
   const nextState = has(input, 'criticalRelay') ? clone(input.criticalRelay) : next.criticalRelay;
-  if (!nextState || nextState.schemaVersion !== 'pixiu.critical-relay.v1' || nextState.mode !== 'FULL_AUTOMATIC_RELAY') fail('新 CR 任務需要完整 v2 執行契約');
+  if (!nextState || nextState.schemaVersion !== 'pixiu.critical-relay.v1' ||
+      (nextState.mode !== 'FULL_AUTOMATIC_RELAY' && !(nextState.mode === 'general' && nextState.researchRequired === true)))
+    fail('新 CR 任務需要完整 v2 執行契約或固定的研究證據契約');
   const proofChanged = previous?.criticalRelayRequired && planner.digestObject(nextState) !== planner.digestObject(previous.criticalRelay);
   if (previous?.currentOwner && (has(input, 'criticalRelay') || proofChanged || !previous.criticalRelayRequired) &&
       input.actor !== previous.currentOwner && !(input.action === 'acknowledge' && next.currentOwner === input.actor)) fail('只有目前持有者可以更新 CR 證據');
@@ -48,16 +53,19 @@ export function enforceCriticalRelay(previous, next, input, projectRef, rootToPr
   }
   if (nextState.lifecycleRequired === true)
     next.lifecycleBinding = previous?.lifecycleBinding || lifecyclePolicy.lifecycleBinding(nextState.lifecycle);
+  lifecyclePolicy.assertLifecycleTransition(previous?.criticalRelay?.lifecycle, nextState.lifecycle);
+  researchEvidence.assertResearchTransition(previous?.criticalRelay,nextState);
   next.criticalRelayRequired = true;
   next.criticalRelay = nextState;
   next.verificationBinding = binding;
   next.verificationWorkspaceRoot = root;
   next.verificationProjectRef = projectRef;
   if (input.action === 'handoff' && !has(input, 'criticalRelay')) fail('CR 交接需包含最新的結構化狀態');
-  if (input.action === 'acknowledge' && nextState.executionContract.verificationRun) {
+  if (input.action === 'acknowledge' && (nextState.executionContract?.verificationRun || nextState.researchVerification)) {
     const check = verifier.verifyStateEvidence(nextState, root, binding);
     if (!check.canComplete) {
-      nextState.executionContract.verification = null;
+      if(nextState.executionContract)nextState.executionContract.verification = null;
+      if(nextState.researchRequired)nextState.researchVerification = null;
       nextState.status = 'active'; nextState.phase = 'REASSESS';
       nextState.phaseHistory.push('REASSESS');
       nextState.nextAction = `接手後重驗：${check.blockingReasons.join(' | ')}`;

@@ -21,18 +21,23 @@ export const runtimeFiles = [
   'scripts/critical-relay/evidence-parser.js',
   'scripts/critical-relay/evidence-reporter.js',
   'scripts/critical-relay/evidence-verifier.js',
+  'scripts/critical-relay/research-evidence.js',
+  'scripts/critical-relay/runtime-info.js',
+  'scripts/critical-relay/evidence-adapters.js',
+  'scripts/critical-relay/report-formats.js',
+  'scripts/critical-relay/adapter-worker.js',
   'scripts/critical-relay/relay-evidence.js',
   'scripts/critical-relay/run-journal.js',
   'scripts/critical-relay/run-recovery.js',
   'scripts/critical-relay/process-identity.js',
   'scripts/critical-relay/auxiliary-lock.js',
   'scripts/critical-relay/plan-migration.js',
-  'scripts/router/resource-policy.js'
+  'scripts/router/resource-policy.js',
+  'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'
 ];
 export const sessionWorkflowFiles = [...runtimeFiles,
   'scripts/devspace-portable/SessionWorkflow.Core.mjs',
-  'scripts/devspace-portable/SessionWorkflow.DevSpaceProjectResolver.mjs',
-  'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'];
+  'scripts/devspace-portable/SessionWorkflow.DevSpaceProjectResolver.mjs'];
 function filesFor(manifest) {
   if (manifest.compatibilityProfile === undefined) return runtimeFiles;
   if (manifest.compatibilityProfile === 'session-workflow-v3-cr-v1') return sessionWorkflowFiles;
@@ -97,10 +102,10 @@ export function assembleBundle(sourceRoot, destination) {
     return { path: relative, bytes, sha256: hash(bytes), length: bytes.length };
   });
   let sourceCommit = null;
-  try { sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).trim(); }
+  try { sourceCommit = execFileSync('git', ['-c', `safe.directory=${path.resolve(sourceRoot)}`, 'rev-parse', 'HEAD'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).trim(); }
   catch { throw new Error('BUNDLE_SOURCE_COMMIT_REQUIRED'); }
   if (!/^[a-f0-9]{40,64}$/u.test(sourceCommit)) throw new Error('BUNDLE_SOURCE_COMMIT_INVALID');
-  const sourceDirty = execFileSync('git', ['status', '--porcelain=v1', '--', ...runtimeFiles],
+  const sourceDirty = execFileSync('git', ['-c', `safe.directory=${path.resolve(sourceRoot)}`, 'status', '--porcelain=v1', '--', ...runtimeFiles],
     { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).trim().length > 0;
   const manifest = { schemaVersion: schema, sourceCommit, sourceDirty, contentDigest: fingerprint(entries),
     executionSchema: 'pixiu.cr-execution.v2', entry: sourceEntry,

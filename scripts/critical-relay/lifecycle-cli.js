@@ -26,7 +26,7 @@ function update(root, action, payload) {
     const state=readJson(root,STATE), pin=readJson(root,BINDING);
     if(state.lifecycleRequired!==true||!verifyLifecycleBinding(pin,state.lifecycle))
       throw Error('LIFECYCLE_BINDING_CHANGED_OR_MISSING');
-    if(action==='record')state.lifecycle=recordEvent(state.lifecycle,payload);
+    if(action==='record')state.lifecycle=recordEvent(state.lifecycle,payload,state);
     else if(action==='advance')state.lifecycle=advanceStage(state.lifecycle,state);
     else{
       if(!payload||![...state.evidence,...state.counterEvidence].some(x=>x.id===payload.evidenceRef))
@@ -39,6 +39,7 @@ function update(root, action, payload) {
         state.executionContract.verification=null;
         state.executionContract.verificationRun=null;
       }
+      if(state.researchRequired)state.researchVerification=null;
       for(const item of state.completionCriteria){item.satisfied=false;item.evidenceRefs=[];}
     }
     state.nextAction=action==='advance'?'CR Lifecycle 進入 '+state.lifecycle.stage+'；待實際蒐證'

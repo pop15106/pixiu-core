@@ -18,7 +18,8 @@ const MAX_OUTPUT = 4 * 1024 * 1024;
 
 function engineDigest() {
   return digestObject(['test-plan.js', 'test-runner.js', 'evidence-parser.js', 'evidence-reporter.js',
-    'evidence-verifier.js', 'execution-contract.js', 'critical-relay.js', 'lifecycle.js', 'lifecycle-cli.js', 'status-heartbeat.js', 'status-watch.js', 'relay-evidence.js', 'run-journal.js', 'run-recovery.js', 'process-identity.js', 'auxiliary-lock.js', 'plan-migration.js', '../router/resource-policy.js']
+    'evidence-adapters.js', 'report-formats.js', 'adapter-worker.js',
+    'evidence-verifier.js', 'research-evidence.js', 'execution-contract.js', 'critical-relay.js', 'lifecycle.js', 'lifecycle-cli.js', 'status-heartbeat.js', 'status-watch.js', 'relay-evidence.js', 'run-journal.js', 'run-recovery.js', 'process-identity.js', 'auxiliary-lock.js', 'plan-migration.js', '../router/resource-policy.js']
     .map(name => [name, hash(fs.readFileSync(path.join(__dirname, name)))]));
 }
 
@@ -48,14 +49,23 @@ function execute(root, command, runId, signal, journal, runLock) {
   const base = { commandId: command.id, evidenceKind: command.evidenceKind, startedAt,
     tool: { name: 'node', version: process.version, platform: process.platform }, exitCode: null, signal: null };
   if (signal?.aborted) return Promise.resolve({ ...base, outcome: 'CANCELLED', stdout: '', stderr: '', endedAt: startedAt });
-  let file;
-  try { file = boundedPath(root, command.file); }
+  let file, spec;
+  const env = childEnvironment(runId);
+  try {
+    file = boundedPath(root, command.file);
+    if (command.adapter !== 'node-test') {
+      spec = require('./evidence-adapters').loadSpec(root, command);
+      file = path.join(__dirname, 'adapter-worker.js');
+      env.CR_ADAPTER_COMMAND = JSON.stringify(command);
+      for (const name of spec.exec?.envFromHost || []) if (process.env[name] !== undefined) env[name] = process.env[name];
+    }
+  }
   catch (error) { return Promise.resolve({ ...base, outcome: 'ENV_BLOCKED', stdout: '', stderr: error.code || error.message, endedAt: startedAt }); }
   // Node 的 reporter 經 ESM 載入；Windows 絕對路徑須先轉成 file URL。
   const args = ['--test', '--test-reporter', pathToFileURL(path.join(__dirname, 'evidence-reporter.js')).href, file];
   return new Promise(resolve => {
     runLock.launching();
-    const child = spawn(process.execPath, args, { cwd: root, env: childEnvironment(runId),
+    const child = spawn(process.execPath, args, { cwd: root, env,
       windowsHide: true, shell: false, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '', stderr = '', forced = null, size = 0, spawnError = null;
     let finished = false;
@@ -144,10 +154,17 @@ async function runPlan({ workspaceRoot, planPath = 'scripts/critical-relay/publi
       let raw;
       try {
         raw = blocked || signal?.aborted
-          ? { commandId: command.id, evidenceKind: 'test', outcome: signal?.aborted ? 'CANCELLED' : 'NOT_RUN',
+          ? { commandId: command.id, evidenceKind: command.evidenceKind, outcome: signal?.aborted ? 'CANCELLED' : 'NOT_RUN',
             exitCode: null, counts: null, signal: null, startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stdout: '', stderr: '' }
           : await execute(root, command, runId, signal, journal, runLock);
       } finally { journal.close(); }
+      if (raw.outcome === 'PASS' && command.adapter !== 'node-test') {
+        try {
+          const native = require('./evidence-adapters').verifyAdapter(root, command, runId);
+          if (digestObject(native.counts) !== digestObject(raw.counts)) throw Error('ADAPTER_CASE_COUNTS_MISMATCH');
+          raw.adapterReceiptDigest = native.receiptDigest;
+        } catch (error) { raw.outcome = 'FAIL'; raw.adapterError = error.message; }
+      }
       const stdoutPath = `${runPath}/${command.id}.stdout.jsonl`;
       const stderrPath = `${runPath}/${command.id}.stderr.log`;
       // 回讀已逐行去敏並落盤的事件，不用記憶體摘要取代證據。

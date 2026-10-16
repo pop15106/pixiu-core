@@ -266,7 +266,11 @@ test('超量輸出受控停止，不產生假成功', async t => {
 test('預設必要計劃與 CI 共用入口保持接線一致', () => {
   const root = path.resolve(__dirname, '../..');
   const plan = validatePlan(readJson(root, 'scripts/critical-relay/public-core.plan.json'));
-  assert.equal(plan.commands.length, 18);
+  assert.equal(plan.commands.length, 20);
+  // 新增功能必須接入完整驗證，不可只增加計數卻漏掉實際測試。
+  for (const id of ['research-evidence', 'evidence-adapters']) {
+    assert.equal(plan.commands.find(command => command.id === id)?.required, true);
+  }
   for (const command of plan.commands) {
     assert.equal(command.required, true);
     assert.equal(fs.statSync(boundedPath(root, command.file)).isFile(), true);
@@ -332,3 +336,6 @@ test('必要命令依賴未初始化子模組時仍保持 ENV_BLOCKED', async t 
   assert.equal(result.commands[0].outcome, 'ENV_BLOCKED');
   assert.equal(result.outcome, 'FAIL');
 });
+
+// 通用 adapter 回歸案例由 public-core 的 evidence-runner 群組一併執行。
+require('./evidence-adapters.test');

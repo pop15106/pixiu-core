@@ -1,3 +1,6 @@
+import runtimeInfo from '../critical-relay/runtime-info.js';
+import researchEvidence from '../critical-relay/research-evidence.js';
+export const criticalRelayRuntime=runtimeInfo.reportLoadedRuntime(import.meta.url,'workflow-store-v1-cr-v2',[1]);
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -14,7 +17,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import criticalRelayModule from "../critical-relay/critical-relay.js";
 import lifecycleModule from "../critical-relay/lifecycle.js";
-const { lifecycleBinding, verifyLifecycleBinding } = lifecycleModule;
+const { lifecycleBinding, verifyLifecycleBinding, assertLifecycleTransition } = lifecycleModule;
 import evidenceVerifier from "../critical-relay/evidence-verifier.js";
 const { latchBinding, verifyStateEvidence } = evidenceVerifier;
 import planMigration from "../critical-relay/plan-migration.js";
@@ -252,6 +255,8 @@ function assertCriticalRelayComplete(task) {
 }
 
 function assertLifecycleMutationSafety(previous, next, action) {
+  researchEvidence.assertResearchTransition(previous.criticalRelay,next.criticalRelay);
+  assertLifecycleTransition(previous.criticalRelay?.lifecycle, next.criticalRelay?.lifecycle);
   if (previous.lifecycleBinding) {
     if (!next.lifecycleBinding ||
         JSON.stringify(previous.lifecycleBinding) !== JSON.stringify(next.lifecycleBinding) ||
@@ -544,10 +549,11 @@ function applyUpdate(task, input, helpers) {
       handoff.acknowledgedAt = helpers.now();
       next.currentOwner = actor;
       next.status = "in_progress";
-      if (next.verificationBinding && next.criticalRelay.executionContract.verificationRun) {
+      if (next.verificationBinding && (next.criticalRelay.executionContract?.verificationRun || next.criticalRelay.researchVerification)) {
         const verified = verifyStateEvidence(next.criticalRelay, task.projectRoots[0], next.verificationBinding);
         if (!verified.canComplete) {
-          next.criticalRelay.executionContract.verification = null;
+          if(next.criticalRelay.executionContract)next.criticalRelay.executionContract.verification = null;
+          if(next.criticalRelay.researchRequired)next.criticalRelay.researchVerification = null;
           next.criticalRelay.status = "active";
           next.criticalRelay.phase = "REASSESS";
           next.criticalRelay.phaseHistory.push("REASSESS");

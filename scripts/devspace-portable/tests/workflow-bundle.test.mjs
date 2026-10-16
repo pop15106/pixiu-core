@@ -248,3 +248,35 @@ test('切換後寫入終態失敗，恢復不再切換入口且舊備份保持�
   assert.equal(result.Changed, false);
   assert.deepEqual(fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs')), before);
 });
+
+test('套件模組僅在明確啟用診斷時留下真實載入 PID 與 digest',t=>{
+  const f=fixture(t);
+  const entry=path.join(f.bundle,'scripts/devspace-portable/DevSpace.WorkflowStore.mjs');
+  const argv=['--input-type=module','-e',`await import(${JSON.stringify(pathToFileURL(entry).href)});console.log(process.pid);`];
+  const quiet=spawnSync(process.execPath,argv,{encoding:'utf8',windowsHide:true,env:{...process.env,PIXIU_CR_RUNTIME_DIAGNOSTICS:'0'}});
+  assert.equal(quiet.status,0,quiet.stderr);assert.equal(quiet.stderr,'');
+  const child=spawnSync(process.execPath,argv,{encoding:'utf8',windowsHide:true,env:{...process.env,PIXIU_CR_RUNTIME_DIAGNOSTICS:'1'}});
+  assert.equal(child.status,0,child.stderr);
+  const receipt=child.stderr.trim().split('\n').map(line=>JSON.parse(line)).find(x=>x.event==='pixiu.cr.runtime.loaded');
+  assert.equal(receipt.pid,Number(child.stdout.trim()));assert.equal(receipt.bundleDigest,verifyBundle(f.bundle).contentDigest);
+  assert.equal(receipt.loadedModule,pathToFileURL(entry).href);
+});
+
+test('schema3 已安裝套件升級保留 adapter/core 並拒絕原檔損毀',async t=>{
+  const {upgradeSessionBundle,baselineDigests}=await import('../prepare-session-workflow-cr.mjs');
+  const {sessionWorkflowFiles}=await import('../workflow-bundle.mjs');
+  const {createHash}=await import('node:crypto');const hash=value=>createHash('sha256').update(value).digest('hex');
+  const f=fixture(t),entry=path.join(f.bundle,'scripts/devspace-portable/DevSpace.WorkflowStore.mjs');
+  // 中性封裝 fixture 僅測套件升級完整性；實際 schema3 ledger 另以該機 runtime 驗證。
+  fs.writeFileSync(entry,fs.readFileSync(entry,'utf8').replace("'workflow-store-v1-cr-v2',[1]","'session-workflow-v3-cr-v1',[1,2,3]"));
+  for(const name of ['SessionWorkflow.Core.mjs','SessionWorkflow.DevSpaceProjectResolver.mjs'])fs.writeFileSync(path.join(f.bundle,'scripts/devspace-portable',name),'export const fixture = true;\n');
+  fs.copyFileSync(path.join(repo,'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'),path.join(f.bundle,'scripts/devspace-portable/SessionWorkflow.CrBridge.mjs'));
+  const manifest=JSON.parse(fs.readFileSync(path.join(f.bundle,'WORKFLOW-BUNDLE.json')));
+  manifest.compatibilityProfile='session-workflow-v3-cr-v1';manifest.baselineDigests=baselineDigests;
+  manifest.files=sessionWorkflowFiles.map(file=>{const bytes=fs.readFileSync(path.join(f.bundle,file));return {path:file,sha256:hash(bytes),length:bytes.length};});
+  manifest.contentDigest=hash(JSON.stringify(manifest.files.map(x=>[x.path,x.sha256])));fs.writeFileSync(path.join(f.bundle,'WORKFLOW-BUNDLE.json'),JSON.stringify(manifest));
+  const before=hash(fs.readFileSync(entry)),upgraded=path.join(f.root,'upgraded');upgradeSessionBundle(repo,f.bundle,upgraded);
+  assert.equal(hash(fs.readFileSync(path.join(upgraded,'scripts/devspace-portable/DevSpace.WorkflowStore.mjs'))),before);
+  assert.equal(verifyBundle(upgraded).previousBundleDigest,manifest.contentDigest);
+  fs.appendFileSync(entry,'// tampered');assert.throws(()=>upgradeSessionBundle(repo,f.bundle,path.join(f.root,'rejected')),/HASH_MISMATCH/);
+});

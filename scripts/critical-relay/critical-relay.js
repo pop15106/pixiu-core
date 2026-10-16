@@ -184,6 +184,12 @@ function evaluateCriticalRelay(state) {
 
   const blockingReasons = [];
 
+  if (state.researchRequired !== undefined || state.researchBinding !== undefined) {
+    if (state.researchRequired !== true || state.mode !== 'general' || state.executionContract ||
+        state.lifecycle?.taskType !== 'research' || !state.researchVerification?.digest)
+      blockingReasons.push('研究需固定來源計畫與來源回讀證據，不可降級或冒充產品測試');
+  }
+
   // Legacy state 維持原行為；新任務在驗收前必須走完全流程。
   if (state.lifecycle !== undefined || state.lifecycleRequired !== undefined) {
     if (state.lifecycleRequired !== true) blockingReasons.push('lifecycleRequired 不可降級');
@@ -509,6 +515,9 @@ function buildHandoffSnapshot(state) {
     completionCriteria: state.completionCriteria,
     remainingRisks: state.remainingRisks,
     nextAction: state.nextAction,
+    ...(state.researchRequired !== undefined ? { researchRequired: state.researchRequired,
+      researchBinding: state.researchBinding, researchVerification: state.researchVerification,
+      researchHistory: state.researchHistory } : {}),
     ...(state.executionContractRequired !== undefined
       ? { executionContractRequired: state.executionContractRequired } : {}),
     ...(state.executionContract !== undefined
@@ -552,7 +561,7 @@ function checkFile(filePath, workspaceRoot = process.cwd()) {
   const pinned = fs.existsSync(pinPath) ? readJson(workspaceRoot, '.cr/verification-binding.json') : undefined;
   const lifecyclePinPath = boundedPath(workspaceRoot, '.cr/lifecycle-binding.json', { mustExist: false });
   const lifecyclePin = fs.existsSync(lifecyclePinPath) ? readJson(workspaceRoot, '.cr/lifecycle-binding.json') : undefined;
-  const verified = state.mode === 'FULL_AUTOMATIC_RELAY' && !pinned
+  const verified = (state.mode === 'FULL_AUTOMATIC_RELAY' || state.researchRequired === true) && !pinned
     ? { canComplete: false, blockingReasons: ['CLI 完整交付需先建立 .cr/verification-binding.json；請執行 relay-evidence init'] }
     : verifyStateEvidence(state, workspaceRoot, pinned);
   if ((state.lifecycleRequired === true || lifecyclePin) &&

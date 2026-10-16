@@ -76,7 +76,7 @@ function validatePlan(plan) {
   const covered = new Set();
   for (const command of plan.commands) {
     if (!isObject(command) || !validId(command.id) || ids.has(command.id) ||
-        command.adapter !== 'node-test' || command.evidenceKind !== 'test' ||
+        typeof command.adapter !== 'string' || typeof command.evidenceKind !== 'string' ||
         typeof command.required !== 'boolean' || (!command.required && !command.optionalReason?.trim()) ||
         !Number.isSafeInteger(command.timeoutMs) || command.timeoutMs < 100 || command.timeoutMs > 900000 ||
         !Array.isArray(command.criterionRefs) || !command.criterionRefs.length ||
@@ -84,7 +84,9 @@ function validatePlan(plan) {
       throw new Error('測試命令格式、重複 ID 或關聯不合法');
     }
     safeRelative(command.file);
-    if (command.file.startsWith('.cr/') || !/\.(?:js|mjs|cjs)$/u.test(command.file)) throw new Error('測試入口必須是來源中的 Node 檔案');
+    require('./evidence-adapters').validateAdapterCommand(command);
+    if (command.file.startsWith('.cr/') || (command.adapter === 'node-test' && !/\.(?:js|mjs|cjs)$/u.test(command.file)))
+      throw new Error('驗證入口必須是來源中的 Node 檔案或 adapter JSON');
     if (command.dependsOn !== undefined && (!Array.isArray(command.dependsOn) ||
         command.dependsOn.some(id => !ids.has(id)))) throw new Error('dependsOn 只能引用前面的命令');
     ids.add(command.id);

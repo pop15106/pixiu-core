@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { createCriticalRelay, recordCriticalRelayPhase, evaluateCriticalRelay, buildHandoffSnapshot,
   verifyHandoffSnapshot } = require('./critical-relay');
 const { createLifecycle, lifecycleBinding, verifyLifecycleBinding, classifyDepth, recordEvent, advanceStage,
-  reopenLifecycle, evaluateLifecycle } = require('./lifecycle');
+  reopenLifecycle, evaluateLifecycle, assertLifecycleTransition, verificationContext } = require('./lifecycle');
 
 function setup(type='development',depth='standard',riskSignals=[]) {
   const state=createCriticalRelay({objective:'中性研究與開發驗證',
@@ -189,4 +189,34 @@ test('生命週期固定政策不得刪除或改小風險',()=>{
   s.lifecycle=complete().lifecycle;
   s.lifecycleRequired=false;
   assert.match(evaluateCriticalRelay(s).blockingReasons.join('|'),/不可降級/);
+});
+
+test('v2 覆核綁定真實 run 與來源，只有新 phase 名稱不能沿用舊覆核',()=>{
+  const state=setup();research(state);design(state);development(state);
+  state.executionContract={schemaVersion:'pixiu.cr-execution.v2',
+    source:{headSha:'a'.repeat(40),changeDigest:'b'.repeat(64)},
+    verification:{headSha:'a'.repeat(40),changeDigest:'b'.repeat(64)},
+    verificationRun:{runId:'run-one'},verificationBinding:{planDigest:'c'.repeat(64)}};
+  const add=event=>state.lifecycle=recordEvent(state.lifecycle,event,state);
+  add({id:'bound-review',kind:'evidence_review',method:'回讀本輪',result:'完成',outcome:'PASS',testRefs:['test-a']});
+  add({id:'bound-rechallenge',kind:'rechallenge',method:'反證本輪',result:'完成',challengeRefs:['challenge-a']});
+  advance(state);
+  assert.equal(evaluateLifecycle(state.lifecycle,state).canComplete,true);
+  assert.deepEqual(state.lifecycle.entries.at(-1).verificationContext,verificationContext(state));
+  state.executionContract.verificationRun.runId='run-two';
+  recordCriticalRelayPhase(state,'VERIFY');recordCriticalRelayPhase(state,'RECHALLENGE');
+  assert.match(evaluateLifecycle(state.lifecycle,state).blockingReasons.join('|'),/STALE_VERIFICATION/);
+});
+
+test('既有生命週期事件只能追加；拒絕 cycle 倒退、改寫與刪除歷史',()=>{
+  const old=complete();
+  const next=reopenLifecycle(old.lifecycle,{reason:'新反證',evidenceRef:'evidence-a'});
+  assert.doesNotThrow(()=>assertLifecycleTransition(old.lifecycle,next));
+  assert.throws(()=>assertLifecycleTransition(next,old.lifecycle),/CYCLE_REGRESSED/);
+  for(const field of ['entries','stageHistory','reopenHistory']){
+    const changed=structuredClone(next);changed[field].pop();
+    assert.throws(()=>assertLifecycleTransition(next,changed),/HISTORY/);
+  }
+  const changed=structuredClone(next);changed.entries[0].result='改寫舊判斷';
+  assert.throws(()=>assertLifecycleTransition(next,changed),/HISTORY/);
 });

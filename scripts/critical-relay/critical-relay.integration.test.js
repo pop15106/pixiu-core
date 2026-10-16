@@ -32,7 +32,7 @@ function testCrFullAutoShortcutUsesRealManifest() {
 }
 
 function testCrShortcutRealManifestBoundaries() {
-  for (const request of ['CR  完整自動接力', 'CR\n完整自動接力', 'CR　完整自動接力']) {
+  for (const request of ['CR完整自動接力', 'CR  完整自動接力', 'CR\n完整自動接力', 'CR　完整自動接力']) {
     const result = resolveCapabilities(request, manifest);
     assert.ok(result.capabilities.includes('critical-reasoning'), request);
     assert.ok(result.capabilities.includes('execution-progress'), request);

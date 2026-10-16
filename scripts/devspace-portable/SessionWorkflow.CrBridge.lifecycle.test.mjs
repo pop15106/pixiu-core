@@ -33,3 +33,27 @@ test('schema3 舊 Ledger 任務不可在接力時刪除或降級 Lifecycle',t=>{
     {criticalRelay:lower,actor:'owner',workspaceRoot:f.root},
     f.projectRef,()=>f.projectRef),/Lifecycle/);
 });
+
+test('schema3 正式更新拒絕倒退 cycle 或改寫已保存事件',t=>{
+  const f=setup(t);
+  f.state.evidence.push({id:'new-evidence',source:'repo:fixture/new'});
+  const old=structuredClone(f.state);
+  f.state.lifecycle=lifecycle.reopenLifecycle(f.state.lifecycle,{reason:'新反證',evidenceRef:'new-evidence'});
+  const prior=bridge.enforceCriticalRelay(null,f.task,{...f.input,criticalRelay:f.state},f.projectRef,()=>f.projectRef);
+  assert.throws(()=>bridge.enforceCriticalRelay(prior,structuredClone(prior),
+    {...f.input,criticalRelay:old},f.projectRef,()=>f.projectRef),/CYCLE_REGRESSED/);
+});
+
+test('schema3 研究契約保留來源歷史，來源變動使接手驗收失效',async t=>{
+  const {atomicJson}=await import('../critical-relay/test-plan.js');const fs=await import('node:fs');const path=await import('node:path');
+  const research=await import('../critical-relay/research-evidence.js');const f=fixtures.makeFixture(t);
+  atomicJson(f.root,'research.json',{schemaVersion:'pixiu.research-plan.v1',id:'research',revision:1,criteria:[{id:'criterion-a',criterion:'來源'}],sources:[{id:'source-a',file:'sample-0.test.js',locator:'repo:fixture',criterionRefs:['criterion-a']}]});
+  const state=research.captureResearchEvidence(f.root,relay.createEvidenceState(f.root,'research.json',{lifecycleOptions:{taskType:'research',depth:'quick'}}));
+  const projectRef='project:fixture',input={actor:'owner',workspaceRoot:f.root,criticalRelay:state};
+  const prior=bridge.enforceCriticalRelay(null,{schemaVersion:3,scope:'same_project',projectRefs:[projectRef],currentOwner:'owner',status:'in_progress',criticalRelayRequired:true},input,projectRef,()=>projectRef);
+  const broken=structuredClone(state);broken.researchHistory=[];
+  assert.throws(()=>bridge.enforceCriticalRelay(prior,structuredClone(prior),{...input,criticalRelay:broken},projectRef,()=>projectRef),/RESEARCH_HISTORY_REWRITTEN/);
+  fs.appendFileSync(path.join(f.root,'sample-0.test.js'),'\n// changed');
+  const ack=bridge.enforceCriticalRelay(prior,structuredClone(prior),{...input,action:'acknowledge'},projectRef,()=>projectRef);
+  assert.equal(ack.criticalRelay.researchVerification,null);assert.equal(ack.criticalRelay.researchHistory.length,1);
+});
