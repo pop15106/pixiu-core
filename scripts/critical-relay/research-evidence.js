@@ -83,7 +83,8 @@ function captureResearchEvidence(root,state){
     if(!next.evidence.some(x=>x.id===evidenceId))next.evidence.push({id:evidenceId,source:source.locator,
       provenance:'來源檔案實際回讀；其原文真偽與論點仍需人工查核',file:source.file,sha256:source.sha256});
   }
-  if(next.lifecycle.entries.some(x=>x.cycle===next.lifecycle.cycle&&x.stage==='verification')){
+  // 摘要不同且本輪已有查核事件時，研究與驗證紀錄都必須重新建立。
+  if(next.lifecycle.entries.some(x=>x.cycle===next.lifecycle.cycle)){
     next.lifecycle=require('./lifecycle').reopenLifecycle(next.lifecycle,
       {reason:'研究來源改變，重新查核論點與反證',evidenceRef:next.evidence.at(-1).id});
   }

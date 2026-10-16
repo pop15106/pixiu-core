@@ -1,8 +1,8 @@
 {
   "schemaVersion": "pixiu.test-plan.v1",
   "id": "pixiu-public-core",
-  "revision": 5,
-  "parentDigest": "e9459f2fbf595a2c70783cbe0aaab4f69ccb1d0db48c5f91279b29d06ee414e2",
+  "revision": 6,
+  "parentDigest": "8de8acff94a5255f125238cf4389def5cdf77cd67e363020ae5a213dbaa6023c",
   "profile": "local-only",
   "criteria": [
     {
@@ -248,6 +248,30 @@
       "criterionRefs": [
         "criterion-lifecycle",
         "criterion-handoff"
+      ]
+    },
+    {
+      "id": "research-evidence",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/research-evidence.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-lifecycle",
+        "criterion-evidence",
+        "criterion-handoff"
+      ]
+    },
+    {
+      "id": "evidence-adapters",
+      "adapter": "node-test",
+      "file": "scripts/critical-relay/evidence-adapters.test.js",
+      "evidenceKind": "test",
+      "required": true,
+      "timeoutMs": 180000,
+      "criterionRefs": [
+        "criterion-evidence"
       ]
     }
   ]
