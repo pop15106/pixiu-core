@@ -102,10 +102,10 @@ export function assembleBundle(sourceRoot, destination) {
     return { path: relative, bytes, sha256: hash(bytes), length: bytes.length };
   });
   let sourceCommit = null;
-  try { sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).trim(); }
+  try { sourceCommit = execFileSync('git', ['-c', `safe.directory=${path.resolve(sourceRoot)}`, 'rev-parse', 'HEAD'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).trim(); }
   catch { throw new Error('BUNDLE_SOURCE_COMMIT_REQUIRED'); }
   if (!/^[a-f0-9]{40,64}$/u.test(sourceCommit)) throw new Error('BUNDLE_SOURCE_COMMIT_INVALID');
-  const sourceDirty = execFileSync('git', ['status', '--porcelain=v1', '--', ...runtimeFiles],
+  const sourceDirty = execFileSync('git', ['-c', `safe.directory=${path.resolve(sourceRoot)}`, 'status', '--porcelain=v1', '--', ...runtimeFiles],
     { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).trim().length > 0;
   const manifest = { schemaVersion: schema, sourceCommit, sourceDirty, contentDigest: fingerprint(entries),
     executionSchema: 'pixiu.cr-execution.v2', entry: sourceEntry,
