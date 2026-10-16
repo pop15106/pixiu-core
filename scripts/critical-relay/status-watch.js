@@ -22,19 +22,29 @@ async function watch(root, runId, { intervalMs = 10_000, maxPolls = 120, sleep =
     if (status.observed === 'HEARTBEAT_STALE') return status;
     if (attempt < maxPolls - 1) await sleep(intervalMs);
   }
-  return { ...statusOnce(root, id, readOptions), monitorStopped: 'MAX_POLLS_REACHED_NOT_COMPLETED' };
+  const final = statusOnce(root, id, readOptions);
+  if (final.heartbeatSeq < lastSequence) throw new Error('CR_STATUS_HEARTBEAT_SEQUENCE_REGRESSED');
+  if (final.observed === 'RUNNING_HEARTBEAT_FRESH') final.monitorStopped = 'MAX_POLLS_REACHED_NOT_COMPLETED';
+  emit(final);
+  return final;
+}
+function exitCodeFor(result) {
+  if (result.observed === 'HEARTBEAT_STALE') return 4;
+  if (result.monitorStopped === 'MAX_POLLS_REACHED_NOT_COMPLETED' || result.observed === 'RUNNING_HEARTBEAT_FRESH') return 3;
+  return result.observed === 'TESTS_PASS_GATE_NOT_CONFIRMED' ? 0 : 1;
 }
 if (require.main === module) {
-  const [mode = 'status', runId, intervalString] = process.argv.slice(2);
+  const [mode = 'status', runId, intervalString, maxPollsString] = process.argv.slice(2);
   try {
     if (!['status', 'watch', 'task'].includes(mode)) throw new Error('用法：status-watch.js status [runId]、watch [runId] [intervalMs] 或 task');
     if (mode === 'task') output(readLifecycleStage(process.cwd()));
     else if (mode === 'status') output(statusOnce(process.cwd(), runId));
     else {
-      watch(process.cwd(), runId, { intervalMs: intervalString === undefined ? 10_000 : Number(intervalString) })
-        .then(result => { process.exitCode = ['TERMINAL_RESULT_UNVERIFIED', 'RUN_TERMINATED_UNSUCCESSFULLY'].includes(result.observed) ? 1 : 0; })
+      watch(process.cwd(), runId, { intervalMs: intervalString === undefined ? 10_000 : Number(intervalString),
+        maxPolls: maxPollsString === undefined ? 120 : Number(maxPollsString) })
+        .then(result => { process.exitCode = exitCodeFor(result); })
         .catch(error => { console.error(error.message); process.exitCode = 2; });
     }
   } catch (error) { console.error(error.message); process.exitCode = 2; }
 }
-module.exports = { statusOnce, watch };
+module.exports = { statusOnce, watch, exitCodeFor };

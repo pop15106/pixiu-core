@@ -6,7 +6,7 @@
 
 `public-core.plan.json` 第 5 版固定十八組必要驗證，涵蓋原有 CR、路由、workflow、lazy-loading、私人資源隔離、測試執行器、證據閘門及交接正反例。母體使用 Node.js 22；沒有更動系統 JDK 或 Java 專案。
 
-目前 adapter 只執行 Node `node:test`。UI、API、build、document 可作驗收所需種類，但尚無對應的自動收集 adapter，缺少該證據就阻擋完成。此工具不會以 build 或核心測試假冒產品 UI／API 驗收。
+支援 `node-test`、`junit-command`（test／api／ui）、`playwright-command`（ui）、`build-command`（build）與 `http-json`（api）。介面綁定命令、原生報告和產物，不限定 Java 或前後端框架；實際工具必須由工作區既有環境提供。設定與信任邊界見 [adapter-guide.md](adapter-guide.md)。document 尚無通用自動 adapter；缺必要種類仍阻擋，build 不替代產品 UI／API 驗收。
 
 ## 全生命週期 CR：研究→設計→開發→驗證
 
@@ -26,7 +26,7 @@ node scripts/critical-relay/lifecycle-cli.js reopen .cr/new-evidence.json
 
 已使用 DevSpace Workflow Ledger 的任務沿用該 ledger，透過 `createEvidenceState(root, planPath, { lifecycleOptions:{ taskType:'development', depth:'standard', riskSignals:[] }})` 建立附加狀態，不執行 fallback init。標準版與家用 schema-3 相容橋接均固定 lifecycleBinding，不能移除、降級或藉修改 metadata 宣告完成。
 
-純研究任務用 `taskType=research`，只需研究及來源證據驗收；不得冒稱做了程式或 UI/API 實測。Ledger、CLI 與心跳均不授權 Agent、背景推播、網頁或 Git push；研究與開發須由當前明確授權的執行者實際操作。雜湊不是外部第三方簽章。
+純研究任務以 `init-research research-plan.json` 固定來源計畫，再以 `sources` 回讀原文並保存快照；不需要 Git、Node 測試計畫或 executionContract。正式 workflow 同樣支援 research-evidence-v1；來源／計畫改變須重驗。範例見 [adapter-guide.md](adapter-guide.md#純研究)。不得冒稱做了程式或 UI/API 實測。Ledger、CLI 與心跳均不授權 Agent、背景推播、網頁或 Git push；研究與開發須由當前明確授權的執行者實際操作。雜湊不是外部第三方簽章。
 
 ## 長任務心跳與輪詢（Git-only 維護）
 
@@ -39,7 +39,7 @@ node scripts/critical-relay/status-watch.js task
 ```
 
 - `status` 只查一次最新執行狀態，或指定真實的 UUID runId。
-- `watch` 預設每 10 秒讀取同一個 run；顯示命令、完成組數、journal 事件數和最近心跳時間，遇到終態或 stale 結束。最大輪詢次數由程式限制。
+- `watch` 預設每 10 秒讀取同一個 run；顯示命令、完成組數、journal 事件數和最近心跳時間，遇到終態或 stale 結束。可用 `watch <runId> <intervalMs> <maxPolls>` 設上限；最後一次仍在執行會輸出 `MAX_POLLS_REACHED_NOT_COMPLETED`。exit 0 僅代表測試終態 PASS（CR gate 尚未確認），1 失敗／未確認終態，2 輸入錯誤，3 輪詢上限／尚未完成，4 心跳過期。
 - `task` 查既有 `.cr/state.json` 研究／設計／開發階段的**上次 checkpoint**，不宣稱目前 Agent 仍在線。
 - `TESTS_PASS_GATE_NOT_CONFIRMED` 代表 runner 的 `result.json` 已報測試結束，但仍須既有 evidence verifier／CR completion gate 和 RECHALLENGE。
 - `latest-run.json` 與 heartbeat 只提供查詢，不增加第二份帳本或任何 Agent、排程／背景 ChatGPT 推播權限。連線完全失效時，ChatGPT 無法自行推送進度。
@@ -91,6 +91,8 @@ node scripts/critical-relay/critical-relay.js check .cr/state.json
 
 createTask 會固定 `verificationBinding`。更新時不可改成另一份計劃或降級模式。complete 重新核對實際檔案與工作區；handoff 的 acknowledge 若發現證據缺失或來源變更，會保留歷史並轉入 REASSESS，清除可交付 checkpoint。
 
+當次 evidence_review／rechallenge 自動綁定 runId、HEAD、來源與計畫 digest；新 run 使舊驗證 cycle 失效。標準 ledger 與 schema-3 橋接只接受追加歷史，不接受 cycle 倒退或改寫舊事件。API 使用 `recordEvent(lifecycle, event, state)` 傳入當前 state；CLI 會自動傳入。
+
 `applyRunEvidence` 的 `authorizedRepair` 預設 false，只有本次已取得實作／修復授權才設為 true。相同錯誤兩次無新證據轉入 REASSESS；`changedApproach` 用來記錄真正的診斷或換路。重送同一 run 不增加次數；同 run 內容改變則拒絕。這些 helper 不啟動模型、不自動改碼。
 
 ## 證據與來源
@@ -117,7 +119,7 @@ Git 子模組以 gitlink commit 與初始化狀態納入來源指紋。未初始
 
 `scripts/devspace-portable/workflow-bundle.mjs` 組裝明確的依賴清單並保存內容指紋。打包驗證會在乾淨目錄真正 import；安裝器先驗證完整包，再切換單一入口，舊入口與 receipt 保留以供回復。`verify-portable-package.ps1 -IntegrityOnly` 僅供首次 bootstrap 前檢；Node 安裝完成後仍須做真正的 runtime 驗證。
 
-套件的 Node 版本、v2 schema、實際載入路徑、來源 HEAD、來源是否未提交及內容指紋由 probe 回讀。這次只在暫存目錄做升級與回復，不重啟現正運作的 DevSpace。
+套件的 Node 版本、v2 schema、實際載入路徑、來源 HEAD、來源是否未提交及內容指紋由 probe 回讀。實機更新需依當次授權逐台安裝並核對執行中服務，不能以新程序 import 成功冒充服務已載入；每台保存安裝 receipt 供 rollback。
 
 ## 明確恢復與計劃遷移
 
@@ -153,8 +155,10 @@ node scripts/critical-relay/plan-migration.js resume <migrationId> --authorized
 
 ## 已知限制與後續工作
 
-尚未更新 active DevSpace 或重啟服務；實際桌面／MCP 版本生效仍需另外授權與回讀。套件完整性不是數位簽章，不能替代供應鏈信任。
+active DevSpace 的更新結果記在各次部署驗證報告，不能由本 README 推論任何主機已更新；實際桌面／MCP 版本需當次回讀。套件完整性不是數位簽章，不能替代供應鏈信任。
 
 輔助鎖、計劃 binding/state 之間及套件入口切換前後已有程序強制終止測試。ENOSPC／EIO／不支援硬連結與 rename 失敗採故障注入，並非真的把磁碟寫滿或證明所有硬體斷電時序。網路檔案系統、任意非合作寫入者、歷史鏈自動壓縮及全機斷電尚未驗證。資料缺失或不一致保持阻擋，不宣稱任意中斷皆可自動續跑。
 
-下一版仍需完成 Java 8／Maven、UI／API adapter、逐案例需求追溯、多工作區驗證，以及受控實機安裝。
+逐案例需求追溯、多工作區驗證，以及更多原生報告格式仍待擴充。不同框架產生的 JUnit XML 有方言差異；目前採嚴格子集合，不保證任意廠商報告都相容。必要報告解析失敗、零案例、略過、重試後才成功、非零程序結果均不會轉為 PASS。
+
+執行中版本可由服務 stderr 的 `pixiu.cr.runtime.loaded` 紀錄核對 PID、載入路徑、bundleDigest 與來源 commit。probe 的新程序輸出只能證明套件可載入，服務驗收必須比對實際服務 PID。schema-3 已安裝套件可用 `prepare-session-workflow-cr.mjs upgrade <sourceRoot或標準套件> <既有schema3套件> <新目的地>` 保留既有 adapter/core，再安裝新套件；舊 manifest 與各檔 hash 不符即拒絕。

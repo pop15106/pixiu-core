@@ -2,7 +2,7 @@
 name: critical-relay-lifecycle
 description: CR 全流程 Skill。CR 研究／搜尋／設計／開發／全流程或完整自動接力時，將資源查找、方案取捨、實作與實測證據納入共同的反證迴圈。單純一般研究或開發不強制啟動。
 origin: Pixiu
-version: 0.1.0
+version: 0.2.0
 language: zh-TW
 ---
 
@@ -32,11 +32,11 @@ Router 明確命中 `CR 研究`、`CR 搜尋`、`CR 設計`、`CR 開發`、`CR 
 4. **VERIFICATION**：`evidence_review` 連結真實執行結果／測試 ID；`rechallenge` 在驗證之後重新挑戰。最後跑現有 CR completion gate 與 v2 真實證據 Gate。
 5. **HANDOFF**：交出基準 commit、選項和取捨、支持來源、反證、實際測試、未解風險及下一步。只有明確授權才 commit／push／release／deploy。
 
-研究專用請用 `taskType=research`，只執行 research → verification，不假裝已有開發或 UI／API 實測。若有新反證，`reopenLifecycle` 開下一 cycle，保留舊紀錄；既有 runner 證據在改源後失效。
+研究專用以 `init-research research-plan.json` 固定來源、`sources` 保存並回讀原文快照；workflow 用 `createEvidenceState` 的 `taskType=research`，只執行 research → verification，不假裝已有開發或 UI／API 實測。若有新反證，`reopenLifecycle` 開下一 cycle，保留舊紀錄；既有 runner 證據在改源後失效。
 
 ## 信任與限制
 
-Lifecycle entry 是**查核筆記**，不是外部自動搜尋或執行證明。對 `state.claims/evidence/counterEvidence/challenges/tests` 僅引用真實 ID；在正式 runner 中只接受真實可回讀測試。未知語言及 UI/API 目前沒有自動 Adapter 時標 UNVERIFIED／ENV_BLOCKED，不能宣稱 PASS。
+Lifecycle entry 是**查核筆記**，不是外部自動搜尋或執行證明。對 `state.claims/evidence/counterEvidence/challenges/tests` 僅引用真實 ID；在正式 runner 中只接受真實可回讀測試。依 `scripts/critical-relay/adapter-guide.md` 以通用命令和原生 JUnit／Playwright 報告、建置產物或 HTTP 驗證接入不同架構。工具、格式或必要證據缺失時標 UNVERIFIED／ENV_BLOCKED，不能宣稱 PASS。驗證事件使用當前 state 綁定 run／來源；新 run 重開 cycle，舊歷史只能追加。
 
 維持**單一 Agent**，不啟用子 Agent、背景模型或 ChatGPT 自動推播。不把同一模型自我覆核稱為獨立審查，也不把雜湊當成外部不可偽造簽章。
 

@@ -8,7 +8,7 @@ description: CR 全流程 Workflow：研究→方案比較→實作→反證→�
 
 ## 0. UNDERSTAND — 範圍與風險
 
-核對本次授權、repo / 工作區、branch、Git 基準及必要驗收條件；不覆寫 dirty checkout。依風險選擇 Quick／Standard（預設）／Deep。既有 CR state 只接續不重置。以本機 runner 實際可執行的必要測試建立 evidence plan；缺 Java／UI／API Adapter 時保留未驗證。
+核對本次授權、repo / 工作區、branch、Git 基準及必要驗收條件；不覆寫 dirty checkout。依風險選擇 Quick／Standard（預設）／Deep。既有 CR state 只接續不重置。以本機 runner 實際可執行的必要測試建立 evidence plan；依 `scripts/critical-relay/adapter-guide.md` 選擇 node-test、JUnit 命令、Playwright、build 或 HTTP adapter；工具缺失或原生證據未通過時保留未驗證。純研究使用 research-plan，不用測試計畫。
 
 若**全新**專案沒有 fallback state：
 

@@ -20,6 +20,14 @@ function validateBinding(root, binding) {
 }
 
 function latchBinding(root, state, previous) {
+  const research = require('./research-evidence');
+  if (state?.researchRequired === true || state?.researchBinding !== undefined || previous?.profile === research.PROFILE) {
+    if (state?.researchRequired !== true || state.mode !== 'general' || state.executionContract || state.lifecycle?.taskType !== 'research')
+      throw Error('研究驗證模式不可降級或替換');
+    const binding = research.validateResearchBinding(root, state.researchBinding);
+    if (previous && digestObject(previous) !== digestObject(binding)) throw Error('固定研究 binding 不可更換');
+    return binding;
+  }
   const candidate = state?.executionContract?.verificationBinding;
   const required = state?.mode === FULL_MODE || candidate !== undefined || previous !== undefined;
   if (!required) return undefined;
@@ -68,7 +76,7 @@ function verifyRun(root, binding, runRef) {
       if (hash(stdout) !== result.stdoutDigest || hash(stderr) !== result.stderrDigest) throw new Error(`證據內容指紋不符：${expected.id}`);
       if (!expected.required && result.outcome !== 'PASS') continue;
       const expectedArgv = ['--test', '--test-reporter', pathToFileURL(path.join(__dirname, 'evidence-reporter.js')).href,
-        boundedPath(root, expected.file)];
+        expected.adapter === 'node-test' ? boundedPath(root, expected.file) : path.join(__dirname, 'adapter-worker.js')];
       if (result.outcome !== 'PASS' || result.exitCode !== 0 || result.signal !== null ||
           digestObject(result.argv) !== digestObject(expectedArgv) || result.executable !== process.execPath ||
           result.cwd !== fs.realpathSync(root) || result.tool?.version !== process.version || result.tool?.platform !== process.platform ||
@@ -83,6 +91,11 @@ function verifyRun(root, binding, runRef) {
       }
       const parsed = parseTestOutput(stdout);
       if (!parsed.clean || digestObject(parsed.counts) !== digestObject(result.counts)) throw new Error(`必要測試零筆、未通過或統計矛盾：${expected.id}`);
+      if (expected.adapter !== 'node-test') {
+        const native = require('./evidence-adapters').verifyAdapter(root, expected, report.runId);
+        if (native.receiptDigest !== result.adapterReceiptDigest || digestObject(native.counts) !== digestObject(parsed.counts))
+          throw Error(`原生驗證報告與案例事件不一致：${expected.id}`);
+      }
     }
     for (const criterion of plan.criteria) {
       const kinds = new Set(plan.commands.filter(command => command.required && command.criterionRefs.includes(criterion.id) &&
@@ -99,6 +112,11 @@ function verifyStateEvidence(state, root, trustedBinding) {
       return { canComplete: false, blockingReasons: ['MIGRATION_INCOMPLETE：先恢復計劃遷移，再重新測試'] };
     }
   } catch (error) { return { canComplete: false, blockingReasons: [error.message] }; }
+  const research = require('./research-evidence');
+  if (state?.researchRequired === true || state?.researchBinding !== undefined || trustedBinding?.profile === research.PROFILE) {
+    try { return research.verifyResearchEvidence(root, state, latchBinding(root, state, trustedBinding)); }
+    catch (error) { return { canComplete: false, blockingReasons: [error.message] }; }
+  }
   const binding = state?.executionContract?.verificationBinding;
   if (state?.mode !== FULL_MODE && binding === undefined && trustedBinding === undefined) return { canComplete: true, blockingReasons: [] };
   try {

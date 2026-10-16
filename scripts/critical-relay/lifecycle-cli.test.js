@@ -12,6 +12,9 @@ const entry=path.join(__dirname,'lifecycle-cli.js');
 
 function fixture(t) {
   const f=makeFixture(t);
+  atomicJson(f.root,'research.json',{schemaVersion:'pixiu.research-plan.v1',id:'research',revision:1,
+    criteria:[{id:'criterion-a',criterion:'核對來源'}],sources:[{id:'source-a',file:'sample-0.test.js',locator:'repo:fixture',criterionRefs:['criterion-a']}]});
+  f.planPath='research.json';
   const state=initializeFallback(f.root,f.planPath,
     {lifecycleOptions:{taskType:'research',depth:'quick'}});
   state.claims.push({id:'claim-a',statement:'可驗證研究主張',status:'open',evidenceRefs:[],challengeRefs:[]});
@@ -53,7 +56,8 @@ test('重新開啟需要真實 evidence ID，且會使既有驗收失效',t=>{
   assert.equal(good.status,0,good.stderr);
   const state=readJson(f.root,'.cr/state.json');
   assert.equal(state.lifecycle.cycle,2);
-  assert.equal(state.executionContract.verificationRun,null);
+  assert.equal(state.executionContract,undefined);
+  assert.equal(state.researchVerification,null);
   state.lifecycleRequired=false;
   atomicJson(f.root,'.cr/state.json',state);
   assert.equal(execute(f,'advance').status,2);
@@ -67,6 +71,9 @@ test('固定 binding 被移除或不是 .cr 私有輸入時拒絕',t=>{
 });
 test('正式 init-lifecycle 在舊 state 存在時不會覆寫',t=>{
   const f=makeFixture(t);
+  atomicJson(f.root,'research.json',{schemaVersion:'pixiu.research-plan.v1',id:'research',revision:1,
+    criteria:[{id:'criterion-a',criterion:'核對來源'}],sources:[{id:'source-a',file:'sample-0.test.js',locator:'repo:fixture',criterionRefs:['criterion-a']}]});
+  f.planPath='research.json';
   const init=()=>spawnSync(process.execPath,[path.join(__dirname,'relay-evidence.js'),
     'init-lifecycle',f.planPath,'research','quick'],{
       cwd:f.root,encoding:'utf8',windowsHide:true,timeout:25000});
@@ -75,3 +82,5 @@ test('正式 init-lifecycle 在舊 state 存在時不會覆寫',t=>{
   assert.equal(readJson(f.root,'.cr/lifecycle-binding.json').depth,'quick');
   const b=init();assert.equal(b.status,2);assert.match(b.stderr,/已有 CR fallback/);
 });
+
+require('./research-evidence.test');

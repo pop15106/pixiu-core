@@ -8,6 +8,7 @@ function normalizeText(value) {
   return String(value || '')
     .normalize('NFKC')
     .toLowerCase()
+    .replace(/\bcr(?=完整自動接力|研究|搜尋|設計|開發|全流程)/gu, 'cr ')
     .replace(/\s+/gu, ' ')
     .trim();
 }

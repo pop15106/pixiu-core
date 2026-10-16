@@ -50,6 +50,37 @@ function verifyLifecycleBinding(binding, lifecycle) {
   catch { return false; }
 }
 
+// 正式驗證事件必須指向同一次執行與來源，不能只重用測試 ID 或階段名稱。
+function verificationContext(state) {
+  if (state?.researchRequired === true) {
+    if (!state.researchVerification?.digest) throw Error('LIFECYCLE_RESEARCH_NOT_READY');
+    return { researchDigest: state.researchVerification.digest, planDigest: state.researchBinding?.planDigest };
+  }
+  const contract = state?.executionContract;
+  if (contract?.schemaVersion !== 'pixiu.cr-execution.v2') return null;
+  const run = contract.verificationRun, source = contract.source;
+  if (!run?.runId || !source?.headSha || !source?.changeDigest || !contract.verification)
+    throw new Error('LIFECYCLE_VERIFICATION_NOT_READY');
+  return { runId: run.runId, headSha: source.headSha, changeDigest: source.changeDigest,
+    planDigest: contract.verificationBinding?.planDigest };
+}
+
+function assertLifecycleTransition(previous, next) {
+  if (!previous) return;
+  if (!next || !verifyLifecycleBinding(lifecycleBinding(previous), next))
+    throw new Error('LIFECYCLE_POLICY_CHANGED');
+  if (!Number.isSafeInteger(next.cycle) || next.cycle < previous.cycle)
+    throw new Error('LIFECYCLE_CYCLE_REGRESSED');
+  for (const field of ['entries', 'stageHistory', 'reopenHistory']) {
+    if (!Array.isArray(previous[field]) || !Array.isArray(next[field]) ||
+        next[field].length < previous[field].length || previous[field].some((item, i) =>
+          digestObject(item) !== digestObject(next[field][i])))
+      throw new Error('LIFECYCLE_HISTORY_REWRITTEN: ' + field);
+  }
+  if (next.cycle !== next.reopenHistory.length + 1 || next.stageHistory.at(-1) !== next.stage)
+    throw new Error('LIFECYCLE_HISTORY_INVALID');
+}
+
 const activeEntries = (lifecycle, stage) => lifecycle.entries.filter(item =>
   item.cycle === lifecycle.cycle && (!stage || item.stage === stage));
 const byId = collection => new Map((Array.isArray(collection) ? collection : []).filter(isObject)
@@ -138,6 +169,12 @@ function evaluateStage(lifecycle, state, stage) {
     if (!rs('rechallenge').some(item => has(item,'challengeRefs') && performed(item)))
       reasons.push('verification 缺少 VERIFY 之後的 RECHALLENGE');
     if (reversed('evidence_review','rechallenge')) reasons.push('verification 必須先回讀證據再重新挑戰');
+    try {
+      const context = verificationContext(state);
+      if (context && entries.some(item => ['evidence_review', 'rechallenge'].includes(item.kind) &&
+          (!isObject(item.verificationContext) || digestObject(item.verificationContext) !== digestObject(context))))
+        reasons.push('LIFECYCLE_STALE_VERIFICATION: 覆核必須對應當次 run 與來源');
+    } catch (error) { reasons.push(error.message); }
   }
   for (const item of entries) {
     validateReferences(item,state,reasons);
@@ -195,13 +232,15 @@ function evaluateLifecycle(lifecycle, state = {}) {
   return { canComplete: reasons.length === 0, blockingReasons: [...new Set(reasons)] };
 }
 
-function recordEvent(lifecycle, input) {
+function recordEvent(lifecycle, input, state) {
   if (!isObject(lifecycle) || lifecycle.schemaVersion !== SCHEMA || lifecycle.stage === 'complete' ||
       !isObject(input) || !nonempty(input.id) || !TYPES[lifecycle.stage]?.includes(input.kind) ||
       lifecycle.entries.some(item => item.id === input.id) || !nonempty(input.method) || !nonempty(input.result))
     throw new Error('LIFECYCLE_EVENT_INVALID');
   const next = clone(lifecycle);
-  next.entries.push({ ...clone(input), stage: next.stage, cycle: next.cycle, seq: next.entries.length + 1 });
+  const context = next.stage === 'verification' && state ? verificationContext(state) : null;
+  next.entries.push({ ...clone(input), ...(context ? { verificationContext: context } : {}),
+    stage: next.stage, cycle: next.cycle, seq: next.entries.length + 1 });
   return next;
 }
 
@@ -224,4 +263,5 @@ function reopenLifecycle(lifecycle, {reason,evidenceRef} = {}) {
   return next;
 }
 module.exports = { SCHEMA, STAGES, classifyDepth, createLifecycle, lifecycleBinding,
-  verifyLifecycleBinding, evaluateStage, evaluateLifecycle, recordEvent, advanceStage, reopenLifecycle };
+  verifyLifecycleBinding, verificationContext, assertLifecycleTransition,
+  evaluateStage, evaluateLifecycle, recordEvent, advanceStage, reopenLifecycle };

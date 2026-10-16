@@ -95,8 +95,44 @@ export function prepareSessionBundle(sourceRoot, installedBin, destination) {
 }
 if (process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   try {
-    const [source,installed,destination]=process.argv.slice(2);
+    const args=process.argv.slice(2),upgrade=args[0]==='upgrade';if(upgrade)args.shift();
+    const [source,installed,destination]=args;
     if (!source||!installed||!destination) throw new Error('用法：prepare-session-workflow-cr.mjs <sourceRoot> <已核對的舊bin> <新目的地>');
-    console.log(JSON.stringify(prepareSessionBundle(path.resolve(source),path.resolve(installed),path.resolve(destination))));
+    console.log(JSON.stringify((upgrade?upgradeSessionBundle:prepareSessionBundle)(path.resolve(source),path.resolve(installed),path.resolve(destination))));
   } catch(error) { console.error(error.message);process.exitCode=2; }
+}
+
+// 已部署 schema-3 套件升級：保留該機原有 ledger adapter/core，只更新 CR runtime。
+export function upgradeSessionBundle(sourceRoot,installedBundle,destination){
+  plain(installedBundle);plain(destination);
+  if(fs.existsSync(destination))throw Error('SESSION_DESTINATION_EXISTS');
+  const manifest=JSON.parse(fs.readFileSync(path.join(installedBundle,'WORKFLOW-BUNDLE.json'),'utf8'));
+  const added=new Set(['research-evidence.js','evidence-adapters.js','report-formats.js','adapter-worker.js','runtime-info.js']);
+  const legacy=sessionWorkflowFiles.filter(file=>!added.has(path.basename(file)));
+  const expected=manifest.files?.length===legacy.length?legacy:sessionWorkflowFiles;
+  if(manifest.schemaVersion!=='pixiu.workflow-bundle.v1'||manifest.compatibilityProfile!=='session-workflow-v3-cr-v1'||
+      manifest.executionSchema!=='pixiu.cr-execution.v2'||manifest.entry!==runtimeFiles[0]||
+      !Array.isArray(manifest.files)||manifest.files.length!==expected.length||new Set(manifest.files.map(x=>x.path)).size!==expected.length||
+      expected.some(file=>!manifest.files.some(x=>x.path===file))||
+      JSON.stringify(manifest.baselineDigests)!==JSON.stringify(baselineDigests))throw Error('SESSION_UPGRADE_MANIFEST_INVALID');
+  for(const item of manifest.files){
+    const target=path.join(installedBundle,item.path);plain(target);
+    const bytes=fs.readFileSync(target);if(bytes.length!==item.length||hash(bytes)!==item.sha256)throw Error('SESSION_UPGRADE_HASH_MISMATCH');
+  }
+  if(hash(JSON.stringify(manifest.files.map(x=>[x.path,x.sha256])))!==manifest.contentDigest)throw Error('SESSION_UPGRADE_DIGEST_MISMATCH');
+  const entries=new Map(runtimeFiles.map(file=>{plain(path.join(sourceRoot,file));return [file,fs.readFileSync(path.join(sourceRoot,file))];}));
+  for(const name of ['DevSpace.WorkflowStore.mjs','SessionWorkflow.Core.mjs','SessionWorkflow.DevSpaceProjectResolver.mjs']){
+    const file='scripts/devspace-portable/'+name;entries.set(file,fs.readFileSync(path.join(installedBundle,file)));
+  }
+  const bridge='scripts/devspace-portable/SessionWorkflow.CrBridge.mjs';plain(path.join(sourceRoot,bridge));entries.set(bridge,fs.readFileSync(path.join(sourceRoot,bridge)));
+  const packaged=fs.existsSync(path.join(sourceRoot,'WORKFLOW-BUNDLE.json'))?verifyBundle(sourceRoot):null;
+  const sourceCommit=packaged?.sourceCommit||execFileSync('git',['rev-parse','HEAD'],{cwd:sourceRoot,encoding:'utf8',windowsHide:true}).trim();
+  const sourceDirty=packaged?packaged.sourceDirty:execFileSync('git',['status','--porcelain=v1','--',...runtimeFiles,bridge,'scripts/devspace-portable/prepare-session-workflow-cr.mjs'],{cwd:sourceRoot,encoding:'utf8',windowsHide:true}).trim().length>0;
+  const files=sessionWorkflowFiles.map(file=>({path:file,sha256:hash(entries.get(file)),length:entries.get(file).length}));
+  const next={schemaVersion:'pixiu.workflow-bundle.v1',sourceCommit,sourceDirty,compatibilityProfile:'session-workflow-v3-cr-v1',baselineDigests,previousBundleDigest:manifest.contentDigest,
+    contentDigest:hash(JSON.stringify(files.map(x=>[x.path,x.sha256]))),executionSchema:'pixiu.cr-execution.v2',entry:runtimeFiles[0],files};
+  fs.mkdirSync(destination,{recursive:true});
+  for(const [file,bytes] of entries){const target=path.join(destination,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,bytes,{flag:'wx',mode:0o600});}
+  fs.writeFileSync(path.join(destination,'WORKFLOW-BUNDLE.json'),JSON.stringify(next,null,2)+'\n',{flag:'wx',mode:0o600});
+  verifyBundle(destination);return probeBundle(destination);
 }

@@ -332,3 +332,6 @@ test('必要命令依賴未初始化子模組時仍保持 ENV_BLOCKED', async t 
   assert.equal(result.commands[0].outcome, 'ENV_BLOCKED');
   assert.equal(result.outcome, 'FAIL');
 });
+
+// 通用 adapter 回歸案例由 public-core 的 evidence-runner 群組一併執行。
+require('./evidence-adapters.test');
