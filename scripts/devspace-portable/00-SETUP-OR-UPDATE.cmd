@@ -33,6 +33,6 @@ pause
 exit /b %EXIT_CODE%
 
 :verify-package
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verify-portable-package.ps1" -IntegrityOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verify-portable-package.ps1" -PackageRoot "%~dp0." -IntegrityOnly
 set "EXIT_CODE=%ERRORLEVEL%"
 exit /b %EXIT_CODE%
