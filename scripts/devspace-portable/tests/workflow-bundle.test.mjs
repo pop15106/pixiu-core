@@ -249,10 +249,13 @@ test('切換後寫入終態失敗，恢復不再切換入口且舊備份保持�
   assert.deepEqual(fs.readFileSync(path.join(f.bin, 'DevSpace.WorkflowStore.mjs')), before);
 });
 
-test('套件模組在真實載入 PID 留下可對應 digest 的紀錄',t=>{
+test('套件模組僅在明確啟用診斷時留下真實載入 PID 與 digest',t=>{
   const f=fixture(t);
   const entry=path.join(f.bundle,'scripts/devspace-portable/DevSpace.WorkflowStore.mjs');
-  const child=spawnSync(process.execPath,['--input-type=module','-e',`await import(${JSON.stringify(pathToFileURL(entry).href)});console.log(process.pid);`],{encoding:'utf8',windowsHide:true});
+  const argv=['--input-type=module','-e',`await import(${JSON.stringify(pathToFileURL(entry).href)});console.log(process.pid);`];
+  const quiet=spawnSync(process.execPath,argv,{encoding:'utf8',windowsHide:true,env:{...process.env,PIXIU_CR_RUNTIME_DIAGNOSTICS:'0'}});
+  assert.equal(quiet.status,0,quiet.stderr);assert.equal(quiet.stderr,'');
+  const child=spawnSync(process.execPath,argv,{encoding:'utf8',windowsHide:true,env:{...process.env,PIXIU_CR_RUNTIME_DIAGNOSTICS:'1'}});
   assert.equal(child.status,0,child.stderr);
   const receipt=child.stderr.trim().split('\n').map(line=>JSON.parse(line)).find(x=>x.event==='pixiu.cr.runtime.loaded');
   assert.equal(receipt.pid,Number(child.stdout.trim()));assert.equal(receipt.bundleDigest,verifyBundle(f.bundle).contentDigest);

@@ -9,7 +9,8 @@ function reportLoadedRuntime(moduleUrl,integrationProfile,ledgerSchemas){
     executionSchema:'pixiu.cr-execution.v2',pid:process.pid,node:process.version,loadedAt:new Date().toISOString(),
     loadedModule:moduleUrl,bundleDigest:manifest?.contentDigest||null,sourceCommit:manifest?.sourceCommit||null,
     sourceDirty:manifest?.sourceDirty??null});
-  process.stderr.write(JSON.stringify(result)+'\n');
+  // PowerShell 5 的 Stop 模式會將原生 stderr 視為錯誤；僅服務啟動明確要求時輸出。
+  if(process.env.PIXIU_CR_RUNTIME_DIAGNOSTICS==='1')process.stderr.write(JSON.stringify(result)+'\n');
   return result;
 }
 module.exports={reportLoadedRuntime};

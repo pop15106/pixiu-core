@@ -161,4 +161,4 @@ active DevSpace 的更新結果記在各次部署驗證報告，不能由本 REA
 
 逐案例需求追溯、多工作區驗證，以及更多原生報告格式仍待擴充。不同框架產生的 JUnit XML 有方言差異；目前採嚴格子集合，不保證任意廠商報告都相容。必要報告解析失敗、零案例、略過、重試後才成功、非零程序結果均不會轉為 PASS。
 
-執行中版本可由服務 stderr 的 `pixiu.cr.runtime.loaded` 紀錄核對 PID、載入路徑、bundleDigest 與來源 commit。probe 的新程序輸出只能證明套件可載入，服務驗收必須比對實際服務 PID。schema-3 已安裝套件可用 `prepare-session-workflow-cr.mjs upgrade <sourceRoot或標準套件> <既有schema3套件> <新目的地>` 保留既有 adapter/core，再安裝新套件；舊 manifest 與各檔 hash 不符即拒絕。
+執行中版本可在啟動服務時設定 `PIXIU_CR_RUNTIME_DIAGNOSTICS=1`，由 stderr 的 `pixiu.cr.runtime.loaded` 紀錄核對 PID、載入路徑、bundleDigest 與來源 commit。一般匯入預設不輸出，以相容 PowerShell 5 的原生 stderr 錯誤處理。probe 的新程序輸出只能證明套件可載入，服務驗收必須比對實際服務 PID。schema-3 已安裝套件可用 `prepare-session-workflow-cr.mjs upgrade <sourceRoot或標準套件> <既有schema3套件> <新目的地>` 保留既有 adapter/core，再安裝新套件；舊 manifest 與各檔 hash 不符即拒絕。
