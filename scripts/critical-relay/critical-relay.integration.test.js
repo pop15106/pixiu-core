@@ -55,6 +55,33 @@ function testCrModesStayLoadedUnderCapabilityPressure() {
   assert.ok(result.capabilities.includes('critical-reasoning'));
   assert.ok(result.capabilities.includes('execution-progress'));
   assert.ok(result.capabilities.includes('git-fallback'));
+  assert.ok(result.filesToLoad.includes('vault/governance/cr-chat-dev-policy.md'));
+}
+
+function testChatCrRequestsLoadPolicy() {
+  for (const request of ['開CR', '開 CR', '開  cR', '開ＣＲ', '建立正式CR', '建立正式 CR']) {
+    const result = resolveCapabilities(request, manifest);
+    assert.ok(result.capabilities.includes('critical-reasoning'), request);
+    assert.ok(result.filesToLoad.includes('vault/governance/cr-chat-dev-policy.md'), request);
+    assert.strictEqual(result.capabilities.includes('execution-progress'), false, request);
+  }
+}
+
+function testChatCrRequestsRespectNegationAndBoundaries() {
+  for (const request of ['CR', 'SCR', '開CRD', '建立正式CRD', '不要開CR',
+    '不開CR', '不開 CR', '不 開 CR', '不要建立正式CR', '不建立正式 CR']) {
+    assert.strictEqual(
+      resolveCapabilities(request, manifest).capabilities.includes('critical-reasoning'),
+      false,
+      request
+    );
+  }
+}
+
+function testCriticalRelaySourceMirrorMatches() {
+  const source = fs.readFileSync(path.join(core, 'skills/critical-relay/SKILL.md'), 'utf8');
+  const mirror = fs.readFileSync(path.join(core, '.agents/skills/critical-relay/SKILL.md'), 'utf8');
+  assert.strictEqual(source, mirror);
 }
 
 function testLifecycleExplicitRequestsAndNegations() {
@@ -81,6 +108,8 @@ function testLifecycleSourceMirrorMatches() {
 function testCriticalRelayFilesExistInCleanCheckout() {
   for (const relativePath of [
     'skills/critical-relay/SKILL.md',
+    '.agents/skills/critical-relay/SKILL.md',
+    'vault/governance/cr-chat-dev-policy.md',
     'skills/critical-relay-lifecycle/SKILL.md',
     '.agents/skills/critical-relay-lifecycle/SKILL.md',
     '.agent/workflows/cr-lifecycle.md',
@@ -103,6 +132,9 @@ for (const test of [
   testCrFullAutoShortcutUsesRealManifest,
   testCrShortcutRealManifestBoundaries,
   testCrModesStayLoadedUnderCapabilityPressure,
+  testChatCrRequestsLoadPolicy,
+  testChatCrRequestsRespectNegationAndBoundaries,
+  testCriticalRelaySourceMirrorMatches,
   testLifecycleExplicitRequestsAndNegations,
   testLifecycleSourceMirrorMatches,
   testCriticalRelayFilesExistInCleanCheckout

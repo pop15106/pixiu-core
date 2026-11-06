@@ -1,8 +1,8 @@
 ---
 name: critical-relay
-description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、CR 完整自動接力。
+description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、開 CR、建立正式 CR、CR 完整自動接力。
 origin: Pixiu
-version: 0.5.0
+version: 0.5.1
 language: zh-TW
 ---
 
@@ -13,6 +13,7 @@ Critical Relay 是 PixiuCore 的批判推理接力層。它不取代 Deep Resear
 ## 快速觸發
 
 - `CR 完整自動接力`：同時啟用 Critical Relay 與完整自動接力。實作任務採 `mode=FULL_AUTOMATIC_RELAY`、`executionContractRequired=true` 與下列交付契約；研究型任務保留既有 general 模式。
+- `開CR`／`開 CR`／`建立正式CR`／`建立正式 CR`：建立或續接 CR 案件；依下方 Chat 規範決定 Dev 與帳本同步，英文不分大小寫。
 - 不使用裸 `CR` 作全域關鍵字，避免短字串誤觸其他英文內容。
 
 ## 核心原則
@@ -28,6 +29,12 @@ Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動�
 - 單獨模式：`開 Critical Relay`、`用對抗搜尋模式`、`懷疑每個論點並找反證`。
 - 疊加模式：`對抗搜尋，開完整自動接力`。Router 會同時載入 `critical-reasoning` 與 `execution-progress`。
 - 單獨模式只增加懷疑、反證、交叉驗證與 completion gate；不會自動啟用 Git／Release／Deploy 或 Agent 權限。
+
+## Chat 啟動與 Dev 同步
+
+在 Chat 使用本 Skill 時，先讀 `vault/governance/cr-chat-dev-policy.md`。先建立或續接同一案件卡；Dev 尚未選擇時問一次，先在對話內推進。有既有有效授權就直接沿用，不重問同意。
+
+對話內 CR 啟動、Dev 選擇與正式帳本登錄分別回報。帳本依可見範圍查重、持有人、revision 及冪等鍵合法同步；建立案件不要求先 handoff 或通過完成閘門。所有完成聲明仍須符合下列證據與驗收契約。
 
 ## 標準流程
 
@@ -140,7 +147,7 @@ Lifecycle 決策事件沿用 canonical Critical Relay state，不另建第二份
 
 CLI check 與 workflow complete 都回讀原始事件、統計、檔案及實際來源。完整交付缺 binding／run、零筆、過期證據或模式降級時阻擋；舊 general 紀錄保留結構相容，舊 v1 實作任務要明確遷移與重驗。下方 v1 helper 範例僅供歷史結構相容，不是新實作任務入口。
 
-操作、信任邊界、CI 與部署限制詳見 `scripts/critical-relay/README.md`。目前只支援 Node 測試 adapter；UI／API／build 缺少對應證據就保持未完成。雜湊不代表獨立或不可偽造的驗證。
+操作、信任邊界、CI 與部署限制詳見 `scripts/critical-relay/README.md`。可用 adapter 與條件見 `scripts/critical-relay/adapter-guide.md`，包含 `node-test`、`junit-command`、`playwright-command`、`build-command` 與 `http-json`；必要測試仍須有對應實測證據。雜湊不代表獨立或不可偽造的驗證。
 
 ## 單一 Agent 交付契約
 

@@ -200,9 +200,16 @@
           "skills/critical-relay-lifecycle/SKILL.md"
         ],
         "contexts": [],
-        "governance": [".agent/workflows/cr-lifecycle.md"]
+        "governance": [
+          "vault/governance/cr-chat-dev-policy.md",
+          ".agent/workflows/cr-lifecycle.md"
+        ]
       },
       "aliases": [
+        "開cr",
+        "開 cr",
+        "建立正式cr",
+        "建立正式 cr",
         "cr 完整自動接力",
         "cr全流程",
         "cr 全流程",
