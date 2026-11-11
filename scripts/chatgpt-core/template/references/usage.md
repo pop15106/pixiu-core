@@ -15,9 +15,9 @@
 
 使用者明確選用 CRD、Pro析或 X析的純文字分析時，只讀對應規格：
 
-- [CRD 純推理](core/skills/cr-deep-reasoning-no-mcp/SKILL.md)
-- [Pro 參考分析](core/skills/analyze-pro-style/SKILL.md)
-- [XHigh 參考分析](core/skills/analyze-xhigh-style/SKILL.md)
+- [CRD 純推理](core/skills/cr-deep-reasoning-no-mcp/SKILL.reference.md)
+- [Pro 參考分析](core/skills/analyze-pro-style/SKILL.reference.md)
+- [XHigh 參考分析](core/skills/analyze-xhigh-style/SKILL.reference.md)
 
 完成必要規格載入後，在分析階段維持工具、外部查詢與子 Agent 關閉。來源與測試不足時交付待查項，保留未驗證。規格已在對話時沿用。使用者要求從開始零工具且規格不可見時，請其提供規格文字。這些是自訂分析流程；模型與推理強度以宿主實際設定為準。
 
@@ -33,7 +33,7 @@ node <本 Skill 根目錄>/scripts/route.cjs "<使用者本次需求>"
 
 此命令核對快照雜湊，輸出來源版本、最多三個能力及要讀取的相對路徑。只讀命中的文件。腳本不能執行時，以 [能力與觸發索引](capabilities.md) 及 [原始 Manifest](core/vault/capabilities/capability-manifest.json) 路由；明寫腳本未執行。
 
-用 [技能總索引](core/skills/INDEX.md) 查明確要求的其他能力。來源索引中的外部資料或未提供工具，須確認實際可讀性，不把缺資料當成空資料。私人記憶、現行任務與帳本不在快照內。
+用 [技能總索引](skills.md) 查明確要求的其他能力。來源索引中的外部資料或未提供工具，須確認實際可讀性，不把缺資料當成空資料。私人記憶、現行任務與帳本不在快照內。
 
 ## 上下文載入
 
@@ -45,8 +45,8 @@ node <本 Skill 根目錄>/scripts/route.cjs "<使用者本次需求>"
 
 CR 路由命中時讀：
 
-1. [Critical Relay](core/skills/critical-relay/SKILL.md)。
-2. [Lifecycle](core/skills/critical-relay-lifecycle/SKILL.md) 與 [流程步驟](core/.agent/workflows/cr-lifecycle.md)。
+1. [Critical Relay](core/skills/critical-relay/SKILL.reference.md)。
+2. [Lifecycle](core/skills/critical-relay-lifecycle/SKILL.reference.md) 與 [流程步驟](core/.agent/workflows/cr-lifecycle.md)。
 3. [Chat／Dev 規範](core/vault/governance/cr-chat-dev-policy.md) 與 [風險與分析品質](core/vault/governance/cr-risk-review.md)。
 
 沿用同一案件，依序處理目標與完成條件、可推翻主張、支持來源、反證搜尋、方案取捨、實作或研究、實際驗證及驗證後的重新挑戰。
@@ -71,11 +71,11 @@ CR 路由命中時讀：
 
 使用 [能力與觸發索引](capabilities.md) 選取相關流程。以下入口供明確要求時載入：
 
-- [自我驗證迴圈](core/skills/pixiu-verify-loop/SKILL.md)：/go、驗證與修復。
-- [需求確認](core/skills/requirement-confirmation/SKILL.md)：需求差異、範圍與驗收。
-- [報修覆核](core/skills/repair-review-sheet/SKILL.md)：重現、根因、修復及回復。
-- [變更覆核](core/skills/change-review-evidence/SKILL.md)：變更依據與可回讀證據。
-- [工作文件總控](core/skills/work-document-orchestrator/SKILL.md)：依工作意圖路由文件。
+- [自我驗證迴圈](core/skills/pixiu-verify-loop/SKILL.reference.md)：/go、驗證與修復。
+- [需求確認](core/skills/requirement-confirmation/SKILL.reference.md)：需求差異、範圍與驗收。
+- [報修覆核](core/skills/repair-review-sheet/SKILL.reference.md)：重現、根因、修復及回復。
+- [變更覆核](core/skills/change-review-evidence/SKILL.reference.md)：變更依據與可回讀證據。
+- [工作文件總控](core/skills/work-document-orchestrator/SKILL.reference.md)：依工作意圖路由文件。
 - [完整原始 Workflow 目錄](workflows.md)：把步驟作為 Skill 指令使用；執行器能力依實際工具核對。
 
 本包提供流程規範、來源快照及路由工具。Hook 常駐、背景排程、跨對話自動接續、模型切換與工作機服務，均以實際已安裝並驗證的執行環境為準。

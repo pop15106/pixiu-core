@@ -12,11 +12,12 @@ try {
     path.join(core, 'vault/capabilities/capability-manifest.json'));
   const files = result.filesToLoad || [];
   const available = new Set(snapshot.files.map(item => item.path));
+  const stored = new Map(snapshot.files.map(item => [item.path, item.storagePath || item.path]));
   const bundled = files.filter(item => available.has(item));
   const external = files.filter(item => !available.has(item));
   // 外部記憶與工具資料只回報依賴，不從快照猜測目前內容。
   console.log(JSON.stringify({ ...result, sourceCommit: snapshot.sourceCommit,
-    integrity: 'PASS', filesToLoad: bundled.map(item => 'references/core/' + item),
+    integrity: 'PASS', filesToLoad: bundled.map(item => 'references/core/' + stored.get(item)),
     externalReferences: external, execution: 'routing-only' }, null, 2));
   if (result.degraded) process.exitCode = 2;
 } catch (error) { console.error(error.message); process.exitCode = 2; }

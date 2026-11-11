@@ -19,7 +19,7 @@ ALLOWED = ("vault/bootstrap/", "vault/capabilities/", "vault/governance/", "vaul
 TOP = {"AGENTS.md", "CODEX.md", "CLAUDE.md", "GEMINI.md", "user_rules.md", "LICENSE", "LICENSE.md"}
 REQUIRED = {"user_rules.md", "vault/bootstrap/SESSION-BOOTSTRAP.md",
             "vault/capabilities/capability-manifest.json", "vault/governance/cr-risk-review.md",
-            "scripts/router/resolve-capabilities.js", "scripts/critical-relay/risk-review.js"}
+            "scripts/router/resolve-capabilities.js", "scripts/critical-relay/risk-review.js", "skills/INDEX.md"}
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
@@ -29,6 +29,9 @@ def safe_name(name):
     if not name or name.startswith("/") or "\\" in name or ":" in name or ".." in parts:
         raise ValueError("封存包含無效路徑")
     return name
+
+def stored_name(name):
+    return name[:-8] + "SKILL.reference.md" if name.endswith("SKILL.md") else name
 
 def text_member(archive, name):
     return archive.extractfile(name).read().decode("utf-8-sig")
@@ -74,7 +77,7 @@ def import_snapshot(archive_path, commit):
             if re.search(rb"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----", data):
                 raise ValueError("來源含私人憑證：" + name)
             data_by_path[name] = data
-            records.append({"path": name, "bytes": len(data), "sha256": sha(data)})
+            records.append({"path": name, "storagePath": stored_name(name), "bytes": len(data), "sha256": sha(data)})
     if not REQUIRED.issubset(data_by_path):
         raise ValueError("快照缺少必要母體內容")
     missing = sorted({p for c in capability["capabilities"] for group in c.get("load", {}).values()
@@ -85,7 +88,7 @@ def import_snapshot(archive_path, commit):
     manifest_path = REF / "snapshot.json"
     if CORE.exists() and any(CORE.iterdir()):
         previous = json.loads(manifest_path.read_text(encoding="utf-8"))
-        expected = {item["path"]: item for item in previous["files"]}
+        expected = {item.get("storagePath", item["path"]): item for item in previous["files"]}
         actual = {p.relative_to(CORE).as_posix(): p for p in CORE.rglob("*") if p.is_file()}
         if set(expected) != set(actual) or any(p.is_symlink() for p in CORE.rglob("*")):
             raise ValueError("既有快照含未登錄檔案或連結")
@@ -95,7 +98,7 @@ def import_snapshot(archive_path, commit):
         shutil.rmtree(CORE)
     CORE.mkdir(parents=True, exist_ok=True)
     for name, data in data_by_path.items():
-        target = CORE / name
+        target = CORE / stored_name(name)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
     skills = sorted(p for p in data_by_path if re.fullmatch(r"skills/[^/]+/SKILL.md", p))
@@ -116,7 +119,7 @@ def import_snapshot(archive_path, commit):
         triggers = c.get("aliases", []) + c.get("keywords", [])
         links = []
         for p in [p for group in c.get("load", {}).values() for p in group]:
-            links.append("[" + cell(p) + "](core/" + p + ")" if p in data_by_path else cell(p) + "（外部資料）")
+            links.append("[" + cell(p) + "](core/" + stored_name(p) + ")" if p in data_by_path else cell(p) + "（外部資料）")
         rows.append("| " + cell(c["id"]) + " | " + cell("、".join(triggers[:7])) + " | " + "、".join(links) + " |")
     (REF / "capabilities.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
     rows = ["# 原始 Workflow 索引", "", "依主 Skill 將流程步驟當成指令使用；工具及服務需實際可用。", "",
@@ -126,6 +129,9 @@ def import_snapshot(archive_path, commit):
         match = re.search(r"^description:\s*(.+)$", text, re.M)
         desc = match.group(1).strip() if match else "依名稱與任務範圍選取原文。"
         rows.append("| [" + Path(p).stem + "](core/" + p + ") | " + cell(desc[:180]) + " |")
+    skill_rows = ["# 母體技能索引", "", "原始技能保留為參考規格，由單一 PixiuCore 入口按需載入。", ""]
+    skill_rows.extend("- [" + p.split("/")[1] + "](core/" + stored_name(p) + ")" for p in skills)
+    (REF / "skills.md").write_text("\n".join(skill_rows) + "\n", encoding="utf-8")
     (REF / "workflows.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
     version = ["# PixiuCore 版本紀錄", "", "母體 commit：" + commit,
                "來源：https://github.com/pop15106/pixiu-core/commit/" + commit,
@@ -138,7 +144,7 @@ def import_snapshot(archive_path, commit):
         version.append(name + "：" + (match.group(1).strip() if match else "未標示"))
     (REF / "version.md").write_text("\n".join(version) + "\n", encoding="utf-8")
     manifest["generatedFiles"] = []
-    for name in ("capabilities.md", "workflows.md", "version.md"):
+    for name in ("capabilities.md", "workflows.md", "skills.md", "version.md"):
         data = (REF / name).read_bytes()
         manifest["generatedFiles"].append({"path": "references/" + name,
                                            "bytes": len(data), "sha256": sha(data)})

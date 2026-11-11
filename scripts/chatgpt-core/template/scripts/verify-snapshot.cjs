@@ -13,14 +13,20 @@ function verifySnapshot(root = path.resolve(__dirname, '..')) {
     { base: root, files: manifest.generatedFiles || [] }];
   for (const { base: core, files } of groups) {
     const names = new Set();
+    const storedNames = new Set();
     for (const item of files) {
-    if (typeof item.path !== 'string' || !item.path || item.path.includes('\\') ||
+    const stored = item.storagePath || item.path;
+    if (typeof item.path !== 'string' || !item.path || item.path.includes('\\') || item.path.includes(':') ||
         path.posix.isAbsolute(item.path) || item.path.split('/').some(p => !p || p === '.' || p === '..') ||
         names.has(item.path)) throw Error('快照含重複或無效路徑');
+    if (typeof stored !== 'string' || !stored || stored.includes('\\') || stored.includes(':') ||
+        path.posix.isAbsolute(stored) || stored.split('/').some(p => !p || p === '.' || p === '..') ||
+        storedNames.has(stored)) throw Error('快照含重複或無效儲存路徑');
     names.add(item.path);
-    const target = path.join(core, item.path);
+    storedNames.add(stored);
+    const target = path.join(core, stored);
     let current = core;
-    for (const part of item.path.split('/')) {
+    for (const part of stored.split('/')) {
       current = path.join(current, part);
       if (fs.lstatSync(current).isSymbolicLink()) throw Error('快照包含連結：' + item.path);
     }

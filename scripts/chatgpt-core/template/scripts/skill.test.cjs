@@ -7,6 +7,7 @@ const os = require('node:os');
 const { createHash } = require('node:crypto');
 const { verifySnapshot } = require('./verify-snapshot.cjs');
 const { readSection, MAX_BYTES } = require('./read-section.cjs');
+const { materializeSource } = require('./materialize-source.cjs');
 
 function fixture(t, text) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-skill-'));
@@ -62,4 +63,23 @@ test('主入口與適配工具也必須符合母體來源', t => {
   assert.equal(verifySnapshot(root).adapterFiles.length, 1);
   fs.writeFileSync(path.join(root, 'guide.md'), '已改動的入口');
   assert.throws(() => verifySnapshot(root), /完整性/);
+});
+
+test('嵌入技能以參考檔儲存，原始路徑讀取及完整還原保留位元組', t => {
+  const text = '---\nname: nested-source\n---\n原始技能規格';
+  const { root, m } = fixture(t, text);
+  m.files[0].path = 'skills/example/SKILL.md';
+  m.files[0].storagePath = 'skills/example/SKILL.reference.md';
+  const target = path.join(root, 'references/core', m.files[0].storagePath);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.renameSync(path.join(root, 'references/core/source.md'), target);
+  fs.writeFileSync(path.join(root, 'references/snapshot.json'), JSON.stringify(m));
+  assert.equal(readSection(root, m.files[0].path).text, text);
+  const restored = materializeSource(root);
+  t.after(() => fs.rmSync(restored.root, { recursive: true, force: true }));
+  assert.equal(fs.readFileSync(path.join(restored.root, m.files[0].path), 'utf8'), text);
+  assert.equal(fs.existsSync(path.join(root, 'references/core', m.files[0].path)), false);
+  m.files.push({ ...m.files[0], path: 'another-source.md' });
+  fs.writeFileSync(path.join(root, 'references/snapshot.json'), JSON.stringify(m));
+  assert.throws(() => verifySnapshot(root), /儲存路徑/);
 });

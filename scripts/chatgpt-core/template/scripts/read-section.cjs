@@ -5,10 +5,11 @@ const { verifySnapshot } = require('./verify-snapshot.cjs');
 const MAX_BYTES = 12000;
 function readSection(root, relative, start = 1, limit = 80) {
   const manifest = verifySnapshot(root);
-  if (!manifest.files.some(item => item.path === relative)) throw Error('路徑不在來源快照清單');
+  const source = manifest.files.find(item => item.path === relative);
+  if (!source) throw Error('路徑不在來源快照清單');
   if (!Number.isSafeInteger(start) || start < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 80)
     throw Error('起始行需為正整數；每次讀取 1 至 80 行');
-  const text = fs.readFileSync(path.join(root, 'references/core', relative), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'references/core', source.storagePath || relative), 'utf8');
   const lines = text.split(/\r?\n/);
   if (start > lines.length) throw Error('起始行超出檔案範圍');
   const selected = []; let size = 0;
