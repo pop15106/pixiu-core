@@ -15,6 +15,8 @@ const isolatedTempRoot = await mkdtemp(join(tmpdir(), "pixiu-safe-validation-"))
 const powershell = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
 const base = "scripts/devspace-portable/tests/";
 const tests = [
+  { name: "agent-native-compat", executable: process.execPath, args: ["--test", base + "agent-native-compat.test.mjs"] },
+  { name: "native-stop-guard", executable: powershell, args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", base + "run-native-stop-guard-tests.ps1"] },
   { name: "deployment-guard", executable: powershell, args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", base + "run-workflow-deployment-guard-tests.ps1"] },
   { name: "native-http-mcp", executable: process.execPath, args: ["--test", base + "workflow-native-mcp.test.mjs"] },
   { name: "workflow-store", executable: process.execPath, args: ["--test", base + "workflow-store.test.mjs"] },
@@ -68,7 +70,7 @@ for (const specification of tests) {
     stdoutSha256: digest(output.stdout),
     stderrFile,
     stderrSha256: digest(output.stderr),
-    summaryLines: outputText.split(/\r?\n/).filter((line) => /^(Tests:|Workflow deployment guard:|# tests |# pass |# fail |# skipped |# cancelled |已檢查 |Skill metadata )/.test(line)),
+    summaryLines: outputText.split(/\r?\n/).filter((line) => /^(PASS:|Tests:|Workflow deployment guard:|# tests |# pass |# fail |# skipped |# cancelled |已檢查 |Skill metadata )/.test(line)),
     status: output.code === 0 && !output.launchError ? "PASS" : "FAIL",
   };
   records.push(record);

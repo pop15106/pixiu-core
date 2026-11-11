@@ -53,7 +53,13 @@ function printCliRecord(record) {
   }
 }
 
-const store = createLocalAgentStore(loadConfig());
+// 1.0.8 的儲存層改收 stateDir；保留 1.0.4 的既有設定物件介面。
+// 改寫狀態不是原生停止證據；1.0.8 共用 daemon 不可冒用舊版停止方式。
+if (action === "mark-stopped" && packageMetadata.version === "1.0.8") {
+  throw new Error("NATIVE_STOP_UNSUPPORTED: DevSpace 1.0.8 requires task-scoped native stop evidence; no status was changed.");
+}
+const config = loadConfig();
+const store = createLocalAgentStore(packageMetadata.version === "1.0.8" ? config.stateDir : config);
 try {
   if (action === "list") {
     console.log(JSON.stringify(store.list(), null, 2));

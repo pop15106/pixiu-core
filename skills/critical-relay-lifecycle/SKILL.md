@@ -2,7 +2,7 @@
 name: critical-relay-lifecycle
 description: CR 全流程 Skill。CR 研究／搜尋／設計／開發／全流程或完整自動接力時，將資源查找、方案取捨、實作與實測證據納入共同的反證迴圈。單純一般研究或開發不強制啟動。
 origin: Pixiu
-version: 0.2.0
+version: 0.3.0
 language: zh-TW
 ---
 
@@ -41,3 +41,7 @@ Lifecycle entry 是**查核筆記**，不是外部自動搜尋或執行證明。
 維持**單一 Agent**，不啟用子 Agent、背景模型或 ChatGPT 自動推播。不把同一模型自我覆核稱為獨立審查，也不把雜湊當成外部不可偽造簽章。
 
 操作範本：`.agent/workflows/cr-lifecycle.md`。CLI：`commands/cr-lifecycle.md`。
+
+## 風險與分析品質
+
+CR 啟動時同時讀取 `vault/governance/cr-risk-review.md`。使用「CR 風險盤點」或「CR 風險審查」可明確要求此覆核。每項需求連結主張與驗收證據，依原始來源分組核對獨立性，記錄競爭解釋、敏感條件與決策重開條件。盤點未知項及剩餘風險；程式強制風險處置證據與版本綁定，人工核對真實授權、來源品質與盤點完整性。新 run、環境或來源改變後重新驗證。

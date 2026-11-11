@@ -1040,6 +1040,7 @@ export function createDevSpaceAgentAdapter(options = {}) {
       storeModulesPromise = Promise.all([
         import(pathToFileURL(join(distDirectory, "config.js")).href),
         import(pathToFileURL(join(distDirectory, "local-agent-store.js")).href),
+        readFile(join(distDirectory, "..", "package.json"), "utf8").then(JSON.parse),
       ]);
     }
     return storeModulesPromise;
@@ -1080,8 +1081,11 @@ export function createDevSpaceAgentAdapter(options = {}) {
 
     async get(agentId) {
       if (!AGENT_ID_PATTERN.test(agentId)) fail("Invalid DevSpace Agent ID.");
-      const [{ loadConfig }, { createLocalAgentStore }] = await storeModules();
-      const store = createLocalAgentStore(loadConfig());
+      const [{ loadConfig }, { createLocalAgentStore }, metadata] = await storeModules();
+      if (!["1.0.4", "1.0.8"].includes(metadata.version)) fail(`DEVSPACE_STORE_VERSION_UNSUPPORTED: ${metadata.version}`);
+      // 使用此 adapter 的環境，避免測試或指定工作區誤讀其他狀態目錄。
+      const config = loadConfig(inheritedEnv);
+      const store = createLocalAgentStore(metadata.version === "1.0.8" ? config.stateDir : config);
       try {
         const record = store.get(agentId);
         if (!record) fail(`Unknown DevSpace Agent ID: ${agentId}`);
@@ -1090,6 +1094,8 @@ export function createDevSpaceAgentAdapter(options = {}) {
           status: record.status,
           latestResponse: record.latestResponse,
           error: record.error,
+          errorCode: record.errorCode,
+          errorRetryable: record.errorRetryable,
         };
       } finally {
         store.close();

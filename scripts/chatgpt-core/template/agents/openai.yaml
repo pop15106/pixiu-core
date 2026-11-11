@@ -1,0 +1,4 @@
+interface:
+  display_name: "PixiuCore 母體與 CR 工作流程"
+  short_description: "載入母體規範、CR 研究與驗收流程，核對版本、證據及風險"
+  default_prompt: "使用 $pixiu-core 依最新母體規範執行 CR 研究，列出證據、反證、風險及驗收結果。"

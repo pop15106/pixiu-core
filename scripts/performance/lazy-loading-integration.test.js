@@ -132,6 +132,7 @@ function testRecentWorkflowPhrasesRemainRoutable() {
     ['幫我收尾，跑驗證', 'code-review'],
     ['auto mode 自動放行', 'runtime-control'],
     ['focus mode 只看結果', 'runtime-control'],
+    ['DevSpace 斷線，切 Git 繼續', 'git-fallback'],
     ['確認不會影響現行操作跟功能', 'architecture-analysis'],
     ['根據你對我的了解，整理我的偏好', 'identity-calibration'],
     ['幫我優化這段 system prompt', 'prompt-engineering']

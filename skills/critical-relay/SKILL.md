@@ -2,7 +2,7 @@
 name: critical-relay
 description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、開 CR、建立正式 CR、CR 完整自動接力。
 origin: Pixiu
-version: 0.5.1
+version: 0.6.0
 language: zh-TW
 ---
 
@@ -101,7 +101,7 @@ handoff 使用 `buildHandoffSnapshot(state)` 建立獨立快照，附 `stateDige
 - high / critical challenge 或 unknown 尚未 resolved。
 - 必要 test 未 passed。
 - completionCriteria 未滿足，或沒有 evidenceRefs。
-- high / critical remainingRisk 尚未 accepted、mitigated 或 resolved。
+- remainingRisk 等級／狀態無效、尚未評估，或 accepted／mitigated／resolved 缺少負責人、處置證據、使用者接受依據及當次版本／環境綁定。
 - state 欄位型別錯誤、`status=blocked`、缺少 `VERIFY → RECHALLENGE` phaseHistory 都會 fail closed。
 
 可用下列指令檢查 state：
@@ -191,3 +191,7 @@ const executionContract = createExecutionContract({
 - **Verify Loop**：Critical Relay 把「驗證成功」後再加一輪 RECHALLENGE。
 - **完整自動接力**：Critical Relay 成為完成條件的一部分；尚有 blocker 時不得回報 🟢 全部完成。
 - **Workflow handoff**：CR-enabled task 設 `criticalRelayRequired=true` 並攜帶結構化 `criticalRelay` state；handoff 必須有 state，complete 會重新執行 completion gate，不信任舊 evaluation。仍沿用原本 workflow ledger，不新增另一套 durable store。
+
+## 風險與分析品質
+
+CR 啟動時同時讀取 `vault/governance/cr-risk-review.md`。使用「CR 風險盤點」或「CR 風險審查」可明確要求此覆核。每項需求連結主張與驗收證據，依原始來源分組核對獨立性，記錄競爭解釋、敏感條件與決策重開條件。盤點未知項及剩餘風險；程式強制風險處置證據與版本綁定，人工核對真實授權、來源品質與盤點完整性。新 run、環境或來源改變後重新驗證。

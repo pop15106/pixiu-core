@@ -1,0 +1,6 @@
+interface:
+  display_name: "XHigh 參考分析"
+  short_description: "用 X析 啟動：拆解相依並核對原值與反例，以同一模型完成純文字分析及驗收"
+  default_prompt: "請使用 $analyze-xhigh-style，載入規格後依目前對話資料分析；分析階段維持工具與子代理關閉。"
+policy:
+  allow_implicit_invocation: true

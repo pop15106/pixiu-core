@@ -97,6 +97,7 @@ readAt: on-demand
   - **🧠 第二大腦先查 [NEW][HARD]**：除單純翻譯、格式整理、目前時間、明確單一檔案小修等自足任務外，遇到需要背景脈絡、歷史決策、專案規則、舊調查、recap 或跨專案記憶的問題，**必須先查第二大腦**，再回讀命中的 vault 原文或 repo 原始碼驗證。
     - **結果定位**：第二大腦查詢結果是線索與入口，不是最終結論；不得只憑 score、摘要或單一命中片段回答。
     - **資料邊界**：source of truth 仍是 `%PIXIU_CORE%\vault` 與對應 repo；Qdrant 只是可重建索引，不取代 recap、decision 或 repo tracing。
+  - **🔀 Git fallback [NEW][HARD]**：當使用者提及「切 Git」、「改用 Git」、「Git fallback」、「GitHub 直接改」、DevSpace 斷線／不可用或等效語義時，必須讀取 `vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md`。本機母體可用時維持本機母體；本機母體不可用但 GitHub 可用時，從 `https://github.com/pop15106/pixiu-core.git` 建立獨立暫存治理 checkout，再走同一份 `SESSION-BOOTSTRAP.md` 與 Capability Router。不得把母體 clone 到業務 repo、不得因 DevSpace 失效而降級成未受治理 Git 操作。若使用者同時要求「完整自動接力」，必須同步套用 `vault/governance/long-running-progress-policy.md` 的 30–60 秒輪詢與可見進度規則。
   - **全系統測試**：當使用者提及「全系統測試」、「再次測試」或類似語義時，**必須優先執行** `.agent/workflows/system-test.md`。
   - **系統影響評估**：當使用者提及「影響範圍」、「隱藏風險」或「系統面分析」時，**必須執行** `.agent/workflows/impact-assessment.md` 並產出結構化文件。
   - **🚦 Auto mode 授權閘門 [NEW][HARD]**：當使用者提及「auto mode」、「自動模式」、「開 auto」、「shift-tab」、「自動放行」、「跳過確認」、「不要每次問我」或 `--dangerously-skip-permissions` 等關鍵字或語義時，**必須強制執行** `skills/claude-code-auto-mode-policy/SKILL.md` 三步驟評估（黑名單掃描 → 授權聲明 → 審計紀錄），**絕對禁止**略過此流程直接啟用 Auto mode。

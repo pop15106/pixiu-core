@@ -97,3 +97,15 @@ Deep Research 與 Pro 是獨立政策欄位，但目前本地 Agent adapter 無�
 - ledger 是 hash chain，snapshot 只是 cache；偵測到竄改、截斷或 revision 不連續會 fail closed。
 - `sessionRef` 與 `actor` 是單一 DevSpace owner 內的協作識別，不是多使用者登入憑證。
 - OneClick 更新 workflow module 或 server patch 後，只會自動重啟它自己擁有且 PID 已驗證的 DevSpace stack。
+
+## `workflow_list` 顯示工具未註冊時
+
+若 `open_workspace` 正常，但 `workflow_list` 回傳 `Tool workflow_list not found`，表示**目前運作中的 MCP Server 沒有註冊 Workflow 工具**；這不是 `taskId`、`sessionRef` 或 `expectedRevision` 錯誤。
+
+1. 使用 `devspace-oneclick.ps1 status` 只讀確認健康狀態與 DevSpace／Dev Tunnel PID。健康檢查成功，不代表 Workflow 工具已註冊。
+2. 若 PID 顯示 `stale`，先核對實際監聽程序及其所屬啟動路徑；**不要直接結束未知程序**。
+3. DevSpace 1.0.8 的 OneClick 補丁會先使用 `DEVSPACE_WORKFLOW_MODULE`。環境變數缺失時，會尋找已部署在 OneClick state 的 `bin/DevSpace.WorkflowStore.mjs`，並為該備援入口補足原 Workflow ledger 目錄與 DevSpace CLI 路徑。未安裝 OneClick 的普通 DevSpace 保持原行為。
+4. 更新補丁後，現行程序仍須經授權受控重啟。可先使用 `repair-state` 驗證並接管符合身分條件的現存程序，再透過 OneClick `start` 套用補丁與受控重啟。
+5. 恢復後以**原任務**執行 `workflow_list`，確認最新 revision／owner 與兩項 CR flags。保留原 ledger；不可另建任務或直接改 SQLite／JSONL 帳本。
+
+若 PID 或部署雜湊不符、存在其他活動使用者／執行者，先停止修復並取得確認。

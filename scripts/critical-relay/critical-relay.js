@@ -5,6 +5,7 @@ const { createHash } = require('node:crypto');
 const fs = require('fs');
 const { DELIVERY_MODE, evaluateExecutionContract } = require('./execution-contract');
 const { createLifecycle, evaluateLifecycle, verifyLifecycleBinding } = require('./lifecycle');
+const { evaluateRiskDispositions } = require('./risk-review');
 
 const SCHEMA_VERSION = 'pixiu.critical-relay.v1';
 const ARRAY_FIELDS = [
@@ -85,6 +86,7 @@ function createCriticalRelay(input = {}) {
     tests: [],
     completionCriteria: criteria,
     remainingRisks: [],
+    ...(input.riskContext !== undefined ? { riskContext: deepClone(input.riskContext) } : {}),
     nextAction: input.nextAction || '建立第一批可驗證主張與假設',
     ...((input.mode === DELIVERY_MODE || input.executionContractRequired === true)
       ? { executionContractRequired: true } : {}),
@@ -461,16 +463,7 @@ function evaluateCriticalRelay(state) {
     }
   }
 
-  for (const risk of remainingRisks) {
-    if (
-      risk &&
-      typeof risk === 'object' &&
-      severityBlocks(risk.severity) &&
-      !['accepted', 'mitigated', 'resolved'].includes(risk.status)
-    ) {
-      blockingReasons.push(`${risk.id || 'risk'} 高風險 remainingRisk 尚未處置`);
-    }
-  }
+  blockingReasons.push(...evaluateRiskDispositions(state, hasTraceableSource));
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -514,6 +507,7 @@ function buildHandoffSnapshot(state) {
     tests: state.tests,
     completionCriteria: state.completionCriteria,
     remainingRisks: state.remainingRisks,
+    ...(state.riskContext !== undefined ? { riskContext: state.riskContext } : {}),
     nextAction: state.nextAction,
     ...(state.researchRequired !== undefined ? { researchRequired: state.researchRequired,
       researchBinding: state.researchBinding, researchVerification: state.researchVerification,

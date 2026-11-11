@@ -176,6 +176,85 @@
       }
     },
     {
+      "id": "analyze-pro-style",
+      "summary": "明確選用的 Pro 參考純文字分析；單模型多視角、目標計畫、證據核對與驗收，分析階段關閉工具及子代理。",
+      "keywords": [
+        "pro 參考工作法",
+        "pro 參考分析",
+        "pro 式純文字分析"
+      ],
+      "aliases": [
+        "Pro析",
+        "/prostyle",
+        "analyze-pro-style"
+      ],
+      "priority": 51,
+      "load": {
+        "skills": [
+          "skills/analyze-pro-style/SKILL.md"
+        ],
+        "contexts": [],
+        "governance": []
+      },
+      "requiredWhenMatched": true
+    },
+    {
+      "id": "analyze-xhigh-style",
+      "summary": "明確選用的 XHigh 參考純文字分析；相依推導、原值、多視角覆核及計畫狀態，分析階段關閉工具及子代理。",
+      "keywords": [
+        "xhigh 參考工作法",
+        "xhigh 參考分析",
+        "xhigh 式純文字分析"
+      ],
+      "aliases": [
+        "X析",
+        "/xstyle",
+        "analyze-xhigh-style"
+      ],
+      "priority": 51,
+      "load": {
+        "skills": [
+          "skills/analyze-xhigh-style/SKILL.md"
+        ],
+        "contexts": [],
+        "governance": []
+      },
+      "requiredWhenMatched": true
+    },
+    {
+      "id": "cr-deep-reasoning-no-mcp",
+      "summary": "Codex Dynamic Router 方案 C 的純 Skill／無 MCP 逐輪深度推理；僅 Chat 採 Instant 優先，3／8／2 人工檢查點及 Pro／XHigh 風格反證。",
+      "keywords": [
+        "cr deep reasoning",
+        "cr 深度推理",
+        "cr-deep-reasoning-no-mcp",
+        "instant + cr",
+        "instant+cr",
+        "cr 非 mcp",
+        "非 mcp 推理",
+        "純 skill 深度推理",
+        "skill 版 cr"
+      ],
+      "aliases": [
+        "crd",
+        "/crd",
+        "cr深推",
+        "/crdeep",
+        "/icr",
+        "instantcr",
+        "/crx"
+      ],
+      "priority": 49,
+      "load": {
+        "skills": [
+          "skills/cr-deep-reasoning-no-mcp/SKILL.md"
+        ],
+        "contexts": [],
+        "governance": []
+      },
+      "requiredWhenMatched": true
+    },
+    {
       "id": "critical-reasoning",
       "summary": "Critical Relay 對研究、設計、開發、驗證加入反向搜尋、取捨決策與證據回讀，並以 completion gate 控制交棒。",
       "keywords": [
@@ -202,7 +281,8 @@
         "contexts": [],
         "governance": [
           "vault/governance/cr-chat-dev-policy.md",
-          ".agent/workflows/cr-lifecycle.md"
+          ".agent/workflows/cr-lifecycle.md",
+          "vault/governance/cr-risk-review.md"
         ]
       },
       "aliases": [
@@ -225,7 +305,11 @@
         "cr design",
         "cr development",
         "cr lifecycle",
-        "critical relay lifecycle"
+        "critical relay lifecycle",
+        "cr 風險盤點",
+        "cr風險盤點",
+        "cr 風險審查",
+        "cr風險審查"
       ],
       "requiredWhenMatched": true
     },
@@ -534,6 +618,29 @@
       }
     },
     {
+      "id": "git-fallback",
+      "summary": "DevSpace／本機母體不可用時，切換到 GitHub 版 PixiuCore 並維持相同治理與 Router。",
+      "keywords": [
+        "切 git",
+        "改用 git",
+        "git fallback",
+        "github 直接改",
+        "直接在 github 改",
+        "devspace 斷線",
+        "devspace 掛了",
+        "devspace 不可用"
+      ],
+      "priority": 52,
+      "load": {
+        "skills": [],
+        "contexts": [],
+        "governance": [
+          "vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md",
+          "vault/governance/long-running-progress-policy.md"
+        ]
+      }
+    },
+    {
       "id": "execution-progress",
       "summary": "長時間任務、完整自動接力、CI／Build／Test／Release／Deploy 的可見進度、輪詢與完成驗證。",
       "keywords": [
@@ -571,30 +678,6 @@
         ]
       },
       "requiredWhenMatched": true
-    },
-    {
-      "id": "git-fallback",
-      "summary": "本機 PixiuCore／DevSpace 不可用時，依使用者明確指令從 GitHub canonical repo 載入母體治理並沿用相同 Capability Router。",
-      "keywords": [
-        "切 git",
-        "改用 git",
-        "git fallback",
-        "github 直接改",
-        "直接在 github 改",
-        "devspace 斷線",
-        "devspace 掛了",
-        "devspace 不可用"
-      ],
-      "priority": 55,
-      "load": {
-        "skills": [],
-        "contexts": [
-          "vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md"
-        ],
-        "governance": [
-          "vault/governance/long-running-progress-policy.md"
-        ]
-      }
     },
     {
       "id": "runtime-control",

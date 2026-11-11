@@ -229,8 +229,8 @@ function testPlainUnitTestDoesNotTriggerExecutionProgress() {
   assert.strictEqual(result.capabilities.includes('execution-progress'), false);
 }
 
-function testActualManifestRoutesFullAutoRelayToProgressPolicy() {
-  const manifestPath = path.join(
+function actualManifestPath() {
+  return path.join(
     __dirname,
     '..',
     '..',
@@ -238,10 +238,21 @@ function testActualManifestRoutesFullAutoRelayToProgressPolicy() {
     'capabilities',
     'capability-manifest.json'
   );
-  const result = safeResolveFromFile('完整自動接力', manifestPath);
+}
+
+function testActualManifestRoutesFullAutoRelayToProgressPolicy() {
+  const result = safeResolveFromFile('完整自動接力', actualManifestPath());
   assert.strictEqual(result.degraded, false);
   assert.deepStrictEqual(result.capabilities, ['execution-progress']);
   assert.deepStrictEqual(result.filesToLoad, ['vault/governance/long-running-progress-policy.md']);
+}
+
+function testActualManifestRoutesGitFallbackToBootstrap() {
+  const result = safeResolveFromFile('DevSpace 斷線了，切 Git 繼續', actualManifestPath());
+  assert.strictEqual(result.degraded, false);
+  assert.ok(result.capabilities.includes('git-fallback'));
+  assert.ok(result.filesToLoad.includes('vault/bootstrap/GIT-FALLBACK-BOOTSTRAP.md'));
+  assert.ok(result.filesToLoad.includes('vault/governance/long-running-progress-policy.md'));
 }
 
 for (const test of [
@@ -266,7 +277,24 @@ for (const test of [
   testRoutesFullAutoRelayToExecutionProgress,
   testRoutesGitFallbackAndLoadsBootstrap,
   testPlainUnitTestDoesNotTriggerExecutionProgress,
-  testActualManifestRoutesFullAutoRelayToProgressPolicy
+  testActualManifestRoutesFullAutoRelayToProgressPolicy,
+  testActualManifestRoutesGitFallbackToBootstrap
 ]) {
   require('node:test')(test.name, test);
 }
+
+require('node:test')('實際母體保留風險與純文字入口且沒有重複能力', () => {
+  const manifest = JSON.parse(require('fs').readFileSync(actualManifestPath(), 'utf8'));
+  assert.strictEqual(new Set(manifest.capabilities.map(item => item.id)).size, manifest.capabilities.length);
+  for (const query of ['開 CR', 'CR 研究', 'CR 風險盤點', 'CR風險審查']) {
+    const result = safeResolveFromFile(query, actualManifestPath());
+    assert.strictEqual(result.degraded, false);
+    assert.ok(result.capabilities.includes('critical-reasoning'), query);
+    assert.ok(result.filesToLoad.includes('vault/governance/cr-risk-review.md'), query);
+  }
+  for (const [query, id] of [['Pro析', 'analyze-pro-style'], ['X析', 'analyze-xhigh-style'], ['CRD', 'cr-deep-reasoning-no-mcp']]) {
+    const result = safeResolveFromFile(query, actualManifestPath());
+    assert.ok(result.capabilities.includes(id), query);
+    assert.strictEqual(result.capabilities.includes('critical-reasoning'), false, query);
+  }
+});

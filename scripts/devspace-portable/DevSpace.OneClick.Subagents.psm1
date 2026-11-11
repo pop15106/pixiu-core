@@ -259,7 +259,7 @@ function Install-DevSpace108RuntimePatch {
     $content = [System.IO.File]::ReadAllText($serverPath)
     $changed = 0
 
-    if (-not $content.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE')) {
+    if (-not $content.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE') -and -not $content.Contains('const devSpaceWorkflowFallbackPath =')) {
         $urlPattern = 'import \{ fileURLToPath \} from "node:url";'
         $urlRegex = [regex]::new($urlPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
         if (-not $urlRegex.IsMatch($content)) {
@@ -281,8 +281,48 @@ function Install-DevSpace108RuntimePatch {
         $changed += 2
     }
 
-    if (-not $content.Contains('const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";')) {
+    # 即使 DevSpace 由 OneClick 以外的入口重啟，也能定位已部署的 Workflow 模組。
+    if (-not $content.Contains('const devSpaceWorkflowFallbackPath =')) {
         $workflowLoaderPattern = 'const devSpaceWorkflowModule = process\.env\.DEVSPACE_WORKFLOW_MODULE\r?\n\s*\? await import\(pathToFileURL\(process\.env\.DEVSPACE_WORKFLOW_MODULE\)\.href\)\r?\n\s*: undefined;'
+        $workflowLoaderRegex = [regex]::new($workflowLoaderPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+        if (-not $workflowLoaderRegex.IsMatch($content)) {
+            throw "DevSpace 1.0.8 workflow fallback patch point not found in $serverPath"
+        }
+        $urlImport = 'import { fileURLToPath, pathToFileURL } from "node:url";'
+        if (-not $content.Contains($urlImport)) {
+            throw "DevSpace 1.0.8 workflow fallback import point not found in $serverPath"
+        }
+        $workflowImports = @(
+            'import { existsSync as devSpaceWorkflowFileExists } from "node:fs";'
+            'import { join as devSpaceWorkflowPathJoin } from "node:path";'
+        ) -join [Environment]::NewLine
+        $content = $content.Replace($urlImport, $workflowImports + [Environment]::NewLine + $urlImport)
+
+        $workflowFallbackLoader = @(
+            'const devSpaceOneClickStateRoot = process.env.DEVSPACE_ONECLICK_STATE_DIR'
+            '    || (process.env.LOCALAPPDATA'
+            '        ? devSpaceWorkflowPathJoin(process.env.LOCALAPPDATA, "DevSpaceOneClick")'
+            '        : undefined);'
+            'const devSpaceWorkflowFallbackPath = devSpaceOneClickStateRoot'
+            '    ? devSpaceWorkflowPathJoin(devSpaceOneClickStateRoot, "bin", "DevSpace.WorkflowStore.mjs")'
+            '    : undefined;'
+            'const devSpaceWorkflowModulePath = process.env.DEVSPACE_WORKFLOW_MODULE'
+            '    || (devSpaceWorkflowFallbackPath && devSpaceWorkflowFileExists(devSpaceWorkflowFallbackPath)'
+            '        ? devSpaceWorkflowFallbackPath : undefined);'
+            'if (devSpaceWorkflowModulePath && !process.env.DEVSPACE_WORKFLOW_MODULE) {'
+            '    process.env.DEVSPACE_WORKFLOW_STATE_DIR ||= devSpaceWorkflowPathJoin(devSpaceOneClickStateRoot, "workflow");'
+            '    process.env.DEVSPACE_WORKFLOW_CLI ||= fileURLToPath(new URL("./cli.js", import.meta.url));'
+            '}'
+            'const devSpaceWorkflowModule = devSpaceWorkflowModulePath'
+            '    ? await import(pathToFileURL(devSpaceWorkflowModulePath).href)'
+            '    : undefined;'
+        ) -join [Environment]::NewLine
+        $content = $workflowLoaderRegex.Replace($content, $workflowFallbackLoader, 1)
+        $changed += 2
+    }
+
+    if (-not $content.Contains('const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";')) {
+        $workflowLoaderPattern = 'const devSpaceWorkflowModule = devSpaceWorkflowModulePath\r?\n\s*\? await import\(pathToFileURL\(devSpaceWorkflowModulePath\)\.href\)\r?\n\s*: undefined;'
         $workflowLoaderRegex = [regex]::new($workflowLoaderPattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
         if (-not $workflowLoaderRegex.IsMatch($content)) {
             throw "DevSpace 1.0.8 Same-Chat Reviewer loader patch point not found in $serverPath"
@@ -1035,6 +1075,8 @@ function Install-DevSpaceSameChatReviewerBundle {
     }
 }
 
+
+
 function ConvertTo-DevSpaceBashPath {
     param([Parameter(Mandatory = $true)][string]$FilePath)
 
@@ -1182,6 +1224,16 @@ function Stop-DevSpaceAgent {
     )
 
     $validatedId = Assert-DevSpaceAgentId -AgentId $AgentId
+    $packageRoot = Split-Path -Parent (Split-Path -Parent ([System.IO.Path]::GetFullPath($DevSpaceCli)))
+    $metadataPath = Join-Path $packageRoot 'package.json'
+    if (-not (Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+        throw 'NATIVE_STOP_UNSUPPORTED: package identity is unavailable; no process or record was changed.'
+    }
+    $metadata = [System.IO.File]::ReadAllText($metadataPath) | ConvertFrom-Json
+    if ([string]$metadata.version -ne '1.0.4') {
+        # 1.0.8 使用共用 daemon；舊 __worker 掃描不能證明單一任務已停止。
+        throw "NATIVE_STOP_UNSUPPORTED: DevSpace $($metadata.version) has no verified task-scoped stop adapter; no process or record was changed."
+    }
     $record = Invoke-DevSpaceAgentAdmin -NodePath $NodePath -DevSpaceCli $DevSpaceCli -AdminScript $AdminScript -Action show -AgentId $validatedId
     $allProcesses = @(Get-CimInstance Win32_Process)
     $workerPattern = "(?i)agents\s+__worker\s+$([regex]::Escape($validatedId))\s+--prompt-file"
@@ -1191,6 +1243,9 @@ function Stop-DevSpaceAgent {
         $_.CommandLine -match '(?i)@waishnav[\\/]devspace[\\/]dist[\\/]cli\.js'
     } | ForEach-Object { [int]$_.ProcessId })
 
+    if ($workerIds.Count -eq 0) {
+        throw 'STOP_UNCONFIRMED: no matching native worker was observed; the record was not marked stopped.'
+    }
     $depthById = @{}
     function Add-ProcessTree {
         param([int]$ProcessId, [int]$Depth)
@@ -1208,7 +1263,19 @@ function Stop-DevSpaceAgent {
     }
 
     foreach ($entry in @($depthById.GetEnumerator() | Sort-Object Value -Descending)) {
-        Stop-Process -Id ([int]$entry.Key) -Force -ErrorAction SilentlyContinue
+        $before = @($allProcesses | Where-Object { [int]$_.ProcessId -eq [int]$entry.Key })[0]
+        $current = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$entry.Key)"
+        if ($null -eq $current) { continue }
+        if ([string]$current.CreationDate -ne [string]$before.CreationDate -or [int]$current.ParentProcessId -ne [int]$before.ParentProcessId) {
+            throw 'STOP_UNCONFIRMED: process identity changed; refusing to stop a reused PID.'
+        }
+        Stop-Process -Id ([int]$entry.Key) -Force -ErrorAction Stop
+    }
+    foreach ($entry in $depthById.GetEnumerator()) {
+        $observed = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$entry.Key)"
+        if ($null -ne $observed) {
+            throw 'STOP_UNCONFIRMED: process termination was not confirmed; the record was not marked stopped.'
+        }
     }
 
     $updated = Invoke-DevSpaceAgentAdmin -NodePath $NodePath -DevSpaceCli $DevSpaceCli -AdminScript $AdminScript -Action mark-stopped -AgentId $validatedId

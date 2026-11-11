@@ -7,7 +7,7 @@ date: 2026-09-08
 project: PIXIUCORE
 topic: skills-index
 status: active
-summary: skills/ 目錄手動索引：15 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
+summary: skills/ 目錄手動索引：19 個高優先路由能力＋81 個參考能力；正常 Session 一律先走 Capability Router，不全文常駐本索引。
 ---
 
 # Skills 索引（單一真源）
@@ -17,7 +17,7 @@ summary: skills/ 目錄手動索引：15 個高優先路由能力＋81 個參考
 > 參考層：標記 `disable-model-invocation: true`，由 Router、人工索引或使用者 `/名稱` 手動觸發。
 > 維護：新增／刪除 Skill 時同步更新本表與 Capability Manifest；根目錄 `SKILLS_INDEX.md` 只作導覽與當期盤點，不作 runtime 路由。
 
-## 高優先路由層（15）
+## 高優先路由層（19）
 
 | Skill | 什麼情境用 |
 |---|---|
@@ -27,6 +27,10 @@ summary: skills/ 目錄手動索引：15 個高優先路由能力＋81 個參考
 | `requirement-confirmation` | 將 SA/PM 模糊口語需求、使用者自然語言理解與後續追加／變更整理成版本化可覆核需求：保留 Requirement Delta，重算受影響程式／DB／驗收／測試／覆核；無 UI 預設 MD，有 UI 預設 DOCX。 |
 | `claude-code-auto-mode-policy` | Pixiu 專用 Claude Code Auto mode 授權政策 |
 | `critical-relay` | 對抗搜尋／批判推理的獨立模式：把重要結論拆成 claims，主動找反證與反例，要求 supported claim 留下 challenge、method、result 與可追溯 evidence；也可與完整自動接力疊加。 |
+| `critical-relay-lifecycle` | CR 研究、設計、開發與驗證全流程；保留決策、反證、風險處置及重開條件。 |
+| `analyze-pro-style` | 明確選用的 Pro 參考純文字分析；單模型多視角、目標計畫、來源核對、方案取捨與驗收。短語 Pro析；載入後關閉工具及子代理。 |
+| `analyze-xhigh-style` | 明確選用的 XHigh 參考純文字分析；相依拆解、原值及局部推導、反例與範圍驗收。短語 X析；載入後關閉工具及子代理。 |
+| `cr-deep-reasoning-no-mcp` | CR Router 方案 C 的純 Skill／非 MCP 深度推理：只有 Chat 採 Instant 優先，3／8／2 人工檢查點、逐級升級及 Pro／XHigh 風格反證；不執行工具或自動切模型。 |
 | `legacy-java-flow-tracing` | Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQ |
 | `opus-behavior-core` | 將 Claude Opus 4.7 的系統級行為模式抽象為「認知／資訊／行動／溝通／安全」五層可移植規則，供任意 Agent（Cursor、Windsurf、Copilot、Gem |
 | `pixiu-agent-router` | Route PixiuCore agent definitions into Codex workflows. Use when the user asks for Pixiu a |

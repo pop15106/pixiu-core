@@ -109,6 +109,40 @@ function New-TestDevSpacePackage {
     )
 }
 
+function New-TestDevSpace108Package {
+    param([Parameter(Mandatory = $true)][string]$Root)
+
+    $dist = Join-Path $Root 'dist'
+    New-Item -ItemType Directory -Path $dist -Force | Out-Null
+    [System.IO.File]::WriteAllText(
+        (Join-Path $Root 'package.json'),
+        '{"version":"1.0.8"}',
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    $serverPath = Join-Path $dist 'server.js'
+    $backupPath = "$serverPath.devspace-oneclick-1.0.8-original"
+    [System.IO.File]::WriteAllText($backupPath, 'export const original = true;', [System.Text.UTF8Encoding]::new($false))
+    $patched = @(
+        'const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE;',
+        'const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";',
+        '// DevSpace OneClick: expose durable cross-session handoff and review tools.',
+        '// Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.'
+    ) -join [Environment]::NewLine
+    [System.IO.File]::WriteAllText($serverPath, $patched, [System.Text.UTF8Encoding]::new($false))
+    $manifest = [ordered]@{
+        schemaVersion = 1
+        devSpaceVersion = '1.0.8'
+        file = 'dist\server.js'
+        backupSha256 = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        patchedSha256 = (Get-FileHash -LiteralPath $serverPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    [System.IO.File]::WriteAllText(
+        (Join-Path $Root '.devspace-oneclick-patch-1.0.8.json'),
+        ($manifest | ConvertTo-Json -Depth 5),
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
 $entrySyncRoot = Split-Path -Parent $PSScriptRoot
 $modulePath = Join-Path $entrySyncRoot 'Pixiu.GlobalEntries.psm1'
 Import-Module $modulePath -Force
@@ -137,6 +171,7 @@ try {
         Assert-True ($definition.Content.Contains('resolve-capabilities.js')) "routes $($definition.Name) through the capability router"
         Assert-True ($definition.Content.Contains('GIT-FALLBACK-BOOTSTRAP.md')) "includes Git fallback bootstrap source for $($definition.Name)"
         Assert-True ($definition.Content.Contains('pop15106/pixiu-core')) "includes canonical GitHub fallback repo for $($definition.Name)"
+        Assert-True ($definition.Content.Contains('https://github.com/pop15106/pixiu-core.git')) "adds canonical Git fallback repository for $($definition.Name)"
         Assert-True ($definition.SourcePaths -contains (Join-Path $core 'vault\bootstrap\GIT-FALLBACK-BOOTSTRAP.md')) "tracks Git fallback bootstrap source for $($definition.Name)"
         Assert-Equal ($definition.Content -match 'founder-profile|agent-persona|memory-summary') $false "does not embed legacy full-load rules for $($definition.Name)"
     }
@@ -227,7 +262,26 @@ try {
     $devSpaceRoot = Join-Path $testRoot 'devspace-package'
     New-TestDevSpacePackage -Root $devSpaceRoot
     $bindingStatus = @(Test-PixiuLiveBindings -CorePath $core -UserProfile $bindingUser -DevSpacePackageRoot $devSpaceRoot -PixiuCoreEnvironment $core -PixiuCorePathEnvironment $core)
-    Assert-Equal @($bindingStatus.Status | Select-Object -Unique) @('Pass') 'passes a healthy junction, Hook, and DevSpace binding fixture'
+    Assert-Equal @($bindingStatus.Status | Select-Object -Unique) @('Pass') 'passes a healthy junction, Hook, and DevSpace 1.0.4 binding fixture'
+
+    $devSpace108Root = Join-Path $testRoot 'devspace-package-108'
+    New-TestDevSpace108Package -Root $devSpace108Root
+    $binding108 = @(Test-PixiuLiveBindings -CorePath $core -UserProfile $bindingUser -DevSpacePackageRoot $devSpace108Root -PixiuCoreEnvironment $core -PixiuCorePathEnvironment $core)
+    Assert-Equal @($binding108 | Where-Object Name -eq 'devspace-skill-patch' | Select-Object -ExpandProperty Status) @('Pass') 'accepts a healthy DevSpace 1.0.8 runtime patch'
+    Assert-Equal @($binding108 | Where-Object Name -eq 'devspace-patch-manifest' | Select-Object -ExpandProperty Status) @('Pass') 'accepts the DevSpace 1.0.8 single-server patch manifest'
+
+    $fallbackServer = Join-Path $devSpace108Root 'dist\server.js'
+    $fallbackText = [System.IO.File]::ReadAllText($fallbackServer).Replace(
+        'const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE;',
+        'const devSpaceWorkflowFallbackPath = "fixture"; const devSpaceWorkflowModule = devSpaceWorkflowModulePath;'
+    )
+    [System.IO.File]::WriteAllText($fallbackServer, $fallbackText, [System.Text.UTF8Encoding]::new($false))
+    $fallbackManifestPath = Join-Path $devSpace108Root '.devspace-oneclick-patch-1.0.8.json'
+    $fallbackManifest = Get-Content -LiteralPath $fallbackManifestPath -Raw | ConvertFrom-Json
+    $fallbackManifest.patchedSha256 = (Get-FileHash -LiteralPath $fallbackServer -Algorithm SHA256).Hash.ToLowerInvariant()
+    [System.IO.File]::WriteAllText($fallbackManifestPath, ($fallbackManifest | ConvertTo-Json), [System.Text.UTF8Encoding]::new($false))
+    $fallbackBinding = @(Test-PixiuLiveBindings -CorePath $core -UserProfile $bindingUser -DevSpacePackageRoot $devSpace108Root -PixiuCoreEnvironment $core -PixiuCorePathEnvironment $core)
+    Assert-Equal @($fallbackBinding.Status | Select-Object -Unique) @('Pass') 'accepts the verified 1.0.8 fallback loader'
 
     $hooks.hooks.SessionStart[0].hooks[0].commandWindows = 'C:\Program Files\nodejs\node.exe "' + $bridgeFixturePath + '" "session:start"'
     [System.IO.File]::WriteAllText(

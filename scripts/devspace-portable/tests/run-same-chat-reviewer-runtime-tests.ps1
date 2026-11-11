@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $portableRoot = Split-Path -Parent $PSScriptRoot
@@ -142,6 +142,9 @@ try {
             '        server, config, workspaces, registerAppTool, z,'
             '    });'
             '}'
+            'export const workflowOrigin = devSpaceWorkflowModule?.origin ?? "none";'
+            'export const workflowStateRoot = process.env.DEVSPACE_WORKFLOW_STATE_DIR ?? "none";'
+            'export const workflowCli = process.env.DEVSPACE_WORKFLOW_CLI ?? "none";'
         ) -join [Environment]::NewLine
 
         $serverPath = Join-Path $dist 'server.js'
@@ -161,11 +164,83 @@ try {
         $changed = Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $cliPath
         Assert-True ($changed -ge 2) 'old 1.0.8 patch was not upgraded'
         $updated = [System.IO.File]::ReadAllText($serverPath)
+        Assert-True $updated.Contains('devSpaceWorkflowFallbackPath') '1.0.8 缺少 Workflow 自動定位；由外部重新啟動會遺失 workflow_list'
+        Assert-True $updated.Contains('devSpaceWorkflowFileExists(devSpaceWorkflowFallbackPath)') '1.0.8 未確認備援 Workflow 模組存在'
+        Assert-True $updated.Contains('process.env.DEVSPACE_WORKFLOW_STATE_DIR ||=' ) '1.0.8 備援載入未設定 Workflow 原帳本路徑'
+        Assert-True $updated.Contains('process.env.DEVSPACE_WORKFLOW_CLI ||=' ) '1.0.8 備援載入未設定 DevSpace CLI 路徑'
         Assert-True $updated.Contains('const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";') '1.0.8 loader missing'
         Assert-True $updated.Contains('Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.') '1.0.8 registration missing'
         $updatedManifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
         Assert-Equal ([string]$updatedManifest.backupSha256) (Get-Sha256 $backupPath) 'backup hash changed during upgrade'
         Assert-Equal ([string]$updatedManifest.patchedSha256) (Get-Sha256 $serverPath) 'manifest did not track upgraded patch'
+
+        $fallbackBin = Join-Path $testRoot 'DevSpaceOneClick\bin'
+        New-Item -ItemType Directory -Path $fallbackBin -Force | Out-Null
+        [System.IO.File]::WriteAllText((Join-Path $dist 'local-agent-catalog.js'), @(
+            'export const buildLocalAgentCatalog = () => [];'
+            'export const buildLocalAgentProviderStatuses = () => [];'
+            'export const formatLocalAgentProviderStatusSummary = () => "";'
+        ) -join [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $fallbackBin 'DevSpace.WorkflowStore.mjs'),
+            'export const origin = "fallback";', [System.Text.UTF8Encoding]::new($false))
+        $explicitModule = Join-Path $sourceRoot 'explicit-workflow.mjs'
+        [System.IO.File]::WriteAllText($explicitModule,
+            'export const origin = "explicit";', [System.Text.UTF8Encoding]::new($false))
+        $probeFile = Join-Path $testRoot 'workflow-loader-probe.mjs'
+        [System.IO.File]::WriteAllText($probeFile, @(
+            'import { pathToFileURL } from "node:url";'
+            'const loaded = await import(pathToFileURL(process.argv[2]).href);'
+            'console.log(JSON.stringify({ origin: loaded.workflowOrigin, state: loaded.workflowStateRoot, cli: loaded.workflowCli }));'
+        ) -join [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+
+        # 只更動測試子程序環境，模擬失去 OneClick 變數的獨立 DevSpace 啟動。
+        function Invoke-WorkflowLoaderProbe {
+            param([string]$NodePath, [string]$ProbePath, [string]$ServerFile,
+                  [string]$LocalAppData, [string]$ExplicitModule)
+            $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+            $startInfo.FileName = $NodePath
+            $startInfo.Arguments = '"' + $ProbePath + '" "' + $ServerFile + '"'
+            $startInfo.UseShellExecute = $false
+            $startInfo.CreateNoWindow = $true
+            $startInfo.RedirectStandardOutput = $true
+            $startInfo.RedirectStandardError = $true
+            $startInfo.EnvironmentVariables['LOCALAPPDATA'] = $LocalAppData
+            $startInfo.EnvironmentVariables['DEVSPACE_SAME_CHAT_REVIEWER_ENABLED'] = '0'
+            [void]$startInfo.EnvironmentVariables.Remove('DEVSPACE_WORKFLOW_MODULE')
+            [void]$startInfo.EnvironmentVariables.Remove('DEVSPACE_WORKFLOW_STATE_DIR')
+            [void]$startInfo.EnvironmentVariables.Remove('DEVSPACE_WORKFLOW_CLI')
+            [void]$startInfo.EnvironmentVariables.Remove('DEVSPACE_ONECLICK_STATE_DIR')
+            if ($ExplicitModule) {
+                $startInfo.EnvironmentVariables['DEVSPACE_WORKFLOW_MODULE'] = $ExplicitModule
+            }
+            $child = [System.Diagnostics.Process]::Start($startInfo)
+            try {
+                $output = $child.StandardOutput.ReadToEnd().Trim()
+                $errorText = $child.StandardError.ReadToEnd()
+                if (-not $child.WaitForExit(10000)) {
+                    $child.Kill()
+                    throw 'Workflow 模組測試程序逾時。'
+                }
+                if ($child.ExitCode -ne 0) {
+                    throw "Workflow 模組測試程序失敗：$errorText"
+                }
+                return $output
+            }
+            finally {
+                $child.Dispose()
+            }
+        }
+        $node = (Get-Command node -ErrorAction Stop).Source
+        $fallback = Invoke-WorkflowLoaderProbe -NodePath $node -ProbePath $probeFile -ServerFile $serverPath -LocalAppData $testRoot | ConvertFrom-Json
+        Assert-Equal $fallback.origin 'fallback' 'without OneClick environment still loads installed Workflow'
+        Assert-Equal $fallback.state (Join-Path $testRoot 'DevSpaceOneClick\workflow') 'fallback keeps canonical Workflow ledger root'
+        Assert-Equal $fallback.cli $cliPath 'fallback restores the DevSpace CLI path'
+        $explicit = Invoke-WorkflowLoaderProbe -NodePath $node -ProbePath $probeFile -ServerFile $serverPath -LocalAppData $testRoot -ExplicitModule $explicitModule | ConvertFrom-Json
+        Assert-Equal $explicit.origin 'explicit' 'explicit Workflow module takes precedence'
+        $absentRoot = Join-Path $testRoot 'without-oneclick'
+        $absent = Invoke-WorkflowLoaderProbe -NodePath $node -ProbePath $probeFile -ServerFile $serverPath -LocalAppData $absentRoot | ConvertFrom-Json
+        Assert-Equal $absent.origin 'none' 'non-OneClick DevSpace remains usable without module'
+        Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $cliPath) 0 'patched 1.0.8 must remain idempotent'
     } 'upgrades a known DevSpace 1.0.8 patch to Same-Chat registration'
 
     Check {

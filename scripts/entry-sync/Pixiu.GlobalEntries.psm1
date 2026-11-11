@@ -613,46 +613,81 @@ function Test-PixiuLiveBindings {
     }
 
     if ([string]::IsNullOrWhiteSpace($DevSpacePackageRoot)) {
-        New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Warn -Expected 'DevSpace 1.0.4 canonical suppression' -Actual '' -Detail 'DevSpace package root was not provided.'
-        New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Warn -Expected '6-file patch manifest' -Actual '' -Detail 'DevSpace package root was not provided.'
+        New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Warn -Expected 'DevSpace 1.0.4/1.0.8 OneClick patch' -Actual '' -Detail 'DevSpace package root was not provided.'
+        New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Warn -Expected 'Version-matched OneClick patch manifest' -Actual '' -Detail 'DevSpace package root was not provided.'
     }
     else {
         $resolvedDevSpace = ConvertTo-PixiuFullPath -Path $DevSpacePackageRoot
         $packagePath = Join-Path $resolvedDevSpace 'package.json'
-        $skillsPath = Join-Path $resolvedDevSpace 'dist\skills.js'
         try {
             $package = Read-PixiuUtf8File -Path $packagePath | ConvertFrom-Json
-            $skillsContent = Read-PixiuUtf8File -Path $skillsPath
-            $hasMarkers = [string]$package.version -eq '1.0.4' -and
-                $skillsContent.Contains('projectSkillMirrorSha256') -and
-                $skillsContent.Contains('SESSION-BOOTSTRAP.md') -and
-                $skillsContent.Contains('canonicalEntries')
-            if ($hasMarkers) {
-                New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Pass -Expected 'DevSpace 1.0.4 canonical suppression' -Actual $resolvedDevSpace -Detail ''
-            }
-            else {
-                New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Fail -Expected 'DevSpace 1.0.4 canonical suppression' -Actual $resolvedDevSpace -Detail 'Version or canonical suppression marker mismatch.'
-            }
-        }
-        catch {
-            New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Fail -Expected 'DevSpace 1.0.4 canonical suppression' -Actual $resolvedDevSpace -Detail $_.Exception.Message
-        }
+            $devSpaceVersion = [string]$package.version
+            if ($devSpaceVersion -eq '1.0.4') {
+                $skillsPath = Join-Path $resolvedDevSpace 'dist\skills.js'
+                $skillsContent = Read-PixiuUtf8File -Path $skillsPath
+                $hasMarkers = $skillsContent.Contains('projectSkillMirrorSha256') -and
+                    $skillsContent.Contains('SESSION-BOOTSTRAP.md') -and
+                    $skillsContent.Contains('canonicalEntries')
+                if ($hasMarkers) {
+                    New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Pass -Expected 'DevSpace 1.0.4 canonical suppression' -Actual $resolvedDevSpace -Detail ''
+                }
+                else {
+                    New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Fail -Expected 'DevSpace 1.0.4 canonical suppression' -Actual $resolvedDevSpace -Detail 'Canonical suppression markers are missing.'
+                }
 
-        $patchManifestPath = Join-Path $resolvedDevSpace '.devspace-oneclick-patch-manifest.json'
-        try {
-            $patchManifest = Read-PixiuUtf8File -Path $patchManifestPath | ConvertFrom-Json
-            $manifestValid = [int]$patchManifest.schemaVersion -eq 1 -and
-                [string]$patchManifest.devSpaceVersion -eq '1.0.4' -and
-                @($patchManifest.files).Count -eq 6
-            if ($manifestValid) {
-                New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Pass -Expected '6-file patch manifest' -Actual $patchManifestPath -Detail ''
+                $patchManifestPath = Join-Path $resolvedDevSpace '.devspace-oneclick-patch-manifest.json'
+                $patchManifest = Read-PixiuUtf8File -Path $patchManifestPath | ConvertFrom-Json
+                $manifestValid = [int]$patchManifest.schemaVersion -eq 1 -and
+                    [string]$patchManifest.devSpaceVersion -eq '1.0.4' -and
+                    @($patchManifest.files).Count -eq 6
+                if ($manifestValid) {
+                    New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Pass -Expected 'DevSpace 1.0.4 6-file patch manifest' -Actual $patchManifestPath -Detail ''
+                }
+                else {
+                    New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Fail -Expected 'DevSpace 1.0.4 6-file patch manifest' -Actual $patchManifestPath -Detail 'Patch manifest fields do not match.'
+                }
+            }
+            elseif ($devSpaceVersion -eq '1.0.8') {
+                $serverPath = Join-Path $resolvedDevSpace 'dist\server.js'
+                $backupPath = "$serverPath.devspace-oneclick-1.0.8-original"
+                $patchManifestPath = Join-Path $resolvedDevSpace '.devspace-oneclick-patch-1.0.8.json'
+                $serverContent = Read-PixiuUtf8File -Path $serverPath
+                $hasWorkflowLoader = $serverContent.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE') -or
+                    ($serverContent.Contains('const devSpaceWorkflowModule = devSpaceWorkflowModulePath') -and
+                     $serverContent.Contains('const devSpaceWorkflowFallbackPath ='))
+                $hasMarkers = $hasWorkflowLoader -and
+                    $serverContent.Contains('DEVSPACE_SAME_CHAT_REVIEWER_ENABLED') -and
+                    $serverContent.Contains('DevSpace OneClick: expose durable cross-session handoff and review tools.') -and
+                    $serverContent.Contains('Pixiu experimental: register Same-Chat advisory reviewer tools only when explicitly enabled.')
+                if ($hasMarkers) {
+                    New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Pass -Expected 'DevSpace 1.0.8 runtime integration patch' -Actual $serverPath -Detail ''
+                }
+                else {
+                    New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Fail -Expected 'DevSpace 1.0.8 runtime integration patch' -Actual $serverPath -Detail 'Workflow or Same-Chat runtime patch markers are missing.'
+                }
+
+                $patchManifest = Read-PixiuUtf8File -Path $patchManifestPath | ConvertFrom-Json
+                $manifestValid = [int]$patchManifest.schemaVersion -eq 1 -and
+                    [string]$patchManifest.devSpaceVersion -eq '1.0.8' -and
+                    [string]$patchManifest.file -eq 'dist\server.js' -and
+                    (Test-Path -LiteralPath $backupPath -PathType Leaf) -and
+                    [string]::Equals((Get-PixiuFileSha256 -Path $backupPath), [string]$patchManifest.backupSha256, [System.StringComparison]::OrdinalIgnoreCase) -and
+                    [string]::Equals((Get-PixiuFileSha256 -Path $serverPath), [string]$patchManifest.patchedSha256, [System.StringComparison]::OrdinalIgnoreCase)
+                if ($manifestValid) {
+                    New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Pass -Expected 'DevSpace 1.0.8 single-server patch manifest' -Actual $patchManifestPath -Detail ''
+                }
+                else {
+                    New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Fail -Expected 'DevSpace 1.0.8 single-server patch manifest' -Actual $patchManifestPath -Detail 'Patch manifest or SHA-256 evidence does not match the installed runtime.'
+                }
             }
             else {
-                New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Fail -Expected '6-file patch manifest' -Actual $patchManifestPath -Detail 'Patch manifest fields do not match.'
+                New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Fail -Expected 'DevSpace 1.0.4/1.0.8 OneClick patch' -Actual $resolvedDevSpace -Detail "Unsupported DevSpace version: $devSpaceVersion"
+                New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Fail -Expected 'Version-matched OneClick patch manifest' -Actual $resolvedDevSpace -Detail "Unsupported DevSpace version: $devSpaceVersion"
             }
         }
         catch {
-            New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Fail -Expected '6-file patch manifest' -Actual $patchManifestPath -Detail $_.Exception.Message
+            New-PixiuBindingResult -Name 'devspace-skill-patch' -Status Fail -Expected 'DevSpace 1.0.4/1.0.8 OneClick patch' -Actual $resolvedDevSpace -Detail $_.Exception.Message
+            New-PixiuBindingResult -Name 'devspace-patch-manifest' -Status Fail -Expected 'Version-matched OneClick patch manifest' -Actual $resolvedDevSpace -Detail $_.Exception.Message
         }
     }
 }

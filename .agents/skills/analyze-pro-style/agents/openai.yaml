@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pro 參考分析"
+  short_description: "用 Pro析 啟動：核對目標、來源與反證，以同一模型完成純文字決策及驗收"
+  default_prompt: "請使用 $analyze-pro-style，載入規格後依目前對話資料分析；分析階段維持工具與子代理關閉。"
+policy:
+  allow_implicit_invocation: true

@@ -10,6 +10,8 @@ on:
       - "rules/common/prompt-engineering.md"
       - "scripts/critical-relay/**"
       - "scripts/router/**"
+      - "scripts/chatgpt-core/**"
+      - "scripts/codex-native-core/**"
       - "scripts/performance/**"
       - "scripts/devspace-portable/**"
       - "scripts/entry-sync/templates/**"
@@ -22,6 +24,7 @@ on:
       - "vault/bootstrap/**"
       - "vault/capabilities/**"
       - "vault/governance/**"
+      - "vault/context/ai-mothership-loading-policy.md"
       - "AGENTS.md"
       - "CODEX.md"
       - "CLAUDE.md"
@@ -41,6 +44,8 @@ on:
       - "rules/common/prompt-engineering.md"
       - "scripts/critical-relay/**"
       - "scripts/router/**"
+      - "scripts/chatgpt-core/**"
+      - "scripts/codex-native-core/**"
       - "scripts/performance/**"
       - "scripts/devspace-portable/**"
       - "scripts/entry-sync/templates/**"
@@ -53,6 +58,7 @@ on:
       - "vault/bootstrap/**"
       - "vault/capabilities/**"
       - "vault/governance/**"
+      - "vault/context/ai-mothership-loading-policy.md"
       - "AGENTS.md"
       - "CODEX.md"
       - "CLAUDE.md"
@@ -80,6 +86,8 @@ jobs:
           node-version: "22"
       - name: Run public core with local evidence
         run: node scripts/critical-relay/test-runner.js
+      - name: Verify portable skill adapters
+        run: node --test scripts/chatgpt-core/template/scripts/skill.test.cjs scripts/codex-native-core/publish.test.mjs
       # 即使測試失敗仍保存指定的去敏證據；不把失敗結論改成成功。
       - name: Preserve test evidence
         if: always()

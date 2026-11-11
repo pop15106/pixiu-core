@@ -27,8 +27,10 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 | 每月首次 session、或使用者說「做月維護」 | `maintenance-protocol.md` 第 6 節 |
 | 要動任何 AI 入口檔（CLAUDE/CODEX/GEMINI/AGENTS.md） | `entry-files-alignment.md` |
 | 本機母體／DevSpace 不可用，使用者明確要求切 Git／Git fallback | `../bootstrap/GIT-FALLBACK-BOOTSTRAP.md` |
+| 長時間任務、完整自動接力、GitHub Actions／CI／Release 輪詢 | `long-running-progress-policy.md` |
 | 寫程式、修 bug、重構前判斷要做到多大／是否新增依賴、檔案、agent team | `minimal-implementation-ladder.md` |
 | 在 Chat 建立／續接 CR、選擇 Dev 或同步帳本 | `cr-chat-dev-policy.md` |
+| CR 風險盤點、處置證據、來源獨立性、需求覆蓋及決策重開 | `cr-risk-review.md` |
 | 接手上一個 session 的工作、或 context 快用完 | `letter-to-future-sessions.md` |
 | 想知道這套制度為什麼長這樣 | `quick-diagnosis-2026-07-03.md`（背景，非必讀） |
 | 載入政策、L1-L6 語意路由、agent team 閘門 | `../context/ai-mothership-loading-policy.md`（既有政策，仍有效） |
@@ -48,6 +50,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 |---|---|---|
 | `INDEX.md` | 本檔，總路由 | 新增制度檔時 |
 | `cr-chat-dev-policy.md` | Chat 案件卡、Dev 選擇、同案查重與帳本同步 | CR 行為變更時 |
+| `cr-risk-review.md` | 風險處置與版本綁定、來源獨立性與分析品質 | CR 驗收規則變更時 |
 | `quick-diagnosis-2026-07-03.md` | 2026-07-03 vault 健檢快照 | 不更新（下次健檢開新檔） |
 | `full-repo-audit-2026-07-03.md` | 2026-07-03 全 repo 審查（skills/agents/hooks 等） | 不更新（下次審查開新檔） |
 | `entry-files-alignment.md` | 入口檔路由制度＋各檔最小路由文字 | 低 |
@@ -58,6 +61,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 | `judgment-rubrics.md` | 七類判斷的判準/正例/反例/動作 | 低 |
 | `delegation-templates.md` | 五型派工模板＋失敗軌跡格式 | 低 |
 | `maintenance-protocol.md` | 權限分級、教訓迴路、衛生、月維護 | 低 |
+| `long-running-progress-policy.md` | 完整自動接力、長時間工作、CI／Release 的輪詢與可見進度 | 低 |
 | `letter-to-future-sessions.md` | 交接信：未完成項目與退化預防 | 交接時 |
 | `backups/` | 修改既有檔前的備份 | 每次修改前 |
 

@@ -277,3 +277,118 @@ for (const test of [
 ]) {
   require('node:test')(test.name, test);
 }
+
+function riskState(status = 'accepted') {
+  const state = completedState();
+  state.riskContext = { environment: 'isolated-test', sourceRevision: 'fixture-v1' };
+  const context = { scope: state.objective, environment: 'isolated-test', source: { revision: 'fixture-v1' } };
+  state.remainingRisks = [{
+    id: 'risk-high', severity: 'high', status,
+    disposition: { owner: 'operator', reason: '已核對影響範圍', action: '加入保護與回歸驗證',
+      context, evidenceRefs: ['risk-proof'] }
+  }];
+  if (status === 'accepted') {
+    state.evidence.push({ id: 'risk-proof', source: 'file:approvals/risk-high.md',
+      kind: 'risk-acceptance', authority: 'user', actor: 'user-a', decision: 'accepted',
+      riskRefs: ['risk-high'], context: structuredClone(context) });
+    state.remainingRisks[0].approval = {
+      actor: 'user-a', reference: 'file:approvals/risk-high.md', evidenceRef: 'risk-proof'
+    };
+  } else {
+    state.tests.push({ id: 'risk-proof', name: '風險修復反例', status: 'passed', required: true,
+      riskRefs: ['risk-high'], context: structuredClone(context) });
+  }
+  return state;
+}
+
+require('node:test')('高風險不能只修改狀態而略過處置證據', () => {
+  for (const status of ['accepted', 'mitigated', 'resolved']) {
+    const state = completedState();
+    state.remainingRisks = [{ id: 'r', severity: 'high', status }];
+    assert.strictEqual(evaluateCriticalRelay(state).canComplete, false, status);
+  }
+});
+
+require('node:test')('風險等級大小寫、缺漏與未評估值不能繞過閘門', () => {
+  for (const severity of ['HIGH', 'High', 'critical ', 'typo', undefined, 'unknown']) {
+    const state = completedState();
+    state.remainingRisks = [{ id: 'r', severity, status: 'open' }];
+    assert.strictEqual(evaluateCriticalRelay(state).canComplete, false, String(severity));
+  }
+  for (const field of ['assumptions', 'unknowns', 'challenges', 'counterEvidence']) {
+    const state = completedState();
+    state[field].push({ id: 'invalid-severity', severity: 'HIGH', status: 'open' });
+    assert.strictEqual(evaluateCriticalRelay(state).canComplete, false, field);
+  }
+});
+
+require('node:test')('接受風險需可回讀的使用者接受紀錄與一致範圍', () => {
+  const state = riskState();
+  assert.strictEqual(evaluateCriticalRelay(state).canComplete, true);
+  const cases = [
+    x => { delete x.remainingRisks[0].approval; },
+    x => { x.remainingRisks[0].approval.actor = 'someone-else'; },
+    x => { x.remainingRisks[0].approval.reference = 'file:another-approval.md'; },
+    x => { x.evidence.at(-1).authority = 'assistant'; },
+    x => { x.evidence.at(-1).decision = 'proposed'; },
+    x => { x.evidence.at(-1).riskRefs = ['another-risk']; },
+    x => { x.evidence.at(-1).context.environment = 'production'; },
+    x => { x.remainingRisks[0].disposition.owner = ''; },
+    x => { x.remainingRisks[0].disposition.reason = ''; },
+    x => { x.remainingRisks[0].disposition.evidenceRefs = []; },
+    x => { x.riskContext.sourceRevision = 'fixture-v2'; },
+    x => { x.riskContext.environment = 'production'; },
+    x => { x.objective = '不同交付範圍'; },
+    x => { delete x.riskContext; }
+  ];
+  for (const [i, mutate] of cases.entries()) {
+    const changed = structuredClone(state); mutate(changed);
+    assert.strictEqual(evaluateCriticalRelay(changed).canComplete, false, 'case ' + i);
+  }
+});
+
+require('node:test')('緩解與解決風險需通過且對應本次範圍的證據', () => {
+  for (const status of ['mitigated', 'resolved']) {
+    const state = riskState(status);
+    assert.strictEqual(evaluateCriticalRelay(state).canComplete, true, status);
+    const cases = [
+      x => { x.tests.at(-1).status = 'failed'; },
+      x => { x.tests.at(-1).status = 'running'; },
+      x => { x.tests.at(-1).riskRefs = []; },
+      x => { x.tests.at(-1).context.source.revision = 'fixture-v0'; },
+      x => { x.remainingRisks[0].disposition.evidenceRefs = ['missing']; },
+      x => { x.remainingRisks[0].disposition.action = ''; }
+    ];
+    for (const [i, mutate] of cases.entries()) {
+      const changed = structuredClone(state); mutate(changed);
+      assert.strictEqual(evaluateCriticalRelay(changed).canComplete, false, status + ' case ' + i);
+    }
+  }
+});
+
+require('node:test')('風險交接保留環境與版本且拒絕竄改', () => {
+  const state = riskState();
+  const snapshot = buildHandoffSnapshot(state);
+  assert.deepStrictEqual(snapshot.riskContext, state.riskContext);
+  assert.strictEqual(verifyHandoffSnapshot(snapshot).canAccept, true);
+  snapshot.riskContext.environment = 'production';
+  assert.strictEqual(verifyHandoffSnapshot(snapshot).canAccept, false);
+});
+
+require('node:test')('風險驗證綁定正式 run 與研究來源摘要', () => {
+  const { riskVerificationContext } = require('./risk-review');
+  const state = riskState();
+  state.executionContract = { schemaVersion: 'pixiu.cr-execution.v2',
+    source: { headSha: 'head-a', changeDigest: 'diff-a' },
+    verificationRun: { runId: 'run-a' }, verification: { passed: true },
+    verificationBinding: { planDigest: 'plan-a' } };
+  const first = riskVerificationContext(state);
+  state.executionContract.verificationRun.runId = 'run-b';
+  assert.notDeepStrictEqual(riskVerificationContext(state), first);
+  state.researchRequired = true;
+  state.researchVerification = { digest: 'research-a' };
+  state.researchBinding = { planDigest: 'research-plan-a' };
+  const research = riskVerificationContext(state);
+  state.researchVerification.digest = 'research-b';
+  assert.notDeepStrictEqual(riskVerificationContext(state), research);
+});

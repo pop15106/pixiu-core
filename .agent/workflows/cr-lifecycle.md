@@ -54,3 +54,7 @@ node scripts/critical-relay/critical-relay.js check .cr/state.json
 `.cr/research-event.json` 由操作者依**真實證據**建立；CLI 不自動搜尋網頁、生成程式碼或執行模型。禁止無授權 push、Release、Deploy、DB 寫入、任意刪鎖、啟動子 Agent 或假造 PASS。
 
 詳細規則：`skills/critical-relay-lifecycle/SKILL.md`；程式：`scripts/critical-relay/lifecycle.js`。
+
+## 風險處置與重開
+
+依 `vault/governance/cr-risk-review.md` 核對需求覆蓋、來源獨立性、風險盤點與決策重開條件。`risk-review.js` 已接入 CR completion gate；填寫 accepted／mitigated／resolved 需可追溯、符合當次環境、範圍與版本的證據。結構檢查與真實授權／證據判讀分別回報。歷史狀態保留，缺證據的處置須補驗後交付。
