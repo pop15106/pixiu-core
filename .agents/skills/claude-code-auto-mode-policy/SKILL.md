@@ -2,7 +2,7 @@
 name: claude-code-auto-mode-policy
 description: Pixiu 專用 Claude Code Auto mode 授權政策。當使用者提及「auto mode / 自動模式 / shift-tab / 跳過確認 / 自動放行」等關鍵字或語義時強制觸發，評估任務可否進入自動放行，列出強制退回手動的黑名單，並與 Pixiu L0 憲法「絕對用戶審批閘門」銜接。觸發詞：auto mode、自動模式、shift-tab、自動放行、跳過確認、不要每次問我。
 origin: Pixiu
-version: 0.1.0
+version: 0.1.2
 layer_binding: L0-憲法 / L1-安全 / L3-流程
 language: zh-TW
 ---
@@ -53,7 +53,7 @@ language: zh-TW
 🚦 Auto mode 授權範圍
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 本次任務：[一句話描述]
-主模型：[Opus 4.7 / Sonnet 4.6 等]｜分類器：Sonnet 4.6（Claude Code 原生）
+主模型：[查 vault/governance/model-dispatch-rules.md 第 3 節填當下實際型號]｜分類器：[Claude Code 原生]
 
 允許動作：
   ✅ [編輯 / 建立 / 讀取][限定路徑清單]
@@ -92,10 +92,11 @@ language: zh-TW
 
 ## 與 Pixiu 憲法銜接
 
-### 優先級
-```
-L0 絕對用戶審批閘門 ＞ 本 Skill ＞ Claude Code 原生 Auto mode
-```
+### 權限與專案規則
+
+先滿足執行平台的系統與開發者指令、安全規則及工具權限，再套用使用者有效授權、L0 專案閘門與本 Skill。專案規則可縮小自動化範圍，不能增加原生 Auto mode 的權限。
+
+平台拒絕的動作須停止並回報；不更改審批設定、不切換介面重試，也不以使用者接受風險代替平台許可。既有明確授權涵蓋相同工作與範圍時，沿用該授權，不重複索取。
 
 ### 仍須保留的硬閘門（本 Skill 不覆蓋）
 
@@ -133,5 +134,7 @@ L0 絕對用戶審批閘門 ＞ 本 Skill ＞ Claude Code 原生 Auto mode
 ---
 
 ## 版本與來源
+- v0.1.2｜2026-11-11：區分平台權限、使用者授權與專案政策；拒絕結果不由本 Skill 覆蓋。
+- v0.1.1｜2026-07-05：型號名稱去寫死，改指向 model-dispatch-rules.md 第 3 節（單一真源）。
 - v0.1.0｜2026-04-17
 - 來源：Anthropic 官方 Auto Mode 文件、Pixiu `user_rules.md` L0 憲法、`opus-behavior-core` L3 行動層。

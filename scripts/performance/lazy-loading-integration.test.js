@@ -74,12 +74,13 @@ function testBootstrapPreservesCoreInteractionContract() {
   assert.match(bootstrap, /2[–-]3 個選項/);
   assert.match(bootstrap, /不替使用者.*決定/);
   assert.match(bootstrap, /Skill 先判，環境後選/);
-  assert.match(bootstrap, /Work mode 適合時可優先嘗試/);
-  assert.match(bootstrap, /成功轉入.*沿用同一 Skill \/ Capability/);
-  assert.match(bootstrap, /不可用.*轉入失敗.*被拒絕/);
-  assert.match(bootstrap, /立即改用目前對話可用工具.*沿用同一 Skill \/ Capability/);
-  assert.match(bootstrap, /不再次要求切換/);
-  assert.match(bootstrap, /不得因 Work mode 失敗而降級成一般回答/);
+  assert.match(bootstrap, /遵守平台規則與權限/);
+  assert.match(bootstrap, /Work mode 合適時優先嘗試/);
+  assert.match(bootstrap, /成功轉入後沿用同一能力/);
+  assert.match(bootstrap, /環境不可用、轉入失敗或使用者留在目前對話/);
+  assert.match(bootstrap, /用現有工具沿用同一流程，不重複要求切換/);
+  assert.match(bootstrap, /安全或權限拒絕時停止該動作並回報，不換介面重試/);
+  assert.doesNotMatch(bootstrap, /不可用、轉入失敗、被拒絕/);
 }
 
 function testManifestReferencesExistingFiles() {
