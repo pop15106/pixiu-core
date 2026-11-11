@@ -5,6 +5,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'Portable.Cleanup.psm1') -Force
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $PSScriptRoot 'dist'
@@ -66,6 +67,7 @@ $payloadFiles = @(
     'DevSpace.OneClick.Platform.psm1',
     'DevSpace.OneClick.Subagents.psm1',
     'DevSpace.WorkflowStore.mjs',
+    'workflow-bundle.mjs',
     'devspace-oneclick.ps1',
     'devspace-watchdog.ps1',
     'verify-portable-package.ps1',
@@ -99,6 +101,12 @@ try {
         Copy-Item -LiteralPath $source -Destination (Join-Path $packageRoot $relativePath) -Force
     }
 
+    # 保留 runtime 相對目錄；在乾淨出包位置驗證實際 import。
+    & node (Join-Path $PSScriptRoot 'workflow-bundle.mjs') assemble $repoRoot (Join-Path $packageRoot 'workflow-runtime')
+    if ($LASTEXITCODE -ne 0) { throw 'WORKFLOW_BUNDLE_BUILD_FAILED' }
+    & node (Join-Path $packageRoot 'workflow-bundle.mjs') verify (Join-Path $packageRoot 'workflow-runtime')
+    if ($LASTEXITCODE -ne 0) { throw 'WORKFLOW_BUNDLE_IMPORT_FAILED' }
+
     $sameChatReviewerSourceRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\chat-reviewer'))
     foreach ($reviewerFile in @('SameChat.ReviewerTools.mjs', 'same-chat-reviewer.js')) {
         $reviewerSource = Join-Path $sameChatReviewerSourceRoot $reviewerFile
@@ -130,6 +138,8 @@ try {
         builtAtUtc = [DateTime]::UtcNow.ToString('o')
         includesCrossSessionWorkflow = $true
         workflowModule = 'DevSpace.WorkflowStore.mjs'
+        workflowBundle = 'workflow-runtime/WORKFLOW-BUNDLE.json'
+        workflowExecutionSchema = 'pixiu.cr-execution.v2'
         includesSameChatReviewer = $true
         sameChatReviewerToolsModule = 'SameChat.ReviewerTools.mjs'
         sameChatReviewerCoreModule = 'same-chat-reviewer.js'
@@ -150,17 +160,53 @@ try {
     $stamp = Get-Date -Format 'yyyyMMdd'
     $zipName = "DevSpace-OneClick-$stamp-$sourceCommit.zip"
     $zipPath = Join-Path $outputRoot $zipName
-    if (Test-Path -LiteralPath $zipPath) {
-        Remove-Item -LiteralPath $zipPath -Force
+    # 保留既有 ZIP，直到本輪臨時封裝成功才替換。
+    # 使用唯讀共享來源串流，避免 Compress-Archive 對剛完成 import 的檔案要求不必要的獨占存取。
+    Add-Type -AssemblyName System.IO.Compression
+    $archiveTemporary = "$zipPath.$([guid]::NewGuid().ToString('N')).tmp"
+    $zipStream = [System.IO.File]::Open($archiveTemporary, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+    $archive = [System.IO.Compression.ZipArchive]::new($zipStream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
+    try {
+        foreach ($file in @(Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName)) {
+            $entryName = 'DevSpace-OneClick/' + $file.FullName.Substring($packagePrefix.Length).Replace('\', '/')
+            $entry = $archive.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+            $destination = $entry.Open()
+            $sourceStream = $null
+            try {
+                for ($attempt = 0; $attempt -lt 3; $attempt++) {
+                    try {
+                        $sourceStream = [System.IO.File]::Open($file.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, ([System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete))
+                        break
+                    }
+                    catch [System.IO.IOException] {
+                        if ($attempt -eq 2) { throw }
+                        Start-Sleep -Milliseconds 200
+                    }
+                }
+                $sourceStream.CopyTo($destination)
+            }
+            finally {
+                if ($null -ne $sourceStream) { $sourceStream.Dispose() }
+                $destination.Dispose()
+            }
+        }
     }
-    Compress-Archive -Path $packageRoot -DestinationPath $zipPath -CompressionLevel Optimal -Force
+    finally { $archive.Dispose(); $zipStream.Dispose() }
+    Move-Item -LiteralPath $archiveTemporary -Destination $zipPath -Force
 
     Write-Host "Portable package created: $zipPath" -ForegroundColor Green
     Write-Host 'The ZIP contains cross-session/cross-project workflow support plus the opt-in Same-Chat Reviewer runtime, and no local Owner password, tunnel state, or ChatGPT token.'
     return $zipPath
 }
 finally {
-    if (Test-Path -LiteralPath $temporaryRoot) {
-        Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
+    try {
+        $cleanup = Remove-PortableTemporaryDirectory -TemporaryRoot $temporaryRoot
+        if (-not $cleanup.Removed) {
+            Write-Warning -WarningAction Continue ("PORTABLE_CLEANUP_RETAINED: " + ($cleanup | ConvertTo-Json -Compress))
+        }
+    }
+    catch {
+        # 清理本身的非預期錯誤另行揭露，原建置例外及已驗證 ZIP 保持原狀。
+        Write-Warning -WarningAction Continue ("PORTABLE_CLEANUP_ERROR: " + $_.Exception.Message + "; temporaryRoot=" + $temporaryRoot)
     }
 }

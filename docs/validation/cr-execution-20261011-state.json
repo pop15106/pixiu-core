@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "pixiu.critical-relay.v1",
+  "objective": "確認通用 CR 單一 Agent 交付調整的程式、技能與必要回歸，通過後才允許本次已授權推送；不宣稱整個 repository 全綠或模型效能提升",
+  "mode": "FULL_AUTOMATIC_RELAY",
+  "executionContractRequired": true,
+  "phase": "RECHALLENGE",
+  "phaseHistory": ["UNDERSTAND", "HYPOTHESIZE", "EXECUTE", "CHALLENGE", "COUNTERSEARCH", "REASSESS", "REPAIR", "VERIFY", "RECHALLENGE"],
+  "iteration": 2,
+  "status": "ready",
+  "claims": [
+    {"id": "claim-policy", "statement": "CR、Verify Loop 與 /go 的授權修復及單一 Agent 規則一致", "status": "supported", "evidenceRefs": ["e-policy", "e-results"], "challengeRefs": ["q-policy"], "counterEvidenceRefs": ["counter-policy"], "counterEvidenceStatus": "addressed"},
+    {"id": "claim-contract", "statement": "交付契約會阻擋缺少實測、舊版本、未解失敗及契約缺失，並保留舊 CR 閘門", "status": "supported", "evidenceRefs": ["e-contract", "e-results"], "challengeRefs": ["q-contract"], "counterEvidenceRefs": []},
+    {"id": "claim-publication", "statement": "來源與 Codex 副本一致，路由及 workflow 回歸通過", "status": "supported", "evidenceRefs": ["e-publication", "e-results"], "challengeRefs": ["q-publication"], "counterEvidenceRefs": ["counter-publication"], "counterEvidenceStatus": "addressed"}
+  ],
+  "assumptions": [
+    {"id": "assumption-scope", "severity": "high", "status": "bounded", "description": "使用者已授權調整通用 CR、檢查後推送；未授權 Production、Release、Deploy 或額外 Agent，均未執行"}
+  ],
+  "evidence": [
+    {"id": "e-policy", "source": "repo:skills/pixiu-verify-loop/SKILL.md", "provenance": "與 commands/go.md、skills/critical-relay/SKILL.md 逐項覆核"},
+    {"id": "e-contract", "source": "repo:scripts/critical-relay/execution-contract.js", "provenance": "execution-contract.test.js 正反例及舊 CR 回歸"},
+    {"id": "e-publication", "source": "repo:.agents/skills/critical-relay/SKILL.md", "provenance": "來源／Codex 副本測試，包含換行正規化後全文一致"},
+    {"id": "e-results", "source": "repo:docs/reports/20261011-cr-execution-efficiency.md", "provenance": "本次實際工具輸出摘要：45+19+21+6+18=109；另列補充檢查缺檔"}
+  ],
+  "counterEvidence": [
+    {"id": "counter-policy", "source": "git:64669e53f48c2a563cac6c7994889b5b149056ed:skills/pixiu-verify-loop/SKILL.md", "claimRefs": ["claim-policy"], "severity": "high", "status": "addressed", "description": "基準要求紅燈停止及多 Agent simplify，現已替換為授權內修復與單一流程"},
+    {"id": "counter-publication", "source": "repo:docs/reports/20261011-cr-execution-efficiency.md", "claimRefs": ["claim-publication"], "severity": "high", "status": "addressed", "description": "首次新增測試39/40，缺少CR發布副本；補齊後45/45"}
+  ],
+  "challenges": [
+    {"id": "q-policy", "claimRefs": ["claim-policy"], "severity": "high", "status": "resolved", "method": "重新讀取來源、/go 與發布副本，測試授權修復決策及 single policy", "result": "唯讀不改碼、已授權可修復、第二次相同失敗轉診斷；沒有自動啟動其他 Agent"},
+    {"id": "q-contract", "claimRefs": ["claim-contract"], "severity": "high", "status": "resolved", "method": "執行45項交付測試及19項舊CR測試；重查未被unit引用的required test", "result": "錯版本、假passed、缺命令、缺輸出、未解失敗、契約缺失及舊反證閘門皆有拒絕案例"},
+    {"id": "q-publication", "claimRefs": ["claim-publication"], "severity": "high", "status": "resolved", "method": "來源／副本全文比對、Router21項、integration6項、WorkflowStore18項", "result": "必要回歸全數通過；額外全repository延遲載入檢查的基準缺檔另列限制"}
+  ],
+  "unknowns": [
+    {"id": "unknown-model-performance", "severity": "medium", "status": "open", "description": "尚未執行 Sol／Opus A/B，模型實際速度或完成率差距未量測"}
+  ],
+  "tests": [
+    {"id": "test-delivery", "name": "交付契約與發布一致性45項", "required": true, "status": "passed", "command": "node --test scripts/critical-relay/execution-contract.test.js", "exitCode": 0, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#驗證結果", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    {"id": "test-core", "name": "舊CR契約19項", "required": true, "status": "passed", "command": "node scripts/critical-relay/critical-relay.test.js", "exitCode": 0, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#驗證結果", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    {"id": "test-router", "name": "Router21項", "required": true, "status": "passed", "command": "node scripts/router/resolve-capabilities.test.js", "exitCode": 0, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#驗證結果", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    {"id": "test-integration", "name": "CR整合6項", "required": true, "status": "passed", "command": "node scripts/critical-relay/critical-relay.integration.test.js", "exitCode": 0, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#驗證結果", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    {"id": "test-workflow", "name": "WorkflowStore18項", "required": true, "status": "passed", "command": "node --test scripts/devspace-portable/tests/workflow-store.test.mjs", "exitCode": 0, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#驗證結果", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    {"id": "test-diff", "name": "Git差異格式", "required": true, "status": "passed", "command": "git diff --cached --check", "exitCode": 0, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#驗證結果", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    {"id": "test-supplementary-lazy", "name": "額外延遲載入檢查", "required": false, "status": "failed", "command": "node scripts/performance/lazy-loading-integration.test.js", "exitCode": 1, "outputRef": "repo:docs/reports/20261011-cr-execution-efficiency.md#額外檢查的既有限制", "reason": "基準即缺少未版控的founder-profile.md；本次未修改該測試，非CR CI既有步驟"}
+  ],
+  "completionCriteria": [
+    {"id": "criterion-policy", "criterion": "單一Agent及授權內修復、停止和推送規則一致", "satisfied": true, "evidenceRefs": ["e-policy", "test-delivery"]},
+    {"id": "criterion-contract", "criterion": "交付契約正反例及舊CR／workflow相容驗證通過", "satisfied": true, "evidenceRefs": ["test-delivery", "test-core", "test-workflow"]},
+    {"id": "criterion-publication", "criterion": "發布一致、路由整合通過、只納入本次diff", "satisfied": true, "evidenceRefs": ["test-delivery", "test-router", "test-integration", "test-diff"]}
+  ],
+  "remainingRisks": [
+    {"id": "risk-baseline-private-file", "severity": "medium", "status": "open", "description": "額外延遲載入檢查因基準缺少私人檔案而失敗；不宣稱整個repository全綠，不修改測試掩蓋問題"},
+    {"id": "risk-global-skill-collision", "severity": "medium", "status": "open", "description": "舊本機checkout及全域技能未覆寫；只有載入更新版本的repo路由／技能才使用新版"},
+    {"id": "risk-model-comparison", "severity": "medium", "status": "open", "description": "僅驗證流程與契約，未量測模型A/B或效能改善"}
+  ],
+  "nextAction": "核對原始Git內容指紋及CR gate，通過後執行本次已授權的非強制push，讀回遠端SHA並確認Actions",
+  "executionContract": {
+    "schemaVersion": "pixiu.cr-execution.v1",
+    "agentPolicy": "single",
+    "scope": ["scripts/critical-relay/", "skills/critical-relay/", "skills/pixiu-verify-loop/", "skills/verification-loop/", ".agents/skills/critical-relay/", ".agents/skills/pixiu-verify-loop/", ".agents/skills/verification-loop/", ".github/workflows/critical-relay.yml", "commands/go.md", "docs/reports/20261011-cr-execution-efficiency.md", "docs/validation/cr-execution-20261011-state.json"],
+    "source": {"baseSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    "verification": {"headSha": "64669e53f48c2a563cac6c7994889b5b149056ed", "changeDigest": "bae4d41befbecd085fc1088adcd325fa2caa9ffa7aa6736ddcd567a7bd8fa35e"},
+    "workUnits": [
+      {"id": "unit-policy", "criterionRefs": ["criterion-policy"], "status": "passed", "testRefs": ["test-delivery"]},
+      {"id": "unit-contract", "criterionRefs": ["criterion-contract"], "status": "passed", "testRefs": ["test-delivery", "test-core", "test-workflow"]},
+      {"id": "unit-publication", "criterionRefs": ["criterion-publication"], "status": "passed", "testRefs": ["test-delivery", "test-router", "test-integration", "test-diff"]}
+    ],
+    "failures": [
+      {"id": "failure-publication", "fingerprint": "ENOENT:.agents/skills/critical-relay/SKILL.md", "attempts": 1, "status": "resolved", "resolutionEvidenceRef": "e-publication", "changedApproach": "補齊已確認缺失的CR發布副本，重跑來源／發布一致性與所有必要回歸"}
+    ],
+    "modelObservation": {"requestedLabel": "Sol", "actualModelId": null, "actualReasoningEffort": null, "modelSwitchPerformed": false},
+    "nextAction": "依本次授權推送已驗證變更，核對遠端及CI；全域舊技能與模型效能另列未驗證"
+  }
+}

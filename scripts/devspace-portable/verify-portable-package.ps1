@@ -1,6 +1,7 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [string]$PackageRoot = $PSScriptRoot
+    [string]$PackageRoot,
+    [switch]$IntegrityOnly
 )
 
 Set-StrictMode -Version Latest
@@ -11,7 +12,18 @@ function Get-Sha256 {
     return (Get-FileHash -LiteralPath $FilePath -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-$root = [System.IO.Path]::GetFullPath($PackageRoot)
+if (-not $PSBoundParameters.ContainsKey('PackageRoot')) {
+    $PackageRoot = $PSScriptRoot
+}
+if ([string]::IsNullOrWhiteSpace($PackageRoot)) {
+    throw 'Portable package root is empty.'
+}
+try {
+    $root = [System.IO.Path]::GetFullPath($PackageRoot)
+}
+catch {
+    throw "Portable package root path is invalid: $PackageRoot. $($_.Exception.Message)"
+}
 $manifestPath = Join-Path $root 'PORTABLE-MANIFEST.json'
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Portable manifest is missing: $manifestPath"
@@ -38,6 +50,8 @@ $requiredPayload = @(
     'QA-TROUBLESHOOTING.txt',
     'devspace-oneclick.ps1',
     'DevSpace.WorkflowStore.mjs',
+    'workflow-bundle.mjs',
+    'workflow-runtime/WORKFLOW-BUNDLE.json',
     'SameChat.ReviewerTools.mjs',
     'same-chat-reviewer.js',
     '16-ENABLE-SAME-CHAT-REVIEWER.cmd',
@@ -71,7 +85,12 @@ foreach ($required in $requiredPayload) {
 $rootPrefix = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 foreach ($entry in $manifestFiles) {
     $relativePath = [string]$entry.path
-    $target = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
+    try {
+        $target = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
+    }
+    catch {
+        throw "Portable manifest payload path is invalid: $relativePath. $($_.Exception.Message)"
+    }
     if (-not $target.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Portable payload escapes the package root: $relativePath"
     }
@@ -97,6 +116,18 @@ $unexpected = @($actualRelativePaths | Where-Object { $_ -notin $manifestRelativ
 $missing = @($manifestRelativePaths | Where-Object { $_ -notin $actualRelativePaths })
 if ($unexpected.Count -gt 0 -or $missing.Count -gt 0) {
     throw "Portable payload file set mismatch. Unexpected=$($unexpected -join ', '); Missing=$($missing -join ', ')"
+}
+
+# 除了檔案 digest，必須確認解壓後的 runtime 實際可載入。
+if ($manifest.workflowExecutionSchema -ne 'pixiu.cr-execution.v2') {
+    throw 'WORKFLOW_EXECUTION_SCHEMA_MISSING'
+}
+if ($IntegrityOnly) {
+    Write-Host 'WORKFLOW_RUNTIME_NOT_RUN: integrity-only bootstrap check; installation must verify runtime after Node setup.'
+}
+else {
+    & node (Join-Path $root 'workflow-bundle.mjs') verify (Join-Path $root 'workflow-runtime')
+    if ($LASTEXITCODE -ne 0) { throw 'WORKFLOW_RUNTIME_VERIFY_FAILED' }
 }
 
 Write-Host "Portable package verified: $($manifest.packageName) $($manifest.sourceCommit)" -ForegroundColor Green

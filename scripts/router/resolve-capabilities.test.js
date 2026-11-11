@@ -268,6 +268,5 @@ for (const test of [
   testPlainUnitTestDoesNotTriggerExecutionProgress,
   testActualManifestRoutesFullAutoRelayToProgressPolicy
 ]) {
-  test();
-  process.stdout.write(`ok ${test.name}\n`);
+  require('node:test')(test.name, test);
 }

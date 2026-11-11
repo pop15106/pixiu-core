@@ -8,13 +8,17 @@ function normalizeText(value) {
   return String(value || '')
     .normalize('NFKC')
     .toLowerCase()
+    .replace(/\bcr(?=完整自動接力|研究|搜尋|設計|開發|全流程)/gu, 'cr ')
     .replace(/\s+/gu, ' ')
     .trim();
 }
 
-function isNegatedMatch(text, index) {
+function isNegatedMatch(text, index, phrase) {
   const prefix = text.slice(Math.max(0, index - 24), index);
-  return /(?:先不要|暫時不要|不是要|不要|不用|別|取消|關閉|不開)[^。！？!?]{0,12}$/u.test(prefix);
+  // 指令本身含動詞時，「不開 CR」的「不」會留在匹配前綴。
+  const negatedCommand = /不\s*$/u.test(prefix) && /^(?:開|建立)/u.test(phrase);
+  return negatedCommand ||
+    /(?:先不要|暫時不要|不是要|不要|不用|別|取消|關閉|不開)[^。！？!?]{0,12}$/u.test(prefix);
 }
 
 function isAsciiWordChar(value) {
@@ -37,7 +41,7 @@ function findMatch(normalized, phrase, { bounded = false } = {}) {
       isAsciiWordChar(phrase[phrase.length - 1]) &&
       isAsciiWordChar(right);
 
-    if (!leftBlocked && !rightBlocked && !isNegatedMatch(normalized, index)) {
+    if (!leftBlocked && !rightBlocked && !isNegatedMatch(normalized, index, phrase)) {
       return index;
     }
     cursor = index + 1;

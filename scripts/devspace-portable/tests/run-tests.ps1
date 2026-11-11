@@ -438,7 +438,7 @@ HTTP: {
     ) -join [Environment]::NewLine
     [System.IO.File]::WriteAllText($skillRunner, $skillRunnerSource, [System.Text.UTF8Encoding]::new($false))
 
-    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 17 'applies all DevSpace 1.0.4 Windows patches'
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 19 'applies all DevSpace 1.0.4 Windows patches including both Same-Chat additions'
     $patchedRuntime = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-runtime.js'))
     $patchedProfiles = [System.IO.File]::ReadAllText((Join-Path $fakeDist 'local-agent-profiles.js'))
     $patchedSdk = [System.IO.File]::ReadAllText((Join-Path $fakeSdkDist 'index.js'))
@@ -459,6 +459,12 @@ HTTP: {
     Assert-Equal $patchedServer.Contains('if (config.toolMode === "codex")') $false 'registers process-session tools outside Codex mode'
     Assert-Equal $patchedServer.Contains('const devSpaceWorkflowModule = process.env.DEVSPACE_WORKFLOW_MODULE') $true 'loads the durable workflow module from the managed path'
     Assert-Equal $patchedServer.Contains('registerDevSpaceWorkflowTools') $true 'registers cross-session workflow tools for ChatGPT Web'
+    Assert-Equal $patchedServer.Contains('const sameChatReviewerEnabled = process.env.DEVSPACE_SAME_CHAT_REVIEWER_ENABLED === "1";') $true 'retains the opt-in Same-Chat loader alongside the original workflow loader'
+    Assert-Equal $patchedServer.Contains('sameChatReviewerModule.registerSameChatReviewerTools') $true 'retains Same-Chat registration alongside workflow registration'
+    Assert-Equal ($patchedServer -match '(?m)^\s*\$[01]\s*$') $false 'patches never leave literal regex replacement placeholders in JavaScript'
+    $sameVersionServerBefore = [System.IO.File]::ReadAllText($fakeServer)
+    Assert-Equal (Install-DevSpaceSubagentWindowsPatch -DevSpaceCli $fakeCli) 0 'all 1.0.4 runtime patches are idempotent before a later upgrade'
+    Assert-Equal ([System.IO.File]::ReadAllText($fakeServer)) $sameVersionServerBefore 'idempotent patch preserves the exact server bytes'
     Assert-Equal $patchedServer.Contains('Use workflow_create, workflow_list, and workflow_update for durable cross-session coordination') $true 'guides ChatGPT Web to workflow coordination tools'
     Assert-Equal $patchedServer.Contains('Treat clear natural-language continuation intent') $true 'auto-routes clear cross-session intent without tool-name vocabulary'
     Assert-Equal $patchedServer.Contains('Never call workflow_run because of continuation intent alone') $true 'keeps workflow_run behind separate explicit user model authorization'
@@ -626,13 +632,17 @@ HTTP: {
     $workflowBin = Join-Path $testRoot 'workflow-bin'
     $firstWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
     Assert-Equal $firstWorkflowInstall.Changed $true 'installs the durable workflow module'
-    Assert-Equal ([System.IO.File]::ReadAllText($firstWorkflowInstall.Path)) ([System.IO.File]::ReadAllText($workflowSource)) 'preserves workflow module content'
+    $installedBundleEntry = Join-Path $workflowBin ("workflow-releases\" + $firstWorkflowInstall.contentDigest + '\scripts\devspace-portable\DevSpace.WorkflowStore.mjs')
+    Assert-Equal ([System.IO.File]::ReadAllText($installedBundleEntry)) ([System.IO.File]::ReadAllText($workflowSource)) 'preserves exact workflow module content inside its verified dependency bundle'
+    Assert-Equal ([System.IO.File]::ReadAllText($firstWorkflowInstall.Path)).Contains('workflow-releases/') $true 'activates the verified bundle through one entry point'
     $secondWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
     Assert-Equal $secondWorkflowInstall.Changed $false 'workflow module install is idempotent'
     [System.IO.File]::AppendAllText($firstWorkflowInstall.Path, '// simulated drift', [System.Text.UTF8Encoding]::new($false))
     $repairedWorkflowInstall = Install-DevSpaceWorkflowModule -SourceFile $workflowSource -BinDirectory $workflowBin
     Assert-Equal $repairedWorkflowInstall.Changed $true 'repairs a drifted managed workflow module'
-    Assert-Equal (Test-Path -LiteralPath "$($firstWorkflowInstall.Path).devspace-oneclick.bak") $true 'backs up a drifted workflow module before repair'
+    $retainedPreviousEntry = Join-Path $workflowBin ("workflow-receipts\" + $repairedWorkflowInstall.receiptId + '\previous.mjs')
+    Assert-Equal (Test-Path -LiteralPath $retainedPreviousEntry) $true 'retains a uniquely identified previous workflow entry before repair'
+    Assert-Equal ([System.IO.File]::ReadAllText($retainedPreviousEntry)).Contains('// simulated drift') $true 'repair receipt preserves the exact observed previous entry'
     $workflowTestPath = Join-Path $PSScriptRoot 'workflow-store.test.mjs'
     $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
     Assert-Equal ($null -ne $nodeCommand) $true 'finds Node.js for workflow tests'

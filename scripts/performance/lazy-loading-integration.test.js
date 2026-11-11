@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+const test = require('node:test');
 const assert = require('assert');
+const { inspectResources, validatePolicy, assertOnDemandContent } = require('../router/resource-policy');
 const fs = require('fs');
 const path = require('path');
 const { buildReport } = require('./measure-core-startup');
@@ -55,7 +57,11 @@ function testOnlyBootstrapKeepsAutoLoadMarkers() {
     'vault/memory/memory-summary.md',
     'rules/common/prompt-engineering.md'
   ]) {
-    const content = read(relativePath);
+    const policy = validatePolicy(loadManifest(path.join(core, 'vault/capabilities/capability-manifest.json')));
+    // 私人檔案使用中性內容驗證契約；真實私人資料不屬公共測試輸入。
+    const content = Object.hasOwn(policy.localPrivate, relativePath)
+      ? '---\ntype: neutral-fixture\n---\n# 中性測試內容\n' : read(relativePath);
+    assertOnDemandContent(content, relativePath);
     assert.doesNotMatch(content, /^alwaysApply:\s*true$/m, `${relativePath} 仍標記 alwaysApply`);
     assert.doesNotMatch(content, /^readAt:\s*(?:session-start|session-init)$/m, `${relativePath} 仍標記 session auto-load`);
     assert.doesNotMatch(content, /^trigger:\s*always_on$/m, `${relativePath} 仍標記 always_on`);
@@ -78,22 +84,10 @@ function testBootstrapPreservesCoreInteractionContract() {
 
 function testManifestReferencesExistingFiles() {
   const manifest = loadManifest(path.join(core, 'vault', 'capabilities', 'capability-manifest.json'));
-  const missing = [];
-
-  for (const capability of manifest.capabilities) {
-    const load = capability.load || {};
-    for (const relativePath of [
-      ...(load.skills || []),
-      ...(load.contexts || []),
-      ...(load.governance || [])
-    ]) {
-      if (!fs.existsSync(path.join(core, relativePath))) {
-        missing.push(`${capability.id}: ${relativePath}`);
-      }
-    }
-  }
-
-  assert.deepStrictEqual(missing, []);
+  const readiness = inspectResources(core, manifest);
+  assert.deepStrictEqual(readiness.missingPublic, []);
+  assert.strictEqual(readiness.canRunPublicCore, true);
+  assert.ok(readiness.privateResources.every(item => item.status === 'NOT_INSPECTED'));
 }
 
 function testRepresentativeRoutes() {
@@ -179,7 +173,7 @@ function testGitFallbackBootstrapAndTemplatesStayMinimal() {
   }
 }
 
-for (const test of [
+for (const scenario of [
   testStartupPayloadStaysBelowBudget,
   testEntryFilesUseRouterBeforeManifest,
   testOnlyBootstrapKeepsAutoLoadMarkers,
@@ -190,6 +184,5 @@ for (const test of [
   testManifestUsesCanonicalSkillSources,
   testGitFallbackBootstrapAndTemplatesStayMinimal
 ]) {
-  test();
-  process.stdout.write(`ok ${test.name}\n`);
+  test(scenario.name, scenario);
 }

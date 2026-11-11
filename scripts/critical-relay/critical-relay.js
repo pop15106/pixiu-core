@@ -3,6 +3,8 @@
 
 const { createHash } = require('node:crypto');
 const fs = require('fs');
+const { DELIVERY_MODE, evaluateExecutionContract } = require('./execution-contract');
+const { createLifecycle, evaluateLifecycle, verifyLifecycleBinding } = require('./lifecycle');
 
 const SCHEMA_VERSION = 'pixiu.critical-relay.v1';
 const ARRAY_FIELDS = [
@@ -83,7 +85,13 @@ function createCriticalRelay(input = {}) {
     tests: [],
     completionCriteria: criteria,
     remainingRisks: [],
-    nextAction: input.nextAction || '建立第一批可驗證主張與假設'
+    nextAction: input.nextAction || '建立第一批可驗證主張與假設',
+    ...((input.mode === DELIVERY_MODE || input.executionContractRequired === true)
+      ? { executionContractRequired: true } : {}),
+    ...(input.executionContract !== undefined
+      ? { executionContract: deepClone(input.executionContract) } : {}),
+    ...(input.lifecycle !== undefined || input.lifecycleRequired === true
+      ? { lifecycleRequired: true, lifecycle: deepClone(input.lifecycle || createLifecycle()) } : {})
   };
 }
 
@@ -175,6 +183,28 @@ function evaluateCriticalRelay(state) {
   }
 
   const blockingReasons = [];
+
+  if (state.researchRequired !== undefined || state.researchBinding !== undefined) {
+    if (state.researchRequired !== true || state.mode !== 'general' || state.executionContract ||
+        state.lifecycle?.taskType !== 'research' || !state.researchVerification?.digest)
+      blockingReasons.push('研究需固定來源計畫與來源回讀證據，不可降級或冒充產品測試');
+  }
+
+  // Legacy state 維持原行為；新任務在驗收前必須走完全流程。
+  if (state.lifecycle !== undefined || state.lifecycleRequired !== undefined) {
+    if (state.lifecycleRequired !== true) blockingReasons.push('lifecycleRequired 不可降級');
+    blockingReasons.push(...evaluateLifecycle(state.lifecycle, state).blockingReasons);
+  }
+
+  // 舊 state 維持相容；完整交付模式即使移除 required 旗標也不能略過新契約。
+  if (state.executionContractRequired !== undefined &&
+      typeof state.executionContractRequired !== 'boolean') {
+    blockingReasons.push('executionContractRequired 必須是布林值');
+  }
+  if (state.mode === DELIVERY_MODE || state.executionContractRequired === true ||
+      state.executionContract !== undefined) {
+    blockingReasons.push(...evaluateExecutionContract(state.executionContract, state));
+  }
 
   for (const fieldName of ARRAY_FIELDS) {
     if (!Array.isArray(state[fieldName])) {
@@ -484,7 +514,16 @@ function buildHandoffSnapshot(state) {
     tests: state.tests,
     completionCriteria: state.completionCriteria,
     remainingRisks: state.remainingRisks,
-    nextAction: state.nextAction
+    nextAction: state.nextAction,
+    ...(state.researchRequired !== undefined ? { researchRequired: state.researchRequired,
+      researchBinding: state.researchBinding, researchVerification: state.researchVerification,
+      researchHistory: state.researchHistory } : {}),
+    ...(state.executionContractRequired !== undefined
+      ? { executionContractRequired: state.executionContractRequired } : {}),
+    ...(state.executionContract !== undefined
+      ? { executionContract: state.executionContract } : {}),
+    ...(state.lifecycleRequired !== undefined ? { lifecycleRequired: state.lifecycleRequired } : {}),
+    ...(state.lifecycle !== undefined ? { lifecycle: state.lifecycle } : {})
   });
   const evaluation = evaluateCriticalRelay(snapshot);
   const digest = stateDigest(snapshot);
@@ -512,9 +551,27 @@ function verifyHandoffSnapshot(snapshot) {
   };
 }
 
-function checkFile(filePath) {
+function checkFile(filePath, workspaceRoot = process.cwd()) {
   const state = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const snapshot = buildHandoffSnapshot(state);
+  // 完成入口必須回讀實測證據；純結構函式仍供歷史資料與單元測試使用。
+  const { verifyStateEvidence } = require('./evidence-verifier');
+  const { readJson, boundedPath } = require('./test-plan');
+  const pinPath = boundedPath(workspaceRoot, '.cr/verification-binding.json', { mustExist: false });
+  const pinned = fs.existsSync(pinPath) ? readJson(workspaceRoot, '.cr/verification-binding.json') : undefined;
+  const lifecyclePinPath = boundedPath(workspaceRoot, '.cr/lifecycle-binding.json', { mustExist: false });
+  const lifecyclePin = fs.existsSync(lifecyclePinPath) ? readJson(workspaceRoot, '.cr/lifecycle-binding.json') : undefined;
+  const verified = (state.mode === 'FULL_AUTOMATIC_RELAY' || state.researchRequired === true) && !pinned
+    ? { canComplete: false, blockingReasons: ['CLI 完整交付需先建立 .cr/verification-binding.json；請執行 relay-evidence init'] }
+    : verifyStateEvidence(state, workspaceRoot, pinned);
+  if ((state.lifecycleRequired === true || lifecyclePin) &&
+      (!lifecyclePin || state.lifecycleRequired !== true || !verifyLifecycleBinding(lifecyclePin,state.lifecycle))) {
+    verified.canComplete = false;
+    verified.blockingReasons.push('CR 全流程固定 lifecycle binding 缺失、降級或改變');
+  }
+  snapshot.evaluation.blockingReasons.push(...verified.blockingReasons);
+  snapshot.evaluation.canComplete = snapshot.evaluation.canComplete && verified.canComplete;
+  if (!snapshot.evaluation.canComplete) snapshot.evaluation.nextPhase = 'CHALLENGE';
   process.stdout.write(JSON.stringify(snapshot, null, 2) + '\n');
   return snapshot.evaluation.canComplete;
 }
@@ -535,5 +592,6 @@ module.exports = {
   recordCriticalRelayPhase,
   evaluateCriticalRelay,
   buildHandoffSnapshot,
-  verifyHandoffSnapshot
+  verifyHandoffSnapshot,
+  checkFile
 };
