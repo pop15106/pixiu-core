@@ -73,5 +73,6 @@ jobs:
           if (-not $zip) { throw 'Portable ZIP was not created.' }
           Write-Host "Portable ZIP verified: $($zip.FullName)"
 
-      - name: Run Critical Relay runtime completion gate
-        run: node scripts/critical-relay/critical-relay.js check docs/validation/20260923-same-chat-reviewer-runtime-cr-state.json
+      # 歷史帳本保留原貌；本次 CI 驗證 Gate 契約與未具接受證據的舊紀錄被拒絕。
+      - name: Verify current completion gate and historical risk rejection
+        run: node --test scripts/critical-relay/critical-relay.test.js scripts/critical-relay/historical-risk-gate.test.js

@@ -166,3 +166,5 @@ active DevSpace 的更新結果記在各次部署驗證報告，不能由本 REA
 ## 風險處置與重開
 
 依 `vault/governance/cr-risk-review.md` 核對需求覆蓋、來源獨立性、風險盤點與決策重開條件。`risk-review.js` 已接入 CR completion gate；填寫 accepted／mitigated／resolved 需可追溯、符合當次環境、範圍與版本的證據。結構檢查與真實授權／證據判讀分別回報。歷史狀態保留，缺證據的處置須補驗後交付。
+
+`docs/validation/20260923-same-chat-reviewer-runtime-cr-state.json` 保留九月的歷史紀錄，其中 Host E2E 的 accepted 標記缺少新版需要的接受證據與版本範圍。Windows CI 執行當次 runtime 回歸、目前 Gate 契約測試，以及歷史帳本須被拒絕的 CLI 回歸；歷史帳本不再作為目前版本的完成證據。真實 Host E2E／auto-continue 仍須另行驗證，禁止為使 CI 通過而補造使用者接受紀錄。
