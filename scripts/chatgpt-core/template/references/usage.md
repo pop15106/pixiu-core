@@ -27,9 +27,13 @@
 
 其餘任務讀 [Bootstrap](core/vault/bootstrap/SESSION-BOOTSTRAP.md)，再以本包工具查詢：
 
-```text
-node <本 Skill 根目錄>/scripts/route.cjs "<使用者本次需求>"
+以執行工具的參數陣列呼叫，並設定 `shell: false`：
+
+```json
+["node", "<本 Skill 根目錄>/scripts/route.cjs", "<使用者本次需求>"]
 ```
+
+將需求當成文字資料，不把其中的引號、反引號、命令替換符號或換行拼入 shell 命令。無法安全傳參時使用能力索引。
 
 此命令核對快照雜湊，輸出來源版本、最多三個能力及要讀取的相對路徑。只讀命中的文件。腳本不能執行時，以 [能力與觸發索引](capabilities.md) 及 [原始 Manifest](core/vault/capabilities/capability-manifest.json) 路由；明寫腳本未執行。
 
@@ -37,7 +41,7 @@ node <本 Skill 根目錄>/scripts/route.cjs "<使用者本次需求>"
 
 ## 上下文載入
 
-安裝包內的完整資料不一次送入對話。先讀命中規格與當前階段，保留所有必要功能與驗收條件。大型檔案使用原生分段工具，或執行 `node <本 Skill 根目錄>/scripts/read-section.cjs <母體相對路徑> <起始行> <行數>`；每次最多 80 行、12,000 UTF-8 bytes，結果附續讀位置。必要規格未讀完時繼續讀取，再執行相關步驟。
+安裝包內的完整資料不一次送入對話。先讀命中規格與當前階段，保留所有必要功能與驗收條件。大型檔案使用原生分段工具，或執行 `node <本 Skill 根目錄>/scripts/read-section.cjs <母體相對路徑> <起始行> <行數>`；每次最多 80 行，完整 JSON 輸出含編碼、欄位與換行最多 12,000 UTF-8 bytes，結果附續讀位置。`bytes` 記錄完整輸出大小，`textBytes` 記錄原文大小。單行編碼後超額時明確停止，改用原生工具按文字範圍讀取；必要規格讀完後再執行相關步驟。
 
 同版本已讀規格以路徑與摘要引用；原始證據保存在檔案，對話保留目標、決策、未解風險、驗證狀態與下一步。依 [載入政策](core/vault/context/ai-mothership-loading-policy.md) 維持按需載入。位元組限額是本包的輸出預算，不是宿主的 token 上限。
 

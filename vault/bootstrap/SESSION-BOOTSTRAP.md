@@ -28,7 +28,7 @@ priority: highest
 Pro析／/prostyle 與 X析／/xstyle 先讀對應 `skills/analyze-pro-style/SKILL.md` 或 `skills/analyze-xhigh-style/SKILL.md`，再依規格關閉工具及子代理。維護 Skill 不啟動分析。詳見 `vault/governance/pure-text-analysis-routing.md`。
 
 ## 按需能力路由
-1. 先依上方專用入口處理明確的純文字要求；其餘任務執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
+1. 先依上方專用入口處理明確的純文字要求；其餘任務執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。需求以參數陣列傳入，不拼接 shell。
 2. 只讀輸出的 `filesToLoad`；Router 會把 Capability 限制在最多 3 個。
 3. 沒有命中時只使用 Bootstrap 與專案原始碼，不退回全量掃描。
 4. Router 無法執行時，才以 `vault/capabilities/capability-manifest.json` 作降級索引。

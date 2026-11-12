@@ -45,12 +45,52 @@ test('分段載入守住預算且續讀後保留完整內容', t => {
   while (next !== null) {
     const result = readSection(root, 'source.md', next);
     assert(result.bytes <= MAX_BYTES);
+    assert.equal(result.bytes, Buffer.byteLength(JSON.stringify(result, null, 2) + '\n'));
     assert(result.end - result.start + 1 <= 80);
     parts.push(result.text); next = result.nextLine;
   }
   assert.equal(parts.join('\n'), text);
   assert.throws(() => readSection(root, 'source.md', 1, 500), /80/);
   assert.throws(() => readSection(root, '../outside'), /清單/);
+});
+
+test('特殊字元編碼後仍受輸出上限約束，續讀能還原原文', t => {
+  const text = Array.from({ length: 180 }, (_, i) => i + ':"\\\t'.repeat(90)).join('\n');
+  const { root } = fixture(t, text);
+  const parts = []; let next = 1;
+  while (next !== null) {
+    const result = readSection(root, 'source.md', next);
+    const actual = Buffer.byteLength(JSON.stringify(result, null, 2) + '\n');
+    assert.equal(result.bytes, actual);
+    assert(actual <= MAX_BYTES);
+    parts.push(result.text); next = result.nextLine;
+  }
+  assert.equal(parts.join('\n'), text);
+});
+
+test('單行跳脫後超過預算時明確停止，不輸出超額內容', t => {
+  const { root } = fixture(t, '"'.repeat(11999));
+  assert.throws(() => readSection(root, 'source.md'), /編碼後超過輸出預算/);
+});
+
+test('來源根目錄與 references 目錄的連結都在讀取前拒絕', t => {
+  for (const relative of ['references/core', 'references']) {
+    const { root } = fixture(t, '只供測試的資料');
+    const target = path.join(root, relative);
+    const external = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-link-target-'));
+    t.after(() => fs.rmSync(external, { recursive: true, force: true }));
+    const moved = path.join(external, 'moved');
+    fs.renameSync(target, moved);
+    fs.symlinkSync(moved, target, process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => verifySnapshot(root), /連結/);
+    assert.equal(fs.existsSync(path.join(moved, relative === 'references' ? 'core/source.md' : 'source.md')), true);
+  }
+});
+
+test('來源目錄中的未登錄檔案會阻擋完整性驗證', t => {
+  const { root } = fixture(t, '原始資料');
+  fs.writeFileSync(path.join(root, 'references/core/unlisted.js'), '未登錄測試資料');
+  assert.throws(() => verifySnapshot(root), /未登錄/);
 });
 
 test('主入口與適配工具也必須符合母體來源', t => {

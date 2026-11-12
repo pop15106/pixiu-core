@@ -1,12 +1,12 @@
 ---
 name: llm-benchmark
 description: "本地 LLM Benchmark 工具。當使用者想測試、比較或選擇本地 Ollama 模型時觸發。流程：檢查 Ollama 安裝 → 依 VRAM 推薦模型大小 → 下載模型 → 跑 benchmark → 與現有模型比較 → 輸出 markdown 報告。"
-version: 1.0.0
+version: 1.0.1
 ---
 
 # LLM Benchmark Skill
 
-你是本地 LLM 效能評測專家。執行以下完整流程：
+你是本地 LLM 效能評測專家。先確認目標機器、作業系統與評測範圍，再執行以下流程。安裝套件、下載模型、啟停服務及遠端複製須在使用者有效授權與平台權限內；相同範圍的既有授權直接沿用。
 
 ## Step 0：環境檢查
 
@@ -16,20 +16,20 @@ curl -s http://localhost:11434/api/version 2>/dev/null || echo "NOT_RUNNING"
 which ollama 2>/dev/null || echo "NOT_INSTALLED"
 ```
 
-- 若 **未安裝**：執行 `curl -fsSL https://ollama.com/install.sh | sh`，再啟動服務
-- 若 **未運行**：執行 `ollama serve &` 或 `systemctl start ollama`
+- 若 **未安裝**：查核 Ollama 官方安裝說明與目標作業系統。授權包含安裝時，先核對來源與下載內容，再依正式步驟安裝；尚未具備安裝授權時列出依賴與所需動作。
+- 若 **未運行**：確認本次授權涵蓋的服務或獨立測試程序，再啟動並核對狀態；先查證實際服務管理方式。
 - 確認成功後繼續
 
-## Step 0.5：VRAM 清空（benchmark 前必做）
+## Step 0.5：資源檢查與受控隔離
 
-### 1. 停止 OpenClaw（若有且正在運行）
+### 1. 盤點共用工作負載
 
 ```bash
 # 檢查 OpenClaw 容器是否存在且運行中
 docker ps --format '{{.Names}}' | grep -i openclaw
 ```
 
-- 若有 OpenClaw 容器正在運行 → 停止它：
+- 若有 OpenClaw 容器正在運行，先確認容器與服務用途。只有本次授權涵蓋停止該指定測試服務時，才使用已核對的專案路徑與服務名稱操作。以下為已核對該部署後的範例：
   ```bash
   cd ~/openclaw && docker compose stop openclaw-gateway
   echo "OpenClaw stopped"
@@ -38,12 +38,9 @@ docker ps --format '{{.Names}}' | grep -i openclaw
 
 記錄 OpenClaw 是否原本是啟動的，**benchmark 完成後需還原狀態**。
 
-### 2. 重啟 Ollama 清除 VRAM（必做）
+### 2. 選擇隔離方式與必要重啟
 
-```bash
-sudo systemctl restart ollama
-sleep 5
-```
+優先使用獨立測試服務或安排空閒時段。只有本次授權包含重啟、已確認沒有其他工作受影響，且環境確實使用 systemd 管理該服務時，才重啟指定服務。記錄原狀與恢復方式；平台拒絕時停止該操作並回報。
 
 ### 3. 確認 VRAM 已釋放
 
@@ -51,11 +48,11 @@ sleep 5
 nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader,nounits
 ```
 
-確認 `memory.used` 降到 ~1500 MB 以下再繼續。若仍偏高，再等 5 秒重確認。
+記錄實測的可用 VRAM 與其他負載，再依待測模型需求決定是否執行。資源不足時縮小測試範圍或回報限制，不為達成固定數值而停止其他工作。
 
 ### 4. Benchmark 完成後還原 OpenClaw
 
-若步驟 1 有停止 OpenClaw，benchmark 全部完成後執行：
+若步驟 1 曾在授權範圍內停止指定 OpenClaw 測試服務，結束或失敗時依記錄恢復原狀；只恢復本次實際變更的服務。以下為同一已核對部署的範例：
 ```bash
 cd ~/openclaw && docker compose start openclaw-gateway
 echo "OpenClaw restarted"
@@ -118,7 +115,7 @@ else:
 
 - 若某模型**已有 benchmark 記錄** → 直接沿用，不重跑
 - 若機器上有模型**但無 benchmark 記錄** → 詢問使用者是否要補跑
-- 若是**新模型**（需先 pull）→ 自動 pull 後跑 benchmark
+- 若是**新模型**（需先 pull）→ 核對來源、磁碟空間及本次下載授權，再 pull 並執行 benchmark
 
 ## Step 4：Pull 新模型
 

@@ -87,7 +87,9 @@ jobs:
       - name: Run public core with local evidence
         run: node scripts/critical-relay/test-runner.js
       - name: Verify portable skill adapters
-        run: node --test scripts/chatgpt-core/template/scripts/skill.test.cjs scripts/codex-native-core/publish.test.mjs
+        run: |
+          node --test scripts/chatgpt-core/template/scripts/skill.test.cjs scripts/codex-native-core/publish.test.mjs
+          python3 scripts/chatgpt-core/template/scripts/import-snapshot.test.py
       # 即使測試失敗仍保存指定的去敏證據；不把失敗結論改成成功。
       - name: Preserve test evidence
         if: always()

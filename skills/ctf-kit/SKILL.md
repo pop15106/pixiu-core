@@ -1,8 +1,8 @@
 ---
 disable-model-invocation: true
 name: ctf-kit
-description: "CTF 逆向工程解題工具箱 — 聚焦 Windows 應用程式驗證繞過。從開題偵察到 bypass 驗證的完整流程引導，內建實戰踩坑經驗。"
-version: 0.3.0
+description: "CTF 與已授權 Windows 逆向測試工具箱。使用者明確選用本技能，且目標為競賽題目、自有實驗程式或具明確範圍的授權測試時使用；先核對目標與授權，再進行偵察、分析及驗證。"
+version: 0.3.1
 triggers: ["ctf", "reverse", "bypass", "crack", "逆向", "繞過驗證", "破解"]
 license: MIT
 compatibility: "Requires filesystem-based agent (Claude Code or similar) with bash, Python 3. Windows dynamic analysis environment (physical or VM) recommended."
@@ -19,11 +19,15 @@ Windows 應用程式驗證繞過的實戰 playbook。
 
 ## 適用範圍
 
-本 skill 適用於：
-- Windows PE 執行檔的授權/認證繞過
-- 各種保護殼（VMProtect、Themida、UPX、自製殼）
-- 網路驗證、本地驗證、時間驗證
-- 紅隊演練中的軟體授權 bypass
+先確認題目或系統擁有者的授權、目標檔案與程序、測試環境及允許的操作。既有授權涵蓋本次相同範圍時直接沿用；授權或目標不明時，只進行靜態風險說明與必要確認。
+
+本 skill 的操作範圍限於：
+- CTF 題目或自有實驗程式的 Windows PE 驗證邏輯。
+- 在上述範圍內分析保護殼（VMProtect、Themida、UPX、自製殼）。
+- 已授權測試環境中的網路、本地與時間驗證。
+- 有明確書面範圍的紅隊演練；遵守約定的目標、時段及停止條件。
+
+第三方正式服務、付費授權與存取控制不因本技能而取得測試或繞過權限。需要改檔、注入、停程序或安裝工具時，逐項核對既有授權與平台權限，保留原檔及恢復方式。
 
 **不適用時的導向：**
 
@@ -58,7 +62,7 @@ Windows 應用程式驗證繞過的實戰 playbook。
 
 ## 第一部分：處理準則
 
-> 這些準則適用於所有 Windows 驗證繞過場景，不限於特定保護殼。
+> 這些準則適用於上述已確認授權的 Windows 測試場景。
 > 技術會因目標不同而變，但思維方式不會。
 
 ### 準則 1：對齊目標，反覆確認
@@ -67,7 +71,7 @@ Windows 應用程式驗證繞過的實戰 playbook。
 
 ```
 □ 目標是什麼？（找 flag？bypass 認證進主畫面？取得特定資料？）
-□ 目標「不是」什麼？（不要搜 flag 如果目標是 bypass；不要提議用真 key 如果目標是繞過驗證）
+□ 授權涵蓋哪些測試？（題目檔、測試帳號、服務、操作方式與停止條件）
 □ 有時效性限制嗎？（server 在線時間、key 有效期）
 ```
 
