@@ -333,3 +333,30 @@ require('node:test')('Pro析／X析 載入合併後的 analyze-style 與對應�
     }
   }
 });
+
+// Claude 專屬版本（.claude/skills/）必須與共用版保持相同骨架，且不含 ChatGPT 專屬限制
+require('node:test')('Claude 版 analyze-style 與 critical-relay 骨架與共用版一致', () => {
+  const core = path.resolve(path.dirname(actualManifestPath()), '..', '..');
+  const read = rel => fs.readFileSync(path.join(core, rel), 'utf8');
+  const headings = text => text.split('\n').filter(line => /^#{2,3} [PXA]\d/.test(line)).map(line => line.trim());
+  for (const rel of ['analyze-style/references/pro.md', 'analyze-style/references/xhigh.md', 'analyze-style/SKILL.md']) {
+    const shared = read(`skills/${rel}`);
+    const claude = read(`.claude/skills/${rel}`);
+    assert.deepStrictEqual(headings(claude), headings(shared), rel);
+    assert.ok(!/純文字|Instant|pixiu-native-core|產品介面|宿主/.test(claude), `${rel} 仍含 ChatGPT 專屬寫法`);
+  }
+  assert.match(read('.claude/skills/analyze-style/SKILL.md'), /唯讀/);
+  const crShared = read('skills/critical-relay/SKILL.md');
+  const crClaude = read('.claude/skills/critical-relay/SKILL.md');
+  for (const phase of ['UNDERSTAND', 'COUNTERSEARCH', 'VERIFY', 'RECHALLENGE', 'Completion Gate']) {
+    assert.ok(crShared.includes(phase) && crClaude.includes(phase), phase);
+  }
+  assert.ok(!/ChatGPT|DevSpace|Dev 選擇|啟用 Dev 讀|Chat 啟動與 Dev/.test(crClaude), 'critical-relay Claude 版仍含 Chat／Dev 流程');
+  assert.match(crClaude, /沒有 Dev 選項/);
+  for (const tier of ['| 輕量 |', '| 標準 |', '| 深度 |', '升降級規則']) assert.ok(crClaude.includes(tier), tier);
+  const caseReview = read('.claude/skills/critical-relay/references/case-and-review.md');
+  for (const term of ['案件卡與跨輪續接', '最多八輪', 'VERIFY → RECHALLENGE']) assert.ok(caseReview.includes(term), term);
+  assert.ok(!/Dev 選擇｜|workspaceId|DevSpace-work_new/.test(caseReview));
+  assert.match(read('CLAUDE.md'), /cr-chat-dev-policy\.md` 不讀/);
+  assert.strictEqual(read('.claude/skills/critical-relay/references/lifecycle.md').includes('ChatGPT'), false);
+});

@@ -11,6 +11,10 @@ Claude 以低 Token 模式連結 PixiuCore。
 
 Router 無法執行時才以 `vault/capabilities/capability-manifest.json` 降級路由。一般 Session 不全文載入 `user_rules.md`、identity、`memory-summary.md`、recap、decisions、全部 Skills、Workflows、Hooks 或 Agents。需要治理原文、舊決策或特定工作流時再按需載入。
 
+## Claude 專屬版本
+
+Pro析／X析 與 CR 使用 `.claude/skills/` 的版本：分析時可唯讀取證，CR 帳本放本機 `.cr/`，不走 Chat／Dev 流程。Bootstrap 或 Router 指向 `skills/analyze-style/` 或 `skills/critical-relay/` 時，改讀 `.claude/skills/` 下相同路徑；「分析時關閉工具」的規定不適用於 Claude。Claude 沒有 Dev 選項：Router 回傳的 `vault/governance/cr-chat-dev-policy.md` 不讀，也不詢問是否啟用 Dev。
+
 ## Claude 邊界
 
 - Hooks 以 `ECC_HOOK_PROFILE=minimal|standard|strict` 控制成本。
