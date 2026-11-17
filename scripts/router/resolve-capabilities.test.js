@@ -298,3 +298,27 @@ require('node:test')('實際母體保留風險與純文字入口且沒有重複�
     assert.strictEqual(result.capabilities.includes('critical-reasoning'), false, query);
   }
 });
+
+require('node:test')('findMissingFiles 只列出母體中不存在的檔案', () => {
+  const { findMissingFiles } = require('./resolve-capabilities');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-router-missing-'));
+  fs.mkdirSync(path.join(root, 'skills', 'a'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'skills', 'a', 'SKILL.md'), '# a');
+  const missing = findMissingFiles(['skills/a/SKILL.md', 'vault/context/pclms-overview.md'], root);
+  assert.deepStrictEqual(missing, ['vault/context/pclms-overview.md']);
+  assert.deepStrictEqual(findMissingFiles(undefined, root), []);
+});
+
+require('node:test')('CLI 在 filesToLoad 有缺檔時輸出 missing 欄位', () => {
+  const { execFileSync } = require('child_process');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pixiu-router-cli-'));
+  const capDir = path.join(root, 'vault', 'capabilities');
+  fs.mkdirSync(capDir, { recursive: true });
+  fs.writeFileSync(path.join(root, 'legacy.md'), '# legacy');
+  fs.writeFileSync(path.join(capDir, 'capability-manifest.json'), JSON.stringify(manifest));
+  const out = JSON.parse(execFileSync(process.execPath, [
+    path.join(__dirname, 'resolve-capabilities.js'), '追 PCLMS 流程', path.join(capDir, 'capability-manifest.json')
+  ], { encoding: 'utf8' }));
+  assert.deepStrictEqual(out.filesToLoad, ['legacy.md', 'pclms.md']);
+  assert.deepStrictEqual(out.missing, ['pclms.md']);
+});
