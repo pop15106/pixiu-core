@@ -60,3 +60,9 @@ vault/identity/
 
 # CR 本機測試證據、執行狀態及交接資料預設不提交
 /.cr/
+
+# Obsidian 每台機器各自的視窗配置，不進版控（plugins 與設定保留）
+.obsidian/workspace.json
+
+# fleet-agent-cleanup.ps1 產生的本機備份，git 歷史已保留舊版
+/Backup/
