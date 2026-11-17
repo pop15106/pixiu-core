@@ -10,7 +10,7 @@
 
 ## 全生命週期 CR：研究→設計→開發→驗證
 
-本版將研究、方案評估、程式開發與既有 CR Verification 連在同一份 state。來源在 `scripts/critical-relay/lifecycle.js`，可由 Router 載入 `skills/critical-relay-lifecycle/SKILL.md` 與 `.agent/workflows/cr-lifecycle.md`。
+本版將研究、方案評估、程式開發與既有 CR Verification 連在同一份 state。來源在 `scripts/critical-relay/lifecycle.js`，可由 Router 載入 `skills/critical-relay/references/lifecycle.md` 與 `.agent/workflows/cr-lifecycle.md`。
 
 新任務採 `pixiu.cr-lifecycle.v1` 並固定政策 binding，舊任務不被強制升版：
 

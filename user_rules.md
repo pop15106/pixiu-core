@@ -17,7 +17,7 @@ readAt: on-demand
 2. **[L1-安全層]**：我的操作安全嗎？(安全護欄禁令；可調用 ECC `security-reviewer` agent 執行 OWASP 掃描)
 3. **[L2-心智層]**：我思考得夠深嗎？(採用 `claude-reasoning-modes` 與 BDI 認知進行深度思考與自我驗證；ECC `planner` + `architect` agents 輔助規劃)
 4. **[L3-流程層]**：我的工作步驟對嗎？(採用 `architect-protocol` 定義的 5 大工程模組；ECC `/plan` 指令強制規劃審批)
-5. **[L4-技能層]**：我如何執行具體戰術？(呼叫 `.agent/skills/` 下的各領域專家 Skill；ECC 提供 90 個技能涵蓋：TDD、E2E、後端、前端、各語言框架、持續學習)
+5. **[L4-技能層]**：我如何執行具體戰術？(呼叫 `skills/` 下的 Skill，這是唯一主來源；`.agent/skills/` 只保留 `skills/` 沒有的 ECC 補充技能，同名者以 `skills/` 為準)
 6. **[L5-經驗層]**：前輩有留下相關教訓嗎？(執行前必檢索 `troubleshooting-master` 經驗庫；ECC `instinct-status` 查閱累積直覺)
 7. **[L6-校準層]**：我這次的表現是否值得信任？(基於憲法依從度的信用評等與獎懲；ECC `/learn` 萃取本次模式回饋學習迴圈)
 
@@ -139,7 +139,7 @@ readAt: on-demand
 
 ---
 
-> 💡 **操作指南**請參考 `.agent/skills/` 與 `.agent/extensions/`。使用 `Pixiu: 更新上下文` 指令讓所有 AI 重新載入此規則。
+> 💡 **操作指南**請參考 `skills/`（主來源）、`.agent/skills/`（ECC 補充）與 `.agent/extensions/`。使用 `Pixiu: 更新上下文` 指令讓所有 AI 重新載入此規則。
 >
 > 🚀 **ECC 增強指令**（Claude Code / Antigravity 可用）：
 > - `/plan` → 強制規劃審批（L3）｜`/tdd` → 測試驅動開發（L4）｜`/code-review` → 全方位審查（L6）

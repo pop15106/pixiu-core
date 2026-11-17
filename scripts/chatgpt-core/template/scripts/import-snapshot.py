@@ -214,8 +214,9 @@ def import_snapshot(archive_path, commit):
                "能力：" + str(manifest["capabilityCount"]), "技能規格：" + str(len(skills)),
                "Workflow：" + str(len(workflows)), "", "這是固定版本快照。原始規格及流程按需載入。",
                "snapshot.json 的完整檔案清單由程式驗證，不需要全文送入對話。"]
-    for name in ("critical-relay", "critical-relay-lifecycle"):
-        body = data_by_path["skills/" + name + "/SKILL.md"].decode("utf-8-sig")
+    for name, rel in (("critical-relay", "skills/critical-relay/SKILL.md"),
+                      ("critical-relay-lifecycle", "skills/critical-relay/references/lifecycle.md")):
+        body = data_by_path.get(rel, b"").decode("utf-8-sig")
         match = re.search(r"^version:\s*(.+)$", body, re.M)
         version.append(name + "：" + (match.group(1).strip() if match else "未標示"))
     generated["version.md"] = "\n".join(version) + "\n"

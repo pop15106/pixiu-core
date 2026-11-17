@@ -322,3 +322,14 @@ require('node:test')('CLI 在 filesToLoad 有缺檔時輸出 missing 欄位', ()
   assert.deepStrictEqual(out.filesToLoad, ['legacy.md', 'pclms.md']);
   assert.deepStrictEqual(out.missing, ['pclms.md']);
 });
+
+require('node:test')('Pro析／X析 載入合併後的 analyze-style 與對應模式檔', () => {
+  for (const [query, mode] of [['Pro析', 'pro'], ['X析', 'xhigh']]) {
+    const result = safeResolveFromFile(query, actualManifestPath());
+    assert.ok(result.filesToLoad.includes('skills/analyze-style/SKILL.md'), query);
+    assert.ok(result.filesToLoad.includes(`skills/analyze-style/references/${mode}.md`), query);
+    for (const file of result.filesToLoad) {
+      assert.ok(fs.existsSync(path.join(path.dirname(actualManifestPath()), '..', '..', file)), file);
+    }
+  }
+});

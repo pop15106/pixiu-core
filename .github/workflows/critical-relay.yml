@@ -33,7 +33,7 @@ on:
       - "commands/go.md"
       - "commands/cr-lifecycle.md"
       - ".agent/workflows/cr-lifecycle.md"
-      - ".agents/skills/critical-relay-lifecycle/**"
+      - ".agents/skills/analyze-style/**"
       - ".gitignore"
       - ".github/workflows/critical-relay.yml"
   pull_request:
@@ -67,7 +67,7 @@ on:
       - "commands/go.md"
       - "commands/cr-lifecycle.md"
       - ".agent/workflows/cr-lifecycle.md"
-      - ".agents/skills/critical-relay-lifecycle/**"
+      - ".agents/skills/analyze-style/**"
       - ".gitignore"
       - ".github/workflows/critical-relay.yml"
 

@@ -30,15 +30,13 @@ param(
     [string[]]$Skills = @(
         'legacy-java-flow-tracing',
         'critical-relay',
-        'critical-relay-lifecycle',
         'change-review-evidence',
         'requirement-confirmation',
         'system-documentation',      # change-review-evidence / requirement-confirmation 的相依
         'make-docx',                 # system-documentation 產出 DOCX 時使用
         'pixiu-verify-loop',
         'pixiu-session-recap',
-        'analyze-pro-style',
-        'analyze-xhigh-style',
+        'analyze-style',             # Pro析／X析（兩種模式）
         'java-coding-standards',     # 手動呼叫（disable-model-invocation: true）
         'job-scout'                  # 手動呼叫（disable-model-invocation: true）
     ),

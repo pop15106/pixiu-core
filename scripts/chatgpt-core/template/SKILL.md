@@ -15,9 +15,9 @@ GitHub 母體保存完整版本；本 Skill 提供精簡入口與按需參考；
 
 ## 選擇流程
 
-1. 明確要求純文字 Pro析／/prostyle、X析／/xstyle 或 CRD 時，直接讀對應的 [Pro](references/core/skills/analyze-pro-style/SKILL.reference.md)、[XHigh](references/core/skills/analyze-xhigh-style/SKILL.reference.md) 或 [CRD](references/core/skills/cr-deep-reasoning-no-mcp/SKILL.reference.md)。載入後依規格關閉工具與子代理。已讀規格直接沿用；從開始要求零工具而規格不可見時請使用者貼入。維護、安裝或討論 Skill 不切換分析模式。
+1. 明確要求純文字 Pro析／/prostyle、X析／/xstyle 或 CRD 時，直接讀對應的 [Pro／XHigh 共用規格](references/core/skills/analyze-style/SKILL.reference.md)加對應模式檔（[Pro](references/core/skills/analyze-style/references/pro.md)、[XHigh](references/core/skills/analyze-style/references/xhigh.md)） 或 [CRD](references/core/skills/cr-deep-reasoning-no-mcp/SKILL.reference.md)。載入後依規格關閉工具與子代理。已讀規格直接沿用；從開始要求零工具而規格不可見時請使用者貼入。維護、安裝或討論 Skill 不切換分析模式。
 2. 其餘任務讀 [Bootstrap](references/core/vault/bootstrap/SESSION-BOOTSTRAP.md)，以參數陣列（shell: false）呼叫 `scripts/route.cjs`，將本次需求當成單一文字參數。只載入輸出的最多三個能力。無法安全傳參或執行時，用 [能力與觸發索引](references/capabilities.md)；明寫路由腳本未執行。
-3. CR 命中時讀 [CR](references/core/skills/critical-relay/SKILL.reference.md)、[Lifecycle](references/core/skills/critical-relay-lifecycle/SKILL.reference.md)、[流程](references/core/.agent/workflows/cr-lifecycle.md)、[Chat／Dev 規範](references/core/vault/governance/cr-chat-dev-policy.md) 及 [風險規範](references/core/vault/governance/cr-risk-review.md)。沿用同一案件，完成主張、支持與反證、取捨、實測、重新挑戰及風險驗收。
+3. CR 命中時讀 [CR](references/core/skills/critical-relay/SKILL.reference.md)、[Lifecycle](references/core/skills/critical-relay/references/lifecycle.md)、[流程](references/core/.agent/workflows/cr-lifecycle.md)、[Chat／Dev 規範](references/core/vault/governance/cr-chat-dev-policy.md) 及 [風險規範](references/core/vault/governance/cr-risk-review.md)。沿用同一案件，完成主張、支持與反證、取捨、實測、重新挑戰及風險驗收。
 4. 其他母體功能依 [技能索引](references/skills.md) 與 [Workflow 索引](references/workflows.md) 選取原文。外部資料缺失時明列依賴，保持可完成部分的既定流程。
 
 ## 上下文預算
