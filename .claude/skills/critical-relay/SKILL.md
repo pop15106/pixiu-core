@@ -1,8 +1,8 @@
 ---
 name: critical-relay
-description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、開 CR、建立正式 CR、CR 完整自動接力。
+description: 以「先做，再懷疑；主動推翻，推不翻才往下一棒接力」執行對抗搜尋、反證、交叉驗證與完整自動接力。觸發詞：對抗搜尋、懷疑每個論點、反證、反例、交叉驗證、批判搜尋、Critical Relay、開 CR、建立正式 CR、CR 完整自動接力、CR 輕量、輕量 CR、CR 深度、深度 CR。依風險分輕量／標準／深度三級，輕量級不建帳本。
 origin: Pixiu
-version: 0.6.0
+version: 0.6.0-claude.1
 language: zh-TW
 ---
 
@@ -32,11 +32,29 @@ Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動�
 - 疊加模式：`對抗搜尋，開完整自動接力`。Router 會同時載入 `critical-reasoning` 與 `execution-progress`。
 - 單獨模式只增加懷疑、反證、交叉驗證與 completion gate；不會自動啟用 Git／Release／Deploy 或 Agent 權限。
 
+## 分級：先選深度再開始
+
+開 CR 後第一步先選級別，並用一行告訴使用者選了哪級、為什麼。使用者指定「CR 輕量」「CR 深度」時照指定；沒指定時依下表自動判斷，拿不準就選高一級。
+
+| 級別 | 什麼時候用 | 帳本 | 反證與覆核 | 完成判定 |
+| --- | --- | --- | --- | --- |
+| 輕量 | 可逆、範圍小的分析或修改；只讀查詢；文件與說明 | 不建 `.cr/`，主張、證據、反證直接寫在回覆或任務清單 | 每個核心主張至少一次實際反向查找（grep、git 歷史、測試或來源）；驗證後再挑戰一次 | 逐條列「主張 → 證據 → 反證結果」；標明「輕量 CR，未跑完成閘門」 |
+| 標準 | 一般程式修改、跨檔或跨層的變更、會影響其他人的結論 | `.cr/state.json` 與 `.cr/handoff.md` | 至少比較兩個方案；每個 supported 主張都有 challenge 紀錄 | `critical-relay.js check` exit 0 |
+| 深度 | Production、DB 寫入或 DDL、SP 參數變更、資安、資損、事故根因、不可逆操作、結論會影響決策的研究 | 同標準，並依 `vault/governance/cr-risk-review.md` 完整做風險盤點 | 核心主張用兩個不同來源位置交叉查核；額外做反例測試；完成前建議請 Codex 或使用者本人做獨立審查 | 完成閘門通過；沒有獨立審查時標「僅同模型自我覆核」 |
+
+升降級規則：
+
+- 過程中碰到深度級的條件（例如發現要改 DB、找到 high／critical 反證），立刻升級並補上該級要求，不等做完再補。
+- 只有使用者明說才降級；已記錄的證據與反證不刪。
+- 「CR 完整自動接力」與實作類 CR 至少是標準級，因為交付契約需要 `.cr/` 帳本與完成閘門。
+- 下方「標準流程」與「Completion Gate」完整適用於標準與深度級；輕量級照同樣的十個階段思考，但不填 state。
+- 三級都保留核心原則：先做、再懷疑、實際找反證、驗證後再挑戰；差別只在記錄方式與檢查強度。
+
 ## 案件與帳本
 
 本版沒有 Dev 選項：直接在本機推進，不詢問、不等待 Dev，也不讀 `vault/governance/cr-chat-dev-policy.md`。
 
-- 案件帳本用目前 repo 的 `.cr/state.json` 與 `.cr/handoff.md`（`.cr/` 不進版控）。新案件以 `relay-evidence.js init`（實作）或 `init-lifecycle`（研究／設計／開發全流程）建立；已有 `.cr/` 時先讀取並續接，不重建、不清除失敗紀錄。
+- 標準與深度級的案件帳本用目前 repo 的 `.cr/state.json` 與 `.cr/handoff.md`（`.cr/` 不進版控）。新案件以 `relay-evidence.js init`（實作）或 `init-lifecycle`（研究／設計／開發全流程）建立；已有 `.cr/` 時先讀取並續接，不重建、不清除失敗紀錄。
 - 進度用任務清單呈現：每個 completionCriterion 一個項目，VERIFY → RECHALLENGE 也各一項。
 - 使用者明確要求同步到 Hermes 或其他 workflow 帳本時，才依該系統的授權與 `criticalRelayRequired=true` 契約處理。
 - 啟動、帳本建立與完成閘門分別回報；建立案件不要求先通過完成閘門。
@@ -201,4 +219,4 @@ const executionContract = createExecutionContract({
 
 ## 風險與分析品質
 
-CR 啟動時同時讀取 `vault/governance/cr-risk-review.md`。使用「CR 風險盤點」或「CR 風險審查」可明確要求此覆核。每項需求連結主張與驗收證據，依原始來源分組核對獨立性，記錄競爭解釋、敏感條件與決策重開條件。盤點未知項及剩餘風險；程式強制風險處置證據與版本綁定，人工核對真實授權、來源品質與盤點完整性。新 run、環境或來源改變後重新驗證。
+標準與深度級啟動時讀取 `vault/governance/cr-risk-review.md`（深度級完整盤點）；輕量級只在出現風險條件時讀取並升級。使用「CR 風險盤點」或「CR 風險審查」可明確要求此覆核。每項需求連結主張與驗收證據，依原始來源分組核對獨立性，記錄競爭解釋、敏感條件與決策重開條件。盤點未知項及剩餘風險；程式強制風險處置證據與版本綁定，人工核對真實授權、來源品質與盤點完整性。新 run、環境或來源改變後重新驗證。
