@@ -32,8 +32,8 @@ class ImportSnapshotTests(unittest.TestCase):
         self.data = {name: b"fixture\n" for name in IMPORTER.REQUIRED}
         self.data["vault/capabilities/capability-manifest.json"] = json.dumps(
             {"capabilities": [], "resourcePolicy": {"localPrivate": {}}}).encode()
-        for name in ("critical-relay", "critical-relay-lifecycle"):
-            self.data["skills/" + name + "/SKILL.md"] = b"version: 0.1.0\n"
+        for rel in ("skills/critical-relay/SKILL.md", "skills/critical-relay/references/lifecycle.md"):
+            self.data[rel] = b"version: 0.1.0\n"
 
     def restore_module(self):
         IMPORTER.ROOT, IMPORTER.REF, IMPORTER.CORE = self.original

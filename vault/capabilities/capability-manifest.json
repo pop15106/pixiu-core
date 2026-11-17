@@ -186,14 +186,17 @@
       "aliases": [
         "Pro析",
         "/prostyle",
-        "analyze-pro-style"
+        "analyze-pro-style",
+        "analyze-style"
       ],
       "priority": 51,
       "load": {
         "skills": [
-          "skills/analyze-pro-style/SKILL.md"
+          "skills/analyze-style/SKILL.md"
         ],
-        "contexts": [],
+        "contexts": [
+          "skills/analyze-style/references/pro.md"
+        ],
         "governance": []
       },
       "requiredWhenMatched": true
@@ -214,9 +217,11 @@
       "priority": 51,
       "load": {
         "skills": [
-          "skills/analyze-xhigh-style/SKILL.md"
+          "skills/analyze-style/SKILL.md"
         ],
-        "contexts": [],
+        "contexts": [
+          "skills/analyze-style/references/xhigh.md"
+        ],
         "governance": []
       },
       "requiredWhenMatched": true
@@ -275,10 +280,11 @@
       "priority": 47,
       "load": {
         "skills": [
-          "skills/critical-relay/SKILL.md",
-          "skills/critical-relay-lifecycle/SKILL.md"
+          "skills/critical-relay/SKILL.md"
         ],
-        "contexts": [],
+        "contexts": [
+          "skills/critical-relay/references/lifecycle.md"
+        ],
         "governance": [
           "vault/governance/cr-chat-dev-policy.md",
           ".agent/workflows/cr-lifecycle.md",

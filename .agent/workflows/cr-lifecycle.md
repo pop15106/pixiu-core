@@ -53,7 +53,7 @@ node scripts/critical-relay/critical-relay.js check .cr/state.json
 
 `.cr/research-event.json` 由操作者依**真實證據**建立；CLI 不自動搜尋網頁、生成程式碼或執行模型。禁止無授權 push、Release、Deploy、DB 寫入、任意刪鎖、啟動子 Agent 或假造 PASS。
 
-詳細規則：`skills/critical-relay-lifecycle/SKILL.md`；程式：`scripts/critical-relay/lifecycle.js`。
+詳細規則：`skills/critical-relay/references/lifecycle.md`；程式：`scripts/critical-relay/lifecycle.js`。
 
 ## 風險處置與重開
 

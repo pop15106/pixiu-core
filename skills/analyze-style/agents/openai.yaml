@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pro／XHigh 參考分析"
+  short_description: "用 Pro析 或 X析 啟動：依模式核對目標、來源、原值與反證，以同一模型完成純文字分析及驗收"
+  default_prompt: "請使用 $analyze-style，依我用的觸發詞（Pro析 或 X析）載入對應模式檔後分析目前對話資料；分析階段維持工具與子代理關閉。"
+policy:
+  allow_implicit_invocation: true

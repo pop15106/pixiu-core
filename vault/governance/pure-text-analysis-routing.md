@@ -1,6 +1,6 @@
 # 純文字分析路由規範
 
-使用者明確要求 Pro 參考分析、Pro析、/prostyle 或 analyze-pro-style 時，載入 `skills/analyze-pro-style/SKILL.md`；要求 XHigh 參考分析、X析、/xstyle 或 analyze-xhigh-style 時，載入 `skills/analyze-xhigh-style/SKILL.md`。兩者以同一模型依序切換視角，包含目標與計畫、原值與來源、多輪覆核及驗收。
+使用者明確要求 Pro 參考分析、Pro析、/prostyle 或 analyze-pro-style 時，載入 `skills/analyze-style/SKILL.md` 與 `skills/analyze-style/references/pro.md`；要求 XHigh 參考分析、X析、/xstyle 或 analyze-xhigh-style 時，載入同一份 SKILL.md 與 `references/xhigh.md`。兩種模式（2026-11 由兩個 Skill 合併為 `analyze-style`）以同一模型依序切換視角，包含目標與計畫、原值與來源、多輪覆核及驗收。
 
 這類純文字要求先於一般 Capability Router 處理：只載入明確選用的規格；規格已在對話中時直接沿用。完成載入後，依該 Skill 維持工具、MCP、外部查詢及子代理關閉。來源或測試不足時交付未執行的查核計畫。使用者要求從開始就零工具而規格尚不可見時，請其貼入完整文字版。載入行為與額度依宿主判定，不宣稱免額度。
 

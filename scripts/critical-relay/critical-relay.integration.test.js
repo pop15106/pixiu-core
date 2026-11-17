@@ -89,7 +89,7 @@ function testLifecycleExplicitRequestsAndNegations() {
     'CR 開發功能', 'CR開發功能', 'CR 全流程', 'CR全流程', 'CR Research', 'CR Development']) {
     const routed = resolveCapabilities(request, manifest);
     assert.ok(routed.capabilities.includes('critical-reasoning'), request);
-    assert.ok(routed.filesToLoad.includes('skills/critical-relay-lifecycle/SKILL.md'), request);
+    assert.ok(routed.filesToLoad.includes('skills/critical-relay/references/lifecycle.md'), request);
     assert.ok(routed.filesToLoad.includes('.agent/workflows/cr-lifecycle.md'), request);
   }
   for (const request of ['SCR研究工具', '不要 CR 研究', '不開 CR 全流程', '一般研究開發']) {
@@ -97,8 +97,8 @@ function testLifecycleExplicitRequestsAndNegations() {
   }
 }
 function testLifecycleSourceMirrorMatches() {
-  const a = fs.readFileSync(path.join(core,'skills/critical-relay-lifecycle/SKILL.md'),'utf8');
-  const b = fs.readFileSync(path.join(core,'.agents/skills/critical-relay-lifecycle/SKILL.md'),'utf8');
+  const a = fs.readFileSync(path.join(core,'skills/critical-relay/references/lifecycle.md'),'utf8');
+  const b = fs.readFileSync(path.join(core,'.agents/skills/critical-relay/references/lifecycle.md'),'utf8');
   assert.equal(a,b);
   for(const term of ['RESEARCH','DESIGN','DEVELOPMENT','RECHALLENGE']) {
     assert.ok(fs.readFileSync(path.join(core,'.agent/workflows/cr-lifecycle.md'),'utf8').toUpperCase().includes(term));
@@ -110,8 +110,8 @@ function testCriticalRelayFilesExistInCleanCheckout() {
     'skills/critical-relay/SKILL.md',
     '.agents/skills/critical-relay/SKILL.md',
     'vault/governance/cr-chat-dev-policy.md',
-    'skills/critical-relay-lifecycle/SKILL.md',
-    '.agents/skills/critical-relay-lifecycle/SKILL.md',
+    'skills/critical-relay/references/lifecycle.md',
+    '.agents/skills/critical-relay/references/lifecycle.md',
     '.agent/workflows/cr-lifecycle.md',
     'commands/cr-lifecycle.md',
     'scripts/critical-relay/lifecycle.js',

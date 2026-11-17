@@ -139,7 +139,7 @@ Critical Relay 本身不授權 Agent/subagent，也不放寬寫入、push、Rele
 
 ## CR 全流程：研究／設計／開發／驗證
 
-使用者明確要求 CR 研究、CR 搜尋、CR 設計、CR 開發或 CR 全流程時，Router 額外載入 `skills/critical-relay-lifecycle/SKILL.md` 和 `.agent/workflows/cr-lifecycle.md`。研究查可追溯原始來源、反向搜尋與反證；設計比較取捨；開發執行反例；驗證仍依真實測試與 VERIFY → RECHALLENGE 判斷。
+使用者明確要求 CR 研究、CR 搜尋、CR 設計、CR 開發或 CR 全流程時，Router 額外載入 `skills/critical-relay/references/lifecycle.md` 和 `.agent/workflows/cr-lifecycle.md`。研究查可追溯原始來源、反向搜尋與反證；設計比較取捨；開發執行反例；驗證仍依真實測試與 VERIFY → RECHALLENGE 判斷。
 
 Lifecycle 決策事件沿用 canonical Critical Relay state，不另建第二份任務帳本。新建完整交付可使用 `relay-evidence.js init-lifecycle`；既有任務不強迫遷移。Lifecycle 每輪決策及反證只代表已記錄之查核，不是網路搜尋、UI/API 實測、額外 Agent 或自動取得 Push/Release/Deploy 權限。
 

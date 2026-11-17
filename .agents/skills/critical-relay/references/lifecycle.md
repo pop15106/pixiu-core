@@ -1,6 +1,7 @@
 ---
-name: critical-relay-lifecycle
-description: CR 全流程 Skill。CR 研究／搜尋／設計／開發／全流程或完整自動接力時，將資源查找、方案取捨、實作與實測證據納入共同的反證迴圈。單純一般研究或開發不強制啟動。
+type: skill-reference
+parent: critical-relay
+description: CR 全流程參考（2026-11 由 critical-relay-lifecycle Skill 併入 critical-relay）。CR 研究／搜尋／設計／開發／全流程或完整自動接力時，將資源查找、方案取捨、實作與實測證據納入共同的反證迴圈。單純一般研究或開發不強制啟動。
 origin: Pixiu
 version: 0.3.0
 language: zh-TW
@@ -8,13 +9,13 @@ language: zh-TW
 
 # CR Lifecycle：研究、設計、開發、驗證一體化
 
-> **路徑基準**：本 Skill 提到的 `scripts/`、`vault/`、`commands/`、`.agent/` 相對路徑都以母體根目錄為基準。不在母體目錄內執行時（例如在 PCLMS 專案開 Claude Code），先解析母體路徑（`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`），再以絕對路徑呼叫，例如 PowerShell：`node "$env:PIXIU_CORE\scripts\critical-relay\critical-relay.js" check <state.json>`。
+> **路徑基準**：本文件提到的 `scripts/`、`vault/`、`commands/`、`.agent/` 相對路徑都以母體根目錄為基準。不在母體目錄內執行時（例如在 PCLMS 專案開 Claude Code），先解析母體路徑（`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`），再以絕對路徑呼叫，例如 PowerShell：`node "$env:PIXIU_CORE\scripts\critical-relay\critical-relay.js" check <state.json>`。
 
-本 Skill **沿用** `skills/critical-relay/SKILL.md` 的 canonical CR state、驗收閘門、授權與單一 Agent 政策。不能另建競爭的 state，也不能當成啟動 Agent、Git push、Release、Deploy 或網路搜尋的權限。
+本文件是 `skills/critical-relay/SKILL.md` 的全流程參考，**沿用**其 canonical CR state、驗收閘門、授權與單一 Agent 政策。不能另建競爭的 state，也不能當成啟動 Agent、Git push、Release、Deploy 或網路搜尋的權限。
 
 ## 路由與啟用
 
-Router 明確命中 `CR 研究`、`CR 搜尋`、`CR 設計`、`CR 開發`、`CR 全流程`、`CR Research/Design/Development/Lifecycle`、`CR 完整自動接力` 或「反證」等意圖，載入本 Skill 和 `.agent/workflows/cr-lifecycle.md`。不使用裸 `CR`，也不從一般「研究」、「開發」、「找資料」臆測要求深度 CR；否定句跳過。
+Router 明確命中 `CR 研究`、`CR 搜尋`、`CR 設計`、`CR 開發`、`CR 全流程`、`CR Research/Design/Development/Lifecycle`、`CR 完整自動接力` 或「反證」等意圖，載入本文件和 `.agent/workflows/cr-lifecycle.md`。不使用裸 `CR`，也不從一般「研究」、「開發」、「找資料」臆測要求深度 CR；否定句跳過。
 
 已有 CR 任務沿用同一份 ledger/state，不重建或清除失敗紀錄。新完整交付任務用 `relay-evidence.js init-lifecycle` 或受控 workflow 加入 `lifecycleRequired=true` 與 `lifecycle`；舊任務維持原契約。
 
