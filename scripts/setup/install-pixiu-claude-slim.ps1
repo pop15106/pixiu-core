@@ -265,7 +265,7 @@ $MarkerBegin
 1. 需要母體規則時，先讀 ``$bootstrap``。
 2. 執行 ``node "$router" "<本次需求>"``。
 3. 只讀 Router 回傳的 ``filesToLoad``，最多 3 個 Capability；檔案不存在就略過並說明缺少哪個。
-4. Router 指向 ``skills/analyze-style/`` 或 ``skills/critical-relay/`` 時，改讀母體 ``.claude/skills/`` 下相同路徑（Pro析／X析 分析時可唯讀取證；CR 帳本放本機 ``.cr/``）。
+4. Router 指向 ``skills/analyze-style/`` 或 ``skills/critical-relay/`` 時，改讀母體 ``.claude/skills/`` 下相同路徑（Pro析／X析 分析時可唯讀取證；CR 帳本放本機 ``.cr/``）；沒有 Dev 選項，Router 回傳的 ``vault/governance/cr-chat-dev-policy.md`` 不讀。
 
 Router 無法執行時，才改用 ``$manifest`` 降級路由。一般 Session 不全文載入 user_rules.md、identity、memory-summary.md、recap、decisions、全部 Skills、Workflows、Hooks 或 Agents；需要治理原文時，從 ``$govIndex`` 按需路由。
 

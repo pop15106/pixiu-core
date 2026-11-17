@@ -13,7 +13,7 @@ Router 無法執行時才以 `vault/capabilities/capability-manifest.json` 降�
 
 ## Claude 專屬版本
 
-Pro析／X析 與 CR 使用 `.claude/skills/` 的版本：分析時可唯讀取證，CR 帳本放本機 `.cr/`，不走 Chat／Dev 流程。Bootstrap 或 Router 指向 `skills/analyze-style/` 或 `skills/critical-relay/` 時，改讀 `.claude/skills/` 下相同路徑；「分析時關閉工具」的規定不適用於 Claude。
+Pro析／X析 與 CR 使用 `.claude/skills/` 的版本：分析時可唯讀取證，CR 帳本放本機 `.cr/`，不走 Chat／Dev 流程。Bootstrap 或 Router 指向 `skills/analyze-style/` 或 `skills/critical-relay/` 時，改讀 `.claude/skills/` 下相同路徑；「分析時關閉工具」的規定不適用於 Claude。Claude 沒有 Dev 選項：Router 回傳的 `vault/governance/cr-chat-dev-policy.md` 不讀，也不詢問是否啟用 Dev。
 
 ## Claude 邊界
 

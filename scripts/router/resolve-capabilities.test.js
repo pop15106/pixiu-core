@@ -351,6 +351,8 @@ require('node:test')('Claude 版 analyze-style 與 critical-relay 骨架與共�
   for (const phase of ['UNDERSTAND', 'COUNTERSEARCH', 'VERIFY', 'RECHALLENGE', 'Completion Gate']) {
     assert.ok(crShared.includes(phase) && crClaude.includes(phase), phase);
   }
-  assert.ok(!/ChatGPT|DevSpace|cr-chat-dev-policy/.test(crClaude), 'critical-relay Claude 版仍含 Chat／Dev 流程');
+  assert.ok(!/ChatGPT|DevSpace|Dev 選擇|啟用 Dev 讀|Chat 啟動與 Dev/.test(crClaude), 'critical-relay Claude 版仍含 Chat／Dev 流程');
+  assert.match(crClaude, /沒有 Dev 選項/);
+  assert.match(read('CLAUDE.md'), /cr-chat-dev-policy\.md` 不讀/);
   assert.strictEqual(read('.claude/skills/critical-relay/references/lifecycle.md').includes('ChatGPT'), false);
 });

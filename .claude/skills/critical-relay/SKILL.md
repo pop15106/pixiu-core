@@ -34,7 +34,7 @@ Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動�
 
 ## 案件與帳本
 
-直接在本機推進，不需要詢問是否啟用 Dev：
+本版沒有 Dev 選項：直接在本機推進，不詢問、不等待 Dev，也不讀 `vault/governance/cr-chat-dev-policy.md`。
 
 - 案件帳本用目前 repo 的 `.cr/state.json` 與 `.cr/handoff.md`（`.cr/` 不進版控）。新案件以 `relay-evidence.js init`（實作）或 `init-lifecycle`（研究／設計／開發全流程）建立；已有 `.cr/` 時先讀取並續接，不重建、不清除失敗紀錄。
 - 進度用任務清單呈現：每個 completionCriterion 一個項目，VERIFY → RECHALLENGE 也各一項。
