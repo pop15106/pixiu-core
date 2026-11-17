@@ -17,7 +17,7 @@ function read(relativePath) {
 
 function testStartupPayloadStaysBelowBudget() {
   const report = buildReport(core);
-  const expectedBudgets = { codex: 8192, claude: 6144, gemini: 6144 };
+  const expectedBudgets = { codex: 8192, claude: 6144, gemini: 6144, generic: 6144 };
 
   for (const [profileName, budgetBytes] of Object.entries(expectedBudgets)) {
     const profile = report.startupProfiles[profileName];
@@ -175,6 +175,67 @@ function testGitFallbackBootstrapAndTemplatesStayMinimal() {
   }
 }
 
+function startupBlock(content) {
+  const match = content.replace(/\r\n/g, '\n').match(/^## 啟動\n\n((?:\d+\. .*\n)+)/m);
+  return match ? match[1] : null;
+}
+
+function testEntryFilesShareOneStartupSequence() {
+  const canonical = startupBlock(read('AGENTS.md'));
+  assert.ok(canonical, 'AGENTS.md 缺少「啟動」編號清單');
+  assert.match(canonical, /`PIXIU_CORE` → `PIXIU_CORE_PATH`/);
+  assert.match(canonical, /%USERPROFILE%\\\.pixiu-core/);
+  assert.match(canonical, /含 `vault\/bootstrap\/SESSION-BOOTSTRAP\.md` 的目前 repo/);
+  assert.match(canonical, /vault\/capabilities\/ROUTING\.md/);
+  assert.match(canonical, /vault\/governance\/INDEX\.md/);
+
+  // 工具入口保留同一段啟動流程，複製到其他專案時仍能獨立運作；以逐字比對防止各自漂移。
+  for (const relativePath of ['CLAUDE.md', 'CODEX.md', 'GEMINI.md']) {
+    assert.strictEqual(
+      startupBlock(read(relativePath)),
+      canonical,
+      `${relativePath} 的啟動流程必須與 AGENTS.md 逐字相同`
+    );
+  }
+
+  for (const relativePath of ['AGENTS.md', 'CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.codex/AGENTS.md']) {
+    const lines = read(relativePath).split(/\r?\n/).length;
+    assert.ok(lines <= 60, `${relativePath} 超過入口檔 60 行上限：${lines}`);
+  }
+}
+
+function testCommonEntryStaysToolNeutral() {
+  const agents = read('AGENTS.md');
+  assert.doesNotMatch(agents, /SourceEntrance|hermes-submit/i);
+  for (const delta of ['CLAUDE.md', '.codex/AGENTS.md', 'GEMINI.md']) {
+    assert.ok(agents.includes('`' + delta + '`'), `共同入口未指向 ${delta}`);
+  }
+
+  // Hermes 指令改為 Codex 按需載入；觸發條件仍常駐於 Codex 差異檔。
+  const codexDelta = read('.codex/AGENTS.md');
+  assert.match(codexDelta, /明確要求「用 Hermes」/);
+  assert.match(codexDelta, /hermes-routing\.md/);
+  assert.match(read('.codex/hermes-routing.md'), /hermes-submit-and-run\.ps1/);
+
+  const bridge = read('scripts/entry-sync/templates/generic.md');
+  assert.match(bridge, /PIXIU-GLOBAL-ENTRY:1 tool=generic/);
+  assert.match(bridge, /<core>\/AGENTS\.md/);
+  assert.match(bridge, /SESSION-BOOTSTRAP\.md/);
+  assert.match(bridge, /GIT-FALLBACK-BOOTSTRAP\.md/);
+  assert.match(bridge, /明確報錯/);
+}
+
+function testBootstrapCarriesConstitutionHardGates() {
+  const bootstrap = read('vault/bootstrap/SESSION-BOOTSTRAP.md');
+  assert.match(bootstrap, /先對齊理解.*我理解你要的是.*不做什麼/);
+  assert.match(bootstrap, /問句＝討論.*不改檔/);
+  assert.match(bootstrap, /先判斷是否建議啟用並說明原因/);
+  assert.match(bootstrap, /母體載入狀態.*實際讀取的入口與本次能力/);
+  assert.match(bootstrap, /第二大腦先查.*回讀.*驗證/);
+  assert.match(bootstrap, /\$HOME\/\.pixiu-core/);
+  assert.match(bootstrap, /vault\/capabilities\/ROUTING\.md/);
+}
+
 for (const scenario of [
   testStartupPayloadStaysBelowBudget,
   testEntryFilesUseRouterBeforeManifest,
@@ -184,7 +245,10 @@ for (const scenario of [
   testRepresentativeRoutes,
   testRecentWorkflowPhrasesRemainRoutable,
   testManifestUsesCanonicalSkillSources,
-  testGitFallbackBootstrapAndTemplatesStayMinimal
+  testGitFallbackBootstrapAndTemplatesStayMinimal,
+  testEntryFilesShareOneStartupSequence,
+  testCommonEntryStaysToolNeutral,
+  testBootstrapCarriesConstitutionHardGates
 ]) {
   test(scenario.name, scenario);
 }

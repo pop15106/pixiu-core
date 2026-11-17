@@ -19,6 +19,8 @@
 
 橋接檔含 `PIXIU-GLOBAL-ENTRY:1` marker。工具不會把 `user_rules.md`、identity、完整記憶、Skill 清單或 Hook 定義複製到使用者層入口。
 
+其他 AI 工具沒有自動安裝流程。`templates/generic.md` 是工具中立的橋接內容，指向母體的 `AGENTS.md`；需要時手動貼進該工具的全域指令位置。接入步驟見 `vault/governance/entry-files-alignment.md` 第 4.6 節。
+
 ## 唯讀檢查
 
 ```powershell

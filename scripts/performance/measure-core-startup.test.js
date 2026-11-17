@@ -40,7 +40,7 @@ function testBuildsNamedStartupProfiles() {
   fs.writeFileSync(path.join(root, 'vault', 'bootstrap', 'SESSION-BOOTSTRAP.md'), 'bootstrap', 'utf8');
 
   const profiles = measure.measureStartupProfiles(root);
-  assert.deepStrictEqual(Object.keys(profiles), ['codex', 'claude', 'gemini']);
+  assert.deepStrictEqual(Object.keys(profiles), ['codex', 'claude', 'gemini', 'generic']);
   assert.deepStrictEqual(profiles.codex.files, [
     'AGENTS.md',
     'vault/bootstrap/SESSION-BOOTSTRAP.md',
@@ -49,9 +49,15 @@ function testBuildsNamedStartupProfiles() {
   assert.strictEqual(profiles.codex.budgetBytes, 8192);
   assert.strictEqual(profiles.claude.budgetBytes, 6144);
   assert.strictEqual(profiles.gemini.budgetBytes, 6144);
+  assert.strictEqual(profiles.generic.budgetBytes, 6144);
+  assert.deepStrictEqual(profiles.generic.files, [
+    'AGENTS.md',
+    'vault/bootstrap/SESSION-BOOTSTRAP.md'
+  ]);
   assert.strictEqual(profiles.codex.withinBudget, true);
   assert.strictEqual(profiles.claude.withinBudget, true);
   assert.strictEqual(profiles.gemini.withinBudget, true);
+  assert.strictEqual(profiles.generic.withinBudget, true);
   assert.deepStrictEqual(profiles.codex.missingStartupFiles, []);
 }
 

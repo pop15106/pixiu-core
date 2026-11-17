@@ -298,3 +298,6 @@ require('node:test')('實際母體保留風險與純文字入口且沒有重複�
     assert.strictEqual(result.capabilities.includes('critical-reasoning'), false, query);
   }
 });
+
+// 路由索引由 Manifest 產生；併入本測試檔，讓既有 router 測試指令一併驗證。
+require('./build-routing-index.test.js');

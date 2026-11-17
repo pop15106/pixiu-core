@@ -105,6 +105,14 @@ const STARTUP_PROFILE_DEFINITIONS = Object.freeze({
       'vault/bootstrap/SESSION-BOOTSTRAP.md'
     ]),
     budgetBytes: 6144
+  }),
+  // 沒有專屬入口檔的工具只讀共同入口與 Bootstrap。
+  generic: Object.freeze({
+    files: Object.freeze([
+      'AGENTS.md',
+      'vault/bootstrap/SESSION-BOOTSTRAP.md'
+    ]),
+    budgetBytes: 6144
   })
 });
 

@@ -1,27 +1,14 @@
 # Codex Connection Protocol
 
-Codex 以低 Token 模式連結 PixiuCore。
+共同入口是母體的 `AGENTS.md`；下方啟動流程與它逐字相同，Codex 專屬差異集中在 `<core>/.codex/AGENTS.md`。
 
-## Session 啟動
+## 啟動
 
-1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
-2. 讀取 `vault/bootstrap/SESSION-BOOTSTRAP.md`。
-3. 執行 `node scripts/router/resolve-capabilities.js "<本次需求>"`。
-4. 只讀 Router 回傳的 `filesToLoad`；最多 3 個 Capability。
+1. 定位母體 `<core>`：`PIXIU_CORE` → `PIXIU_CORE_PATH` → 家目錄的 `.pixiu-core`（Windows：`%USERPROFILE%\.pixiu-core`）→ 含 `vault/bootstrap/SESSION-BOOTSTRAP.md` 的目前 repo。
+2. 讀 `<core>/vault/bootstrap/SESSION-BOOTSTRAP.md` 並照做；其餘檔案只在它或 Router 指到時才讀。
+3. 執行 `node <core>/scripts/router/resolve-capabilities.js "<本次需求>"`，只讀 `filesToLoad`；不能執行指令時改查 `<core>/vault/capabilities/ROUTING.md`。
+4. 其餘制度從 `<core>/vault/governance/INDEX.md` 按需路由。
 
-Router 無法執行時才以 `vault/capabilities/capability-manifest.json` 降級路由。一般 Session 不全文載入：`user_rules.md`、identity、`memory-summary.md`、recap、decisions、全部 Skills、Workflows、Hooks 或 Agents。遇到治理衝突、高風險操作或舊決策查詢時再讀對應原文。
+## Codex 專屬
 
-## Codex 職責
-
-- 實作前確認需求、允許路徑與驗證標準。
-- 程式碼審查重點：正確性、邊界值、失敗路徑、回歸風險、安全與可攜性。
-- 使用者未同意前不得派遣子 Agent；子 Agent 只取得精簡任務包。
-- 完成前重讀修改檔、檢查 `git diff`，並執行最小充分驗證。
-
-Capability 路由：
-
-```powershell
-node scripts/router/resolve-capabilities.js "<本次需求>"
-```
-
-完整制度按需從 `vault/governance/INDEX.md` 路由。
+接著讀 `<core>/.codex/AGENTS.md`：Codex 職責、Skill discovery 注意事項與 Hermes 路由都在那裡，本檔不重複。

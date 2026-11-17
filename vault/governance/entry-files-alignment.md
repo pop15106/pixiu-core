@@ -5,34 +5,60 @@ project: PIXIUCORE
 system: PIXIUCORE
 topic: entry-files-alignment
 status: active
-lastVerified: 2026-07-05
-tags: [pixiucore, governance, entry-files, routing, claude, codex, gemini]
-summary: 跨 AI 入口路由制度：四個入口檔只留精簡路由，制度本體集中在 vault/governance/。含各入口檔最小路由文字與套用步驟。
+lastVerified: 2026-11-17
+tags: [pixiucore, governance, entry-files, routing, claude, codex, gemini, agents-md]
+summary: 跨 AI 入口制度：AGENTS.md 是工具中立的共同入口，各工具入口檔只帶同一段啟動流程與專屬差異；含各工具實際讀取行為、強制力對照、新工具接入步驟與同步檢查清單。
 ---
 
 # 跨 AI 入口路由制度
 
 ## 1. 設計原則（為什麼要這樣做）
 
-1. **單一真源**：規則本體只存在一份，放 `vault/governance/` 與既有 `vault/sop/`、`vault/context/ai-mothership-loading-policy.md`。
-2. **入口檔只做路由**：`CLAUDE.md` / `CODEX.md` / `GEMINI.md` / `AGENTS.md` 各自只保留「路徑解析＋讀取序列＋該 AI 專屬差異」，上限 **60 行**。超過 60 行就是有規則長錯地方，要搬回本體。
-3. **改本體不改入口**：任何規則變更只改制度本體檔；入口檔只有在「路由目標變了」才改。這是防止四套入口漂移成四套制度的唯一機制。
-4. **與既有載入政策的分工**：`vault/context/ai-mothership-loading-policy.md` 管「載入什麼、何時載入」（L1-L6 分層、skills 路由、agent team 閘門），本檔管「入口檔的形狀與同步」。兩檔對入口檔內容描述不一致時，以本檔第 4 節為準；loading-policy 的「各 AI 入口規則」節與本檔重疊處，待提案合併（見 letter-to-future-sessions 未完成項目）。
+1. **單一真源**：規則本體只存在一份。常駐硬閘門在 `vault/bootstrap/SESSION-BOOTSTRAP.md`，制度本體在 `vault/governance/`、`vault/sop/` 與 `vault/context/ai-mothership-loading-policy.md`，L0 憲法是 `user_rules.md`。
+2. **`AGENTS.md` 是共同入口**：它不屬於任何一個工具，只寫「定位母體、讀 Bootstrap、執行 Router、按需路由」四步。會讀 `AGENTS.md` 的工具不需要另外寫檔就能接上母體。
+3. **工具入口只帶差異**：`CLAUDE.md`、`CODEX.md`、`GEMINI.md` 保留與 `AGENTS.md` 逐字相同的啟動四步，另加該工具的專屬差異。保留啟動四步，是因為這些檔會被工具單獨載入，也會被複製到其他專案，必須能獨立運作；逐字相同由測試強制，不靠人工同步。
+4. **規則要進 Bootstrap 才算跨工具**：一般 Session 不讀 `user_rules.md`。要每個工具每次都遵守的規則，必須在 Bootstrap 有一行摘要；只寫在憲法或單一工具入口檔的規則，其他工具看不到。
+5. **改本體不改入口**：規則變更只改制度本體或 Bootstrap；入口檔只有在「路由目標變了」才改。每個入口檔上限 **60 行**（測試強制），超過就是有規則長錯地方，要搬回本體。
+6. **與既有載入政策的分工**：`vault/context/ai-mothership-loading-policy.md` 管「載入什麼、何時載入」（L1-L6 分層、skills 路由、agent team 閘門），本檔管「入口檔的形狀與同步」。兩檔對入口檔內容描述不一致時，以本檔第 4 節為準。
 
-## 2. 現況盤點（2026-07-03）
+## 2. 現況盤點（2026-11-17）
 
-| 檔案 | 位置 | 狀態 |
+### 2.1 入口相關檔案
+
+| 檔案 | 角色 | 內容 |
 |---|---|---|
-| `vault/README.md` | vault | 已讀。init 序列健全，本次加一行指向 governance/INDEX |
-| `vault/context/ai-mothership-loading-policy.md` | vault | 已讀。內容良好，保留為載入政策本體，不重寫 |
-| `CLAUDE.md` | 母體根目錄 | 已讀（2026-07-03 快照）。36 行；bootstrap 第 2 步讀 vault/README.md → 已間接接上 governance。最終版加直連段 |
-| `CODEX.md` | 母體根目錄 | 已讀。43 行；同樣經 README 間接接上。最終版加直連段。`.codex/AGENTS.md` 仍【未確認】（快照未含子資料夾） |
-| `GEMINI.md` | 母體根目錄 | 已讀。34 行；原版把 README 列為「需要時才讀」→ 有斷線風險。最終版已改為必讀＋直連 |
-| `AGENTS.md` | 母體根目錄 | 已讀。165 行，實為 ECC 插件主說明檔——屬特例，見 4.4。原版未指向 README／governance，最終版已補 |
-| `user_rules.md` | 母體根目錄 | 已讀。L0 最高憲法確認。與現行實務有兩處衝突（recap 檔名時間戳、寫入豁免範圍），修訂屬必問級，見 letter 待辦 |
-| `SKILLS_INDEX.md` | 母體根目錄 | 已讀。最後更新 2026-03-18；agents/skills/commands 數量與 AGENTS.md、根 README 三處互相不一致，且未被任何入口路由 |
+| `AGENTS.md` | 共同入口（工具中立） | 啟動四步、工具差異指引、專案結構 |
+| `CLAUDE.md` | Claude 入口 | 啟動四步＋Claude 邊界 |
+| `GEMINI.md` | Gemini 入口 | 啟動四步＋Gemini 邊界 |
+| `CODEX.md` | Codex 橋接入口 | 啟動四步＋指向 `.codex/AGENTS.md` |
+| `.codex/AGENTS.md` | Codex 專屬差異 | Skill discovery、Codex 職責、Hermes 觸發條件 |
+| `.codex/hermes-routing.md` | Hermes 指令（按需） | 使用者明確要求用 Hermes 時才由 `.codex/AGENTS.md` 載入 |
+| `vault/bootstrap/SESSION-BOOTSTRAP.md` | 常駐硬閘門 | 唯一每次必讀的規則檔 |
+| `vault/capabilities/ROUTING.md` | 不能執行指令時的路由索引 | 由 Manifest 產生，勿手改 |
+| `scripts/entry-sync/templates/` | 使用者層橋接範本 | `claude`、`codex`、`gemini` 由 entry-sync 安裝；`generic` 供其他工具手動貼入 |
 
-> 讀取方式：根目錄無法掛載，由使用者複製快照至 `vault/_root-snapshot/`（2026-07-03）。四個入口檔的**合併後最終版**已產出於 `vault/_root-snapshot/updated/`，先備份、再由使用者回貼根目錄。
+### 2.2 各工具實際讀取行為
+
+2026-11-17 依各工具官方文件查證，未在每個工具內逐一實測；工具改版後要重新查證並更新本表。
+
+| 工具 | 專案層常駐入口 | 使用者層入口 | Skill 位置 | Hook |
+|---|---|---|---|---|
+| Claude Code | `CLAUDE.md`；有它時預設不讀 `AGENTS.md` | `~/.claude/CLAUDE.md` | `~/.claude/skills` | 有（`settings.json`） |
+| Codex | `AGENTS.md`（Git root 到目前目錄） | `~/.codex/AGENTS.md` | `.agents/skills`、`~/.agents/skills` | 有（`hooks.json` bridge） |
+| Gemini CLI | `GEMINI.md`；`context.fileName` 可加入 `AGENTS.md` | `~/.gemini/GEMINI.md` | 【未確認】 | 無 |
+| ChatGPT | 無；以上傳的 Skill 載入 | 無 | 上傳的 Skill 包 | 無 |
+| 其他會讀 `AGENTS.md` 的工具 | `AGENTS.md` | 各工具自訂，見 4.6 | 各工具自訂 | 各工具自訂 |
+
+查證來源：Claude Code `code.claude.com/docs/en/memory`、Codex `developers.openai.com/codex/guides/agents-md` 與 `/codex/concepts/customization`、Gemini CLI `geminicli.com/docs/cli/gemini-md/`、ChatGPT `help.openai.com/en/articles/20001066-skills-in-chatgpt`。
+
+### 2.3 強制力對照
+
+| 閘門 | Claude Code | Codex | Gemini、ChatGPT 與其他工具 |
+|---|---|---|---|
+| 機密掃描、Auto mode 閘門、變更範圍提醒、母體同步提醒 | Hook 攔截（`scripts/hooks/pixiu-guardrails.js`） | Hook bridge 攔截（`scripts/codex-bridge/`） | 無程式攔截 |
+| Bootstrap 其餘硬閘門（審批、最小改動、驗證、先對齊理解等） | 文字規則 | 文字規則 | 文字規則 |
+
+Hook 要在該台機器安裝後才生效（見第 5 節第 6 項）。沒有 Hook 的工具，所有閘門都只靠 Bootstrap 文字約束。
 
 ## 3. 衝突處理優先序（所有 AI 一體適用）
 
@@ -48,72 +74,51 @@ summary: 跨 AI 入口路由制度：四個入口檔只留精簡路由，制度�
 
 **發現入口檔之間互相矛盾時**：不要自行擇一吞掉。做法＝「按上表位階執行位階高者，同時把矛盾寫進 `vault/memory/agent-learning/observations/`（用模板），並在回覆結尾用一行告知使用者」。
 
-## 4. 各入口檔最小路由文字
+## 4. 各入口檔內容規範
 
-以下每段可直接貼入對應檔案。**套用步驟（每檔相同）**：
-1. 備份：`copy CLAUDE.md vault\governance\backups\2026-07-03\CLAUDE.md.bak`（其餘檔案同理）。
-2. 若現有檔案已包含 init 序列或載入政策連結：保留其 AI 專屬設定，僅「追加」下方第 3 點的 governance 路由段。
-3. 若現有檔案超過 60 行：把超出的規則內容剪下，搬到 `vault/governance/` 相應檔案或新檔，入口只留路由。
+### 4.1 啟動四步只有一個版本
 
-### 4.1 `CLAUDE.md`（Claude Code / Claude 桌面 / VSCode extension）
+以 `AGENTS.md` 的「## 啟動」為準，本檔不另外抄一份。`CLAUDE.md`、`CODEX.md`、`GEMINI.md` 的「## 啟動」必須與它逐字相同。修改時先改 `AGENTS.md`，再原樣貼到另外三檔，最後跑第 5 節第 1 項的測試。
 
-```markdown
-## PixiuCore 母體路由（governance）
+### 4.2 各檔可以放什麼
 
-1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
-2. Session 開始依序讀：
-   - `vault/README.md`（init 序列）
-   - `vault/governance/INDEX.md`（制度路由：何時讀哪份規則）
-3. 制度本體一律在 `vault/governance/` 與 `vault/context/ai-mothership-loading-policy.md`；本檔不承載規則內容。
-4. 派工、模型選擇、驗收：照 `vault/governance/model-dispatch-rules.md`。
-5. 拿不準要不要問使用者：照 `vault/governance/judgment-rubrics.md`。
-```
+- `AGENTS.md`：啟動四步、工具差異指引、專案結構。不放任何單一工具專用的指令。
+- `CLAUDE.md`：啟動四步＋Claude 邊界（Hook profile、Agent Team 指令、子 Agent 任務包、完成前驗證）。
+- `GEMINI.md`：啟動四步＋Gemini 邊界（沒有 Skill 或 Hook 時的運作方式、第一手來源驗證、`SESSION-INDEX.md`）。
+- `CODEX.md`：啟動四步＋指向 `.codex/AGENTS.md`。Codex 原生讀的是 `AGENTS.md`；`CODEX.md` 供使用者層橋接與專案複本使用。
+- `.codex/AGENTS.md`：Codex 專屬差異。必須提到 Bootstrap 與 Router。
 
-### 4.2 `CODEX.md`（Codex 桌面 / VSCode extension / CLI；`.codex/AGENTS.md` 同步指向）
+### 4.3 入口檔不可出現的內容
 
-```markdown
-## PixiuCore 母體路由（governance）
+- 要求 Session 啟動時讀 `memory-summary.md`、identity 或完整 `user_rules.md`。
+- 把 `capability-manifest.json` 當成第一步；Router 優先，不能執行時查 `ROUTING.md`。
+- `AGENTS.md` 與 `.codex/AGENTS.md` 不提 `GIT-FALLBACK-BOOTSTRAP.md`；Git fallback 由使用者層橋接處理。
+- 完整 Skill、Agent、模型或 Hook 清單。
 
-1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
-2. Session 開始依序讀 `vault/README.md`、`vault/governance/INDEX.md`。
-3. 制度本體在 `vault/governance/`；本檔與 `.codex/AGENTS.md` 只做路由，不寫規則。
-4. multi-agent / thread dispatch 前，先照 `vault/governance/model-dispatch-rules.md` 的派工三件套與回報合約。
-5. `config.toml` 的能力（threads、reasoning effort）不等於預設啟用；啟用前仍受 user approval gate 約束。
-```
+### 4.4 使用者層橋接
 
-### 4.3 `GEMINI.md`（Gemini CLI / Antigravity）
+`scripts/entry-sync/` 只管 Codex、Claude、Gemini 三個使用者層入口。`templates/codex.md` 的內容會被 Codex 原生發布器以雜湊辨識（`scripts/codex-native-core/publish.mjs` 的舊入口檢查）；修改它之前先確認工作機上 `~/.codex/AGENTS.md` 的狀態，改完重跑 entry-sync，否則發布器會停在「舊 Pixiu 入口與已知範本不同」。
 
-```markdown
-## PixiuCore 母體路由（governance）
+### 4.5 不能執行指令的工具
 
-1. 解析母體路徑：`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`。
-2. Session 開始依序讀 `vault/README.md`、`vault/governance/INDEX.md`。
-3. 無 subagent / hooks 能力時的退化模式：不派工，改用 `vault/governance/model-dispatch-rules.md` 第 7 節「單體模式」——自己分段執行＋每段用檢查清單自驗。
-4. 制度本體在 `vault/governance/`；本檔只做路由。
-```
+改讀 `vault/capabilities/ROUTING.md`。它由 `node scripts/router/build-routing-index.js` 從 Manifest 產生；Manifest 改動後要重跑，否則測試會失敗。
 
-### 4.4 `AGENTS.md`（母體根目錄）——特例
+### 4.6 新工具接入步驟
 
-實測發現它不是泛用入口檔，而是 ECC 插件的主說明檔（165 行，含 agents 清單、TDD、安全、風格規範）。**60 行上限不適用於它**；把插件內容硬搬走反而破壞 ECC 的功能。改用以下要求：
-
-1. 其「Pixiu Mothership Loading Policy」節的 Key rules 開頭必含兩行：session 開始讀 `vault/README.md` 與 `vault/governance/INDEX.md`；位階與衝突處理指向本檔第 3 節。
-2. Agent Orchestration 節補一句：派工與回報照 `model-dispatch-rules.md` 與 `delegation-templates.md`。
-3. 其餘插件內容不動（最小改動）。
-
-最終版已按此產出於 `vault/_root-snapshot/updated/AGENTS.md`（另補一條 legacy 專案的測試覆蓋率適用註記，指向 judgment-rubrics 第 5 節）。
-
-### 4.5 `vault/README.md`（本次已直接修改）
-
-已於 init 序列後加入一行指向 `vault/governance/INDEX.md`。原檔備份在 `vault/governance/backups/2026-07-03/README.md.bak`。
+1. 查該工具的官方文件：專案層讀哪個檔、使用者層指令放哪裡、有沒有 Skill 與 Hook。
+2. 會讀 `AGENTS.md`：專案層不用做事。不會讀：為它建一個入口檔，內容是啟動四步加專屬差異，並把檔名加進 `scripts/performance/lazy-loading-integration.test.js` 的逐字比對清單與 `AGENTS.md` 的工具差異指引。
+3. 使用者層：把 `scripts/entry-sync/templates/generic.md` 貼進該工具的全域指令位置。entry-sync 目前只自動安裝 Codex、Claude、Gemini。
+4. 需要單獨追蹤啟動預算時，在 `scripts/performance/measure-core-startup.js` 加 profile；否則沿用 `generic`。
+5. 在 2.2 登記該工具的實際讀取行為與查證日期。
 
 ## 5. 同步檢查清單（防漂移，每月首次 session 執行）
 
 弱模型照做即可，全部是機械操作：
 
-1. `CLAUDE.md`／`CODEX.md`／`GEMINI.md` 行數 ≤ 60：`Get-Content CLAUDE.md | Measure-Object -Line`（其餘同理）。超標→把規則內容搬回 governance，入口只留路由。`AGENTS.md` 為 ECC 特例不設行數上限（見 4.4）。
-2. 四個入口檔都含字串 `vault/governance/INDEX.md`。缺→補上第 4 節對應段落。
-3. 四個入口檔中用 `%USERPROFILE%` 以外的絕對路徑（如 `C:\Users\`）出現次數為 0。出現→改用環境變數鏈。
-4. `vault/governance/INDEX.md` 的檔案清單與 `vault/governance/` 實際檔案一致。不一致→更新 INDEX。
+1. 跑 `node --test scripts/performance/lazy-loading-integration.test.js`。它檢查啟動四步逐字一致、入口檔 60 行上限、四組啟動預算、共同入口維持工具中立，以及 Bootstrap 的硬閘門摘要。失敗就依訊息修正。
+2. 跑 `node scripts/router/build-routing-index.js --check`，確認路由索引與 Manifest 一致。
+3. 根目錄四個入口檔中，`%USERPROFILE%` 以外的本機絕對路徑（如 `C:\Users\`）出現次數為 0。出現就改用環境變數鏈。
+4. `vault/governance/INDEX.md` 的檔案清單與 `vault/governance/` 實際檔案一致。不一致就更新 INDEX。
 5. 檢查結果寫一行到當日 recap；有修改則入口檔先備份到 `vault/governance/backups/<日期>/`。
 6. **Hook 生效副本對照**（2026-07-05 新增；適用任何執行月維護的 AI——Claude／Codex／Gemini 皆同）：repo 內的 hook 檔是本體範本，實際生效的是各 AI 的使用者層設定，兩邊會漂移（2026-07-05 實例：matcher 修了本體、生效副本沒跟上，閘門空轉兩天）。逐項對照：
    - **Claude Code**：repo `hooks/hooks.json` ↔ `%USERPROFILE%\.claude\settings.json` 的 `hooks` 區塊。快速比對：`Select-String -Path "$env:USERPROFILE\.claude\settings.json" -Pattern 'pixiu-guardrails|auto-mode-guard'`，逐條核 matcher 與 command 和本體一致。
@@ -123,5 +128,5 @@ summary: 跨 AI 入口路由制度：四個入口檔只留精簡路由，制度�
 
 ## 本檔維護
 
-- 修改第 3 節優先序、或第 4 節路由文字：屬制度變更，**先問使用者**。
-- 更新第 2 節盤點狀態（例如根目錄檔案讀到了）：AI 可自行更新，需在 frontmatter 加 `lastVerified` 日期。
+- 修改第 3 節優先序、或第 4 節入口內容規範：屬制度變更，**先問使用者**。
+- 更新第 2 節盤點狀態（例如重新查證某工具的讀取行為）：AI 可自行更新，需在 frontmatter 更新 `lastVerified` 日期。
