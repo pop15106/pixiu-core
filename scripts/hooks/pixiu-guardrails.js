@@ -99,6 +99,10 @@ function handleSecretScan(input) {
     { pattern: /xox[bp]-[A-Za-z0-9-]{10,}/,               name: 'Slack Token' },
     { pattern: /glpat-[A-Za-z0-9_-]{20,}/,                name: 'GitLab Token' },
     { pattern: /npm_[A-Za-z0-9]{36}/,                     name: 'npm Token' },
+    // Oracle JDBC 連線字串直接帶帳密：jdbc:oracle:thin:user/password@host:1521/SID
+    { pattern: /jdbc:oracle:[a-z]+:[^\s\/@"'<>]+\/[^\s@"'<>]+@/i, name: 'Oracle JDBC 連線字串（含帳密）' },
+    // 設定檔中的明文密碼：db.password=xxx、password: xxx（排除 ${ENV}、%VAR%、<placeholder>、*** 與程式呼叫）
+    { pattern: /^\s*["']?[\w.-]*(?:password|passwd|pwd)["']?\s*[=:]\s*["']?(?![$%<*])(?!changeme\b|your[_-]?)[^\s"'(){};,]{4,}["']?\s*,?\s*$/im, name: '設定檔明文密碼' },
   ];
 
   const found = [];

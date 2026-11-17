@@ -9,6 +9,8 @@ language: zh-TW
 
 # Pixiu Session Recap
 
+> **路徑基準**：本 Skill 提到的 `scripts/`、`vault/`、`commands/`、`.agent/` 相對路徑都以母體根目錄為基準。不在母體目錄內執行時（例如在 PCLMS 專案開 Claude Code），先解析母體路徑（`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`），再以絕對路徑呼叫，例如 PowerShell：`node "$env:PIXIU_CORE\scripts\critical-relay\critical-relay.js" check <state.json>`。
+
 > 對應 Claude Code 2.1.108 的 `/recap` 功能。
 > 目的：把「人類記憶斷點」這件事交給工具，讓長 session 回來就能無痛接續。
 

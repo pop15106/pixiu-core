@@ -8,6 +8,8 @@ language: zh-TW
 
 # CR Lifecycle：研究、設計、開發、驗證一體化
 
+> **路徑基準**：本 Skill 提到的 `scripts/`、`vault/`、`commands/`、`.agent/` 相對路徑都以母體根目錄為基準。不在母體目錄內執行時（例如在 PCLMS 專案開 Claude Code），先解析母體路徑（`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`），再以絕對路徑呼叫，例如 PowerShell：`node "$env:PIXIU_CORE\scripts\critical-relay\critical-relay.js" check <state.json>`。
+
 本 Skill **沿用** `skills/critical-relay/SKILL.md` 的 canonical CR state、驗收閘門、授權與單一 Agent 政策。不能另建競爭的 state，也不能當成啟動 Agent、Git push、Release、Deploy 或網路搜尋的權限。
 
 ## 路由與啟用

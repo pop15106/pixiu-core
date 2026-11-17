@@ -8,6 +8,8 @@ language: zh-TW
 
 # Pixiu 自我驗證迴圈
 
+> **路徑基準**：本 Skill 提到的 `scripts/`、`vault/`、`commands/`、`.agent/` 相對路徑都以母體根目錄為基準。不在母體目錄內執行時（例如在 PCLMS 專案開 Claude Code），先解析母體路徑（`PIXIU_CORE` → `PIXIU_CORE_PATH` → `%USERPROFILE%\.pixiu-core`），再以絕對路徑呼叫，例如 PowerShell：`node "$env:PIXIU_CORE\scripts\critical-relay\critical-relay.js" check <state.json>`。
+
 ## 授權先判
 
 以使用者本次授權決定行為，而非把「驗證」視為新的寫入或推送許可。

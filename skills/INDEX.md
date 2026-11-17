@@ -82,7 +82,6 @@ summary: skills/ 目錄手動索引：19 個高優先路由能力＋81 個參考
 | `investor-outreach` | Draft cold emails, warm intro blurbs, follow-ups, update emails, and investor communicatio |
 | `iterative-retrieval` | Pattern for progressively refining context retrieval to solve the subagent context problem |
 | `java-coding-standards` | Java coding standards for Spring Boot services: naming, immutability, Optional usage, stre |
-| `job-radar` | kc_job_radar 求職雷達遙控指令 |
 | `job-scout` | 求職前公司與職位篩選工具。當使用者提到想投履歷、考慮某公司、評估某職缺、或想了解某公司值不值得去時觸發。輸入公司名稱（必要）+ 職位名稱（選填），輸出綜合評估與建議。 |
 | `kotlin-coroutines-flows` | Kotlin Coroutines and Flow patterns for Android and KMP — structured concurrency, Flow ope |
 | `kotlin-exposed-patterns` | JetBrains Exposed ORM patterns including DSL queries, DAO pattern, transactions, HikariCP  |

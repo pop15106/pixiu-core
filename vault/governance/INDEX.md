@@ -63,6 +63,7 @@ summary: 制度總路由：什麼情境讀哪份制度檔。所有 AI 入口檔�
 | `maintenance-protocol.md` | 權限分級、教訓迴路、衛生、月維護 | 低 |
 | `long-running-progress-policy.md` | 完整自動接力、長時間工作、CI／Release 的輪詢與可見進度 | 低 |
 | `letter-to-future-sessions.md` | 交接信：未完成項目與退化預防 | 交接時 |
+| `legacy-opus-4-7-runtime-params.md` | 2026-07 Opus 4.7 API 參數舊規則（存檔，非硬閘門） | 不更新 |
 | `backups/` | 修改既有檔前的備份 | 每次修改前 |
 
 ## 本檔維護

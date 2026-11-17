@@ -171,6 +171,12 @@ function safeResolveFromFile(request, manifestPath, options = {}) {
   }
 }
 
+// 找出 filesToLoad 中在母體不存在的檔案（例如被 .gitignore 排除的私人 context），
+// 讓呼叫端能明確回報缺檔，而不是讀取失敗後默默略過
+function findMissingFiles(files, coreRoot) {
+  return (files || []).filter(file => !fs.existsSync(path.resolve(coreRoot, file)));
+}
+
 if (require.main === module) {
   const request = process.argv[2] || '';
   const manifestPath = path.resolve(
@@ -178,6 +184,9 @@ if (require.main === module) {
   );
 
   const result = safeResolveFromFile(request, manifestPath);
+  // 母體根目錄 = manifest 所在的 vault/capabilities 往上兩層
+  const missing = findMissingFiles(result.filesToLoad, path.resolve(path.dirname(manifestPath), '..', '..'));
+  if (missing.length > 0) result.missing = missing;
   process.stdout.write(JSON.stringify(result, null, 2) + '\n');
   if (result.degraded) process.exitCode = 2;
 }
@@ -188,5 +197,6 @@ module.exports = {
   collectFiles,
   resolveCapabilities,
   loadManifest,
-  safeResolveFromFile
+  safeResolveFromFile,
+  findMissingFiles
 };

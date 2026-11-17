@@ -17,6 +17,7 @@ rules/
 ├── typescript/      # TypeScript/JavaScript specific
 ├── python/          # Python specific
 ├── golang/          # Go specific
+├── java/            # Java 舊系統維運（Servlet／Struts／DAO＋Oracle SP）
 ├── swift/           # Swift specific
 └── php/             # PHP specific
 ```
