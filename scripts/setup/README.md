@@ -2,6 +2,20 @@
 
 > 讓別人 clone 母體後，一鍵接上 Claude Code 與 Codex 的全部治理功能。
 
+## 只接 Claude Code 的精簡安裝（建議）
+
+只想讓 Claude Code 用母體、不動 Codex 與 VS Code 設定時，用精簡版：
+
+```powershell
+pwsh -File scripts/setup/install-pixiu-claude-slim.ps1          # 預演，不改檔
+pwsh -File scripts/setup/install-pixiu-claude-slim.ps1 -Apply   # 執行（先備份到 ~/.claude/backups/）
+pwsh -File scripts/setup/install-pixiu-claude-slim.ps1 -Uninstall -Apply
+```
+
+- 全域 `CLAUDE.md` 只寫低 Token 入口區塊（Bootstrap → Router → 最多 3 個 Capability），不整包載入 user_rules 與 rules。
+- 只連結 13 個 Skills（可用 `-Skills` 覆寫），只掛 change-scope、secret-scan 兩個 hook。
+- 不改 `~/.codex`、VS Code、`permissions.allow`、`effortLevel`。
+
 ## 一鍵部署（新機器 clone 後）
 
 前置：PowerShell 7+、git、node（Codex 接線需要）。
@@ -26,6 +40,7 @@ pwsh -File scripts/setup/bootstrap.ps1
 | 腳本 | 用途 |
 |---|---|
 | `bootstrap.ps1` | **一鍵總入口**（新機器 clone 後跑這個） |
+| `install-pixiu-claude-slim.ps1` | 精簡接 Claude Code（低 Token CLAUDE.md、13 Skills、2 hooks），預設預演、可移除 |
 | `install-to-cli.ps1` | 只接 Claude Code（skills junction + settings.json hooks），冪等 |
 | `install-to-codex.js` | 只接 Codex（node 跨平台生成 hooks.json，node 路徑動態） |
 | `uninstall-from-cli.ps1` | 回滾 Claude Code 注入（只動 `~/.claude/`） |

@@ -110,7 +110,7 @@ readAt: on-demand
     3. **使用者明示允許**：本 session 內使用者主動說過「開 focus」或等效語句。
     - **任一失敗即退出**：步驟紅燈、criteria 缺失、偵測到母體寫入或破壞性指令 → 立即退出 Focus mode，回全步驟可見模式，附完整 trace。
     - **不可與 Auto mode 疊加的情境**：涉及 `%PIXIU_CORE%\` 寫入時，Focus + Auto 兩者**皆不可開**，必須全程可見＋逐步確認。
-  - **🪜 /go 驗證迴圈觸發 [NEW]**：當使用者輸入「/go」、「跑驗證」、「收尾」或任務進入寫入完成階段時，**必須執行** `skills/pixiu-verify-loop/SKILL.md` 三步驟（E2E → /simplify → PR 草稿）。任一步紅燈即停、不自動修；PR 僅產草稿不自動推送。
+  - **🪜 /go 驗證迴圈觸發 [NEW]**：當使用者輸入「/go」、「跑驗證」、「收尾」或任務進入寫入完成階段時，**必須執行** `skills/pixiu-verify-loop/SKILL.md`，並依該 Skill 的授權表處理：唯讀審核只回報不修改；已授權實作／修復才在原範圍修正並重驗；只有本次明確授權 push 才推送，否則只交付本機差異與 PR 草稿。會啟動其他 Agent 的工具（含 /simplify）需另行明確授權。
   - **🧾 Recap 觸發 [NEW]**：當使用者提及「recap」、「摘要」、「現在到哪了」、「下一步」、或 Phase 完成、session 恢復時，Claude、Gemini、Codex 都**必須遵守同一份標準**：先讀 `vault/sop/recap-standard.md` 與 `vault/templates/session-recap.md`，再執行 `skills/pixiu-session-recap/SKILL.md`；Phase Recap 依 `vault/sop/recap-standard.md` 寫入 `vault/memory/recaps/<專案或母體>/<YYYY-MM>/YYYY-MM-DD-專案-內容.md`（Obsidian 相容格式，檔名只留日期不加時間戳）。
   - **🧾 Recap 自動寫檔 [NEW][HARD]**：Recap 產出後，**不需要使用者確認，直接寫入** `%PIXIU_CORE%\vault\memory\recaps\`（存放與命名依 `vault/sop/recap-standard.md`：專案／月份資料夾、檔名只留日期）。此規則**跨 AI、跨專案強制適用**：不論目前是 Claude、Gemini、Codex，不論目前工作目錄、repo、專案類型或是否存在專案內 vault，只要使用者下達 `recap` 或等效觸發詞，就必須回寫 `%PIXIU_CORE%`。Frontmatter 必須使用 `type/date/project/system/repo/topic/status/tags/source_paths/summary`；`repo` 填短 repo 名，完整路徑放 `source_paths`。若本次真的產生可長期追蹤的決策或索引狀態，再同步更新 `vault/memory/memory-summary.md` 或建立 `vault/memory/decisions/` 獨立決策檔。此為使用者預授權的寫入行為，豁免絕對用戶審批閘門。同樣預授權豁免（2026-07-03 擴充）：依對應模板**新增**檔案至 `vault/memory/agent-learning/observations/`、`vault/memory/agent-learning/instincts/`、`vault/after-action/`，以及依 `vault/governance/maintenance-protocol.md` 第 7 節更新 `vault/memory/memory-summary.md`；豁免僅限新增與模板內補充，不含刪除或改寫他人內容。
   - **📥 Dashboard Inbox 協議 [NEW][HARD]**：當使用者說「去看我的 inbox」、「看 dashboard」、「inbox 有東西」或等效語句時，**必須**執行以下流程：
@@ -126,13 +126,7 @@ readAt: on-demand
   - 當任務涉及複雜架構判斷、跨模型人格校準、Agent 行為設計或使用者明確要求「行為骨幹／Opus 規則」時，才按需載入完整 `skills/opus-behavior-core/SKILL.md`。
   - 非 Anthropic 模型以 Bootstrap 的認知／資訊／行動／溝通／安全摘要作為預設姿勢，不把完整 Skill 複製進 system prompt 或入口檔。
   - 當本骨幹（L1–L5）與本檔衝突時，**本檔（L0 憲法）優先**；骨幹僅在不違反 L0 的前提下提供預設姿勢。
-- **🧮 Opus 4.7 運行參數政策 (Runtime Parameter Policy) [NEW][HARD]**：使用 Claude Opus 4.7 時，**必須**遵守以下原生參數規則，違反會直接 400 錯誤或造成預期外行為。
-  **版本適用註記（2026-07-03）**：本節僅針對 Opus 4.7 驗證；對 Opus 4.8、Sonnet 5、Fable 5 的適用性【未確認】——使用新版模型時，先查官方文件確認 tokenizer 與參數行為，再決定是否沿用本節數值，不得直接照搬：
-  - **Tokenizer 膨脹補償**：Opus 4.7 新 tokenizer 在相同文字上多用 1×–1.35× token（最多 +35%）。所有 `max_tokens` 估算**必須加 35% headroom**；`task_budget` 下限 20k，成本估算同比例上修；compaction 觸發點一併同步。
-  - **Adaptive Thinking 顯式開啟**：預設 off。Pixiu「深度思考觸發條件」存在時，**必須顯式**設 `thinking: {"type": "adaptive"}`，並在需要觀察推理時加 `display: "summarized"`。
-  - **Effort Level 預設**：Code Review / Debug 根因 / 架構審閱 用 `xhigh`；一般撰寫用 `high`；文件摘要用 `medium`；簡問簡答用 `low`；跨領域多方案辯證臨時切 `max`（僅當前 session 生效）。
-  - **禁用參數清單**：`temperature`、`top_p`、`top_k`、`thinking.budget_tokens` 一律不得設定非預設值，否則 Opus 4.7 會回 400。以 prompting 取代 sampling 調校。
-  - **行為原生對齊**：Opus 4.7 已內建「更直接、少 emoji、少 sub-agent、更頻繁回進度」傾向，舊 prompt 中重複要求這些的 scaffolding 可移除。
+- **🧮 模型運行參數政策**：呼叫 Claude API 前，`max_tokens`、thinking、effort 與禁用參數一律以當下官方文件為準，不沿用舊版模型的數值。2026-07 針對 Opus 4.7 驗證過的舊規則保留於 `vault/governance/legacy-opus-4-7-runtime-params.md`，僅供對照，不再是硬閘門。
 - **錯誤復原與持續回報**：操作失敗時，回報錯誤、已完成事項與影響範圍，記錄可驗證的修正方式，繼續處理既有授權內且不受阻擋的工作。工具可用性與權限由執行平台決定；遇到安全或權限拒絕時停止該動作，說明正式處理方式，不自行解除鎖定、修改審批設定或換介面重做被拒絕的操作。
 
 ---

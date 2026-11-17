@@ -1,6 +1,6 @@
 ---
 name: legacy-java-flow-tracing
-description: Use when tracing legacy Java, Servlet, Spring, Vue, PCLMS, PEPIS, PISSO, PTWCS, report, SQL, table, history-table, menu, login, validator, or stack-trace behavior across UI, controller, service, DAO, database, and report layers.
+description: Use when tracing legacy Java, Servlet, Struts, Spring, Vue, Oracle stored procedure, trigger, PCLMS, PEPIS, PISSO, PTWCS, report, SQL, table, history-table, menu, login, validator, or stack-trace behavior across UI, controller, service, DAO, database, and report layers.
 ---
 
 # Legacy Java Flow Tracing
@@ -31,6 +31,12 @@ Use this order unless the evidence clearly demands another route:
 - Return the exact SQL or mapper location when available, not just table names.
 - If a table is written, identify insert/update order, history table behavior, and commit/rollback boundary.
 - If the answer involves report numbers, trace service totals, DTO assembly, and view/report template, not only the SELECT.
+
+## Raw Value Guard
+
+- Compare stored values as raw strings first. Do not silently HTML-decode (`&amp;` vs `&`), trim spaces, drop leading zeros (`00127` vs `127`), or merge NULL and empty string.
+- If a display layer or batch step converts values, name the layer and the rule, then compare both the raw and the converted value.
+- When a Java caller invokes a stored procedure, check parameter names, order, types and defaults on both sides; a new SP parameter without a matching caller change is a known failure pattern.
 
 ## Repo Boundary Guard
 
