@@ -40,6 +40,7 @@ Critical Relay 可以單獨形成一個模式，也可以疊加在完整自動�
 - 進度用任務清單呈現：每個 completionCriterion 一個項目，VERIFY → RECHALLENGE 也各一項。
 - 使用者明確要求同步到 Hermes 或其他 workflow 帳本時，才依該系統的授權與 `criticalRelayRequired=true` 契約處理。
 - 啟動、帳本建立與完成閘門分別回報；建立案件不要求先通過完成閘門。
+- 案件卡、跨輪續接、主張與多輪驗收依 [references/case-and-review.md](references/case-and-review.md)。
 
 ## 標準流程
 

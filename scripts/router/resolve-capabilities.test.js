@@ -353,6 +353,9 @@ require('node:test')('Claude 版 analyze-style 與 critical-relay 骨架與共�
   }
   assert.ok(!/ChatGPT|DevSpace|Dev 選擇|啟用 Dev 讀|Chat 啟動與 Dev/.test(crClaude), 'critical-relay Claude 版仍含 Chat／Dev 流程');
   assert.match(crClaude, /沒有 Dev 選項/);
+  const caseReview = read('.claude/skills/critical-relay/references/case-and-review.md');
+  for (const term of ['案件卡與跨輪續接', '最多八輪', 'VERIFY → RECHALLENGE']) assert.ok(caseReview.includes(term), term);
+  assert.ok(!/Dev 選擇｜|workspaceId|DevSpace-work_new/.test(caseReview));
   assert.match(read('CLAUDE.md'), /cr-chat-dev-policy\.md` 不讀/);
   assert.strictEqual(read('.claude/skills/critical-relay/references/lifecycle.md').includes('ChatGPT'), false);
 });
